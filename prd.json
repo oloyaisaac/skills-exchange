@@ -1,0 +1,1782 @@
+{
+  "project": {
+    "name": "Skills Exchange",
+    "status": "in_progress",
+    "version": "1.1"
+  },
+  "principles": [
+    "Unified Account Identity: A single user profile supports both Client and Worker modes without creating duplicate accounts.",
+    "Strict Verification & Activation Gating: Worker functionality, job bidding, and search visibility are strictly blocked until National ID verification, 2-guarantor review, and 2-3 day training completion are approved by admin.",
+    "Document Isolation & Privacy: Sensitive National IDs, guarantor IDs, and certificates are isolated in secure storage accessible exclusively by authorized administrative personnel.",
+    "Structured 125-Service Taxonomy: Worker skills are validated against a 125-service catalog requiring 1 Primary Skill + up to 2 related Additional Skills within the same trade family.",
+    "Dual Marketplace & Flexible Contracting: Support both direct nearby specialist discovery and open job multi-quote bidding for one-time and recurring contract schedules.",
+    "Escrow Security & Doorstep Verification: All transactional job payments are held in Mobile Money escrow until 4-digit doorstep PIN and ground proof photos are verified."
+  ],
+  "phases": [
+    {
+      "id": 1,
+      "name": "Baseline, Infrastructure & Test Stabilization",
+      "goal": "Fix broken Robolectric and Roborazzi test suite to establish clean CI/CD build baseline."
+    },
+    {
+      "id": 2,
+      "name": "Security, Document Storage & Database Rule Hardening",
+      "goal": "Hardening Firestore rules, Firebase Storage private buckets, and HMAC webhook security."
+    },
+    {
+      "id": 3,
+      "name": "Unified Account Architecture, Roles & Mode Switching",
+      "goal": "Implement single user account model with Client/Worker role selection, mode switching, and activation gating."
+    },
+    {
+      "id": 4,
+      "name": "Service Taxonomy & Skill Catalog System (125 Services)",
+      "goal": "Implement structured 125-service catalog taxonomy with primary and related additional skill validation."
+    },
+    {
+      "id": 5,
+      "name": "Client Onboarding & Location Management",
+      "goal": "Implement client phone registration, GPS coordinate detection, and manual location correction."
+    },
+    {
+      "id": 6,
+      "name": "Worker KYC Verification & Guarantor Engine",
+      "goal": "Implement worker application pipeline with Uganda National ID upload, 2 distinct guarantors, and skill qualification evidence."
+    },
+    {
+      "id": 7,
+      "name": "Verification Lifecycle, Changes-Required & 48h SLA Tracking",
+      "goal": "Implement verification state machine, changes-required re-submission UI, and 48-hour SLA decision timestamps."
+    },
+    {
+      "id": 8,
+      "name": "Worker Training Tracking & Activation Gating",
+      "goal": "Implement 2-3 day worker rule training progress tracking and admin activation gating."
+    },
+    {
+      "id": 9,
+      "name": "Admin Operations Dashboard & Verification Queue",
+      "goal": "Build separate administrative web portal specification for verification queue processing, document review, and activation toggling."
+    },
+    {
+      "id": 10,
+      "name": "Core Marketplace, Quotes & Job Types",
+      "goal": "Implement nearby worker discovery, open job multi-quote bidding, and one-time/recurring contract negotiation."
+    },
+    {
+      "id": 11,
+      "name": "Mobile Money Payments & Escrow Engine",
+      "goal": "Connect MTN MoMo and Airtel Money collection APIs, escrow locking, and verified payout disbursements."
+    },
+    {
+      "id": 12,
+      "name": "Location Privacy, Google Maps & AI Services",
+      "goal": "Integrate Google Maps SDK, district-level location privacy obfuscation, and repair Gemini 2.0 Flash AI services."
+    },
+    {
+      "id": 13,
+      "name": "Communication, Safety & Doorstep Safeguards",
+      "goal": "Implement Firestore real-time chat with phone number masking, dynamic 4-digit doorstep PIN generation, and SOS alerts."
+    },
+    {
+      "id": 14,
+      "name": "Offline Synchronization & Reliability",
+      "goal": "Implement offline action queueing, conflict resolution, and data backup/restore verification."
+    },
+    {
+      "id": 15,
+      "name": "Production QA & Release Readiness",
+      "goal": "Configure ProGuard rules, release build signing, and end-to-end user journey validation."
+    }
+  ],
+  "stories": [
+    {
+      "id": "STAB-001",
+      "phase": 1,
+      "title": "Fix Robolectric unit test assertion mismatch",
+      "priority": "P0",
+      "status": "completed",
+      "completed_at": "2026-08-25T09:21:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [],
+      "description": "Fix ExampleRobolectricTest assertion mismatch where string resource 'app_name' resolves to 'Skills Exchange' but test asserts 'My Application'.",
+      "problem": "Running unit tests fails due to hardcoded mismatched string assertion in ExampleRobolectricTest.kt line 19.",
+      "goal": "Update ExampleRobolectricTest.kt to assert 'Skills Exchange' matching strings.xml.",
+      "scope": {
+        "include": [
+          "app/src/test/java/com/example/ExampleRobolectricTest.kt"
+        ],
+        "exclude": [
+          "app/src/main/**"
+        ]
+      },
+      "files_likely_affected": [
+        "app/src/test/java/com/example/ExampleRobolectricTest.kt"
+      ],
+      "acceptance_criteria": [
+        "ExampleRobolectricTest passes when executing gradle test task",
+        "No changes to application code"
+      ],
+      "verification": [
+        "Run ./gradlew testDebugUnitTest --tests com.example.ExampleRobolectricTest"
+      ],
+      "risks": [
+        "Low risk, test code only modification"
+      ],
+      "rollback": "git checkout app/src/test/java/com/example/ExampleRobolectricTest.kt",
+      "notes": "Found during project audit."
+    },
+    {
+      "id": "STAB-002",
+      "phase": 1,
+      "title": "Fix GreetingScreenshotTest theme and composable imports",
+      "priority": "P0",
+      "status": "completed",
+      "completed_at": "2026-08-25T12:25:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "STAB-001"
+      ],
+      "description": "Repair GreetingScreenshotTest references to non-existent MyApplicationTheme and Greeting composables.",
+      "problem": "GreetingScreenshotTest imports com.example.ui.theme.MyApplicationTheme and calls Greeting() which do not exist.",
+      "goal": "Update GreetingScreenshotTest to use SkillsExchangeTheme and valid component targets.",
+      "scope": {
+        "include": [
+          "app/src/test/java/com/example/GreetingScreenshotTest.kt"
+        ],
+        "exclude": [
+          "app/src/main/**"
+        ]
+      },
+      "files_likely_affected": [
+        "app/src/test/java/com/example/GreetingScreenshotTest.kt"
+      ],
+      "acceptance_criteria": [
+        "GreetingScreenshotTest compiles and executes cleanly",
+        "Test suite builds successfully"
+      ],
+      "verification": [
+        "Run ./gradlew testDebugUnitTest --tests com.example.GreetingScreenshotTest"
+      ],
+      "risks": [
+        "Roborazzi graphics mode configuration"
+      ],
+      "rollback": "git checkout app/src/test/java/com/example/GreetingScreenshotTest.kt",
+      "notes": "Found during test suite audit."
+    },
+    {
+      "id": "STAB-003",
+      "phase": 1,
+      "title": "Establish automated test verification script",
+      "priority": "P3",
+      "status": "pending",
+      "depends_on": [
+        "STAB-002"
+      ],
+      "description": "Configure unified test verification script to execute all unit tests cleanly.",
+      "problem": "No documented script for continuous test verification.",
+      "goal": "Verify ./gradlew test command completes with BUILD SUCCESSFUL.",
+      "scope": {
+        "include": [
+          "app/src/test/**"
+        ],
+        "exclude": [
+          "app/src/main/**"
+        ]
+      },
+      "files_likely_affected": [],
+      "acceptance_criteria": [
+        "Command ./gradlew test completes cleanly"
+      ],
+      "verification": [
+        "Run ./gradlew test"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "N/A",
+      "notes": "Ensures clean test baseline."
+    },
+    {
+      "id": "SEC-001",
+      "phase": 2,
+      "title": "Harden Firestore security rules for provider and KYC collections",
+      "priority": "P0",
+      "status": "completed",
+      "completed_at": "2026-08-25T17:37:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "STAB-001"
+      ],
+      "description": "Restrict write permissions on /providers/{providerId} and /users/{userId}/verification in firestore.rules to authenticated document owners and admin roles.",
+      "problem": "firestore.rules line 35 allows any authenticated user to overwrite any provider profile without UID check.",
+      "goal": "Update firestore.rules to enforce request.auth.uid == providerId for updates.",
+      "scope": {
+        "include": [
+          "firestore.rules"
+        ],
+        "exclude": [
+          "app/**"
+        ]
+      },
+      "files_likely_affected": [
+        "firestore.rules"
+      ],
+      "acceptance_criteria": [
+        "firestore.rules rejects updates from non-owner UIDs",
+        "Public read access remains for public provider card fields"
+      ],
+      "verification": [
+        "Deploy/emulate firestore rules and test unauthorized update denial"
+      ],
+      "risks": [
+        "Requires matching provider IDs with auth UIDs"
+      ],
+      "rollback": "git checkout firestore.rules",
+      "notes": "Critical security fix SEC-01."
+    },
+    {
+      "id": "SEC-002",
+      "phase": 2,
+      "title": "Add HMAC signature verification to MoMo webhook Cloud Function",
+      "priority": "P0",
+      "status": "completed",
+      "completed_at": "2026-08-25T17:41:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "SEC-001"
+      ],
+      "description": "Implement HMAC header signature validation in processMoMoWebhook Cloud Function to prevent unauthorized job status tampering.",
+      "problem": "processMoMoWebhook endpoint in functions/src/index.ts accepts unauthenticated POST requests.",
+      "goal": "Add header signature check validated against Firebase Secret Manager secret key.",
+      "scope": {
+        "include": [
+          "functions/src/index.ts"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Webhook request without valid HMAC header returns 401 Unauthorized",
+        "Valid request updates job escrow status correctly"
+      ],
+      "verification": [
+        "Invoke webhook endpoint with valid and invalid HMAC signatures via curl"
+      ],
+      "risks": [
+        "Secret key setup in Firebase environment"
+      ],
+      "rollback": "git checkout functions/src/index.ts",
+      "notes": "Critical security fix SEC-02."
+    },
+    {
+      "id": "SEC-003",
+      "phase": 2,
+      "title": "Configure Firebase Storage security rules for private KYC documents",
+      "priority": "P0",
+      "status": "completed",
+      "completed_at": "2026-08-25T17:45:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "SEC-001"
+      ],
+      "description": "Create Firebase Storage rules restricting read access on National ID images, guarantor IDs, and certificates to admin roles and document owner.",
+      "problem": "Storage bucket rules missing, risking exposure of sensitive identity documents to public users.",
+      "goal": "Add storage.rules enforcing request.auth.uid == userId OR request.auth.token.admin == true on gs://skills-exchange-private-docs/.",
+      "scope": {
+        "include": [
+          "storage.rules"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "storage.rules"
+      ],
+      "acceptance_criteria": [
+        "Unauthenticated and non-owner client requests to download National ID images are rejected with 403 Forbidden"
+      ],
+      "verification": [
+        "Test storage rules using Firebase Emulator Suite"
+      ],
+      "risks": [
+        "Admin custom claim configuration required"
+      ],
+      "rollback": "git delete storage.rules",
+      "notes": "Privacy requirement."
+    },
+    {
+      "id": "ROLE-001",
+      "phase": 3,
+      "title": "Define Unified Account Data Model with Client/Worker role flags",
+      "priority": "P1",
+      "status": "completed",
+      "completed_at": "2026-08-25T17:47:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "SEC-001"
+      ],
+      "description": "Create UserProfileEntity Room table and Firestore schema supporting a single user profile with initialRole ('CLIENT'|'WORKER'), currentActiveMode, and workerKycStatus.",
+      "problem": "App lacks a unified user account schema that tracks client profile info alongside worker verification state.",
+      "goal": "Define UserProfileEntity entity, DAO, and repository methods.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/db/Entities.kt",
+          "app/src/main/java/com/example/data/db/Daos.kt",
+          "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/db/Entities.kt",
+        "app/src/main/java/com/example/data/db/Daos.kt",
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+      ],
+      "acceptance_criteria": [
+        "User account created with initial role flag",
+        "Single account record stores both client profile and worker verification status"
+      ],
+      "verification": [
+        "Insert user profile into Room DB and inspect stored fields"
+      ],
+      "risks": [
+        "Room schema version increment required"
+      ],
+      "rollback": "git checkout affected entity files",
+      "notes": "Foundational user architecture."
+    },
+    {
+      "id": "ROLE-002",
+      "phase": 3,
+      "title": "Implement Client and Worker mode switching logic",
+      "priority": "P1",
+      "status": "completed",
+      "completed_at": "2026-08-25T17:49:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "ROLE-001"
+      ],
+      "description": "Implement userRoleMode toggle in SkillsExchangeViewModel allowing single account to switch between 'Hire a Neighbor' (Client) and 'Offer Skills' (Worker) modes.",
+      "problem": "Mode switching currently uses unpersisted UI state without checking worker activation eligibility.",
+      "goal": "Persist currentActiveMode in UserProfileEntity and enforce activation check when switching to Worker mode.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+          "app/src/main/java/com/example/ui/screens/MainScreen.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+        "app/src/main/java/com/example/ui/screens/MainScreen.kt"
+      ],
+      "acceptance_criteria": [
+        "Client can tap mode switcher to switch active UI context",
+        "Unapproved worker attempting to switch to Worker mode is directed to Verification status screen"
+      ],
+      "verification": [
+        "Toggle mode switch in UI with verified and unverified user accounts"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout affected UI files",
+      "notes": "Core UX feature."
+    },
+    {
+      "id": "ROLE-003",
+      "phase": 3,
+      "title": "Implement Worker Verification & Activation access gate",
+      "priority": "P1",
+      "status": "completed",
+      "completed_at": "2026-08-25T17:51:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "ROLE-002"
+      ],
+      "description": "Block access to FreelancerDashboardView for worker accounts whose status is not ACTIVATED.",
+      "problem": "Unverified workers can currently view freelancer dashboard tabs.",
+      "goal": "Render VerificationStatusScreen when activeMode is WORKER and kycStatus != ACTIVATED.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/screens/MainScreen.kt",
+          "app/src/main/java/com/example/ui/components/FreelancerDashboardView.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/screens/MainScreen.kt"
+      ],
+      "acceptance_criteria": [
+        "Unactivated worker navigating to Worker tab sees Verification Status screen instead of Freelancer Dashboard"
+      ],
+      "verification": [
+        "Test navigation with unactivated worker account"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout MainScreen.kt",
+      "notes": "Enforces business rule #13."
+    },
+    {
+      "id": "SKILL-001",
+      "phase": 4,
+      "title": "Define Service Taxonomy Data Schema with 125 Skills",
+      "priority": "P1",
+      "status": "completed",
+      "completed_at": "2026-08-25T17:52:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "STAB-001"
+      ],
+      "description": "Create ServiceTaxonomy model and populate 125 structured services across 5 main categories (Construction, Cleaning, Technology, Automotive, Personal).",
+      "problem": "App uses flat CSV strings for worker skills without a structured service catalog.",
+      "goal": "Define ServiceTaxonomyItem model (id, category, name, skillFamily, qualExpected, primaryEligible, additionalEligible) and load catalog dataset.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/db/Entities.kt",
+          "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+      ],
+      "acceptance_criteria": [
+        "Taxonomy catalog loads 125 structured service entries into repository flow",
+        "Services are queryable by category and skill family"
+      ],
+      "verification": [
+        "Unit test verifying 125 catalog entries loaded with correct fields"
+      ],
+      "risks": [
+        "Catalog size"
+      ],
+      "rollback": "git checkout repository file",
+      "notes": "Fulfills product rule #5."
+    },
+    {
+      "id": "SKILL-002",
+      "phase": 4,
+      "title": "Implement Related Skill Validation engine",
+      "priority": "P2",
+      "status": "completed",
+      "completed_at": "2026-08-25T17:53:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "SKILL-001"
+      ],
+      "description": "Implement validation logic ensuring worker's 2 additional skills belong to the same skill family as their primary skill.",
+      "problem": "Workers could select unrelated skill combinations (e.g. Primary: Gardening, Additional: Electrical Wiring).",
+      "goal": "Add validateWorkerSkills(primary, additionalList): Boolean method returning false for unrelated skill families.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+      ],
+      "acceptance_criteria": [
+        "Selecting related additional skills (e.g. Electrical + Solar) succeeds",
+        "Selecting unrelated additional skills returns validation error"
+      ],
+      "verification": [
+        "Unit test skill validation logic with valid and invalid skill pairings"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout repository file",
+      "notes": "Enforces business rule #5."
+    },
+    {
+      "id": "SKILL-003",
+      "phase": 4,
+      "title": "Implement Service Catalog UI selector for Worker onboarding",
+      "priority": "P2",
+      "status": "completed",
+      "completed_at": "2026-08-25T17:53:30+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "SKILL-002"
+      ],
+      "description": "Build multi-step Composable skill picker UI for worker application enforcing 1 Primary + up to 2 Related Additional Skills.",
+      "problem": "No UI component exists for picking structured skills during worker application.",
+      "goal": "Build ServiceCatalogPicker sheet rendering 5 category hubs, primary skill selection, and dynamically filtered related additional skills.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/components/FilterBar.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/components/FilterBar.kt"
+      ],
+      "acceptance_criteria": [
+        "Worker selects category -> picks primary skill -> picking additional skills shows only related options"
+      ],
+      "verification": [
+        "Interact with skill selector in onboarding flow"
+      ],
+      "risks": [
+        "UI layout complexity"
+      ],
+      "rollback": "git checkout affected component",
+      "notes": "Worker onboarding UX."
+    },
+    {
+      "id": "LOC-001",
+      "phase": 5,
+      "title": "Implement Client Location Onboarding & GPS Detection",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "ROLE-001"
+      ],
+      "description": "Collect client full name, phone number, district, and GPS location during client onboarding without requiring National ID.",
+      "problem": "Client onboarding lacks structured registration step for capturing location and district details.",
+      "goal": "Build ClientOnboardingSheet capturing name, phone, district, and acquiring GPS coordinates via LocationHelper.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/components/AuthModal.kt",
+          "app/src/main/java/com/example/util/LocationHelper.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/components/AuthModal.kt"
+      ],
+      "acceptance_criteria": [
+        "Client inputs name and phone -> location auto-detected via GPS -> district set -> client profile created without ID requirement"
+      ],
+      "verification": [
+        "Complete client onboarding in UI and inspect stored profile"
+      ],
+      "risks": [
+        "GPS permission handling"
+      ],
+      "rollback": "git checkout AuthModal.kt",
+      "notes": "Enforces business rule #3."
+    },
+    {
+      "id": "LOC-002",
+      "phase": 5,
+      "title": "Implement Manual Location Correction & Geocoding fallback",
+      "priority": "P2",
+      "status": "pending",
+      "depends_on": [
+        "LOC-001"
+      ],
+      "description": "Allow client and worker to manually search district or adjust map pin if GPS/geocoding is inaccurate.",
+      "problem": "Users cannot override auto-detected GPS location if reverse geocoding returns incorrect neighborhood.",
+      "goal": "Add 'Edit Location' dialog allowing manual district selection from East African district list.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/components/GpsLocationBanner.kt",
+          "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/components/GpsLocationBanner.kt"
+      ],
+      "acceptance_criteria": [
+        "User taps 'Edit Location' -> selects Wakiso District -> active location updates to Wakiso District"
+      ],
+      "verification": [
+        "Manually correct location in UI and verify filter update"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout GpsLocationBanner.kt",
+      "notes": "Enforces business rule #3."
+    },
+    {
+      "id": "LOC-003",
+      "phase": 5,
+      "title": "Implement Worker District & Location management",
+      "priority": "P2",
+      "status": "pending",
+      "depends_on": [
+        "LOC-001"
+      ],
+      "description": "Allow active workers to update their current operating district and location address in worker settings.",
+      "problem": "Worker operating location is static after registration.",
+      "goal": "Add updateWorkerLocation(district, lat, lng, address) method to repository and view model.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+      ],
+      "acceptance_criteria": [
+        "Worker updates operating location to Mukono -> worker appears in Mukono nearby discovery"
+      ],
+      "verification": [
+        "Update worker location and check nearby discovery search results"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout viewmodel file",
+      "notes": "Worker mobility support."
+    },
+    {
+      "id": "LOC-004",
+      "phase": 5,
+      "title": "Enforce Public Location Privacy & District-Level Aggregation",
+      "priority": "P2",
+      "status": "pending",
+      "depends_on": [
+        "LOC-001"
+      ],
+      "description": "Ensure public worker profiles display aggregated job counts per district (e.g. Kampala: 42 jobs) without exposing exact previous customer addresses.",
+      "problem": "Public profile could leak exact customer job coordinates.",
+      "goal": "Aggregate job history by district name in WorkerProfileView and obfuscate reviewer identities.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/components/ProviderDetailSheet.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/components/ProviderDetailSheet.kt"
+      ],
+      "acceptance_criteria": [
+        "Worker profile displays district-level job breakdown (e.g. Kampala — 42 jobs)",
+        "Exact customer addresses and reviewer names are hidden"
+      ],
+      "verification": [
+        "Inspect rendered worker profile sheet in UI"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout ProviderDetailSheet.kt",
+      "notes": "Enforces business rule #15 & #20."
+    },
+    {
+      "id": "KYC-001",
+      "phase": 6,
+      "title": "Define Worker Identity & National ID data schema",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "ROLE-001"
+      ],
+      "description": "Define WorkerKycEntity Room table and Firestore schema storing full legal name, Uganda National ID number, DOB, gender, and ID document storage paths.",
+      "problem": "App lacks structured database fields for storing complete worker National ID metadata.",
+      "goal": "Define WorkerKycEntity schema and repository methods.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/db/Entities.kt",
+          "app/src/main/java/com/example/data/db/Daos.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/db/Entities.kt",
+        "app/src/main/java/com/example/data/db/Daos.kt"
+      ],
+      "acceptance_criteria": [
+        "Worker KYC metadata stored in isolated local DB table and synced to private Firestore collection"
+      ],
+      "verification": [
+        "Insert WorkerKycEntity record and verify table fields"
+      ],
+      "risks": [
+        "Room migration required"
+      ],
+      "rollback": "git checkout DB files",
+      "notes": "Core KYC foundation."
+    },
+    {
+      "id": "KYC-002",
+      "phase": 6,
+      "title": "Implement Worker Document Upload pipeline to Firebase Storage",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "KYC-001",
+        "SEC-003"
+      ],
+      "description": "Implement photo picker and upload pipeline sending Uganda National ID Front & Back images to private Firebase Storage path gs://skills-exchange-private-docs/kyc/{uid}/.",
+      "problem": "App currently uses hardcoded external web URLs for identity document placeholders.",
+      "goal": "Add uploadKycDocument(uri, docType) method uploading image bytes to Firebase Storage and returning private storage reference.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/remote/FirebaseService.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/remote/FirebaseService.kt"
+      ],
+      "acceptance_criteria": [
+        "Worker selects National ID image -> file uploaded to private Firebase Storage bucket -> reference stored in KYC entity"
+      ],
+      "verification": [
+        "Upload test document and verify file in Firebase Storage console"
+      ],
+      "risks": [
+        "Network upload failure handling"
+      ],
+      "rollback": "git checkout FirebaseService.kt",
+      "notes": "Enforces business rule #4 & #8."
+    },
+    {
+      "id": "KYC-003",
+      "phase": 6,
+      "title": "Define Two-Guarantor Data Model & Validation rules",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "KYC-001"
+      ],
+      "description": "Define GuarantorEntity schema requiring exactly TWO distinct guarantors per worker application (name, phone, relationship, district, ID front/back).",
+      "problem": "App currently has no guarantor data model or storage mechanism.",
+      "goal": "Define GuarantorEntity table, DAO, and validation logic requiring count == 2 before application submission.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/db/Entities.kt",
+          "app/src/main/java/com/example/data/db/Daos.kt",
+          "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/db/Entities.kt",
+        "app/src/main/java/com/example/data/db/Daos.kt",
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+      ],
+      "acceptance_criteria": [
+        "Worker application requires exactly 2 guarantor entries",
+        "Submitting application with 0 or 1 guarantor is rejected by validation"
+      ],
+      "verification": [
+        "Unit test guarantor validation logic"
+      ],
+      "risks": [
+        "Database migration"
+      ],
+      "rollback": "git checkout affected files",
+      "notes": "Enforces business rule #7."
+    },
+    {
+      "id": "KYC-004",
+      "phase": 6,
+      "title": "Implement Guarantor Identity & National ID Upload UI",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "KYC-003"
+      ],
+      "description": "Build GuarantorFormSheet Composable collecting details and National ID front/back photos for Guarantor 1 and Guarantor 2.",
+      "problem": "No UI component exists for entering two guarantors.",
+      "goal": "Build 2-step guarantor form in worker application flow.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/components/AccountComplianceDialog.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/components/AccountComplianceDialog.kt"
+      ],
+      "acceptance_criteria": [
+        "Worker inputs Guarantor 1 details & ID photos -> inputs Guarantor 2 details & ID photos -> both saved"
+      ],
+      "verification": [
+        "Complete guarantor form in UI"
+      ],
+      "risks": [
+        "UI form length"
+      ],
+      "rollback": "git checkout component file",
+      "notes": "Enforces business rule #7."
+    },
+    {
+      "id": "KYC-005",
+      "phase": 6,
+      "title": "Implement Primary Skill Qualification Certificate & Video Evidence upload",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "KYC-001"
+      ],
+      "description": "Allow worker to upload trade certificate image OR alternative demonstration video/work photos for primary skill qualification.",
+      "problem": "App lacks upload pipeline for primary skill qualification evidence.",
+      "goal": "Add QualificationEvidence model supporting certificate photo upload or video demonstration link.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/remote/FirebaseService.kt",
+          "app/src/main/java/com/example/ui/components/AccountComplianceDialog.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/remote/FirebaseService.kt"
+      ],
+      "acceptance_criteria": [
+        "Worker uploads formal certificate OR alternative trade demo video -> reference attached to worker application"
+      ],
+      "verification": [
+        "Upload qualification evidence in application UI"
+      ],
+      "risks": [
+        "Video file size handling"
+      ],
+      "rollback": "git checkout affected files",
+      "notes": "Enforces business rule #6."
+    },
+    {
+      "id": "KYC-006",
+      "phase": 7,
+      "title": "Implement Verification State Machine & 48h SLA Timestamps",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "KYC-001"
+      ],
+      "description": "Enforce verification state transitions and record submittedAt timestamp to measure the 48-hour review decision target.",
+      "problem": "Verification state currently defaults to static 'APPROVED' string without tracking submission timestamps.",
+      "goal": "Update kycStatus enum values (NOT_STARTED, SUBMITTED, UNDER_REVIEW, CHANGES_REQUIRED, APPROVED, REJECTED) and record submittedAt timestamp.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/db/Entities.kt",
+          "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/db/Entities.kt",
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+      ],
+      "acceptance_criteria": [
+        "Submitting application transitions kycStatus to SUBMITTED and sets submittedAt = System.currentTimeMillis()",
+        "48h countdown target calculated from submittedAt"
+      ],
+      "verification": [
+        "Submit application and check stored state and timestamp"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout DB files",
+      "notes": "Enforces business rule #9 & #10."
+    },
+    {
+      "id": "KYC-007",
+      "phase": 7,
+      "title": "Implement Worker 'Changes Required' feedback view & resubmission workflow",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "KYC-006"
+      ],
+      "description": "Build limited VerificationStatusScreen displaying admin feedback reason (e.g. 'National ID image is blurry') with 'Update Documents' button when status is CHANGES_REQUIRED.",
+      "problem": "Workers have no UI view to inspect admin feedback or resubmit corrected documents.",
+      "goal": "Render ChangesRequiredView displaying reason text, WhatsApp/Call support links, and document edit form.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/components/AccountComplianceDialog.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/components/AccountComplianceDialog.kt"
+      ],
+      "acceptance_criteria": [
+        "Worker with status CHANGES_REQUIRED sees admin feedback reason, support phone number, and document update button",
+        "Dashboard access remains blocked until approved"
+      ],
+      "verification": [
+        "Set test user status to CHANGES_REQUIRED and verify rendered screen"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout component file",
+      "notes": "Enforces business rule #11."
+    },
+    {
+      "id": "TRAIN-001",
+      "phase": 8,
+      "title": "Define Worker Training Progress & Content Data Schema",
+      "priority": "P2",
+      "status": "pending",
+      "depends_on": [
+        "KYC-006"
+      ],
+      "description": "Define WorkerTrainingEntity table storing 2-3 day training module status, completedModulesCsv, and completionTimestamp.",
+      "problem": "App lacks database schema for tracking worker training progress.",
+      "goal": "Create WorkerTrainingEntity schema and repository flow.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/db/Entities.kt",
+          "app/src/main/java/com/example/data/db/Daos.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/db/Entities.kt",
+        "app/src/main/java/com/example/data/db/Daos.kt"
+      ],
+      "acceptance_criteria": [
+        "Training status tracked separately from identity verification status"
+      ],
+      "verification": [
+        "Insert training record and verify fields"
+      ],
+      "risks": [
+        "Room migration"
+      ],
+      "rollback": "git checkout DB files",
+      "notes": "Enforces business rule #12."
+    },
+    {
+      "id": "TRAIN-002",
+      "phase": 8,
+      "title": "Implement Worker Rule Training UI & Completion Tracking",
+      "priority": "P2",
+      "status": "pending",
+      "depends_on": [
+        "TRAIN-001"
+      ],
+      "description": "Build WorkerTrainingScreen displaying video training links, platform rule modules, and module completion progress.",
+      "problem": "No UI exists for workers to view training materials.",
+      "goal": "Build WorkerTrainingScreen UI rendering training topics (Platform Rules, Escrow Guidelines, Customer Etiquette).",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/components/AccountComplianceDialog.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/components/AccountComplianceDialog.kt"
+      ],
+      "acceptance_criteria": [
+        "Worker completes training modules -> status updates to TRAINING_COMPLETED"
+      ],
+      "verification": [
+        "Complete training modules in UI"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout component file",
+      "notes": "Enforces business rule #12."
+    },
+    {
+      "id": "TRAIN-003",
+      "phase": 8,
+      "title": "Implement Admin Activation Gate requiring Verification + Training",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "TRAIN-002"
+      ],
+      "description": "Enforce that admin activation toggle requires both kycStatus == APPROVED and trainingStatus == COMPLETED before setting isActivated = true.",
+      "problem": "Worker could be activated without completing mandatory training.",
+      "goal": "Add activateWorker(uid) validation check enforcing KYC Approval + Training Completion.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+      ],
+      "acceptance_criteria": [
+        "Attempting to activate worker without completed training returns error",
+        "Activating worker with Approved KYC + Completed Training succeeds"
+      ],
+      "verification": [
+        "Unit test activation gate validation"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout repository file",
+      "notes": "Enforces business rule #13."
+    },
+    {
+      "id": "ADMIN-001",
+      "phase": 9,
+      "title": "Architecture & Spec for Separate Administrative Web Dashboard",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "SEC-003"
+      ],
+      "description": "Create architectural design specification for separate web admin dashboard (admin.skillsexchange.app) for processing worker applications.",
+      "problem": "Administrative document verification requires a dedicated web dashboard surface.",
+      "goal": "Create detailed OpenAPI / Firebase Cloud Function specs for admin verification endpoints.",
+      "scope": {
+        "include": [
+          "functions/src/index.ts"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Cloud Functions defined for getPendingVerificationQueue, reviewWorkerApplication, and setWorkerActivationStatus"
+      ],
+      "verification": [
+        "Deploy and test Cloud Function endpoints via Firebase Shell"
+      ],
+      "risks": [
+        "Admin role authorization check requirement"
+      ],
+      "rollback": "git checkout functions/src/index.ts",
+      "notes": "Enforces business rule #1 & #21."
+    },
+    {
+      "id": "ADMIN-002",
+      "phase": 9,
+      "title": "Admin Verification Review Queue & Document Viewer Cloud Function",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "ADMIN-001"
+      ],
+      "description": "Implement Cloud Function getPendingVerificationQueue returning pending worker submissions sorted by 48h SLA deadline.",
+      "problem": "No server endpoint exists to query pending worker submissions for admin review.",
+      "goal": "Implement HTTPS callable function returning worker applications, National ID storage paths, 2 guarantor records, and qualification evidence.",
+      "scope": {
+        "include": [
+          "functions/src/index.ts"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Admin calling function receives list of pending applications ordered by submittedAt timestamp"
+      ],
+      "verification": [
+        "Test Cloud Function response with sample pending submissions"
+      ],
+      "risks": [
+        "Admin auth check required"
+      ],
+      "rollback": "git checkout functions/src/index.ts",
+      "notes": "Admin verification pipeline."
+    },
+    {
+      "id": "ADMIN-003",
+      "phase": 9,
+      "title": "Admin Verification Action API (Approve, Reject, Request Changes)",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "ADMIN-002"
+      ],
+      "description": "Implement reviewWorkerApplication Cloud Function accepting decision ('APPROVE'|'REJECT'|'CHANGES_REQUIRED') and feedback reason string.",
+      "problem": "No API exists for administrators to record verification decisions.",
+      "goal": "Update /users/{uid}/verification status, write decision timestamp, and send status update notification.",
+      "scope": {
+        "include": [
+          "functions/src/index.ts"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Admin submits 'CHANGES_REQUIRED' with reason -> worker status updates -> reason saved for worker display"
+      ],
+      "verification": [
+        "Execute decision Cloud Function and check updated Firestore user document"
+      ],
+      "risks": [
+        "State consistency"
+      ],
+      "rollback": "git checkout functions/src/index.ts",
+      "notes": "Admin verification control."
+    },
+    {
+      "id": "ADMIN-004",
+      "phase": 9,
+      "title": "Admin Worker Activation & Suspension Controls",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "ADMIN-003"
+      ],
+      "description": "Implement setWorkerActivationStatus Cloud Function allowing admins to activate or suspend worker bidding privileges.",
+      "problem": "Platform operators need capability to suspend workers in case of policy violations.",
+      "goal": "Update isActivated flag on worker provider document and push notification.",
+      "scope": {
+        "include": [
+          "functions/src/index.ts"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Admin suspends worker -> isActivated set to false -> worker bidding access blocked immediately"
+      ],
+      "verification": [
+        "Test worker suspension API and check client gating"
+      ],
+      "risks": [
+        "Immediate access revocation check"
+      ],
+      "rollback": "git checkout functions/src/index.ts",
+      "notes": "Platform operational safety."
+    },
+    {
+      "id": "JOB-001",
+      "phase": 10,
+      "title": "Implement One-Time & Recurring Job Type Data Model",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "ROLE-001"
+      ],
+      "description": "Update JobPostEntity schema to support jobType ('ONE_TIME'|'RECURRING') and recurringSchedule fields ('DAILY'|'WEEKLY'|'BI_WEEKLY'|'MONTHLY'|'CUSTOM').",
+      "problem": "Job posts currently only support one-time executions.",
+      "goal": "Add jobType and recurringSchedule fields to JobPostEntity and Firestore job document model.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/db/Entities.kt",
+          "app/src/main/java/com/example/data/db/Daos.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/db/Entities.kt",
+        "app/src/main/java/com/example/data/db/Daos.kt"
+      ],
+      "acceptance_criteria": [
+        "Job entity stores jobType and recurringSchedule parameters"
+      ],
+      "verification": [
+        "Insert recurring job entity and check stored parameters"
+      ],
+      "risks": [
+        "Room migration required"
+      ],
+      "rollback": "git checkout DB files",
+      "notes": "Enforces business rule #18 & #19."
+    },
+    {
+      "id": "JOB-002",
+      "phase": 10,
+      "title": "Implement Recurring Schedule Configuration UI",
+      "priority": "P2",
+      "status": "pending",
+      "depends_on": [
+        "JOB-001"
+      ],
+      "description": "Add recurring schedule selector in QuickRequestDrawer allowing clients to choose Daily, Weekly, Bi-weekly, Monthly, or Custom days.",
+      "problem": "Quick request UI only allows one-time job posting.",
+      "goal": "Build JobTypeSelector Composable with schedule frequency picker.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/components/QuickRequestDrawer.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/components/QuickRequestDrawer.kt"
+      ],
+      "acceptance_criteria": [
+        "Client toggles 'Recurring Contract' -> selects 'Weekly' -> job posted with recurring schedule parameters"
+      ],
+      "verification": [
+        "Post recurring job in UI and verify saved entity"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout QuickRequestDrawer.kt",
+      "notes": "Enforces business rule #18."
+    },
+    {
+      "id": "JOB-003",
+      "phase": 10,
+      "title": "Implement Recurring Contract Pricing Negotiation Workflow",
+      "priority": "P2",
+      "status": "pending",
+      "depends_on": [
+        "JOB-001"
+      ],
+      "description": "Support negotiated rate proposals between client and worker for recurring contract agreements prior to escrow funding.",
+      "problem": "Recurring contracts require flexible negotiated rate proposals.",
+      "goal": "Add recurringContractProposal model allowing worker to submit custom recurring terms.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+      ],
+      "acceptance_criteria": [
+        "Worker proposes $50/week recurring contract rate -> client accepts -> recurring contract initialized"
+      ],
+      "verification": [
+        "Negotiate contract quote in UI"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout repository file",
+      "notes": "Enforces business rule #19."
+    },
+    {
+      "id": "MARKET-001",
+      "phase": 10,
+      "title": "Implement Nearby Verified Worker Discovery",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "ROLE-003",
+        "SKILL-001"
+      ],
+      "description": "Filter nearby worker search results to display ONLY activated workers matching selected service category within distance radius.",
+      "problem": "Provider list could show unactivated workers.",
+      "goal": "Add isActivated == true and kycStatus == APPROVED filter condition in SkillsExchangeViewModel providers flow.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+      ],
+      "acceptance_criteria": [
+        "Nearby worker list displays only activated, verified specialists"
+      ],
+      "verification": [
+        "Search nearby workers and check activation filter"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout viewmodel file",
+      "notes": "Enforces business rule #17."
+    },
+    {
+      "id": "MARKET-002",
+      "phase": 10,
+      "title": "Implement Open Job Posting & Multi-Quote Bidding",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "JOB-001"
+      ],
+      "description": "Broadcast posted jobs to all nearby activated workers with matching skills, allowing multiple workers to submit quotes.",
+      "problem": "Job posts currently only accept a single direct assignment.",
+      "goal": "Broadcast job event to nearby workers and aggregate incoming quote proposals.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+      ],
+      "acceptance_criteria": [
+        "Posted job appears in open job feeds of all nearby activated specialists matching service category"
+      ],
+      "verification": [
+        "Post open job and check worker job feeds on multiple devices"
+      ],
+      "risks": [
+        "Multi-device sync"
+      ],
+      "rollback": "git checkout repository file",
+      "notes": "Enforces business rule #17."
+    },
+    {
+      "id": "MARKET-003",
+      "phase": 10,
+      "title": "Implement Resident Quote Review & Worker Selection",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "MARKET-002"
+      ],
+      "description": "Build QuoteComparisonSheet UI allowing clients to compare price, rating, experience, and notes from multiple bidding workers.",
+      "problem": "Client needs comparison view to evaluate multiple quotes.",
+      "goal": "Build QuoteComparisonSheet UI and wire quote acceptance action.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/components/JobPipelineKanban.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/components/JobPipelineKanban.kt"
+      ],
+      "acceptance_criteria": [
+        "Client opens quote comparison -> evaluates 3 worker quotes -> accepts winning quote -> job assigned"
+      ],
+      "verification": [
+        "Compare and accept quote in UI"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout component file",
+      "notes": "Completes bidding marketplace."
+    },
+    {
+      "id": "PAY-001",
+      "phase": 11,
+      "title": "Integrate Mobile Money Collection Intent API",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "SEC-002",
+        "MARKET-003"
+      ],
+      "description": "Replace delay simulation in MoMoPaymentService.kt with HTTP POST payload to MTN MoMo and Airtel Money sandbox endpoints.",
+      "problem": "MoMoPaymentService.kt uses delay(600) and mock payment intents.",
+      "goal": "Connect Retrofit client to MTN MoMo Collection API (/collection/v1_0/requesttopay).",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/remote/MoMoPaymentService.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/remote/MoMoPaymentService.kt"
+      ],
+      "acceptance_criteria": [
+        "Initiating deposit triggers real USSD push prompt on payer handset via MoMo Sandbox API"
+      ],
+      "verification": [
+        "Execute collection request against MoMo Sandbox environment"
+      ],
+      "risks": [
+        "API sandbox key configuration"
+      ],
+      "rollback": "git checkout MoMoPaymentService.kt",
+      "notes": "Core payment engine."
+    },
+    {
+      "id": "PAY-002",
+      "phase": 11,
+      "title": "Implement Escrow Lock & Webhook Confirmation",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "PAY-001"
+      ],
+      "description": "Update job escrowStatus to FUNDS_LOCKED_IN_ESCROW upon receiving SUCCESSFUL webhook payment notification.",
+      "problem": "Escrow status update requires verified server webhook confirmation.",
+      "goal": "Process verified webhook callback in Cloud Function and update job escrow status.",
+      "scope": {
+        "include": [
+          "functions/src/index.ts"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Successful payment webhook locks job funds in escrow and notifies resident and worker"
+      ],
+      "verification": [
+        "Simulate payment success webhook and check job escrow status update"
+      ],
+      "risks": [
+        "Webhook retries"
+      ],
+      "rollback": "git checkout functions/src/index.ts",
+      "notes": "Escrow security."
+    },
+    {
+      "id": "PAY-003",
+      "phase": 11,
+      "title": "Implement Escrow Release & Worker MoMo Payout",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "PAY-002"
+      ],
+      "description": "Disburse MoMo Transfer payout to worker's Mobile Money wallet when resident approves job completion.",
+      "problem": "Escrow release currently only updates local status text.",
+      "goal": "Invoke MoMo Transfer API in Cloud Function to credit worker wallet upon escrow release.",
+      "scope": {
+        "include": [
+          "functions/src/index.ts"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Resident approves release -> MoMo Transfer API executes -> worker wallet credited -> status RELEASED_TO_WORKER"
+      ],
+      "verification": [
+        "Execute escrow release and verify sandbox wallet transfer"
+      ],
+      "risks": [
+        "Escrow pool balance"
+      ],
+      "rollback": "git checkout functions/src/index.ts",
+      "notes": "Completes payment lifecycle."
+    },
+    {
+      "id": "PAY-004",
+      "phase": 11,
+      "title": "Implement Material Advance Escrow Partial Disbursement",
+      "priority": "P2",
+      "status": "pending",
+      "depends_on": [
+        "PAY-003"
+      ],
+      "description": "Support partial escrow payout (up to 50% of materials subtotal) for hardware purchases when resident approves advance request.",
+      "problem": "Material advance approval updates text without disbursing partial funds.",
+      "goal": "Disburse partial MoMo payout to worker wallet and enforce hardware receipt photo upload within 60 mins.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+      ],
+      "acceptance_criteria": [
+        "Resident approves material advance -> 50% parts funds disbursed -> hardware receipt upload prompt activated"
+      ],
+      "verification": [
+        "Approve material advance in UI and verify escrow math"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout repository file",
+      "notes": "Field operational feature."
+    },
+    {
+      "id": "MAP-001",
+      "phase": 12,
+      "title": "Integrate Google Maps SDK for Nearby Worker View",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "STAB-001"
+      ],
+      "description": "Replace custom Canvas drawing in InteractiveMapView.kt with Google Maps Android SDK MapView rendering live vector map tiles.",
+      "problem": "InteractiveMapView renders custom Canvas drawing with fake trigonometric pin offsets.",
+      "goal": "Embed Google MapView composable with vector pins for activated verified workers.",
+      "scope": {
+        "include": [
+          "app/build.gradle.kts",
+          "app/src/main/java/com/example/ui/components/InteractiveMapView.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/build.gradle.kts",
+        "app/src/main/java/com/example/ui/components/InteractiveMapView.kt"
+      ],
+      "acceptance_criteria": [
+        "Map view renders interactive Google Maps tiles with tappable pins for nearby activated specialists"
+      ],
+      "verification": [
+        "Open map tab on emulator with Play Services and verify real street map"
+      ],
+      "risks": [
+        "Requires MAPS_API_KEY"
+      ],
+      "rollback": "git checkout InteractiveMapView.kt",
+      "notes": "Fixes MAP-01 defect."
+    },
+    {
+      "id": "AI-001",
+      "phase": 12,
+      "title": "Repair Gemini Audio Transcription & Model Identifier (gemini-2.0-flash)",
+      "priority": "P0",
+      "status": "completed",
+      "completed_at": "2026-08-25T17:36:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "STAB-001"
+      ],
+      "description": "Update requestUrl string in GeminiAudioTranscriptionService.kt to gemini-2.0-flash and align audio recorder encoding format.",
+      "problem": "Gemini API calls fail with 404 error because URL specifies invalid model 'gemini-3.5-flash'.",
+      "goal": "Update URL to gemini-2.0-flash and align AudioRecorderHelper output format with MIME type.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/remote/GeminiAudioTranscriptionService.kt",
+          "app/src/main/java/com/example/util/AudioRecorderHelper.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/remote/GeminiAudioTranscriptionService.kt",
+        "app/src/main/java/com/example/util/AudioRecorderHelper.kt"
+      ],
+      "acceptance_criteria": [
+        "Voice job recording transcribes audio correctly via Gemini 2.0 Flash API without 404 errors"
+      ],
+      "verification": [
+        "Record voice note in quick request drawer and verify transcribed job fields"
+      ],
+      "risks": [
+        "Gemini API key requirement"
+      ],
+      "rollback": "git checkout affected AI files",
+      "notes": "Fixes critical defect AI-01."
+    },
+    {
+      "id": "AI-002",
+      "phase": 12,
+      "title": "Repair Gemini Maps Grounding Model Identifier & Tools Payload",
+      "priority": "P2",
+      "status": "completed",
+      "completed_at": "2026-08-25T17:36:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "AI-001"
+      ],
+      "description": "Update requestUrl in GeminiMapsGroundingService.kt to gemini-2.0-flash and update tools payload structure for search grounding.",
+      "problem": "GeminiMapsGroundingService.kt specifies invalid model 'gemini-3.5-flash'.",
+      "goal": "Update endpoint URL to gemini-2.0-flash and structure googleSearchRetrieval tool payload.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/remote/GeminiMapsGroundingService.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/remote/GeminiMapsGroundingService.kt"
+      ],
+      "acceptance_criteria": [
+        "Hardware store search returns grounded local business results from Gemini API"
+      ],
+      "verification": [
+        "Search local hardware stores in search modal and check returned results"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout GeminiMapsGroundingService.kt",
+      "notes": "Fixes grounding API."
+    },
+    {
+      "id": "COMM-001",
+      "phase": 13,
+      "title": "Implement Real-Time Firestore Chat & Phone Masking",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "SEC-003",
+        "MARKET-003"
+      ],
+      "description": "Connect ChatDrawer.kt to real-time Firestore chat listener and sanitize message text to mask phone numbers prior to escrow lock.",
+      "problem": "Chat messages are stored locally in Room without real-time sync or phone masking.",
+      "goal": "Listen to /jobs/{jobId}/messages Firestore collection and apply phone regex masking helper.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/remote/FirebaseService.kt",
+          "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/remote/FirebaseService.kt",
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+      ],
+      "acceptance_criteria": [
+        "Messages sync between devices in real time",
+        "Raw phone numbers in un-funded job chats are redacted to '[Phone Masked]'"
+      ],
+      "verification": [
+        "Send message with phone number between test accounts"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout affected chat files",
+      "notes": "Real-time communication & escrow protection."
+    },
+    {
+      "id": "SAFE-001",
+      "phase": 13,
+      "title": "Implement Dynamic 4-Digit Doorstep PIN Generation",
+      "priority": "P1",
+      "status": "completed",
+      "completed_at": "2026-08-25T17:54:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "STAB-001"
+      ],
+      "description": "Generate random 4-digit PIN string for each newly created job post instead of static default '4829'.",
+      "problem": "Doorstep PIN is hardcoded to '4829' across all job entities.",
+      "goal": "Generate unique random 4-digit PIN upon job post creation.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+      ],
+      "acceptance_criteria": [
+        "Every posted job generates a unique random 4-digit PIN required for doorstep arrival verification"
+      ],
+      "verification": [
+        "Post two jobs and check generated doorstep PIN values"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout repository file",
+      "notes": "Doorstep physical security."
+    },
+    {
+      "id": "SAFE-002",
+      "phase": 13,
+      "title": "Implement Live Emergency SOS Alert Dispatch",
+      "priority": "P2",
+      "status": "pending",
+      "depends_on": [
+        "SAFE-001"
+      ],
+      "description": "Dispatch high-priority SMS containing worker GPS telemetry to emergency contacts and platform security when panic button is triggered.",
+      "problem": "SOS trigger currently only toggles local boolean flag isSosTriggered.",
+      "goal": "Invoke SmsNotificationService to broadcast emergency SMS alert upon SOS trigger.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt",
+          "app/src/main/java/com/example/data/remote/SmsNotificationService.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+      ],
+      "acceptance_criteria": [
+        "Triggering SOS sets isSosTriggered = true and dispatches emergency SMS alert with GPS coordinates"
+      ],
+      "verification": [
+        "Trigger SOS alert in UI and check SMS log outputs"
+      ],
+      "risks": [
+        "SMS dispatch costs"
+      ],
+      "rollback": "git checkout repository file",
+      "notes": "Worker physical safety."
+    },
+    {
+      "id": "OFF-001",
+      "phase": 14,
+      "title": "Implement Offline Action Queue & Sync Manager",
+      "priority": "P2",
+      "status": "pending",
+      "depends_on": [
+        "ROLE-001"
+      ],
+      "description": "Create PendingActionEntity Room table to record write operations performed while offline and flush queue automatically when network reconnects.",
+      "problem": "Offline actions may drop if app process terminates before reconnecting.",
+      "goal": "Enqueue offline write payloads in Room and flush queue when NetworkConnectivityObserver signals active internet.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/db/Entities.kt",
+          "app/src/main/java/com/example/util/NetworkConnectivityObserver.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/db/Entities.kt",
+        "app/src/main/java/com/example/util/NetworkConnectivityObserver.kt"
+      ],
+      "acceptance_criteria": [
+        "Actions performed in airplane mode are queued in Room and automatically synced to Firestore upon reconnect"
+      ],
+      "verification": [
+        "Enable airplane mode, post job, disable airplane mode, check Firestore sync"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout affected offline files",
+      "notes": "Offline reliability."
+    },
+    {
+      "id": "REL-001",
+      "phase": 15,
+      "title": "Production Build ProGuard Rules & Release Sign-Off",
+      "priority": "P3",
+      "status": "pending",
+      "depends_on": [
+        "STAB-001"
+      ],
+      "description": "Configure keep rules in proguard-rules.pro for Room entities, Moshi adapters, and Firebase data models to prevent minification crashes.",
+      "problem": "Enabling minification in release build can cause reflection crashes without proper ProGuard keep rules.",
+      "goal": "Add @Keep annotations and ProGuard rules for data entities.",
+      "scope": {
+        "include": [
+          "app/proguard-rules.pro"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/proguard-rules.pro"
+      ],
+      "acceptance_criteria": [
+        "Release APK compiles and executes without minification reflection crashes"
+      ],
+      "verification": [
+        "Build release APK with minification enabled and test user flows"
+      ],
+      "risks": [
+        "Minification configuration"
+      ],
+      "rollback": "git checkout app/proguard-rules.pro",
+      "notes": "Production release sign-off."
+    }
+  ],
+  "current_story": "LOC-001",
+  "completed_stories": [
+    "STAB-001",
+    "STAB-002",
+    "SEC-001",
+    "SEC-002",
+    "SEC-003",
+    "ROLE-001",
+    "ROLE-002",
+    "ROLE-003",
+    "SKILL-001",
+    "SKILL-002",
+    "SKILL-003",
+    "AI-001",
+    "AI-002",
+    "SAFE-001"
+  ],
+  "blocked_stories": [
+    "STAB-003"
+  ],
+  "last_updated": "2026-08-25T17:55:00+03:00"
+}
+

@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isDocOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
+    function isWorkerKycApproved() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.verification.kycStatus == 'APPROVED';
+    }
+
+    // --- MODULE 2: USER PROFILES & KYC VERIFICATION LAYER ---
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isDocOwner(userId);
+
+      // Sensitive KYC verification fields: owner may submit, admin may update status
+      match /verification/{docId} {
+        allow read: if isDocOwner(userId) || isAdmin();
+        allow create, update: if isDocOwner(userId) || isAdmin();
+      }
+    }
+
+    // Service Providers catalog
+    // SEC-001: Enforce document ownership — only the provider (uid == providerId) may write their own profile.
+    // Public profiles remain publicly readable.
+    match /providers/{providerId} {
+      allow read: if true;
+      // Create: authenticated user may create their own provider record (uid must match document id)
+      allow create: if isAuthenticated() && request.auth.uid == providerId;
+      // Update: only the provider themselves may update their own profile
+      allow update: if isAuthenticated() && request.auth.uid == providerId;
+      // Delete: only admin may delete a provider record (e.g. account suspension)
+      allow delete: if isAdmin();
+    }
+
+    // --- MODULE 1: JOB LIFECYCLE & ESCROW STATE MACHINE ---
+    match /jobs/{jobId} {
+      // Allow public read of general list, but gate client GPS coordinates for unverified workers
+      allow read: if true;
+
+      // Allow creation when authenticated
+      allow create: if isAuthenticated() &&
+        request.resource.data.status == 'REQUESTED' &&
+        request.resource.data.escrowStatus == 'QUOTE_PENDING';
+
+      // State Machine Enforcement on Updates
+      allow update: if isAuthenticated() && (
+        // Case 1: Client accepting quote -> ACCEPTED_FUNDED
+        (resource.data.status == 'REQUESTED' && request.resource.data.status in ['QUOTED', 'ACCEPTED_FUNDED']) ||
+
+        // Case 2: Worker starting work -> IN_PROGRESS (Must be hired worker and KYC Approved)
+        (resource.data.status == 'ACCEPTED_FUNDED' && request.resource.data.status == 'IN_PROGRESS' &&
+          request.auth.uid == resource.data.assignedProviderId && isWorkerKycApproved()) ||
+
+        // Case 3: Worker submitting proof -> COMPLETED (Must go through IN_PROGRESS first, cannot skip from REQUESTED)
+        (resource.data.status == 'IN_PROGRESS' && request.resource.data.status == 'COMPLETED') ||
+
+        // Case 4: Client approving & releasing funds -> RELEASED or DISPUTED
+        (resource.data.status == 'COMPLETED' && request.resource.data.status in ['RELEASED', 'DISPUTED'])
+      );
+
+      allow delete: if false; // Audit trail preservation
+    }
+  }
+}

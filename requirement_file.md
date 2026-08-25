@@ -1,0 +1,445 @@
+# Skills Exchange — Product Requirements Document (PRD)
+
+## 1. Executive Summary & Product Model
+
+### Product Purpose
+Skills Exchange is a hyperlocal peer-to-peer services marketplace operating in East African urban centers (Uganda, Kenya, Tanzania, Rwanda). It connects nearby residents (clients) with verified local workers and service providers for home repairs, maintenance, technical tasks, personal services, and recurring contracts.
+
+### Operational Surfaces
+The platform consists of three distinct operational surfaces:
+1. **Client Experience (Android App)**: Search nearby specialists, post jobs, receive and compare multiple quotes, hire workers, negotiate recurring contracts, fund Mobile Money escrow, verify doorstep arrivals, chat, and review workers.
+2. **Worker Experience (Android App)**: Separate worker dashboard gated by identity verification and training activation. Allows workers to toggle availability, browse job requests, submit quotes, request material advances, submit ground proof photos, and receive Mobile Money payouts.
+3. **Admin Experience (Separate Administrative Web Dashboard)**: Web-based administrative portal for platform operators to review worker KYC applications, verify Uganda National IDs, inspect two-guarantor submissions, review skill certificates/demo videos, issue "Changes Required" feedback, track 2-3 day worker training progress, toggle worker activation/deactivation, manage disputes, and handle support.
+
+### Unified Account Model
+A user creates a single account during registration and selects an initial mode (`Client` or `Worker`).
+- A single person owns **one account**.
+- A user registered as a Client can apply at any time to become a Worker.
+- A user registered as a Worker can seamlessly switch to Client mode to hire other specialists.
+- Two separate accounts are never created for the same individual.
+- Worker functionality remains strictly gated behind verification approval and admin activation.
+
+---
+
+## 2. Product Goals
+
+### MVP Goals (v1.0 Production Readiness)
+1. **Unified Account & Role Switching**: Support single user profile with client/worker mode toggling and verification gating.
+2. **Client GPS Onboarding**: Acquire location coordinates with manual neighborhood correction option (no National ID required for clients).
+3. **Mandatory Worker Verification Pipeline**: Collect Uganda National ID (front & back), full legal name, DOB, gender, and exactly **two guarantors** with complete ID documents.
+4. **Service Taxonomy (125 Services)**: Enforce a structured 125-service catalog categorized into 5 main hubs with related skill validation (1 Primary + up to 2 Related Additional Skills).
+5. **Flexible Qualification Evidence**: Support formal certificates or alternative admin-approved evidence (demonstration video, work photos, in-person visit).
+6. **Verification Lifecycle & 48-Hour SLA**: Enforce state transitions (`Application In Progress` -> `Submitted` -> `Under Review` -> `Changes Required`/`Rejected`/`Approved`), tracking timestamps to target 48-hour review decisions.
+7. **Worker Training & Admin Activation Gate**: Track 2-3 day training completion before admin activates worker eligibility to bid.
+8. **Secure Document Storage & Privacy**: Isolate National IDs, guarantor IDs, and certificates in secure Firebase Storage accessible only by admins. Obfuscate exact client addresses on public worker profiles (district-level job distribution stats only).
+9. **Dual Marketplace Discovery**: Support both direct nearby worker selection and open job multi-quote bidding.
+10. **One-Time & Recurring Contracts**: Support single jobs and recurring contract schedules (Daily, Weekly, Bi-weekly, Monthly, Custom) with negotiated pricing.
+11. **Escrow Payments & Doorstep Security**: Mobile Money (MTN MoMo / Airtel Money) escrow lock, dynamic 4-digit doorstep PIN generation, and emergency SOS alerts.
+12. **Admin Web Dashboard Specification**: Build administrative web portal specs for verification queue processing, document review, and activation management.
+
+---
+
+## 3. Account Model & User Roles
+
+### Registration & Role Flow
+```text
+                       ┌─────────────────────────┐
+                       │   Initial Registration  │
+                       └────────────┬────────────┘
+                                    │
+                    ┌───────────────┴───────────────┐
+                    ▼                               ▼
+          ┌───────────────────┐           ┌───────────────────┐
+          │   Client Mode     │           │   Worker Mode     │
+          │ (Immediate Access)│           │ (Requires KYC)    │
+          └─────────┬─────────┘           └─────────┬─────────┘
+                    │                               │
+                    │ Apply to become Worker        │ Immediate Client
+                    ▼                               │ Access Included
+          ┌───────────────────┐                     │
+          │ Worker KYC Submit │<────────────────────┘
+          └─────────┬─────────┘
+                    │
+                    ▼
+          ┌───────────────────┐
+          │   Under Review    │ (48h Operational SLA Target)
+          └─────────┬─────────┘
+                    │ Approved
+                    ▼
+          ┌───────────────────┐
+          │  Training (2-3d)  │ (Covers platform rules)
+          └─────────┬─────────┘
+                    │ Completed & Admin Activated
+                    ▼
+          ┌───────────────────┐
+          │ Active Worker Mode│
+          └───────────────────┘
+```
+
+### Permission Matrix
+
+| Operation / Feature | Client Mode | Unverified Worker | Active Worker | Admin (Web Portal) | Guest |
+|---|---|---|---|---|---|
+| Browse nearby workers | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Search 125-service catalog | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Post one-time / recurring job | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Fund Mobile Money Escrow | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Submit worker application | N/A | ✅ | ✅ | ❌ | ❌ |
+| Upload National ID & 2 Guarantors | N/A | ✅ | ✅ | ❌ | ❌ |
+| Submit quote on open job | ❌ | ❌ (Gated) | ✅ | ❌ | ❌ |
+| Access Worker Dashboard | ❌ | ❌ (Gated) | ✅ | ❌ | ❌ |
+| Receive MoMo Escrow Payouts | ❌ | ❌ | ✅ | ❌ | ❌ |
+| Review KYC Docs & Guarantor IDs | ❌ | ❌ | ❌ | ✅ (Strict) | ❌ |
+| Approve / Reject / Request Changes | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Activate / Deactivate Worker | ❌ | ❌ | ❌ | ✅ | ❌ |
+
+---
+
+## 4. Client Onboarding & Location Management
+
+### Information Collected
+- Full Legal Name
+- Verified Mobile Phone Number (SMS OTP)
+- Optional Profile Photo
+- Current District (e.g. Kampala, Wakiso, Mukono)
+- Current Location Address / Landmark
+- Device GPS Coordinates (Latitude / Longitude) when permission granted
+- Manual Location Correction: Client can drag map pin or select neighborhood if GPS/geocoding is inaccurate.
+
+### Privacy & Identity Policy
+- Client National ID verification is **NOT required**.
+- Client exact street coordinates are never displayed publicly.
+
+---
+
+## 5. Worker Verification & KYC Engine
+
+### 5.1 Mandatory Application Data
+- **Identity**: Full legal name as shown on National ID, National ID Number, Phone Number, Date of Birth, Gender.
+- **Primary Identification**: Uganda National ID (Front & Back photos). *Note: Uganda National ID is default/primary. Without an eligible accepted ID, worker cannot qualify for activation.*
+- **Location**: District, Address, GPS coordinates, Human-readable location. (Editable later).
+- **Professional Details**: Primary Skill, up to 2 Related Additional Skills, Years of Experience, Bio/Description, Profile Photo.
+
+### 5.2 Mandatory Two-Guarantor Requirement
+Every worker application **MUST** include exactly **two distinct guarantors**. One guarantor cannot substitute for two.
+
+For EACH Guarantor:
+- Full Name
+- Phone Number
+- Relationship to Worker (e.g., Former Employer, Community Leader, Relative)
+- District / Location
+- Guarantor National ID Front photo
+- Guarantor National ID Back photo
+
+Guarantor data models and verification statuses are stored separately from worker identity fields.
+
+### 5.3 Primary Skill Qualification & Alternative Evidence
+- **Primary Skill**: Requires qualification evidence.
+- **Formal Evidence**: Certificate / Diploma from a recognized institute or trade school.
+- **Alternative Evidence (Informal Trade Workers)**: Demonstration video, portfolio photo evidence, in-person trade evaluation visit, or admin-approved trade reference.
+- **Additional Skills**: Do not require formal certificate uploads if related to primary skill.
+
+### 5.4 Verification Lifecycle State Machine
+```text
+NOT_STARTED -> APPLICATION_IN_PROGRESS -> SUBMITTED -> UNDER_REVIEW
+                                                            │
+                     ┌──────────────────────────────────────┴──────────────────────────────────────┐
+                     ▼                                                                             ▼
+             CHANGES_REQUIRED                                                                  APPROVED
+                     │                                                                             │
+                     ▼ (Worker updates docs & resubmits)                                           ▼
+                RESUBMITTED ───> UNDER_REVIEW                                               TRAINING_PENDING
+                                                                                                   │
+                                                                                                   ▼ (2-3 Days Completed)
+                                                                                            TRAINING_COMPLETED
+                                                                                                   │
+                                                                                                   ▼ (Admin Toggles Activation)
+                                                                                                ACTIVATED
+```
+
+- **48-Hour SLA Target**: `submittedAt` and `reviewedAt` timestamps are recorded. System tracks review turnaround against the 48-hour operational target.
+- **Changes Required Screen**: If admin flags blurry IDs or invalid certificates, worker is presented with a restricted screen displaying the admin's feedback reason and an "Update Documents" button. Normal worker dashboard access remains blocked.
+- **Customer Support Contact**: Direct Phone and WhatsApp customer support links displayed on verification screens.
+
+---
+
+## 6. Worker Training & Activation Gating
+
+- **Sequence**: `Approved` -> `Training` -> `Activated`.
+- **Training Duration**: 2 to 3 days covering platform quality standards, customer etiquette, safety protocols, and escrow rules.
+- **Delivery Formats**: Video modules, WhatsApp training groups, online reference materials.
+- **Completion Tracking**: Progress status (`NOT_STARTED`, `IN_PROGRESS`, `COMPLETED`) tracked per worker.
+- **Activation Gate**: Worker cannot receive job broadcasts, appear in nearby searches, or submit quotes until Admin verifies `KYC Approved` + `Training Completed` and explicitly toggles `isActivated = true`.
+
+---
+
+## 7. Service Taxonomy & 125-Service Catalog
+
+Workers select **1 Primary Skill** + up to **2 Related Additional Skills**. Additional skills must belong to the same logical service family as the primary skill.
+
+The platform enforces a structured **125-Service Taxonomy** divided into 5 core category hubs:
+
+### Category 1: Construction & Building (30 Services)
+| Service ID | Service Name | Skill Family | Qual. Evidence Expected | Primary Eligible | Additional Eligible |
+|---|---|---|---|---|---|
+| `CONST-01` | Domestic Plumbing & Pipe Leak Repair | Plumbing & Fluid Systems | Yes | Yes | Yes |
+| `CONST-02` | Commercial Pipefitting & Drainage | Plumbing & Fluid Systems | Yes | Yes | Yes |
+| `CONST-03` | Water Tank & Pump Installation | Plumbing & Fluid Systems | Yes | Yes | Yes |
+| `CONST-04` | Sanitary Fixture & Septic Maintenance | Plumbing & Fluid Systems | No | Yes | Yes |
+| `CONST-05` | Residential Electrical Wiring | Electrical & Power | Yes | Yes | Yes |
+| `CONST-06` | Industrial Panel & Breaker Upgrades | Electrical & Power | Yes | Yes | Yes |
+| `CONST-07` | Backup Generator Installation & Repair | Electrical & Power | Yes | Yes | Yes |
+| `CONST-08` | Lighting Fixture & Fan Fitting | Electrical & Power | No | Yes | Yes |
+| `CONST-09` | Rough Carpentry & Wood Framing | Carpentry & Joinery | No | Yes | Yes |
+| `CONST-10` | Custom Cabinetry & Furniture Making | Carpentry & Joinery | No | Yes | Yes |
+| `CONST-11` | Hardwood & Laminate Flooring | Carpentry & Joinery | No | Yes | Yes |
+| `CONST-12` | Roof Truss & Timber Repair | Carpentry & Joinery | No | Yes | Yes |
+| `CONST-13` | Masonry & Bricklaying | Masonry & Concrete | No | Yes | Yes |
+| `CONST-14` | Concrete Foundation & Slab Pouring | Masonry & Concrete | Yes | Yes | Yes |
+| `CONST-15` | Plastering & Rendering | Masonry & Concrete | No | Yes | Yes |
+| `CONST-16` | Stone Paver & Driveway Laying | Masonry & Concrete | No | Yes | Yes |
+| `CONST-17` | Interior & Exterior House Painting | Finishing & Decoration | No | Yes | Yes |
+| `CONST-18` | Spray Painting & Wood Staining | Finishing & Decoration | No | Yes | Yes |
+| `CONST-19` | Wall Tiling & Backsplash Fitting | Finishing & Decoration | No | Yes | Yes |
+| `CONST-20` | POP & Gypsum Ceiling Installation | Finishing & Decoration | No | Yes | Yes |
+| `CONST-21` | Structural Steel Welding | Metal Fabrication | Yes | Yes | Yes |
+| `CONST-22` | Security Gate & Metal Railing Welding | Metal Fabrication | No | Yes | Yes |
+| `CONST-23` | Iron Sheet Roofing & Gutters | Roofing & Weatherproofing | No | Yes | Yes |
+| `CONST-24` | Waterproofing & Leak Proofing | Roofing & Weatherproofing | No | Yes | Yes |
+| `CONST-25` | Glass Window & Door Fitting | Glass & Aluminum | No | Yes | Yes |
+| `CONST-26` | Aluminum Partitioning & Shopfronts | Glass & Aluminum | No | Yes | Yes |
+| `CONST-27` | Scaffolding Rigging & Erection | Site Logistics | Yes | Yes | Yes |
+| `CONST-28` | Demolition & Debris Clearance | Site Logistics | No | Yes | Yes |
+| `CONST-29` | Borehole & Water Well Repair | Heavy Trades | Yes | Yes | Yes |
+| `CONST-30` | Fencing & Perimeter Wall Construction | Security Infrastructure | No | Yes | Yes |
+
+### Category 2: Cleaning & Home Services (25 Services)
+| Service ID | Service Name | Skill Family | Qual. Evidence Expected | Primary Eligible | Additional Eligible |
+|---|---|---|---|---|---|
+| `CLEAN-01` | Deep House Cleaning & Sanitation | Residential Cleaning | No | Yes | Yes |
+| `CLEAN-02` | Post-Renovation Site Cleanup | Residential Cleaning | No | Yes | Yes |
+| `CLEAN-03` | Move-In / Move-Out Deep Clean | Residential Cleaning | No | Yes | Yes |
+| `CLEAN-04` | Office & Commercial Janitorial Clean | Commercial Cleaning | No | Yes | Yes |
+| `CLEAN-05` | Carpet & Upholstery Steam Washing | Specialty Cleaning | No | Yes | Yes |
+| `CLEAN-06` | Window Washing & Exterior Facade | Specialty Cleaning | No | Yes | Yes |
+| `CLEAN-07` | Compound & Lawn Grass Mowing | Grounds & Gardening | No | Yes | Yes |
+| `CLEAN-08` | Tree Trimming & Hedge Pruning | Grounds & Gardening | No | Yes | Yes |
+| `CLEAN-09` | Landscape Design & Flower Bed Care | Grounds & Gardening | No | Yes | Yes |
+| `CLEAN-10` | Agricultural Garden Weeding & Tilling | Grounds & Gardening | No | Yes | Yes |
+| `CLEAN-11` | Residential Laundry & Ironing | Domestic Services | No | Yes | Yes |
+| `CLEAN-12` | Fumigation & Vector Pest Control | Environmental Health | Yes | Yes | Yes |
+| `CLEAN-13` | House Moving & Relocation Loading | Moving Logistics | No | Yes | Yes |
+| `CLEAN-14` | Heavy Furniture Assembly & Rigging | Moving Logistics | No | Yes | Yes |
+| `CLEAN-15` | Garbage & Waste Hauling | Waste Management | No | Yes | Yes |
+| `CLEAN-16` | Pool Cleaning & Chemical Treatment | Aquatic Care | Yes | Yes | Yes |
+| `CLEAN-17` | Septic Tank Pumping & Exhausting | Environmental Health | Yes | Yes | Yes |
+| `CLEAN-18` | Curtain & Blind Installation | Interior Setup | No | Yes | Yes |
+| `CLEAN-19` | Home Organization & Decluttering | Domestic Services | No | Yes | Yes |
+| `CLEAN-20` | Pressure Washing Driveways & Patio | Specialty Cleaning | No | Yes | Yes |
+| `CLEAN-21` | Water Tank Cleaning & Chlorination | Sanitation | No | Yes | Yes |
+| `CLEAN-22` | Solar Panel Surface Cleaning | Maintenance | No | Yes | Yes |
+| `CLEAN-23` | Shoe Repair & Cobbling | Leathercraft | No | Yes | Yes |
+| `CLEAN-24` | Mattress Sanitization & Stain Extraction | Specialty Cleaning | No | Yes | Yes |
+| `CLEAN-25` | Commercial Kitchen Grease Trap Clean | Commercial Cleaning | Yes | Yes | Yes |
+
+### Category 3: Technology & Electronics (25 Services)
+| Service ID | Service Name | Skill Family | Qual. Evidence Expected | Primary Eligible | Additional Eligible |
+|---|---|---|---|---|---|
+| `TECH-01` | Smartphone Hardware Screen & Battery Fix | Mobile Repair | No | Yes | Yes |
+| `TECH-02` | Mobile Motherboard Soldering & Micro-repair | Mobile Repair | Yes | Yes | Yes |
+| `TECH-03` | Laptop Hardware Repair & Upgrades | Computer Hardware | Yes | Yes | Yes |
+| `TECH-04` | PC Desktop Building & Diagnostics | Computer Hardware | No | Yes | Yes |
+| `TECH-05` | CCTV Camera Wiring & DVR Config | Security Tech | Yes | Yes | Yes |
+| `TECH-06` | Biometric Access Control & Smart Locks | Security Tech | Yes | Yes | Yes |
+| `TECH-07` | Solar PV System Sizing & Inverter Install | Solar & Renewable | Yes | Yes | Yes |
+| `TECH-08` | Solar Water Heater Setup & Service | Solar & Renewable | Yes | Yes | Yes |
+| `TECH-09` | Refrigerator & Freezer Compressor Fix | Appliance Repair | Yes | Yes | Yes |
+| `TECH-10` | Washing Machine & Dryer Service | Appliance Repair | Yes | Yes | Yes |
+| `TECH-11` | Microwave & Kitchen Oven Repair | Appliance Repair | No | Yes | Yes |
+| `TECH-12` | TV & Home Theater Decoder Setup | Consumer Electronics | No | Yes | Yes |
+| `TECH-13` | Air Conditioning (AC) Sizing & Gas Refill | HVAC & Cooling | Yes | Yes | Yes |
+| `TECH-14` | Office Wi-Fi Router & Mesh Networking | Networking | Yes | Yes | Yes |
+| `TECH-15` | Fiber Optic Cable Splicing & Trunking | Networking | Yes | Yes | Yes |
+| `TECH-16` | POS Machine & Receipt Printer Config | Commercial Hardware | Yes | Yes | Yes |
+| `TECH-17` | Audio System & Speaker Installation | Consumer Electronics | No | Yes | Yes |
+| `TECH-18` | Inverter & Battery Bank Wiring | Electrical Power | Yes | Yes | Yes |
+| `TECH-19` | WordPress & Local Website Design | Digital Services | No | Yes | Yes |
+| `TECH-20` | Graphic Design & Logo Branding | Digital Services | No | Yes | Yes |
+| `TECH-21` | Software OS Installation & Virus Removal | Computer Software | No | Yes | Yes |
+| `TECH-22` | Printer & Copier Maintenance | Office Tech | Yes | Yes | Yes |
+| `TECH-23` | Intercom & PABX Phone System Setup | Networking | Yes | Yes | Yes |
+| `TECH-24` | Vehicle GPS Tracker Installation | Telematics | Yes | Yes | Yes |
+| `TECH-25` | Smart Home Automation Hub Config | Security Tech | Yes | Yes | Yes |
+
+### Category 4: Automotive Services (20 Services)
+| Service ID | Service Name | Skill Family | Qual. Evidence Expected | Primary Eligible | Additional Eligible |
+|---|---|---|---|---|---|
+| `AUTO-01` | General Car Engine Mechanical Service | Auto Mechanics | Yes | Yes | Yes |
+| `AUTO-02` | Mobile Driveway Oil & Filter Change | Auto Mechanics | No | Yes | Yes |
+| `AUTO-03` | Brake Pad Replacement & Rotor Polish | Auto Mechanics | No | Yes | Yes |
+| `AUTO-04` | Auto Electrical Rewiring & Alternator Fix | Auto Electronics | Yes | Yes | Yes |
+| `AUTO-05` | Car Battery Jumpstart & Replacement | Auto Electronics | No | Yes | Yes |
+| `AUTO-06` | Motorcycle (Boda Boda) Engine Overhaul | Motorcycle Repair | No | Yes | Yes |
+| `AUTO-07` | Motorcycle Tire Patching & Wheel Alignment | Motorcycle Repair | No | Yes | Yes |
+| `AUTO-08` | Car AC Gas Refill & Leak Fix | HVAC Auto | Yes | Yes | Yes |
+| `AUTO-09` | Auto Body Panel Beating & Dent Fix | Bodywork | No | Yes | Yes |
+| `AUTO-10` | Car Spray Painting & Scratch Touch-up | Bodywork | No | Yes | Yes |
+| `AUTO-11` | Mobile Car Detailing & Interior Wash | Car Wash | No | Yes | Yes |
+| `AUTO-12` | Tire Mounting, Balancing & Vulcanizing | Tire Services | No | Yes | Yes |
+| `AUTO-13` | OBD-II Computer Diagnostics Scan | Auto Electronics | Yes | Yes | Yes |
+| `AUTO-14` | Suspension Bushing & Shock Replacement | Auto Mechanics | Yes | Yes | Yes |
+| `AUTO-15` | Car Key Programming & Locksmithing | Locksmithing | Yes | Yes | Yes |
+| `AUTO-16` | Clutch & Transmission Service | Auto Mechanics | Yes | Yes | Yes |
+| `AUTO-17` | Windshield Glass Replacement | Auto Glass | No | Yes | Yes |
+| `AUTO-18` | Car Audio & Alarm System Fitting | Auto Electronics | No | Yes | Yes |
+| `AUTO-19` | Radiator & Engine Cooling System Fix | Auto Mechanics | No | Yes | Yes |
+| `AUTO-20` | Tow Truck & Emergency Breakdown Assist | Breakdown Services | Yes | Yes | Yes |
+
+### Category 5: Personal, Creative & Educational (25 Services)
+| Service ID | Service Name | Skill Family | Qual. Evidence Expected | Primary Eligible | Additional Eligible |
+|---|---|---|---|---|---|
+| `PERS-01` | Mobile Men's Hair Barbering | Beauty & Grooming | No | Yes | Yes |
+| `PERS-02` | Women's Hair Braiding & Styling | Beauty & Grooming | No | Yes | Yes |
+| `PERS-03` | Bridal Makeup & Cosmetology | Beauty & Grooming | No | Yes | Yes |
+| `PERS-04` | Manicure & Pedicure Nail Care | Beauty & Grooming | No | Yes | Yes |
+| `PERS-05` | Bespoke Clothing Tailoring & Alteration | Fashion & Textiles | No | Yes | Yes |
+| `PERS-06` | Primary School Math & Science Tutoring | Academic Tutoring | Yes | Yes | Yes |
+| `PERS-07` | High School Physics & Chemistry Prep | Academic Tutoring | Yes | Yes | Yes |
+| `PERS-08` | English & Swahili Language Instruction | Languages | Yes | Yes | Yes |
+| `PERS-09` | Music Instrument Tutoring (Guitar/Piano) | Arts & Music | No | Yes | Yes |
+| `PERS-10` | Event Portrait & Outdoor Photography | Media Production | No | Yes | Yes |
+| `PERS-11` | Video Editing & Event Coverage | Media Production | No | Yes | Yes |
+| `PERS-12` | Event Sound Equipment & DJ Setup | Event Services | No | Yes | Yes |
+| `PERS-13` | Party Catering & Private Chef Services | Culinary | Yes | Yes | Yes |
+| `PERS-14` | Event Decoration & Flower Arrangement | Event Services | No | Yes | Yes |
+| `PERS-15` | Document Translation (Swahili/French/Luganda) | Languages | Yes | Yes | Yes |
+| `PERS-16` | Home Fitness Training & Aerobics | Wellness | Yes | Yes | Yes |
+| `PERS-17` | Massage & Physiotherapy Wellness | Wellness | Yes | Yes | Yes |
+| `PERS-18` | Dog Training & Pet Grooming | Pet Care | No | Yes | Yes |
+| `PERS-19` | Veterinary Vaccination & Pet Health | Animal Care | Yes | Yes | Yes |
+| `PERS-20` | Commercial Signboard & Poster Printing | Print & Graphic | No | Yes | Yes |
+| `PERS-21` | Cake Baking & Pastry Decoration | Culinary | No | Yes | Yes |
+| `PERS-22` | Driver Instruction & Driving Lessons | Education | Yes | Yes | Yes |
+| `PERS-23` | Childcare & Nanny Babysitting | Domestic Services | No | Yes | Yes |
+| `PERS-24` | Elderly Caregiving & Assistance | Wellness | Yes | Yes | Yes |
+| `PERS-25` | Legal Document Preparation Assistant | Professional Services | Yes | Yes | Yes |
+
+---
+
+## 8. Document Storage & Public Location Privacy
+
+### 8.1 Firebase Storage Architecture
+- All sensitive verification documents (National ID Front/Back, Guarantor ID Front/Back, Skill Certificates, Demo Videos) are stored in isolated Firebase Storage buckets under `gs://skills-exchange-private-docs/`.
+- Strict Firebase Storage security rules enforce that document objects can ONLY be read or written by authorized Admin UIDs or the document owner during submission.
+- Clients are NEVER granted read access to raw verification document URLs or National ID numbers.
+
+### 8.2 Public Profile Privacy & Location Obfuscation
+Client-facing worker profiles display public trust indicators without leaking sensitive PII or exact addresses:
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│  John Kateregga  ✓ VERIFIED WORKER                     │
+│  ★ 4.8 (38 reviews) • Electrician                        │
+│  Kampala District • 6 Years Experience                   │
+│                                                         │
+│  Primary Skill: Residential Electrical Wiring           │
+│  Additional: Solar PV Setup, CCTV Wiring               │
+│                                                         │
+│  District Job History:                                  │
+│  • Kampala Central: 42 Jobs Completed                   │
+│  • Wakiso District: 18 Jobs Completed                   │
+│  • Mukono District: 7 Jobs Completed                    │
+└─────────────────────────────────────────────────────────┘
+```
+- **Reviews**: Public worker reviews hide reviewer names/identities to preserve client privacy.
+- **Location**: Exact coordinates of past jobs are never exposed; only aggregated district-level statistics are shown.
+
+---
+
+## 9. Marketplace Discovery & Job Types
+
+### 9.1 Discovery Modes
+1. **Nearby Specialist Discovery**: Clients filter nearby verified workers by skill category, distance radius, rating, and hourly rate. Clients can directly contact or request a quote from a chosen worker.
+2. **Open Job Marketplace**: Clients post a job request (title, description, budget, urgency, labor vs material breakdown). Relevant verified workers in the radius receive notifications and submit quotes. The client compares quotes and selects a worker.
+
+### 9.2 Job Types & Recurring Contracts
+- **One-Time Jobs (Default)**: Single-execution micro-jobs (e.g. leak repair, single tutoring session).
+- **Recurring Contracts**: Ongoing service arrangements (e.g. weekly compound cleaning, bi-weekly catering, monthly AC maintenance).
+- **Recurring Schedules**:
+  - `DAILY`
+  - `WEEKLY`
+  - `BI_WEEKLY`
+  - `MONTHLY`
+  - `CUSTOM_DAYS` (e.g. Every Monday & Thursday)
+- **Pricing & Negotiation**: Initial contract pricing is negotiated between client and worker via in-app quote proposals before escrow funding.
+
+---
+
+## 10. Administrative Web Dashboard Specification
+
+A dedicated web-based operational portal (`admin.skillsexchange.app`) is specified for platform operators:
+
+```text
+Admin Web Dashboard
+  ├── Verification Queue Module
+  │     ├── List pending worker applications sorted by submission timestamp (48h SLA timer)
+  │     ├── Inspect worker Uganda National ID images (Front & Back)
+  │     ├── Inspect 2 Guarantor records & Guarantor ID images
+  │     ├── Inspect Primary Skill Certificate / Demo Video evidence
+  │     └── Trigger Decisions: [Approve], [Reject (Reason)], [Request Changes (Reason)]
+  │
+  ├── Training & Activation Module
+  │     ├── Track 2-3 day worker rule training progress
+  │     └── Action: [Activate Worker] (Gates bidding eligibility) / [Deactivate / Suspend]
+  │
+  ├── Dispute Resolution Module
+  │     ├── Inspect job chat logs, before/after photos, and escrow transaction trail
+  │     └── Action: [Release Escrow to Worker] / [Refund to Client] / [Split Payout]
+  │
+  └── Support & Oversight Module
+        ├── View transaction ledgers, SMS dispatch logs, and platform health telemetry
+        └── Direct WhatsApp / Call support integration
+```
+
+---
+
+## 11. Known Defect & Requirement Gap Inventory
+
+### Critical Priority (P0)
+- **SEC-01 (CONFIRMED)**: Firestore rules allow public read/write access to `/providers/{providerId}` without user ownership verification (`firestore.rules` line 34-36).
+- **SEC-02 (CONFIRMED)**: Serverless webhook `processMoMoWebhook` (`functions/src/index.ts` line 63) lacks HMAC signature verification.
+- **SEC-03 (NEW REQUIREMENT)**: Firebase Storage security rules missing for private KYC document buckets.
+- **TEST-01 (CONFIRMED)**: Automated test suite fails build execution due to `ExampleRobolectricTest` string assertion mismatch ("My Application" vs "Skills Exchange") and `GreetingScreenshotTest` missing class references.
+- **AI-01 (CONFIRMED)**: Gemini API calls specify non-existent model name `gemini-3.5-flash` in `GeminiAudioTranscriptionService.kt` and `GeminiMapsGroundingService.kt`.
+
+### High Priority (P1)
+- **ROLE-01 (NEW REQUIREMENT)**: Account role model missing unified Client/Worker schema with mode switching and verification gating.
+- **KYC-01 (NEW REQUIREMENT)**: Missing 2-guarantor data model and National ID photo upload pipeline.
+- **KYC-02 (NEW REQUIREMENT)**: Missing verification state machine (`UNDER_REVIEW`, `CHANGES_REQUIRED`, `APPROVED`) and 48h SLA tracking timestamps.
+- **TRAIN-01 (NEW REQUIREMENT)**: Missing 2-3 day training tracking and admin activation gate.
+- **ADMIN-01 (NEW REQUIREMENT)**: Administrative web dashboard architecture missing for verification queue management.
+- **SKILL-01 (NEW REQUIREMENT)**: 125-service taxonomy data catalog and related-skill validation logic missing.
+- **AUTH-01 (CONFIRMED)**: Phone authentication and Google Sign-In are simulated with local state flags.
+- **PAY-01 (CONFIRMED)**: Mobile Money collection relies on coroutine `delay()` calls instead of live gateway API.
+- **MAP-01 (CONFIRMED)**: Map view in `InteractiveMapView.kt` uses custom Canvas drawing instead of Google Maps SDK.
+
+---
+
+## 12. Implementation Phases Overview
+
+The project backlog is organized into **15 Logical Implementation Phases**:
+1. Phase 1: Baseline, Infrastructure & Test Stabilization
+2. Phase 2: Security, Document Storage & Database Rule Hardening
+3. Phase 3: Unified Account Architecture, Roles & Mode Switching
+4. Phase 4: Service Taxonomy & Skill Catalog System (125 Services)
+5. Phase 5: Client Onboarding & Location Management
+6. Phase 6: Worker KYC Verification & Guarantor Engine (2 Guarantors + Document Upload)
+7. Phase 7: Verification Lifecycle, Changes-Required & 48h SLA Tracking
+8. Phase 8: Worker Training Tracking & Activation Gating
+9. Phase 9: Admin Operations Dashboard & Verification Queue
+10. Phase 10: Core Marketplace, Quotes & Job Types (One-Time & Recurring)
+11. Phase 11: Mobile Money Payments & Escrow Engine
+12. Phase 12: Location Privacy, Google Maps & AI Services
+13. Phase 13: Communication, Safety & Doorstep Safeguards
+14. Phase 14: Offline Synchronization & Reliability
+15. Phase 15: Production QA & Release Readiness
