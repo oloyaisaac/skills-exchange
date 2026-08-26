@@ -533,11 +533,14 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     /**
      * LOC-003: Update worker operating district and coordinates
      */
-    fun updateWorkerLocation(district: String, lat: Double = 0.3476, lng: Double = 32.5825) {
+    fun updateWorkerLocation(district: String, lat: Double = 0.3476, lng: Double = 32.5825, address: String? = null) {
         viewModelScope.launch {
             val user = repository.currentUser.first() ?: return@launch
             val updated = user.copy(
                 district = district,
+                latitude = lat,
+                longitude = lng,
+                address = address,
                 updatedAtTimestamp = System.currentTimeMillis()
             )
             repository.saveUserProfile(updated)

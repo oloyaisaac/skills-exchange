@@ -53,8 +53,8 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 | ID | Priority | Title | Status | Notes |
 |---|---|---|---|---|
 | LOC-001 | P1 | Implement Client Location Onboarding & GPS Detection | ✅ Completed | Implemented in AuthModal.kt using LocationHelper |
-| LOC-002 | P2 | Implement Manual Location Correction & Geocoding fallback | ⏳ Pending | Depends on LOC-001 |
-| LOC-003 | P2 | Implement Worker District & Location management | ⏳ Pending | Depends on LOC-001 |
+| LOC-002 | P2 | Implement Manual Location Correction & Geocoding fallback | ✅ Completed | Added EditLocationDialog in GpsLocationBanner.kt |
+| LOC-003 | P2 | Implement Worker District & Location management | ✅ Completed | Added address, lat, lng to UserProfileEntity and ViewModel |
 | LOC-004 | P2 | Enforce Public Location Privacy & District-Level Aggregation | ⏳ Pending | Depends on LOC-001 |
 
 ---
@@ -165,9 +165,9 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | Status | Count |
 |---|---|
-| ✅ Completed | 14 (STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, AI-001, AI-002, SAFE-001) |
+| ✅ Completed | 17 (STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, AI-001, AI-002, SAFE-001) |
 | 🔄 In Progress | 0 |
-| ⏳ Pending | 18 |
+| ⏳ Pending | 15 |
 | 🚫 Blocked | 1 (STAB-003) |
 | ❌ Failed | 0 |
 | **Total** | **33** |

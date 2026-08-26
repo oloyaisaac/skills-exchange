@@ -313,7 +313,7 @@ fun MainScreen(
                 onRequestGps = triggerLocationFlow,
                 onDenyGps = { viewModel.denyGpsPermission() },
                 onDismissBanner = { viewModel.dismissGpsBanner() },
-                onOpenDistrictSelector = { viewModel.setFilterDrawerOpen(true) }
+                onManualDistrictSelect = { viewModel.switchToManualDistrict(it) }
             )
 
             // Filter Bar

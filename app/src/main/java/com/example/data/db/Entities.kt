@@ -137,6 +137,9 @@ data class UserProfileEntity(
     val momoNumber: String = "+256 772 198 420",
     val momoProvider: String = "MTN_MOMO",
     val walletBalance: Double = 185.0,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val address: String? = null,
     val createdAtTimestamp: Long = System.currentTimeMillis(),
     val updatedAtTimestamp: Long = System.currentTimeMillis()
 )

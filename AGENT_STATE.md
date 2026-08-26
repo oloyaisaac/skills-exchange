@@ -47,6 +47,8 @@ Progress through Phase 5 (Location Onboarding LOC-001..LOC-004) and Phase 6 (Wor
 
 ### Phase 5 — Client Onboarding & Location Management
 - **LOC-001**: Implement Client Location Onboarding & GPS Detection (Implemented GPS permission request and location fetching in AuthModal.kt)
+- **LOC-002**: Implement Manual Location Correction & Geocoding fallback (Added EditLocationDialog in GpsLocationBanner.kt)
+- **LOC-003**: Implement Worker District & Location management (Added address, lat, lng to UserProfileEntity and updated viewmodel)
 
 ### Phase 12 — AI Services
 - **AI-001**: Repair Gemini Audio Transcription & Model Identifier (Fixed model URL from gemini-3.5-flash to gemini-2.0-flash & MPEG_4/AAC audio format)
@@ -58,9 +60,7 @@ Progress through Phase 5 (Location Onboarding LOC-001..LOC-004) and Phase 6 (Wor
 ---
 
 ## Work In Progress / Next Task
-1. **LOC-002** (P2): Implement Manual Location Correction & Geocoding fallback.
-2. **LOC-003** (P2): Implement Worker District & Location management.
-3. **LOC-004** (P2): Enforce Public Location Privacy & District-Level Aggregation.
+1. **LOC-004** (P2): Enforce Public Location Privacy & District-Level Aggregation.
 
 ---
 
@@ -114,13 +114,13 @@ Progress through Phase 5 (Location Onboarding LOC-001..LOC-004) and Phase 6 (Wor
 
 ```
 Current session:          Antigravity continuation session
-Current PRD story:        LOC-002 (Implement Manual Location Correction & Geocoding fallback)
+Current PRD story:        LOC-004 (Enforce Public Location Privacy & District-Level Aggregation)
 Current task:             Phase 5 Location Management
-Completed stories (15):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, AI-001, AI-002, SAFE-001
-Last completed action:    Implemented LOC-001
-Last verified action:     Manual code inspection of LOC-001 implementation
-Files modified:           prd.json, TASKS.md, AGENT_STATE.md, CHANGELOG.md, AuthModal.kt
-Next action:              Implement LOC-002 (Manual Location Correction & Geocoding fallback)
+Completed stories (17):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, AI-001, AI-002, SAFE-001
+Last completed action:    Implemented LOC-003
+Last verified action:     Manual code inspection of LOC-003 implementation
+Files modified:           prd.json, TASKS.md, AGENT_STATE.md, CHANGELOG.md, Entities.kt, AppDatabase.kt, SkillsExchangeViewModel.kt
+Next action:              Implement LOC-004 (Enforce Public Location Privacy & District-Level Aggregation)
 Handoff status:           Ready for immediate continuation
 ```
 

@@ -10,6 +10,14 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ## 2026-08-26
 
+### [2026-08-26] [LOC-003] [IMPL] Worker District & Location management
+- Upgraded `UserProfileEntity` and `AppDatabase` (v6) to support `latitude`, `longitude`, and `address` fields.
+- Upgraded `updateWorkerLocation` in `SkillsExchangeViewModel.kt` to persist all location metadata.
+
+### [2026-08-26] [LOC-002] [IMPL] Manual Location Correction
+- Added `EditLocationDialog` in `GpsLocationBanner.kt` to allow users to manually correct their active district.
+- Wired manual district selection to `SkillsExchangeViewModel` through `MainScreen.kt`.
+
 ### [2026-08-26] [LOC-001] [IMPL] Client Location Onboarding & GPS Detection
 - Implemented GPS location requesting logic using LocationHelper in AuthModal.kt, which sets the user's neighborhood automatically.
 

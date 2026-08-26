@@ -22,6 +22,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import com.example.ui.theme.*
 import com.example.ui.viewmodel.GpsLocationState
 
@@ -32,9 +34,22 @@ fun GpsLocationBanner(
     onRequestGps: () -> Unit,
     onDenyGps: () -> Unit,
     onDismissBanner: () -> Unit,
-    onOpenDistrictSelector: () -> Unit,
+    onManualDistrictSelect: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showEditDialog by remember { mutableStateOf(false) }
+
+    if (showEditDialog) {
+        EditLocationDialog(
+            currentDistrict = currentDistrict,
+            onDismiss = { showEditDialog = false },
+            onDistrictSelected = { selected ->
+                showEditDialog = false
+                onManualDistrictSelect(selected)
+            }
+        )
+    }
+
     if (gpsState.isBannerDismissed) return
 
     val infiniteTransition = rememberInfiniteTransition(label = "gps_spin")
@@ -156,7 +171,7 @@ fun GpsLocationBanner(
             ) {
                 // LOC-002: Manual Location Correction Trigger
                 OutlinedButton(
-                    onClick = onOpenDistrictSelector,
+                    onClick = { showEditDialog = true },
                     shape = RoundedCornerShape(6.dp),
                     contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
                     modifier = Modifier.height(28.dp)
@@ -226,3 +241,96 @@ fun GpsLocationBanner(
         }
     }
 }
+
+@Composable
+fun EditLocationDialog(
+    currentDistrict: String,
+    onDismiss: () -> Unit,
+    onDistrictSelected: (String) -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    
+    val allDistricts = listOf(
+        "Kampala Central", "Nakawa", "Makindye", "Kawempe", "Rubaga", 
+        "Wakiso District", "Entebbe", "Mukono District", "Kira", "Nansana",
+        "Jinja", "Mbarara", "Gulu", "Mbale", "Masaka", "Fort Portal",
+        "Sunnyside District"
+    )
+
+    val filteredDistricts = allDistricts.filter {
+        it.contains(searchQuery, ignoreCase = true)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        title = {
+            Text("Edit Location", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Slate900)
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "Select your current operating district manually if GPS is inaccurate.",
+                    fontSize = 12.sp,
+                    color = Slate600,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Search districts...", fontSize = 13.sp) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = SignalBlue,
+                        unfocusedBorderColor = Slate300
+                    )
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 240.dp)
+                ) {
+                    items(filteredDistricts) { district ->
+                        val isSelected = district == currentDistrict
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(if (isSelected) Slate100 else Color.Transparent)
+                                .clickable { onDistrictSelected(district) }
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = district,
+                                fontSize = 14.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                color = Slate800
+                            )
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = androidx.compose.material.icons.Icons.Default.LocationOn,
+                                    contentDescription = "Selected",
+                                    tint = SignalBlue,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Slate600)
+            }
+        }
+    )
+}
+
