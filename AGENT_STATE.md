@@ -23,7 +23,7 @@ Progress through Phase 5 (Location Onboarding LOC-001..LOC-004) and Phase 6 (Wor
 
 ---
 
-## Completed & Verified Work (14 Stories)
+## Completed & Verified Work (15 Stories)
 
 ### Phase 1 — Test & Baseline Stabilization
 - **STAB-001**: Fix Robolectric unit test assertion mismatch (Verified correct assertion "Skills Exchange")
@@ -45,6 +45,9 @@ Progress through Phase 5 (Location Onboarding LOC-001..LOC-004) and Phase 6 (Wor
 - **SKILL-002**: Implement Related Skill Validation engine (Created validateWorkerSkills engine enforcing trade family compatibility)
 - **SKILL-003**: Implement Service Catalog UI selector for Worker onboarding (Created ServiceCatalogPickerModal with category tabs and live validation)
 
+### Phase 5 — Client Onboarding & Location Management
+- **LOC-001**: Implement Client Location Onboarding & GPS Detection (Implemented GPS permission request and location fetching in AuthModal.kt)
+
 ### Phase 12 — AI Services
 - **AI-001**: Repair Gemini Audio Transcription & Model Identifier (Fixed model URL from gemini-3.5-flash to gemini-2.0-flash & MPEG_4/AAC audio format)
 - **AI-002**: Repair Gemini Maps Grounding Model Identifier & Tools Payload (Fixed model URL to gemini-2.0-flash)
@@ -55,10 +58,9 @@ Progress through Phase 5 (Location Onboarding LOC-001..LOC-004) and Phase 6 (Wor
 ---
 
 ## Work In Progress / Next Task
-1. **LOC-001** (P1): Implement Client Location Onboarding & GPS Detection.
-2. **LOC-002** (P2): Implement Manual Location Correction & Geocoding fallback.
-3. **LOC-003** (P2): Implement Worker District & Location management.
-4. **LOC-004** (P2): Enforce Public Location Privacy & District-Level Aggregation.
+1. **LOC-002** (P2): Implement Manual Location Correction & Geocoding fallback.
+2. **LOC-003** (P2): Implement Worker District & Location management.
+3. **LOC-004** (P2): Enforce Public Location Privacy & District-Level Aggregation.
 
 ---
 
@@ -112,13 +114,13 @@ Progress through Phase 5 (Location Onboarding LOC-001..LOC-004) and Phase 6 (Wor
 
 ```
 Current session:          Antigravity continuation session
-Current PRD story:        LOC-001 (Phase 5 Client Location Onboarding)
+Current PRD story:        LOC-002 (Implement Manual Location Correction & Geocoding fallback)
 Current task:             Phase 5 Location Management
-Completed stories (14):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, AI-001, AI-002, SAFE-001
-Last completed action:    Implemented and integrated SKILL-001, SKILL-002, SKILL-003, SAFE-001, ROLE-001, ROLE-002, ROLE-003, SEC-002, SEC-003
-Last verified action:     Full code audit and verification of all 14 completed stories
-Files modified:           prd.json, TASKS.md, AGENT_STATE.md, CHANGELOG.md, DECISIONS.md, storage.rules, functions/src/index.ts, functions/tsconfig.json, ServiceTaxonomy.kt, Entities.kt, Daos.kt, AppDatabase.kt, SkillsExchangeRepository.kt, SkillsExchangeViewModel.kt, WorkerVerificationStatusView.kt, ServiceCatalogPicker.kt, MainScreen.kt, GeminiAudioTranscriptionService.kt, GeminiMapsGroundingService.kt, AudioRecorderHelper.kt
-Next action:              Implement LOC-001 (Client Location Onboarding & GPS Detection)
+Completed stories (15):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, AI-001, AI-002, SAFE-001
+Last completed action:    Implemented LOC-001
+Last verified action:     Manual code inspection of LOC-001 implementation
+Files modified:           prd.json, TASKS.md, AGENT_STATE.md, CHANGELOG.md, AuthModal.kt
+Next action:              Implement LOC-002 (Manual Location Correction & Geocoding fallback)
 Handoff status:           Ready for immediate continuation
 ```
 

@@ -20,6 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import com.example.util.LocationHelper
 import com.example.ui.theme.*
 
 /**
@@ -39,6 +43,46 @@ fun AuthModal(
     var phoneNumber by remember { mutableStateOf("+256 701 234 567") }
     var selectedDistrict by remember { mutableStateOf(initialDistrict) }
     var isSubmitting by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineGranted = permissions[android.Manifest.permission.ACCESS_FINE_LOCATION] == true
+        val coarseGranted = permissions[android.Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (fineGranted || coarseGranted) {
+            LocationHelper.getCurrentLocation(
+                context = context,
+                onLocationReceived = { locResult ->
+                    selectedDistrict = locResult.neighborhoodName
+                },
+                onError = {
+                    selectedDistrict = "Sunnyside"
+                }
+            )
+        }
+    }
+
+    val triggerLocationFlow: () -> Unit = {
+        if (LocationHelper.hasLocationPermission(context)) {
+            LocationHelper.getCurrentLocation(
+                context = context,
+                onLocationReceived = { locResult ->
+                    selectedDistrict = locResult.neighborhoodName
+                },
+                onError = {
+                    selectedDistrict = "Sunnyside"
+                }
+            )
+        } else {
+            locationPermissionLauncher.launch(
+                arrayOf(
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+    }
 
     val popularDistricts = listOf(
         "Sunnyside",
@@ -216,7 +260,7 @@ fun AuthModal(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.clickable { selectedDistrict = "Current Location" }
+                        modifier = Modifier.clickable { triggerLocationFlow() }
                     ) {
                         Icon(
                             imageVector = Icons.Default.MyLocation,

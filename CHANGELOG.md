@@ -8,6 +8,11 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ---
 
+## 2026-08-26
+
+### [2026-08-26] [LOC-001] [IMPL] Client Location Onboarding & GPS Detection
+- Implemented GPS location requesting logic using LocationHelper in AuthModal.kt, which sets the user's neighborhood automatically.
+
 ## 2026-08-25
 
 ### [2026-08-25] [SAFE-001] [SECURITY] Dynamic 4-Digit Doorstep PIN Generation
