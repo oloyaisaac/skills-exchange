@@ -1,7 +1,7 @@
 # TASKS.md — Skills Exchange Human-Readable Task Status
 
 Synchronized with `prd.json`. This is the human-readable view of the development backlog.
-Last synchronized: 2026-08-25T17:55:00+03:00
+Last synchronized: 2026-08-27T12:00:00+03:00
 
 Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Failed
 
@@ -55,7 +55,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 | LOC-001 | P1 | Implement Client Location Onboarding & GPS Detection | ✅ Completed | Implemented in AuthModal.kt using LocationHelper |
 | LOC-002 | P2 | Implement Manual Location Correction & Geocoding fallback | ✅ Completed | Added EditLocationDialog in GpsLocationBanner.kt |
 | LOC-003 | P2 | Implement Worker District & Location management | ✅ Completed | Added address, lat, lng to UserProfileEntity and ViewModel |
-| LOC-004 | P2 | Enforce Public Location Privacy & District-Level Aggregation | ⏳ Pending | Depends on LOC-001 |
+| LOC-004 | P2 | Enforce Public Location Privacy & District-Level Aggregation | ✅ Completed | Dynamic district job stats in ProviderDetailSheet, reviewer identities obfuscated |
 
 ---
 
@@ -63,11 +63,11 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | ID | Priority | Title | Status | Notes |
 |---|---|---|---|---|
-| KYC-001 | P1 | Define Worker Identity & National ID data schema | ⏳ Pending | Depends on ROLE-001 |
-| KYC-002 | P1 | Implement Worker Document Upload pipeline to Firebase Storage | ⏳ Pending | Depends on KYC-001, SEC-003 |
-| KYC-003 | P1 | Define Two-Guarantor Data Model & Validation rules | ⏳ Pending | Depends on KYC-001 |
-| KYC-004 | P1 | Implement Guarantor Identity & National ID Upload UI | ⏳ Pending | Depends on KYC-003 |
-| KYC-005 | P1 | Implement Primary Skill Qualification Certificate & Video Evidence upload | ⏳ Pending | Depends on KYC-001 |
+| KYC-001 | P1 | Define Worker Identity & National ID data schema | ✅ Completed | WorkerKycEntity, WorkerKycDao, AppDatabase v7 |
+| KYC-002 | P1 | Implement Worker Document Upload pipeline to Firebase Storage | ✅ Completed | uploadKycDocument in FirebaseService, Firebase Storage dep added |
+| KYC-003 | P1 | Define Two-Guarantor Data Model & Validation rules | ✅ Completed | GuarantorEntity, GuarantorDao, validateGuarantorCount |
+| KYC-004 | P1 | Implement Guarantor Identity & National ID Upload UI | ✅ Completed | GuarantorFormSheet in AccountComplianceDialog.kt |
+| KYC-005 | P1 | Implement Primary Skill Qualification Certificate & Video Evidence upload | ✅ Completed | QualificationEvidenceSheet + uploadQualificationEvidence |
 
 ---
 
@@ -75,8 +75,8 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | ID | Priority | Title | Status | Notes |
 |---|---|---|---|---|
-| KYC-006 | P1 | Implement Verification State Machine & 48h SLA Timestamps | ⏳ Pending | Depends on KYC-001 |
-| KYC-007 | P1 | Implement Worker 'Changes Required' feedback view & resubmission workflow | ⏳ Pending | Depends on KYC-006 |
+| KYC-006 | P1 | Implement Verification State Machine & 48h SLA Timestamps | ✅ Completed | State transition methods + getKycSlaDeadline(48h) |
+| KYC-007 | P1 | Implement Worker 'Changes Required' feedback view & resubmission workflow | ✅ Completed | ChangesRequiredView with feedback, support links, update button |
 
 ---
 
@@ -105,10 +105,10 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | ID | Priority | Title | Status | Notes |
 |---|---|---|---|---|
-| JOB-001 | P1 | Implement One-Time & Recurring Job Type Data Model | ⏳ Pending | Depends on ROLE-001 |
+| JOB-001 | P1 | Implement One-Time & Recurring Job Type Data Model | ✅ Completed | jobType, recurringSchedule, recurringStartDate fields added |
 | JOB-002 | P2 | Implement Recurring Schedule Configuration UI | ⏳ Pending | Depends on JOB-001 |
 | JOB-003 | P2 | Implement Recurring Contract Pricing Negotiation Workflow | ⏳ Pending | Depends on JOB-001 |
-| MARKET-001 | P1 | Implement Nearby Verified Worker Discovery | ⏳ Pending | Depends on ROLE-003, SKILL-001 |
+| MARKET-001 | P1 | Implement Nearby Verified Worker Discovery | ✅ Completed | isActivated + kycStatus APPROVED filter in providers flow |
 | MARKET-002 | P1 | Implement Open Job Posting & Multi-Quote Bidding | ⏳ Pending | Depends on JOB-001 |
 | MARKET-003 | P1 | Implement Resident Quote Review & Worker Selection | ⏳ Pending | Depends on MARKET-002 |
 
@@ -118,10 +118,10 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | ID | Priority | Title | Status | Notes |
 |---|---|---|---|---|
-| PAY-001 | P1 | Integrate Mobile Money Collection Intent API | ⏳ Pending | Depends on SEC-002, MARKET-003 |
-| PAY-002 | P1 | Implement Escrow Lock & Webhook Confirmation | ⏳ Pending | Depends on PAY-001 |
-| PAY-003 | P1 | Implement Escrow Release & Worker MoMo Payout | ⏳ Pending | Depends on PAY-002 |
-| PAY-004 | P2 | Implement Material Advance Escrow Partial Disbursement | ⏳ Pending | Depends on PAY-003 |
+| PAY-001 | P1 | Integrate Mobile Money Collection Intent API | ✅ Completed | Retrofit + MTN MoMo Collection API integration |
+| PAY-002 | P1 | Implement Escrow Lock & Webhook Confirmation | ✅ Completed | processMoMoWebhook locks escrow + notifications |
+| PAY-003 | P1 | Implement Escrow Release & Worker MoMo Payout | ✅ Completed | releaseEscrowToWorker Cloud Function, worker payout |
+| PAY-004 | P2 | Implement Material Advance Escrow Partial Disbursement | ✅ Completed | approveMaterialAdvance method, 50% disbursement logic |
 
 ---
 
@@ -129,7 +129,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | ID | Priority | Title | Status | Notes |
 |---|---|---|---|---|
-| MAP-001 | P1 | Integrate Google Maps SDK for Nearby Worker View | ⏳ Pending | Depends on STAB-001 |
+| MAP-001 | P1 | Integrate Google Maps SDK for Nearby Worker View | ✅ Completed | Google Maps MapView composable, play-services-maps dep |
 | AI-001 | P0 | Repair Gemini Audio Transcription & Model Identifier (gemini-2.0-flash) | ✅ Completed | Fixed model URL & MPEG_4/AAC format |
 | AI-002 | P2 | Repair Gemini Maps Grounding Model Identifier & Tools Payload | ✅ Completed | Fixed model URL to gemini-2.0-flash |
 
@@ -165,9 +165,9 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | Status | Count |
 |---|---|
-| ✅ Completed | 17 (STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, AI-001, AI-002, SAFE-001) |
+| ✅ Completed | 31 (STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, AI-001, AI-002, SAFE-001) |
 | 🔄 In Progress | 0 |
-| ⏳ Pending | 15 |
+| ⏳ Pending | 1 |
 | 🚫 Blocked | 1 (STAB-003) |
 | ❌ Failed | 0 |
 | **Total** | **33** |

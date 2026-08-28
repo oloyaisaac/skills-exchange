@@ -474,15 +474,19 @@ fun MainScreen(
     // Modal Overlays & Drawers
     if (selectedProvider != null) {
         val endorsements by viewModel.getEndorsementsForProvider(selectedProvider!!.id).collectAsStateWithLifecycle(initialValue = emptyList())
+        val districtJobStats = remember(selectedProvider, jobs) {
+            selectedProvider?.let { viewModel.getDistrictJobStatsForProvider(it.id) } ?: emptyMap()
+        }
         ProviderDetailSheet(
             provider = selectedProvider!!,
             endorsements = endorsements,
+            districtJobStats = districtJobStats,
             onEndorseSkill = { skill -> viewModel.endorseSkill(selectedProvider!!.id, skill) },
             onRequestJob = { prov ->
                 viewModel.setQuickRequestOpen(true)
             },
             isAuthenticated = isAuthenticated,
-            onTriggerAuth = { viewModel.triggerAuthFlow(it) },
+            onTriggerAuth = onTriggerAuth,
             onDismiss = { viewModel.selectProvider(null) }
         )
     }

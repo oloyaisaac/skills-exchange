@@ -8,6 +8,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,6 +49,15 @@ class FirebaseService(private val context: Context? = null) {
             if (initializeFirebase()) FirebaseFirestore.getInstance() else null
         } catch (e: Exception) {
             Log.d("FirebaseService", "FirebaseFirestore unavailable: ${e.message}")
+            null
+        }
+    }
+
+    private val storage: FirebaseStorage? by lazy {
+        try {
+            if (initializeFirebase()) FirebaseStorage.getInstance() else null
+        } catch (e: Exception) {
+            Log.d("FirebaseService", "FirebaseStorage unavailable: ${e.message}")
             null
         }
     }
@@ -115,7 +125,10 @@ class FirebaseService(private val context: Context? = null) {
                 "grandTotal" to job.grandTotal,
                 "escrowStatus" to job.escrowStatus,
                 "paymentChannel" to job.paymentChannel,
-                "momoPhoneNumber" to job.momoPhoneNumber
+                "momoPhoneNumber" to job.momoPhoneNumber,
+                "jobType" to job.jobType,
+                "recurringSchedule" to job.recurringSchedule,
+                "recurringStartDate" to job.recurringStartDate
             )
             db.collection("jobs")
                 .document(job.id)
@@ -177,5 +190,98 @@ class FirebaseService(private val context: Context? = null) {
             Log.d("FirebaseService", "Firestore stream listener: ${e.message}")
             awaitClose { }
         }
+    }
+
+    suspend fun uploadKycDocument(userId: String, docType: String, fileBytes: ByteArray): String? {
+        val storageInstance = storage ?: return null
+        return try {
+            val fileName = "${docType}_${System.currentTimeMillis()}.jpg"
+            val storageRef = storageInstance.reference.child("users/$userId/kyc/$fileName")
+            storageRef.putBytes(fileBytes).await()
+            storageRef.path
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "KYC document upload failed: ${e.message}")
+            null
+        }
+    }
+
+    suspend fun uploadQualificationEvidence(userId: String, evidenceType: String, fileBytes: ByteArray? = null, videoUrl: String? = null): String? {
+        val storageInstance = storage ?: return null
+        return try {
+            val path = when (evidenceType) {
+                "VIDEO" -> {
+                    if (videoUrl.isNullOrBlank()) return null
+                    "users/$userId/certificates/video_${System.currentTimeMillis()}"
+                }
+                else -> {
+                    if (fileBytes == null) return null
+                    val fileName = "certificate_${System.currentTimeMillis()}.jpg"
+                    val ref = storageInstance.reference.child("users/$userId/certificates/$fileName")
+                    ref.putBytes(fileBytes).await()
+                    ref.path
+                }
+            }
+            path
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "Qualification evidence upload failed: ${e.message}")
+            null
+        }
+    }
+
+    fun streamChatMessages(jobId: String): Flow<List<Map<String, Any>>> = callbackFlow {
+        val db = firestore
+        if (db == null) {
+            awaitClose { }
+            return@callbackFlow
+        }
+        try {
+            val listener = db.collection("jobs")
+                .document(jobId)
+                .collection("messages")
+                .orderBy("timestamp")
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        Log.d("FirebaseService", "Firestore chat snapshot: ${error.message}")
+                        return@addSnapshotListener
+                    }
+                    if (snapshot != null) {
+                        val messages = snapshot.documents.mapNotNull { doc ->
+                            doc.data?.plus("docId" to doc.id)
+                        }
+                        trySend(messages)
+                    }
+                }
+            awaitClose { listener.remove() }
+        } catch (e: Exception) {
+            Log.d("FirebaseService", "Firestore chat stream listener: ${e.message}")
+            awaitClose { }
+        }
+    }
+
+    suspend fun sendChatMessage(jobId: String, senderId: String, senderName: String, text: String, isFromUser: Boolean) {
+        val db = firestore ?: return
+        try {
+            val messageData = mapOf(
+                "senderId" to senderId,
+                "senderName" to senderName,
+                "text" to maskPhoneNumbers(text),
+                "isFromUser" to isFromUser,
+                "timestamp" to System.currentTimeMillis(),
+                "jobId" to jobId
+            )
+            db.collection("jobs")
+                .document(jobId)
+                .collection("messages")
+                .add(messageData)
+                .await()
+            Log.d("FirebaseService", "Chat message sent for job $jobId")
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "Failed to send chat message: ${e.message}")
+        }
+    }
+
+    private fun maskPhoneNumbers(text: String): String {
+        val phoneRegex = Regex("(\\+?\\d{3}[-.\\s]?\\d{3}[-.\\s]?\\d{4,6})")
+        return phoneRegex.replace(text) { "[Phone Masked]" }
     }
 }

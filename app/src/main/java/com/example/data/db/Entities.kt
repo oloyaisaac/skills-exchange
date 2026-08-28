@@ -28,6 +28,7 @@ data class ServiceProviderEntity(
     val idDocumentUrl: String = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80",
     val selfieVerificationUrl: String = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
     val kycStatus: String = "APPROVED", // "UNVERIFIED", "PENDING_REVIEW", "APPROVED", "REJECTED"
+    val isActivated: Boolean = false,
     // Mobile Money Wallet Schema
     val momoNumber: String = "+256 772 198 420",
     val momoProvider: String = "MTN_MOMO", // "MTN_MOMO", "AIRTEL_MONEY"
@@ -87,7 +88,10 @@ data class JobPostEntity(
     val materialAdvanceReceiptUrl: String = "",
     val materialAdvanceStatus: String = "NONE", // "NONE", "REQUESTED", "DISBURSED"
     val isSosTriggered: Boolean = false,
-    val calloutFee: Double = 5.0
+    val calloutFee: Double = 5.0,
+    val jobType: String = "ONE_TIME", // "ONE_TIME", "RECURRING"
+    val recurringSchedule: String = "", // "DAILY", "WEEKLY", "BI_WEEKLY", "MONTHLY", "CUSTOM"
+    val recurringStartDate: String = ""
 )
 
 @Entity(tableName = "chat_messages")
@@ -113,6 +117,42 @@ data class NeighborhoodPostEntity(
     val completedAgoText: String,
     val cost: Double,
     val neighborhood: String
+)
+
+/**
+ * KYC-001: Worker Identity & National ID data schema
+ * Isolated table storing worker KYC metadata separate from public profile data.
+ */
+@Entity(tableName = "worker_kyc")
+data class WorkerKycEntity(
+    @PrimaryKey val userId: String,
+    val fullLegalName: String,
+    val nationalIdNumber: String,
+    val dateOfBirth: String,
+    val gender: String,
+    val idFrontStoragePath: String,
+    val idBackStoragePath: String,
+    val status: String = "NOT_STARTED",
+    val submittedAt: Long = 0,
+    val reviewedAt: Long = 0,
+    val reviewFeedback: String = ""
+)
+
+/**
+ * KYC-003: Two-Guarantor Data Model
+ * Each worker application must have exactly two distinct guarantors.
+ */
+@Entity(tableName = "guarantors")
+data class GuarantorEntity(
+    @PrimaryKey val id: String,
+    val workerKycId: String,
+    val fullName: String,
+    val phoneNumber: String,
+    val relationship: String,
+    val district: String,
+    val idFrontStoragePath: String,
+    val idBackStoragePath: String,
+    val createdAt: Long = System.currentTimeMillis()
 )
 
 /**

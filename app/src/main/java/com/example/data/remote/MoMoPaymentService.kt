@@ -1,8 +1,11 @@
 package com.example.data.remote
 
 import android.util.Log
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.moshi.MoshiConverterFactory
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 data class MoMoPaymentIntent(
@@ -24,42 +27,95 @@ data class MoMoPayoutResponse(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-class MoMoPaymentService {
+class MoMoPaymentService(
+    private val apiKey: String = "",
+    private val baseUrl: String = "https://sandbox.momodeveloper.mtn.com/"
+) {
+
+    private val logging = HttpLoggingInterceptor { message -> Log.d("MoMoPaymentService", message) }
+    logging.setLevel(HttpLoggingInterceptor.Level.BODY)
+
+    private val client = OkHttpClient.Builder()
+        .addInterceptor(logging)
+        .build()
+
+    private val retrofit = Retrofit.Builder()
+        .baseUrl(baseUrl)
+        .client(client)
+        .addConverterFactory(MoshiConverterFactory.create())
+        .build()
+
+    private val api = retrofit.create(MoMoCollectionApi::class.java)
 
     /**
-     * Module 3: Mobile Money Collection (MTN MoMo & Airtel Money Integration Abstraction)
-     * Triggers STK Push payment intent to resident's phone when quote is accepted.
+     * PAY-001: Integrate Mobile Money Collection Intent API
+     * Triggers real HTTP POST to MTN MoMo Collection API (/collection/v1_0/requesttopay).
      */
     suspend fun createMoMoCollection(
         jobId: String,
         amountUgx: Double,
         phoneNumber: String,
-        provider: String = "MTN_MOMO"
+        provider: String = "MTN_MOMO",
+        apiKey: String = this.apiKey
     ): MoMoPaymentIntent = withContext(Dispatchers.IO) {
         val txId = "MOMO-UG-${System.currentTimeMillis().toString().takeLast(8)}"
         Log.d("MoMoPaymentService", "Initiating MoMo collection tx: $txId for Job $jobId on $phoneNumber ($provider)")
 
-        // Simulate network API request payload to MTN MoMo / Airtel Money Collection API
-        delay(600)
+        try {
+            val authHeader = "Bearer $apiKey"
+            val request = MoMoRequestToPayRequest(
+                amount = amountUgx.toInt().toString(),
+                externalId = jobId,
+                payer = MoMoPayer(partyId = phoneNumber),
+                payerMessage = "Skills Exchange payment for Job #$jobId"
+            )
 
-        MoMoPaymentIntent(
-            transactionId = txId,
-            amount = amountUgx,
-            currency = "UGX",
-            momoNumber = phoneNumber,
-            provider = provider,
-            status = "PENDING",
-            referenceMessage = "Enter PIN on your $provider handset to authorize payment of UGX ${amountUgx.toInt()} for Job #$jobId."
-        )
+            val response = api.requestToPay(authHeader, request)
+            if (response.isSuccessful) {
+                val body = response.body()
+                val status = body?.status ?: "PENDING"
+                Log.d("MoMoPaymentService", "MoMo collection response: $status for tx $txId")
+                MoMoPaymentIntent(
+                    transactionId = txId,
+                    amount = amountUgx,
+                    currency = "UGX",
+                    momoNumber = phoneNumber,
+                    provider = provider,
+                    status = status,
+                    referenceMessage = "Payment request sent to $phoneNumber. Enter PIN to authorize UGX ${amountUgx.toInt()}."
+                )
+            } else {
+                Log.e("MoMoPaymentService", "MoMo collection failed: ${response.code()} ${response.message()}")
+                MoMoPaymentIntent(
+                    transactionId = txId,
+                    amount = amountUgx,
+                    currency = "UGX",
+                    momoNumber = phoneNumber,
+                    provider = provider,
+                    status = "FAILED",
+                    referenceMessage = "Payment request failed. Please try again."
+                )
+            }
+        } catch (e: Exception) {
+            Log.e("MoMoPaymentService", "MoMo collection error: ${e.message}")
+            MoMoPaymentIntent(
+                transactionId = txId,
+                amount = amountUgx,
+                currency = "UGX",
+                momoNumber = phoneNumber,
+                provider = provider,
+                status = "FAILED",
+                referenceMessage = "Network error. Please check your connection and try again."
+            )
+        }
     }
 
     /**
      * Polls or receives asynchronous payment confirmation webhook result.
      */
     suspend fun checkCollectionStatus(transactionId: String): String = withContext(Dispatchers.IO) {
-        delay(400)
-        Log.d("MoMoPaymentService", "MoMo Status poll for $transactionId: SUCCESSFUL")
-        "SUCCESSFUL"
+        Log.d("MoMoPaymentService", "MoMo Status poll for $transactionId")
+        "PENDING"
     }
 
     /**
@@ -72,7 +128,6 @@ class MoMoPaymentService {
         provider: String = "MTN_MOMO"
     ): MoMoPayoutResponse = withContext(Dispatchers.IO) {
         val payoutId = "PAYOUT-UG-${System.currentTimeMillis().toString().takeLast(8)}"
-        delay(500)
         Log.d("MoMoPaymentService", "Disbursed Escrow payout $payoutId of UGX ${amountUgx.toInt()} to $workerId ($momoNumber)")
 
         MoMoPayoutResponse(

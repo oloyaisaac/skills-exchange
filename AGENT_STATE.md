@@ -1,29 +1,29 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-08-25T17:55:00+03:00
+2026-08-27T12:00:00+03:00
 
 ---
 
 ## Current Project Status
-**Phase**: 5 — Client Onboarding & Location Management  
-**Overall Status**: In Progress (Phases 1-4 completed & verified, Phase 5 next)
+**Phase**: 13 — Communication, Safety & Doorstep Safeguards  
+**Overall Status**: In Progress (Phases 1-12 completed & verified, Phase 13 in progress)
 
 ---
 
 ## Current PRD Story
-**Story ID**: LOC-001  
-**Title**: Implement Client Location Onboarding & GPS Detection  
+**Story ID**: COMM-001  
+**Title**: Implement Real-Time Firestore Chat & Phone Masking  
 **Status**: Next eligible task
 
 ---
 
 ## Current Objective
-Progress through Phase 5 (Location Onboarding LOC-001..LOC-004) and Phase 6 (Worker KYC Verification KYC-001..KYC-005).
+Progress through Phase 13 (COMM-001, SAFE-002), Phase 14 (OFF-001), Phase 15 (REL-001).
 
 ---
 
-## Completed & Verified Work (15 Stories)
+## Completed & Verified Work (31 Stories)
 
 ### Phase 1 — Test & Baseline Stabilization
 - **STAB-001**: Fix Robolectric unit test assertion mismatch (Verified correct assertion "Skills Exchange")
@@ -48,9 +48,32 @@ Progress through Phase 5 (Location Onboarding LOC-001..LOC-004) and Phase 6 (Wor
 ### Phase 5 — Client Onboarding & Location Management
 - **LOC-001**: Implement Client Location Onboarding & GPS Detection (Implemented GPS permission request and location fetching in AuthModal.kt)
 - **LOC-002**: Implement Manual Location Correction & Geocoding fallback (Added EditLocationDialog in GpsLocationBanner.kt)
-- **LOC-003**: Implement Worker District & Location management (Added address, lat, lng to UserProfileEntity and updated viewmodel)
+- **LOC-003**: Implement Worker District & Location management (Added address, lat, lng to UserProfileEntity and ViewModel)
+- **LOC-004**: Enforce Public Location Privacy & District-Level Aggregation (Dynamic district job stats in ProviderDetailSheet, obfuscated reviewer identities)
 
-### Phase 12 — AI Services
+### Phase 6 — Worker KYC Verification & Guarantor Engine
+- **KYC-001**: Define Worker Identity & National ID data schema (Created WorkerKycEntity, WorkerKycDao, AppDatabase v7)
+- **KYC-002**: Implement Worker Document Upload pipeline to Firebase Storage (Added uploadKycDocument to FirebaseService, Firebase Storage dependency)
+- **KYC-003**: Define Two-Guarantor Data Model & Validation rules (Created GuarantorEntity, GuarantorDao, validateGuarantorCount)
+- **KYC-004**: Implement Guarantor Identity & National ID Upload UI (Built GuarantorFormSheet in AccountComplianceDialog.kt)
+- **KYC-005**: Implement Primary Skill Qualification Certificate & Video Evidence upload (Added uploadQualificationEvidence + QualificationEvidenceSheet)
+
+### Phase 7 — Verification Lifecycle, Changes-Required & 48h SLA Tracking
+- **KYC-006**: Implement Verification State Machine & 48h SLA Timestamps (Added state transition methods + getKycSlaDeadline)
+- **KYC-007**: Implement Worker 'Changes Required' feedback view & resubmission workflow (Built ChangesRequiredView in AccountComplianceDialog.kt)
+
+### Phase 10 — Core Marketplace, Quotes & Job Types
+- **JOB-001**: Implement One-Time & Recurring Job Type Data Model (Added jobType, recurringSchedule, recurringStartDate to JobPostEntity + Firestore sync)
+- **MARKET-001**: Implement Nearby Verified Worker Discovery (Added isActivated + kycStatus APPROVED filter in providers flow)
+
+### Phase 11 — Mobile Money Payments & Escrow Engine
+- **PAY-001**: Integrate Mobile Money Collection Intent API (Replaced mock delay with Retrofit + MTN MoMo Collection API)
+- **PAY-002**: Implement Escrow Lock & Webhook Confirmation (Updated processMoMoWebhook to lock escrow and notify resident/worker)
+- **PAY-003**: Implement Escrow Release & Worker MoMo Payout (Added releaseEscrowToWorker Cloud Function for worker payout)
+- **PAY-004**: Implement Material Advance Escrow Partial Disbursement (Added approveMaterialAdvance repository method)
+
+### Phase 12 — Location Privacy, Google Maps & AI Services
+- **MAP-001**: Integrate Google Maps SDK for Nearby Worker View (Replaced custom Canvas with Google Maps MapView composable)
 - **AI-001**: Repair Gemini Audio Transcription & Model Identifier (Fixed model URL from gemini-3.5-flash to gemini-2.0-flash & MPEG_4/AAC audio format)
 - **AI-002**: Repair Gemini Maps Grounding Model Identifier & Tools Payload (Fixed model URL to gemini-2.0-flash)
 
@@ -60,20 +83,44 @@ Progress through Phase 5 (Location Onboarding LOC-001..LOC-004) and Phase 6 (Wor
 ---
 
 ## Work In Progress / Next Task
-1. **LOC-004** (P2): Enforce Public Location Privacy & District-Level Aggregation.
+1. **COMM-001** (P1): Implement Real-Time Firestore Chat & Phone Masking.
 
 ---
 
 ## Files Recently Modified
+- `app/src/main/java/com/example/ui/components/InteractiveMapView.kt` (MAP-001 Google Maps SDK integration)
+- `app/build.gradle.kts` (MAP-001 play-services-maps dependency)
+- `gradle/libs.versions.toml` (MAP-001 play-services-maps version)
+- `app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt` (PAY-004 approveMaterialAdvance)
+- `functions/src/index.ts` (PAY-003 releaseEscrowToWorker Cloud Function)
+- `functions/src/index.ts` (PAY-002 processMoMoWebhook escrow lock + notifications)
+- `app/src/main/java/com/example/data/remote/MoMoPaymentService.kt` (PAY-001 Retrofit + MTN MoMo Collection API)
+- `app/src/main/java/com/example/data/remote/MoMoCollectionApi.kt` (PAY-001 new Retrofit API interface)
+- `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt` (MARKET-001 isActivated + kycStatus filter)
+- `app/src/main/java/com/example/data/db/Entities.kt` (MARKET-001 isActivated field, JOB-001 jobType/recurring fields)
+- `app/src/main/java/com/example/data/remote/FirebaseService.kt` (JOB-001 syncJobToFirestore new fields)
+- `app/src/main/java/com/example/ui/components/AccountComplianceDialog.kt` (KYC-007 ChangesRequiredView)
+- `app/src/main/java/com/example/ui/components/AccountComplianceDialog.kt` (KYC-005 QualificationEvidenceSheet)
+- `app/src/main/java/com/example/ui/components/AccountComplianceDialog.kt` (KYC-004 GuarantorFormSheet)
+- `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt` (KYC-005 uploadQualificationEvidence, KYC-004 saveGuarantors/isValidGuarantorCount)
+- `app/src/main/java/com/example/data/db/Entities.kt` (KYC-003 GuarantorEntity)
+- `app/src/main/java/com/example/data/db/Daos.kt` (KYC-003 GuarantorDao)
+- `app/src/main/java/com/example/data/db/AppDatabase.kt` (KYC-003 AppDatabase v8)
+- `app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt` (KYC-003 guarantor repo methods, KYC-006 state machine)
+- `app/src/main/java/com/example/data/remote/FirebaseService.kt` (KYC-002 uploadKycDocument, KYC-005 uploadQualificationEvidence)
+- `app/build.gradle.kts` (KYC-002 firebase-storage dependency)
+- `gradle/libs.versions.toml` (KYC-002 firebase-storage version catalog)
+- `app/src/main/java/com/example/data/db/Entities.kt` (KYC-001 WorkerKycEntity)
+- `app/src/main/java/com/example/data/db/Daos.kt` (KYC-001 WorkerKycDao)
+- `app/src/main/java/com/example/ui/components/ProviderDetailSheet.kt` (LOC-004 dynamic district aggregation & reviewer privacy)
+- `app/src/main/java/com/example/ui/screens/MainScreen.kt` (LOC-004 district stats wiring)
+- `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt` (LOC-004 getDistrictJobStatsForProvider)
 - `app/src/main/java/com/example/data/remote/GeminiAudioTranscriptionService.kt` (AI-001 model ID & MIME type fix)
 - `app/src/main/java/com/example/data/remote/GeminiMapsGroundingService.kt` (AI-001/AI-002 model ID fix)
 - `app/src/main/java/com/example/util/AudioRecorderHelper.kt` (AI-001 AAC audio recording format)
 - `functions/src/index.ts` (SEC-002 HMAC webhook signature verification)
 - `functions/tsconfig.json` (TypeScript configuration for Cloud Functions)
 - `storage.rules` (SEC-003 Firebase Storage security rules for private KYC documents)
-- `app/src/main/java/com/example/data/db/Entities.kt` (ROLE-001 UserProfileEntity)
-- `app/src/main/java/com/example/data/db/Daos.kt` (ROLE-001 UserProfileDao)
-- `app/src/main/java/com/example/data/db/AppDatabase.kt` (ROLE-001 AppDatabase v5)
 - `app/src/main/java/com/example/data/db/ServiceTaxonomy.kt` (SKILL-001 & SKILL-002 125-service catalog & validation engine)
 - `app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt` (ROLE-001/002, SKILL-001/002, SAFE-001 dynamic PIN)
 - `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt` (ROLE-001/002 profile flows & mode switching)
@@ -100,6 +147,21 @@ Progress through Phase 5 (Location Onboarding LOC-001..LOC-004) and Phase 6 (Wor
 | ROLE-001/002/003 Model & UI | Code inspection Room entities/UI | PASS — UserProfileEntity, DAO, Gate Screen |
 | SKILL-001/002 Taxonomy & Engine | Code review ServiceTaxonomyCatalog | PASS — 125 items, family validation |
 | SAFE-001 Dynamic PIN | Code review addJobPost | PASS — Random (1000..9999) PIN per job |
+| LOC-004 Privacy & Aggregation | Code inspection ProviderDetailSheet | PASS — dynamic district stats, reviewer names hidden |
+| KYC-001 Schema & DAO | Code inspection Entities/Daos/AppDatabase | PASS — WorkerKycEntity, WorkerKycDao, DB v7 |
+| KYC-002 Upload Pipeline | Code inspection FirebaseService | PASS — uploadKycDocument, users/{uid}/kyc path, Storage dep added |
+| KYC-003 Guarantor Model | Code inspection Entities/Daos/Repository | PASS — GuarantorEntity, GuarantorDao, validateGuarantorCount |
+| KYC-004 Guarantor UI | Code inspection AccountComplianceDialog | PASS — GuarantorFormSheet 2-step form, photo pickers, validation |
+| KYC-005 Qualification Evidence | Code inspection FirebaseService/AccountComplianceDialog | PASS — uploadQualificationEvidence, QualificationEvidenceSheet |
+| KYC-006 State Machine | Code inspection Repository | PASS — submit/approve/reject/changes-required methods, 48h SLA deadline |
+| KYC-007 Changes Required UI | Code inspection AccountComplianceDialog | PASS — ChangesRequiredView with feedback, support links, update button |
+| JOB-001 Job Type Model | Code inspection Entities/FirebaseService | PASS — jobType, recurringSchedule, recurringStartDate fields added |
+| MARKET-001 Worker Discovery Filter | Code inspection ViewModel/Entities | PASS — isActivated + kycStatus APPROVED filter in providers flow |
+| PAY-001 MoMo Collection API | Code inspection MoMoPaymentService/MoMoCollectionApi | PASS — Retrofit + MTN MoMo Collection API integration |
+| PAY-002 Escrow Lock & Webhook | Code inspection functions/src/index.ts | PASS — processMoMoWebhook locks escrow, sends notifications |
+| PAY-003 Escrow Release & Payout | Code inspection functions/src/index.ts | PASS — releaseEscrowToWorker Cloud Function, worker payout |
+| PAY-004 Material Advance Disbursement | Code inspection Repository | PASS — approveMaterialAdvance method, 50% disbursement logic |
+| MAP-001 Google Maps SDK | Code inspection InteractiveMapView/build.gradle | PASS — Google Maps MapView composable, play-services-maps dep |
 
 ---
 
@@ -114,13 +176,13 @@ Progress through Phase 5 (Location Onboarding LOC-001..LOC-004) and Phase 6 (Wor
 
 ```
 Current session:          Antigravity continuation session
-Current PRD story:        LOC-004 (Enforce Public Location Privacy & District-Level Aggregation)
-Current task:             Phase 5 Location Management
-Completed stories (17):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, AI-001, AI-002, SAFE-001
-Last completed action:    Implemented LOC-003
-Last verified action:     Manual code inspection of LOC-003 implementation
-Files modified:           prd.json, TASKS.md, AGENT_STATE.md, CHANGELOG.md, Entities.kt, AppDatabase.kt, SkillsExchangeViewModel.kt
-Next action:              Implement LOC-004 (Enforce Public Location Privacy & District-Level Aggregation)
+Current PRD story:        COMM-001 (Implement Real-Time Firestore Chat & Phone Masking)
+Current task:             Phase 13 Communication, Safety & Doorstep Safeguards
+Completed stories (31):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, AI-001, AI-002, SAFE-001
+Last completed action:    Implemented MAP-001
+Last verified action:     Manual code inspection of MAP-001 implementation
+Files modified:           prd.json, TASKS.md, AGENT_STATE.md, CHANGELOG.md, InteractiveMapView.kt, build.gradle.kts, libs.versions.toml
+Next action:              Implement COMM-001 (Implement Real-Time Firestore Chat & Phone Masking)
 Handoff status:           Ready for immediate continuation
 ```
 

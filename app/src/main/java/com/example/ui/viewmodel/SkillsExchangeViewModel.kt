@@ -134,12 +134,13 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             val matchDistance = provider.distanceMiles <= filter.radiusMiles
             val matchRate = provider.hourlyRate >= filter.minRate && provider.hourlyRate <= filter.maxRate
             val matchVerified = !filter.onlyVerified || (provider.isVerifiedResident && provider.isBackgroundChecked)
+            val matchActivated = provider.isActivated && provider.kycStatus == "APPROVED"
             val matchQuery = filter.searchQuery.isBlank() ||
                     provider.name.contains(filter.searchQuery, ignoreCase = true) ||
                     provider.tagline.contains(filter.searchQuery, ignoreCase = true) ||
                     provider.skillsCsv.contains(filter.searchQuery, ignoreCase = true)
 
-            matchCategory && matchDistance && matchRate && matchVerified && matchQuery
+            matchCategory && matchDistance && matchRate && matchVerified && matchActivated && matchQuery
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -619,12 +620,38 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     // --- MODULE 4: SMS FALLBACK DISPATCH TO OFFLINE WORKERS ---
+    fun getDistrictJobStatsForProvider(providerId: String): Map<String, Int> {
+        return jobs.value
+            .filter { it.assignedProviderId == providerId }
+            .groupBy { it.district }
+            .mapValues { it.value.size }
+    }
+
     fun triggerSmsAlertToOfflineWorkers(jobTitle: String, district: String) {
         viewModelScope.launch {
             val offlineWorkers = providers.value
                 .filter { it.neighborhood.contains(district, ignoreCase = true) && it.kycStatus == "APPROVED" }
                 .map { it.momoNumber }
             smsNotificationService.notifyOfflineWorkersInRadius(offlineWorkers, jobTitle, district)
+        }
+    }
+
+    fun saveGuarantors(workerKycId: String, guarantors: List<com.example.data.db.GuarantorEntity>) {
+        viewModelScope.launch {
+            repository.deleteGuarantorsForWorker(workerKycId)
+            repository.insertGuarantors(guarantors)
+        }
+    }
+
+    fun isValidGuarantorCount(workerKycId: String): Boolean {
+        return repository.validateGuarantorCount(workerKycId)
+    }
+
+    fun uploadQualificationEvidence(evidenceType: String, fileBytes: ByteArray? = null, videoUrl: String? = null, onResult: (String?) -> Unit) {
+        viewModelScope.launch {
+            val userId = currentUser.value?.id ?: "user_default_me"
+            val path = firebaseService.uploadQualificationEvidence(userId, evidenceType, fileBytes, videoUrl)
+            onResult(path)
         }
     }
 }

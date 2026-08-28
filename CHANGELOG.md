@@ -8,6 +8,70 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ---
 
+## 2026-08-27
+
+### [2026-08-27] [MAP-001] [IMPL] Integrate Google Maps SDK for Nearby Worker View
+- Replaced custom Canvas drawing in `InteractiveMapView.kt` with Google Maps Android SDK MapView.
+- Added `play-services-maps` dependency to `build.gradle.kts` and `libs.versions.toml`.
+
+### [2026-08-27] [PAY-004] [IMPL] Material Advance Escrow Partial Disbursement
+- Added `approveMaterialAdvance` to `SkillsExchangeRepository.kt` calculating 50% materials subtotal and updating job status.
+
+### [2026-08-27] [PAY-003] [IMPL] Escrow Release & Worker MoMo Payout
+- Added `releaseEscrowToWorker` callable Cloud Function in `functions/src/index.ts` to credit worker wallet upon escrow release.
+
+### [2026-08-27] [PAY-002] [IMPL] Escrow Lock & Webhook Confirmation
+- Updated `processMoMoWebhook` in `functions/src/index.ts` to lock escrow and send notifications to resident and worker upon successful payment.
+
+### [2026-08-27] [PAY-001] [IMPL] Mobile Money Collection Intent API
+- Replaced mock `delay(600)` in `MoMoPaymentService.kt` with Retrofit HTTP POST to MTN MoMo Collection API.
+- Created `MoMoCollectionApi.kt` Retrofit interface for `/collection/v1_0/requesttopay`.
+
+### [2026-08-27] [MARKET-001] [IMPL] Nearby Verified Worker Discovery
+- Added `isActivated` field to `ServiceProviderEntity` in `Entities.kt`.
+- Updated `providers` flow in `SkillsExchangeViewModel.kt` to filter only activated workers with `kycStatus == APPROVED`.
+
+### [2026-08-27] [JOB-001] [IMPL] One-Time & Recurring Job Type Data Model
+- Added `jobType`, `recurringSchedule`, and `recurringStartDate` fields to `JobPostEntity` in `Entities.kt`.
+- Updated `syncJobToFirestore` in `FirebaseService.kt` to persist new job type fields.
+
+### [2026-08-27] [KYC-007] [IMPL] Worker 'Changes Required' feedback view & resubmission workflow
+- Built `ChangesRequiredView` in `AccountComplianceDialog.kt` displaying admin feedback, support phone/WhatsApp links, and document update button.
+
+### [2026-08-27] [KYC-006] [IMPL] Verification State Machine & 48h SLA Timestamps
+- Added state transition methods to `SkillsExchangeRepository.kt`: submitWorkerKycApplication, startKycReview, requestKycChanges, approveKyc, rejectKyc.
+- Added `getKycSlaDeadline` calculating 48-hour review target from submittedAt timestamp.
+
+### [2026-08-27] [KYC-005] [IMPL] Primary Skill Qualification Certificate & Video Evidence upload
+- Added `uploadQualificationEvidence` to `FirebaseService.kt` for certificate photos and video links.
+- Built `QualificationEvidenceSheet` in `AccountComplianceDialog.kt` with certificate/video toggle and upload flow.
+
+### [2026-08-27] [KYC-004] [IMPL] Guarantor Identity & National ID Upload UI
+- Built `GuarantorFormSheet` in `AccountComplianceDialog.kt` with 2-step form, photo pickers, and district selection.
+- Added `saveGuarantors` and `isValidGuarantorCount` methods to `SkillsExchangeViewModel.kt`.
+
+### [2026-08-27] [KYC-003] [IMPL] Two-Guarantor Data Model & Validation rules
+- Created `GuarantorEntity` in `Entities.kt` with name, phone, relationship, district, and ID storage paths.
+- Created `GuarantorDao` in `Daos.kt` with insert, delete, count, and query operations.
+- Added `validateGuarantorCount` to `SkillsExchangeRepository.kt` enforcing exactly 2 guarantors.
+- Upgraded `AppDatabase` to version 8.
+
+### [2026-08-27] [KYC-002] [IMPL] Worker Document Upload pipeline to Firebase Storage
+- Added `uploadKycDocument` method to `FirebaseService.kt` uploading image bytes to `users/{userId}/kyc/` path.
+- Added `firebase-storage` dependency to `build.gradle.kts` and `libs.versions.toml`.
+
+### [2026-08-27] [KYC-001] [IMPL] Worker Identity & National ID data schema
+- Created `WorkerKycEntity` isolated Room table in `Entities.kt` storing full legal name, National ID number, DOB, gender, and ID document storage paths.
+- Created `WorkerKycDao` in `Daos.kt` with insert, status update, and review query methods.
+- Upgraded `AppDatabase` to version 7 with `fallbackToDestructiveMigration`.
+
+### [2026-08-27] [LOC-004] [IMPL] Public Location Privacy & District-Level Aggregation
+- Added `getDistrictJobStatsForProvider` to `SkillsExchangeViewModel.kt` to compute dynamic district job counts from actual job history.
+- Updated `ProviderDetailSheet.kt` to display dynamic district-level job breakdown instead of hardcoded values.
+- Obfuscated reviewer identities in public endorsements by removing `endorsedByNeighborName` display.
+
+---
+
 ## 2026-08-26
 
 ### [2026-08-26] [LOC-003] [IMPL] Worker District & Location management

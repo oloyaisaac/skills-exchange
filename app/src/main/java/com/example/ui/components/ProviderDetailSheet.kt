@@ -29,6 +29,7 @@ import com.example.util.ShareHelper
 fun ProviderDetailSheet(
     provider: ServiceProviderEntity,
     endorsements: List<SkillEndorsementEntity>,
+    districtJobStats: Map<String, Int> = emptyMap(),
     onEndorseSkill: (String) -> Unit,
     onRequestJob: (ServiceProviderEntity) -> Unit,
     activeRegion: CurrencyRegion = CurrencyRegion.currentRegion,
@@ -310,40 +311,42 @@ fun ProviderDetailSheet(
                         }
                     }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Surface(
-                            color = Blue50,
-                            shape = RoundedCornerShape(6.dp),
-                            modifier = Modifier.weight(1f)
+                    if (districtJobStats.isNotEmpty()) {
+                        val topDistricts = districtJobStats.entries.sortedByDescending { it.value }.take(3)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Column(modifier = Modifier.padding(8.dp)) {
-                                Text(text = provider.neighborhood, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = SignalBlue)
-                                Text(text = "Primary • 38 jobs", fontSize = 10.sp, color = Slate600)
+                            topDistricts.forEach { (district, count) ->
+                                val isPrimary = district == provider.neighborhood
+                                Surface(
+                                    color = if (isPrimary) Blue50 else Slate100,
+                                    shape = RoundedCornerShape(6.dp),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Column(modifier = Modifier.padding(8.dp)) {
+                                        Text(
+                                            text = district,
+                                            fontSize = 11.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isPrimary) SignalBlue else Slate800
+                                        )
+                                        Text(
+                                            text = if (isPrimary) "Primary • $count jobs" else "$count jobs completed",
+                                            fontSize = 10.sp,
+                                            color = Slate600
+                                        )
+                                    }
+                                }
                             }
                         }
-                        Surface(
-                            color = Slate100,
-                            shape = RoundedCornerShape(6.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Column(modifier = Modifier.padding(8.dp)) {
-                                Text(text = "Wakiso District", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Slate800)
-                                Text(text = "19 jobs completed", fontSize = 10.sp, color = Slate600)
-                            }
-                        }
-                        Surface(
-                            color = Slate100,
-                            shape = RoundedCornerShape(6.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Column(modifier = Modifier.padding(8.dp)) {
-                                Text(text = "Entebbe Metro", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Slate800)
-                                Text(text = "12 jobs completed", fontSize = 10.sp, color = Slate600)
-                            }
-                        }
+                    } else {
+                        Text(
+                            text = "No job history yet in records",
+                            fontSize = 11.sp,
+                            color = Slate500,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
                     }
                 }
             }
@@ -390,7 +393,7 @@ fun ProviderDetailSheet(
                                 )
                                 Text(
                                     text = if (skillEndorsements.isNotEmpty())
-                                        "Endorsed by ${skillEndorsements.first().endorsedByNeighborName} (${skillEndorsements.first().neighborDistrict})"
+                                        "Endorsed by verified neighbor"
                                     else "Local verified service skill",
                                     fontSize = 10.sp,
                                     color = Slate500

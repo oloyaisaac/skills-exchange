@@ -1,11 +1,13 @@
 package com.example.data.repository
 
 import com.example.data.db.*
+import com.example.data.remote.FirebaseService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 
 class SkillsExchangeRepository(
-    private val db: AppDatabase
+    private val db: AppDatabase,
+    private val firebaseService: FirebaseService = FirebaseService()
 ) {
     val providers: Flow<List<ServiceProviderEntity>> = db.serviceProviderDao().getAllProviders()
     val jobs: Flow<List<JobPostEntity>> = db.jobPostDao().getAllJobs()
@@ -31,6 +33,50 @@ class SkillsExchangeRepository(
 
     fun getEndorsements(providerId: String): Flow<List<SkillEndorsementEntity>> {
         return db.skillEndorsementDao().getEndorsementsForProvider(providerId)
+    }
+
+    fun getGuarantorsForWorker(workerKycId: String): Flow<List<GuarantorEntity>> {
+        return db.guarantorDao().getGuarantorsForWorker(workerKycId)
+    }
+
+    suspend fun insertGuarantor(guarantor: GuarantorEntity) {
+        db.guarantorDao().insertGuarantor(guarantor)
+    }
+
+    suspend fun insertGuarantors(guarantors: List<GuarantorEntity>) {
+        db.guarantorDao().insertGuarantors(guarantors)
+    }
+
+    suspend fun deleteGuarantorsForWorker(workerKycId: String) {
+        db.guarantorDao().deleteGuarantorsForWorker(workerKycId)
+    }
+
+    suspend fun validateGuarantorCount(workerKycId: String): Boolean {
+        return db.guarantorDao().countGuarantorsForWorker(workerKycId) == 2
+    }
+
+    suspend fun submitWorkerKycApplication(userId: String) {
+        db.workerKycDao().updateKycStatus(userId, "SUBMITTED")
+    }
+
+    suspend fun startKycReview(userId: String) {
+        db.workerKycDao().updateKycStatus(userId, "UNDER_REVIEW")
+    }
+
+    suspend fun requestKycChanges(userId: String, feedback: String) {
+        db.workerKycDao().updateKycReview(userId, "CHANGES_REQUIRED", feedback = feedback)
+    }
+
+    suspend fun approveKyc(userId: String) {
+        db.workerKycDao().updateKycReview(userId, "APPROVED")
+    }
+
+    suspend fun rejectKyc(userId: String, feedback: String) {
+        db.workerKycDao().updateKycReview(userId, "REJECTED", feedback = feedback)
+    }
+
+    fun getKycSlaDeadline(submittedAt: Long): Long {
+        return submittedAt + (48 * 60 * 60 * 1000)
     }
 
     suspend fun insertJob(job: JobPostEntity) {
@@ -358,6 +404,14 @@ class SkillsExchangeRepository(
             isSystemNotification = false
         )
         db.chatMessageDao().insertMessage(msg)
+
+        val currentUser = currentUser.first()
+        val senderId = currentUser?.id ?: "unknown"
+        firebaseService.sendChatMessage(jobId, senderId, senderName, text, isFromUser)
+    }
+
+    fun getFirestoreChatMessages(jobId: String): Flow<List<Map<String, Any>>> {
+        return firebaseService.streamChatMessages(jobId)
     }
 
     suspend fun endorseSkill(providerId: String, skillName: String, neighborName: String, district: String) {
@@ -816,5 +870,11 @@ class SkillsExchangeRepository(
                 neighborhood = "Oakridge Heights"
             )
         )
+    }
+
+    suspend fun approveMaterialAdvance(jobId: String, materialsSubtotal: Double): Double {
+        val advanceAmount = (materialsSubtotal * 0.5).coerceAtMost(materialsSubtotal)
+        db.jobPostDao().updateMaterialAdvance(jobId, true, advanceAmount, "DISBURSED", "")
+        return advanceAmount
     }
 }

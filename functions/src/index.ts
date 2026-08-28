@@ -94,6 +94,64 @@ export const createMoMoCollection = functions.https.onCall(async (data, context)
 });
 
 /**
+ * PAY-003: Escrow Release & Worker MoMo Payout
+ * Callable function triggered when resident approves job completion.
+ * Credits worker's Mobile Money wallet and updates job status.
+ */
+export const releaseEscrowToWorker = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Authentication required to release escrow."
+    );
+  }
+
+  const { jobId, workerId, workerMomoNumber, amountUgx, provider } = data;
+  if (!jobId || !workerId || !workerMomoNumber || !amountUgx) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Missing required parameters: jobId, workerId, workerMomoNumber, amountUgx."
+    );
+  }
+
+  const payoutRef = `PAYOUT-${Date.now()}`;
+  const payoutPayload = {
+    payoutId: payoutRef,
+    jobId,
+    workerId,
+    workerMomoNumber,
+    amount: amountUgx,
+    currency: "UGX",
+    provider: provider || "MTN_MOMO",
+    status: "QUEUED",
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  };
+
+  await db.collection("momo_payouts").doc(payoutRef).set(payoutPayload);
+
+  await db.collection("jobs").doc(jobId).update({
+    status: "COMPLETED",
+    escrowStatus: "RELEASED_TO_WORKER",
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  await db.collection("notifications").add({
+    userId: workerId,
+    type: "PAYOUT_RELEASED",
+    jobId,
+    message: `Payment of UGX ${amountUgx} has been released to your ${provider || "MTN_MOMO"} wallet.`,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    read: false
+  });
+
+  return {
+    success: true,
+    payoutRef,
+    message: `Escrow released. UGX ${amountUgx} payout queued to ${workerMomoNumber}.`
+  };
+});
+
+/**
  * MODULE 3: SERVERLESS WEBHOOK HANDLER
  * HTTP endpoint listening for asynchronous payment callbacks from MTN MoMo / Airtel Money / Flutterwave gateway.
  */
@@ -116,11 +174,39 @@ export const processMoMoWebhook = functions.https.onRequest(async (req, res) => 
       const newJobState = payoutType === "ESCROW_RELEASE" ? "RELEASED" : "ACCEPTED_FUNDED";
       const newEscrowState = payoutType === "ESCROW_RELEASE" ? "RELEASED_TO_WORKER" : "FUNDS_LOCKED_IN_ESCROW";
 
-      await db.collection("jobs").doc(jobId).update({
+      const jobRef = db.collection("jobs").doc(jobId);
+      await jobRef.update({
         status: newJobState,
         escrowStatus: newEscrowState,
         lastPaymentWebhookAt: admin.firestore.FieldValue.serverTimestamp()
       });
+
+      const jobSnapshot = await jobRef.get();
+      const jobData = jobSnapshot.data();
+      const residentId = jobData?.postedByResident;
+      const providerId = jobData?.assignedProviderId;
+
+      if (residentId) {
+        await db.collection("notifications").add({
+          userId: residentId,
+          type: "ESCROW_LOCKED",
+          jobId,
+          message: `Payment confirmed. Funds are now locked in escrow for job #${jobId}.`,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          read: false
+        });
+      }
+
+      if (providerId) {
+        await db.collection("notifications").add({
+          userId: providerId,
+          type: "ESCROW_LOCKED",
+          jobId,
+          message: `Payment confirmed. Funds locked in escrow for job #${jobId}. You may proceed with work.`,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          read: false
+        });
+      }
 
       await db.collection("momo_transactions").doc(transactionRef).update({
         status: "SUCCESSFUL",

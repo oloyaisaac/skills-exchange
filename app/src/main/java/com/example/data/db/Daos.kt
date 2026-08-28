@@ -91,6 +91,48 @@ interface NeighborhoodPostDao {
 }
 
 /**
+ * KYC-003: Two-Guarantor Data Access Object
+ */
+@Dao
+interface GuarantorDao {
+    @Query("SELECT * FROM guarantors WHERE workerKycId = :workerKycId")
+    fun getGuarantorsForWorker(workerKycId: String): Flow<List<GuarantorEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertGuarantor(guarantor: GuarantorEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertGuarantors(guarantors: List<GuarantorEntity>)
+
+    @Query("DELETE FROM guarantors WHERE workerKycId = :workerKycId")
+    suspend fun deleteGuarantorsForWorker(workerKycId: String)
+
+    @Query("SELECT COUNT(*) FROM guarantors WHERE workerKycId = :workerKycId")
+    suspend fun countGuarantorsForWorker(workerKycId: String): Int
+}
+
+/**
+ * KYC-001: Worker KYC Data Access Object
+ */
+@Dao
+interface WorkerKycDao {
+    @Query("SELECT * FROM worker_kyc WHERE userId = :userId")
+    fun getWorkerKyc(userId: String): Flow<WorkerKycEntity?>
+
+    @Query("SELECT * FROM worker_kyc LIMIT 1")
+    fun getCurrentWorkerKyc(): Flow<WorkerKycEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertWorkerKyc(kyc: WorkerKycEntity)
+
+    @Query("UPDATE worker_kyc SET status = :status, submittedAt = :submittedAt WHERE userId = :userId")
+    suspend fun updateKycStatus(userId: String, status: String, submittedAt: Long = System.currentTimeMillis())
+
+    @Query("UPDATE worker_kyc SET status = :status, reviewedAt = :reviewedAt, reviewFeedback = :feedback WHERE userId = :userId")
+    suspend fun updateKycReview(userId: String, status: String, reviewedAt: Long = System.currentTimeMillis(), feedback: String = "")
+}
+
+/**
  * ROLE-001: User Profile & Mode Switching DAO
  */
 @Dao
