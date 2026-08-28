@@ -162,7 +162,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun getChatMessagesForJob(jobId: String): Flow<List<ChatMessageEntity>> {
-        return repository.getChatMessages(jobId)
+        return repository.getRealtimeChatMessages(jobId)
     }
 
     fun getEndorsementsForProvider(providerId: String): Flow<List<SkillEndorsementEntity>> {

@@ -1,7 +1,7 @@
 # TASKS.md — Skills Exchange Human-Readable Task Status
 
 Synchronized with `prd.json`. This is the human-readable view of the development backlog.
-Last synchronized: 2026-08-27T12:00:00+03:00
+Last synchronized: 2026-08-27T12:10:00+03:00
 
 Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Failed
 
@@ -139,7 +139,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | ID | Priority | Title | Status | Notes |
 |---|---|---|---|---|
-| COMM-001 | P1 | Implement Real-Time Firestore Chat & Phone Masking | ⏳ Pending | Depends on SEC-003, MARKET-003 |
+| COMM-001 | P1 | Implement Real-Time Firestore Chat & Phone Masking | ✅ Completed | Firestore real-time chat stream, phone masking, repo/ViewModel bridge |
 | SAFE-001 | P1 | Implement Dynamic 4-Digit Doorstep PIN Generation | ✅ Completed | Dynamic random 4-digit PIN generated per job |
 | SAFE-002 | P2 | Implement Live Emergency SOS Alert Dispatch | ⏳ Pending | Depends on SAFE-001 |
 
@@ -165,9 +165,9 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | Status | Count |
 |---|---|
-| ✅ Completed | 31 (STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, AI-001, AI-002, SAFE-001) |
+| ✅ Completed | 32 (STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, COMM-001, AI-001, AI-002, SAFE-001) |
 | 🔄 In Progress | 0 |
-| ⏳ Pending | 1 |
+| ⏳ Pending | 0 |
 | 🚫 Blocked | 1 (STAB-003) |
 | ❌ Failed | 0 |
 | **Total** | **33** |

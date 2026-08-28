@@ -414,6 +414,38 @@ class SkillsExchangeRepository(
         return firebaseService.streamChatMessages(jobId)
     }
 
+    fun getRealtimeChatMessages(jobId: String): Flow<List<ChatMessageEntity>> {
+        return getFirestoreChatMessages(jobId).map { firestoreMessages ->
+            firestoreMessages.mapNotNull { msg ->
+                val id = msg["docId"] as? String ?: "msg_${msg["timestamp"] ?: System.currentTimeMillis()}"
+                val senderName = msg["senderName"] as? String ?: "Unknown"
+                val text = msg["text"] as? String ?: ""
+                val isFromUser = msg["isFromUser"] as? Boolean ?: false
+                val timestamp = msg["timestamp"] as? Long ?: System.currentTimeMillis()
+                ChatMessageEntity(
+                    id = id,
+                    jobId = jobId,
+                    senderName = senderName,
+                    isFromUser = isFromUser,
+                    message = text,
+                    timestampText = formatTimestamp(timestamp),
+                    isSystemNotification = false
+                )
+            }
+        }
+    }
+
+    private fun formatTimestamp(timestamp: Long): String {
+        val now = System.currentTimeMillis()
+        val diff = now - timestamp
+        return when {
+            diff < 60000 -> "Just now"
+            diff < 3600000 -> "${diff / 60000} min ago"
+            diff < 86400000 -> "${diff / 3600000} hrs ago"
+            else -> "${diff / 86400000} days ago"
+        }
+    }
+
     suspend fun endorseSkill(providerId: String, skillName: String, neighborName: String, district: String) {
         val endorsement = SkillEndorsementEntity(
             id = "end_${System.currentTimeMillis()}",
@@ -876,5 +908,21 @@ class SkillsExchangeRepository(
         val advanceAmount = (materialsSubtotal * 0.5).coerceAtMost(materialsSubtotal)
         db.jobPostDao().updateMaterialAdvance(jobId, true, advanceAmount, "DISBURSED", "")
         return advanceAmount
+    }
+
+    suspend fun triggerEmergencySos(jobId: String, latitude: Double, longitude: Double, district: String) {
+        db.jobPostDao().setSosAlert(jobId, true)
+
+        val currentUser = currentUser.first()
+        val workerName = currentUser?.fullName ?: "Worker"
+        val workerPhone = currentUser?.phoneNumber ?: "+256 700 000 000"
+
+        smsNotificationService.dispatchEmergencySosAlert(
+            workerPhone = workerPhone,
+            workerName = workerName,
+            latitude = latitude,
+            longitude = longitude,
+            district = district
+        )
     }
 }

@@ -1,7 +1,7 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-08-27T12:00:00+03:00
+2026-08-27T12:10:00+03:00
 
 ---
 
@@ -12,18 +12,18 @@
 ---
 
 ## Current PRD Story
-**Story ID**: COMM-001  
-**Title**: Implement Real-Time Firestore Chat & Phone Masking  
+**Story ID**: SAFE-002  
+**Title**: Implement Live Emergency SOS Alert Dispatch  
 **Status**: Next eligible task
 
 ---
 
 ## Current Objective
-Progress through Phase 13 (COMM-001, SAFE-002), Phase 14 (OFF-001), Phase 15 (REL-001).
+Progress through Phase 13 (SAFE-002), Phase 14 (OFF-001), Phase 15 (REL-001).
 
 ---
 
-## Completed & Verified Work (31 Stories)
+## Completed & Verified Work (32 Stories)
 
 ### Phase 1 — Test & Baseline Stabilization
 - **STAB-001**: Fix Robolectric unit test assertion mismatch (Verified correct assertion "Skills Exchange")
@@ -77,17 +77,21 @@ Progress through Phase 13 (COMM-001, SAFE-002), Phase 14 (OFF-001), Phase 15 (RE
 - **AI-001**: Repair Gemini Audio Transcription & Model Identifier (Fixed model URL from gemini-3.5-flash to gemini-2.0-flash & MPEG_4/AAC audio format)
 - **AI-002**: Repair Gemini Maps Grounding Model Identifier & Tools Payload (Fixed model URL to gemini-2.0-flash)
 
-### Phase 13 — Doorstep Safeguards
+### Phase 13 — Communication, Safety & Doorstep Safeguards
+- **COMM-001**: Implement Real-Time Firestore Chat & Phone Masking (Added streamChatMessages, sendChatMessage, maskPhoneNumbers to FirebaseService; realtime chat flow in repository/ViewModel)
 - **SAFE-001**: Implement Dynamic 4-Digit Doorstep PIN Generation (Random 4-digit PIN generated per job creation in SkillsExchangeRepository.kt)
 
 ---
 
 ## Work In Progress / Next Task
-1. **COMM-001** (P1): Implement Real-Time Firestore Chat & Phone Masking.
+1. **SAFE-002** (P2): Implement Live Emergency SOS Alert Dispatch.
 
 ---
 
 ## Files Recently Modified
+- `app/src/main/java/com/example/data/remote/FirebaseService.kt` (COMM-001 streamChatMessages, sendChatMessage, maskPhoneNumbers)
+- `app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt` (COMM-001 getRealtimeChatMessages, Firestore chat bridge)
+- `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt` (COMM-001 getChatMessagesForJob -> realtime Firestore flow)
 - `app/src/main/java/com/example/ui/components/InteractiveMapView.kt` (MAP-001 Google Maps SDK integration)
 - `app/build.gradle.kts` (MAP-001 play-services-maps dependency)
 - `gradle/libs.versions.toml` (MAP-001 play-services-maps version)
@@ -162,6 +166,7 @@ Progress through Phase 13 (COMM-001, SAFE-002), Phase 14 (OFF-001), Phase 15 (RE
 | PAY-003 Escrow Release & Payout | Code inspection functions/src/index.ts | PASS — releaseEscrowToWorker Cloud Function, worker payout |
 | PAY-004 Material Advance Disbursement | Code inspection Repository | PASS — approveMaterialAdvance method, 50% disbursement logic |
 | MAP-001 Google Maps SDK | Code inspection InteractiveMapView/build.gradle | PASS — Google Maps MapView composable, play-services-maps dep |
+| COMM-001 Real-Time Chat & Phone Masking | Code inspection FirebaseService/Repository/ViewModel | PASS — streamChatMessages, sendChatMessage, maskPhoneNumbers, realtime flow |
 
 ---
 
@@ -176,13 +181,13 @@ Progress through Phase 13 (COMM-001, SAFE-002), Phase 14 (OFF-001), Phase 15 (RE
 
 ```
 Current session:          Antigravity continuation session
-Current PRD story:        COMM-001 (Implement Real-Time Firestore Chat & Phone Masking)
+Current PRD story:        SAFE-002 (Implement Live Emergency SOS Alert Dispatch)
 Current task:             Phase 13 Communication, Safety & Doorstep Safeguards
-Completed stories (31):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, AI-001, AI-002, SAFE-001
-Last completed action:    Implemented MAP-001
-Last verified action:     Manual code inspection of MAP-001 implementation
-Files modified:           prd.json, TASKS.md, AGENT_STATE.md, CHANGELOG.md, InteractiveMapView.kt, build.gradle.kts, libs.versions.toml
-Next action:              Implement COMM-001 (Implement Real-Time Firestore Chat & Phone Masking)
+Completed stories (32):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, COMM-001, AI-001, AI-002, SAFE-001
+Last completed action:    Implemented COMM-001
+Last verified action:     Manual code inspection of COMM-001 implementation
+Files modified:           prd.json, TASKS.md, AGENT_STATE.md, CHANGELOG.md, FirebaseService.kt, SkillsExchangeRepository.kt, SkillsExchangeViewModel.kt
+Next action:              Implement SAFE-002 (Implement Live Emergency SOS Alert Dispatch)
 Handoff status:           Ready for immediate continuation
 ```
 

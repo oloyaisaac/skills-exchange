@@ -10,6 +10,11 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ## 2026-08-27
 
+### [2026-08-27] [COMM-001] [IMPL] Real-Time Firestore Chat & Phone Masking
+- Added `streamChatMessages` and `sendChatMessage` with `maskPhoneNumbers` to `FirebaseService.kt`.
+- Added `getRealtimeChatMessages` bridge in `SkillsExchangeRepository.kt` converting Firestore maps to `ChatMessageEntity`.
+- Updated `SkillsExchangeViewModel.kt` `getChatMessagesForJob` to use real-time Firestore flow.
+
 ### [2026-08-27] [MAP-001] [IMPL] Integrate Google Maps SDK for Nearby Worker View
 - Replaced custom Canvas drawing in `InteractiveMapView.kt` with Google Maps Android SDK MapView.
 - Added `play-services-maps` dependency to `build.gradle.kts` and `libs.versions.toml`.
