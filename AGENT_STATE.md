@@ -1,7 +1,7 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-08-28T17:32:00+03:00
+2026-08-28T18:05:00+03:00
 
 ---
 
@@ -12,14 +12,14 @@
 ---
 
 ## Current PRD Story
-**Story ID**: ADMIN-001  
-**Title**: Architecture & Spec for Separate Administrative Web Dashboard  
+**Story ID**: TRAIN-001  
+**Title**: Define Worker Training Progress & Content Data Schema  
 **Status**: Next eligible task
 
 ---
 
 ## Current Objective
-Progress through Phase 9 (ADMIN-001), remaining eligible stories in Phases 8-15.
+Progress through Phase 8 (TRAIN-001), remaining eligible stories in Phases 10, 14, 15.
 
 ---
 
@@ -77,6 +77,12 @@ Progress through Phase 9 (ADMIN-001), remaining eligible stories in Phases 8-15.
 - **AI-001**: Repair Gemini Audio Transcription & Model Identifier (Fixed model URL from gemini-3.5-flash to gemini-2.0-flash & MPEG_4/AAC audio format)
 - **AI-002**: Repair Gemini Maps Grounding Model Identifier & Tools Payload (Fixed model URL to gemini-2.0-flash)
 
+### Phase 9 — Admin Operations Dashboard & Verification Queue
+- **ADMIN-001**: Architecture & Spec for Separate Administrative Web Dashboard (Cloud Functions: getPendingVerificationQueue, reviewWorkerApplication, setWorkerActivationStatus)
+- **ADMIN-002**: Admin Verification Review Queue & Document Viewer Cloud Function (Implemented in functions/src/index.ts)
+- **ADMIN-003**: Admin Verification Action API (Approve, Reject, Request Changes) (Implemented in functions/src/index.ts)
+- **ADMIN-004**: Admin Worker Activation & Suspension Controls (Implemented in functions/src/index.ts)
+
 ### Phase 13 — Communication, Safety & Doorstep Safeguards
 - **COMM-001**: Implement Real-Time Firestore Chat & Phone Masking (Added streamChatMessages, sendChatMessage, maskPhoneNumbers to FirebaseService; realtime chat flow in repository/ViewModel)
 - **SAFE-001**: Implement Dynamic 4-Digit Doorstep PIN Generation (Random 4-digit PIN generated per job creation in SkillsExchangeRepository.kt)
@@ -85,14 +91,15 @@ Progress through Phase 9 (ADMIN-001), remaining eligible stories in Phases 8-15.
 ---
 
 ## Work In Progress / Next Task
-1. **ADMIN-001** (P1): Architecture & Spec for Separate Administrative Web Dashboard.
+1. **TRAIN-001** (P2): Define Worker Training Progress & Content Data Schema.
 
 ---
 
 ## Files Recently Modified
-- `app/src/main/java/com/example/data/remote/FirebaseService.kt` (COMM-001 streamChatMessages, sendChatMessage, maskPhoneNumbers)
-- `app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt` (COMM-001 getRealtimeChatMessages, Firestore chat bridge)
-- `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt` (COMM-001 getChatMessagesForJob -> realtime Firestore flow)
+- `functions/src/index.ts` (ADMIN-001..004: getPendingVerificationQueue, reviewWorkerApplication, setWorkerActivationStatus)
+- `app/src/main/java/com/example/data/remote/FirebaseService.kt` (ADMIN: getPendingVerificationQueue, reviewWorkerApplication, setWorkerActivationStatus + COMM-001 streamChatMessages, sendChatMessage, maskPhoneNumbers)
+- `app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt` (ADMIN: getAdminVerificationQueue, submitAdminVerificationDecision, setWorkerActivation + SAFE-002 smsNotificationService + COMM-001 + PAY-004 + KYC)
+- `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt` (ADMIN: loadAdminVerificationQueue, submitAdminDecision, setWorkerActivation + SAFE-002 triggerSosAlert GPS dispatch)
 - `app/src/main/java/com/example/ui/components/InteractiveMapView.kt` (MAP-001 Google Maps SDK integration)
 - `app/build.gradle.kts` (MAP-001 play-services-maps dependency)
 - `gradle/libs.versions.toml` (MAP-001 play-services-maps version)
@@ -168,6 +175,7 @@ Progress through Phase 9 (ADMIN-001), remaining eligible stories in Phases 8-15.
 | PAY-003 Escrow Release & Payout | Code inspection functions/src/index.ts | PASS — releaseEscrowToWorker Cloud Function, worker payout |
 | PAY-004 Material Advance Disbursement | Code inspection Repository | PASS — approveMaterialAdvance method, 50% disbursement logic |
 | MAP-001 Google Maps SDK | Code inspection InteractiveMapView/build.gradle | PASS — Google Maps MapView composable, play-services-maps dep |
+| ADMIN-001..004 Admin Cloud Functions | Code inspection functions/src/index.ts | PASS — getPendingVerificationQueue, reviewWorkerApplication, setWorkerActivationStatus with admin auth |
 | SAFE-002 SOS Dispatch | Code inspection triggerSosAlert | PASS — GPS-aware dispatch to SmsNotificationService |
 | COMM-001 Real-Time Chat & Phone Masking | Code inspection FirebaseService/Repository/ViewModel | PASS — streamChatMessages, sendChatMessage, maskPhoneNumbers, realtime flow |
 
@@ -184,13 +192,13 @@ Progress through Phase 9 (ADMIN-001), remaining eligible stories in Phases 8-15.
 
 ```
 Current session:          Continuation session
-Current PRD story:        ADMIN-001 (Architecture & Spec for Separate Administrative Web Dashboard)
-Current task:             Phase 9 Admin Operations Dashboard & Verification Queue
-Completed stories (33):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, COMM-001, AI-001, AI-002, SAFE-001, SAFE-002
-Last completed action:    Implemented SAFE-002
-Last verified action:     Code inspection of SAFE-002 GPS-aware SOS dispatch
-Files modified:           prd.json, TASKS.md, AGENT_STATE.md, CHANGELOG.md, SkillsExchangeViewModel.kt, SkillsExchangeRepository.kt
-Next action:              Implement ADMIN-001 (Architecture & Spec for Separate Administrative Web Dashboard)
+Current PRD story:        TRAIN-001 (Define Worker Training Progress & Content Data Schema)
+Current task:             Phase 8 Worker Training Tracking & Activation Gating
+Completed stories (37):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, COMM-001, AI-001, AI-002, SAFE-001, SAFE-002, ADMIN-001, ADMIN-002, ADMIN-003, ADMIN-004
+Last completed action:    Implemented ADMIN-001..004
+Last verified action:     Code inspection of admin Cloud Functions
+Files modified:           prd.json, TASKS.md, AGENT_STATE.md, CHANGELOG.md, functions/src/index.ts, FirebaseService.kt, SkillsExchangeRepository.kt, SkillsExchangeViewModel.kt
+Next action:              Implement TRAIN-001 (Define Worker Training Progress & Content Data Schema)
 Handoff status:           Ready for immediate continuation
 ```
 

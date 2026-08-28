@@ -659,4 +659,28 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             onResult(path)
         }
     }
+
+    val adminVerificationQueue = MutableStateFlow<List<Map<String, Any>>>(emptyList())
+
+    fun loadAdminVerificationQueue() {
+        viewModelScope.launch {
+            val queue = repository.getAdminVerificationQueue()
+            adminVerificationQueue.value = queue
+        }
+    }
+
+    fun submitAdminDecision(userId: String, decision: String, feedback: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val success = repository.submitAdminVerificationDecision(userId, decision, feedback)
+            if (success) loadAdminVerificationQueue()
+            onResult(success)
+        }
+    }
+
+    fun setWorkerActivation(userId: String, activate: Boolean, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val success = repository.setWorkerActivation(userId, activate)
+            onResult(success)
+        }
+    }
 }

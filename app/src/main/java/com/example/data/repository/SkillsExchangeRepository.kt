@@ -460,6 +460,18 @@ class SkillsExchangeRepository(
         db.serviceProviderDao().incrementEndorsements(providerId)
     }
 
+    suspend fun getAdminVerificationQueue(): List<Map<String, Any>> {
+        return firebaseService.getPendingVerificationQueue()
+    }
+
+    suspend fun submitAdminVerificationDecision(userId: String, decision: String, feedback: String): Boolean {
+        return firebaseService.reviewWorkerApplication(userId, decision, feedback)
+    }
+
+    suspend fun setWorkerActivation(userId: String, activate: Boolean): Boolean {
+        return firebaseService.setWorkerActivationStatus(userId, activate)
+    }
+
     companion object {
         val initialProviders = listOf(
             ServiceProviderEntity(

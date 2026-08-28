@@ -1,7 +1,7 @@
 # TASKS.md — Skills Exchange Human-Readable Task Status
 
 Synchronized with `prd.json`. This is the human-readable view of the development backlog.
-Last synchronized: 2026-08-28T17:32:00+03:00
+Last synchronized: 2026-08-28T18:05:00+03:00
 
 Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Failed
 
@@ -84,7 +84,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | ID | Priority | Title | Status | Notes |
 |---|---|---|---|---|
-| TRAIN-001 | P2 | Define Worker Training Progress & Content Data Schema | 🔄 In Progress | Depends on KYC-006 |
+| TRAIN-001 | P2 | Define Worker Training Progress & Content Data Schema | ⏳ Pending | Depends on KYC-006 |
 | TRAIN-002 | P2 | Implement Worker Rule Training UI & Completion Tracking | ⏳ Pending | Depends on TRAIN-001 |
 | TRAIN-003 | P1 | Implement Admin Activation Gate requiring Verification + Training | ⏳ Pending | Depends on TRAIN-002 |
 
@@ -94,10 +94,10 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | ID | Priority | Title | Status | Notes |
 |---|---|---|---|---|
-| ADMIN-001 | P1 | Architecture & Spec for Separate Administrative Web Dashboard | ⏳ Pending | Depends on SEC-003 |
-| ADMIN-002 | P1 | Admin Verification Review Queue & Document Viewer Cloud Function | ⏳ Pending | Depends on ADMIN-001 |
-| ADMIN-003 | P1 | Admin Verification Action API (Approve, Reject, Request Changes) | ⏳ Pending | Depends on ADMIN-002 |
-| ADMIN-004 | P1 | Admin Worker Activation & Suspension Controls | ⏳ Pending | Depends on ADMIN-003 |
+| ADMIN-001 | P1 | Architecture & Spec for Separate Administrative Web Dashboard | ✅ Completed | Cloud Functions: getPendingVerificationQueue, reviewWorkerApplication, setWorkerActivationStatus |
+| ADMIN-002 | P1 | Admin Verification Review Queue & Document Viewer Cloud Function | ✅ Completed | Implemented in functions/src/index.ts |
+| ADMIN-003 | P1 | Admin Verification Action API (Approve, Reject, Request Changes) | ✅ Completed | Implemented in functions/src/index.ts |
+| ADMIN-004 | P1 | Admin Worker Activation & Suspension Controls | ✅ Completed | Implemented in functions/src/index.ts |
 
 ---
 
@@ -165,12 +165,12 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | Status | Count |
 |---|---|
-| ✅ Completed | 33 (STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, COMM-001, AI-001, AI-002, SAFE-001, SAFE-002) |
-| 🔄 In Progress | 1 (TRAIN-001) |
-| ⏳ Pending | 0 |
+| ✅ Completed | 37 (STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, COMM-001, AI-001, AI-002, SAFE-001, SAFE-002, ADMIN-001, ADMIN-002, ADMIN-003, ADMIN-004) |
+| 🔄 In Progress | 0 |
+| ⏳ Pending | 9 (TRAIN-001, TRAIN-002, TRAIN-003, JOB-002, JOB-003, MARKET-002, MARKET-003, OFF-001, REL-001) |
 | 🚫 Blocked | 1 (STAB-003) |
 | ❌ Failed | 0 |
-| **Total** | **34** |
+| **Total** | **48** |
 
 ---
 

@@ -284,4 +284,47 @@ class FirebaseService(private val context: Context? = null) {
         val phoneRegex = Regex("(\\+?\\d{3}[-.\\s]?\\d{3}[-.\\s]?\\d{4,6})")
         return phoneRegex.replace(text) { "[Phone Masked]" }
     }
+
+    suspend fun getPendingVerificationQueue(): List<Map<String, Any>> {
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val result = functions
+                .getHttpsCallable("getPendingVerificationQueue")
+                .call(mapOf<String, Any>())
+            @Suppress("UNCHECKED_CAST")
+            val data = result.data as? Map<String, Any> ?: emptyMap()
+            @Suppress("UNCHECKED_CAST")
+            data["applications"] as? List<Map<String, Any>> ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun reviewWorkerApplication(userId: String, decision: String, feedback: String): Boolean {
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val result = functions
+                .getHttpsCallable("reviewWorkerApplication")
+                .call(mapOf("userId" to userId, "decision" to decision, "feedback" to feedback))
+            @Suppress("UNCHECKED_CAST")
+            val data = result.data as? Map<String, Any> ?: emptyMap()
+            data["success"] as? Boolean ?: false
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun setWorkerActivationStatus(userId: String, activate: Boolean): Boolean {
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val result = functions
+                .getHttpsCallable("setWorkerActivationStatus")
+                .call(mapOf("userId" to userId, "activate" to activate))
+            @Suppress("UNCHECKED_CAST")
+            val data = result.data as? Map<String, Any> ?: emptyMap()
+            data["success"] as? Boolean ?: false
+        } catch (e: Exception) {
+            false
+        }
+    }
 }

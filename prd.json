@@ -1036,7 +1036,9 @@
       "phase": 9,
       "title": "Architecture & Spec for Separate Administrative Web Dashboard",
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-08-28T18:05:00+03:00",
+      "verified_by": "code_inspection",
       "depends_on": [
         "SEC-003"
       ],
@@ -1069,7 +1071,9 @@
       "phase": 9,
       "title": "Admin Verification Review Queue & Document Viewer Cloud Function",
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-08-28T18:05:00+03:00",
+      "verified_by": "code_inspection",
       "depends_on": [
         "ADMIN-001"
       ],
@@ -1102,7 +1106,9 @@
       "phase": 9,
       "title": "Admin Verification Action API (Approve, Reject, Request Changes)",
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-08-28T18:05:00+03:00",
+      "verified_by": "code_inspection",
       "depends_on": [
         "ADMIN-002"
       ],
@@ -1135,7 +1141,9 @@
       "phase": 9,
       "title": "Admin Worker Activation & Suspension Controls",
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-08-28T18:05:00+03:00",
+      "verified_by": "code_inspection",
       "depends_on": [
         "ADMIN-003"
       ],
@@ -1797,8 +1805,8 @@
       "notes": "Production release sign-off."
     }
   ],
-  "current_story": "ADMIN-001",
-  "completed_stories": [
+    "current_story": "TRAIN-001",
+    "completed_stories": [
     "STAB-001",
     "STAB-002",
     "SEC-001",
@@ -1831,12 +1839,16 @@
     "COMM-001",
     "AI-001",
     "AI-002",
-    "SAFE-001",
-    "SAFE-002"
-  ],
+      "SAFE-001",
+      "SAFE-002",
+      "ADMIN-001",
+      "ADMIN-002",
+      "ADMIN-003",
+      "ADMIN-004"
+    ],
   "blocked_stories": [
     "STAB-003"
   ],
-  "last_updated": "2026-08-28T17:32:00+03:00"
+    "last_updated": "2026-08-28T18:05:00+03:00"
 }
 

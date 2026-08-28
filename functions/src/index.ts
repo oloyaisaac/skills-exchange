@@ -279,3 +279,144 @@ async function sendSmsAlert(phoneNumber: string, message: string): Promise<boole
   // POST https://api.africastalking.com/version1/messaging
   return true;
 }
+
+/**
+ * ADMIN-001: Helper to verify caller has admin custom claim.
+ */
+function isAdmin(context: functions.https.CallableContext): boolean {
+  return context.auth?.token?.admin === true;
+}
+
+/**
+ * ADMIN-002: Get Pending Verification Queue
+ * Returns worker applications with status SUBMITTED or UNDER_REVIEW, sorted by submittedAt (48h SLA).
+ */
+export const getPendingVerificationQueue = functions.https.onCall(async (data, context) => {
+  if (!isAdmin(context)) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "Admin access required."
+    );
+  }
+
+  const snapshot = await db
+    .collection("worker_kyc")
+    .where("status", "in", ["SUBMITTED", "UNDER_REVIEW"])
+    .orderBy("submittedAt", "asc")
+    .limit(50)
+    .get();
+
+  const queue = snapshot.docs.map((doc) => {
+    const d = doc.data();
+    const slaDeadline = (d.submittedAt || 0) + (48 * 60 * 60 * 1000);
+    return {
+      userId: doc.id,
+      fullLegalName: d.fullLegalName || "",
+      nationalIdNumber: d.nationalIdNumber || "",
+      status: d.status || "NOT_STARTED",
+      submittedAt: d.submittedAt || 0,
+      slaDeadline,
+      idFrontStoragePath: d.idFrontStoragePath || "",
+      idBackStoragePath: d.idBackStoragePath || "",
+      reviewFeedback: d.reviewFeedback || ""
+    };
+  });
+
+  return { count: queue.length, applications: queue };
+});
+
+/**
+ * ADMIN-003: Review Worker Application
+ * Accepts decision ('APPROVE' | 'REJECT' | 'CHANGES_REQUIRED') and feedback reason.
+ */
+export const reviewWorkerApplication = functions.https.onCall(async (data, context) => {
+  if (!isAdmin(context)) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "Admin access required."
+    );
+  }
+
+  const { userId, decision, feedback } = data;
+  if (!userId || !decision) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Missing required parameters: userId, decision."
+    );
+  }
+
+  const validDecisions = ["APPROVE", "REJECT", "CHANGES_REQUIRED"];
+  if (!validDecisions.includes(decision)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      `Invalid decision. Must be one of: ${validDecisions.join(", ")}`
+    );
+  }
+
+  const statusMap: Record<string, string> = {
+    APPROVE: "APPROVED",
+    REJECT: "REJECTED",
+    CHANGES_REQUIRED: "CHANGES_REQUIRED"
+  };
+
+  const newStatus = statusMap[decision];
+  const now = admin.firestore.FieldValue.serverTimestamp();
+
+  await db.collection("worker_kyc").doc(userId).update({
+    status: newStatus,
+    reviewFeedback: feedback || "",
+    reviewedAt: now
+  });
+
+  await db.collection("notifications").add({
+    userId,
+    type: "VERIFICATION_DECISION",
+    message: decision === "APPROVE"
+      ? "Your worker application has been approved. Please complete training to activate your account."
+      : decision === "REJECT"
+      ? `Your worker application was not approved. Reason: ${feedback || "No reason provided."}`
+      : `Changes required for your application. Reason: ${feedback || "Please review feedback."}`,
+    createdAt: now,
+    read: false
+  });
+
+  return { success: true, userId, newStatus };
+});
+
+/**
+ * ADMIN-004: Set Worker Activation Status
+ * Activate or suspend worker bidding privileges.
+ */
+export const setWorkerActivationStatus = functions.https.onCall(async (data, context) => {
+  if (!isAdmin(context)) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "Admin access required."
+    );
+  }
+
+  const { userId, activate } = data;
+  if (!userId || typeof activate !== "boolean") {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Missing required parameters: userId, activate (boolean)."
+    );
+  }
+
+  await db.collection("providers").doc(userId).update({
+    isActivated: activate,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  await db.collection("notifications").add({
+    userId,
+    type: activate ? "ACTIVATED" : "SUSPENDED",
+    message: activate
+      ? "Your worker account has been activated. You can now receive job bids and appear in nearby searches."
+      : "Your worker account has been suspended. Bidding access has been revoked.",
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    read: false
+  });
+
+  return { success: true, userId, isActivated: activate };
+});
