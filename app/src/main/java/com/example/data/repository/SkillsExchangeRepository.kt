@@ -2,12 +2,14 @@ package com.example.data.repository
 
 import com.example.data.db.*
 import com.example.data.remote.FirebaseService
+import com.example.data.remote.SmsNotificationService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 
 class SkillsExchangeRepository(
     private val db: AppDatabase,
-    private val firebaseService: FirebaseService = FirebaseService()
+    private val firebaseService: FirebaseService = FirebaseService(),
+    private val smsNotificationService: SmsNotificationService = SmsNotificationService()
 ) {
     val providers: Flow<List<ServiceProviderEntity>> = db.serviceProviderDao().getAllProviders()
     val jobs: Flow<List<JobPostEntity>> = db.jobPostDao().getAllJobs()

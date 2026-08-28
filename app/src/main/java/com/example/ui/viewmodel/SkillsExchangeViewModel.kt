@@ -389,7 +389,12 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     fun triggerSosAlert(jobId: String) {
         viewModelScope.launch {
-            repository.triggerSosAlert(jobId)
+            val job = repository.jobs.first().find { it.id == jobId } ?: return@launch
+            val user = repository.currentUser.first()
+            val gps = gpsLocationState.value
+            val latitude = gps.latitude ?: user?.latitude ?: 0.3476
+            val longitude = gps.longitude ?: user?.longitude ?: 32.5825
+            repository.triggerEmergencySos(jobId, latitude, longitude, job.district)
             val updatedJob = repository.jobs.first().find { it.id == jobId }
             selectedJob.value = updatedJob
         }

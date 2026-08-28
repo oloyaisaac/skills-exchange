@@ -8,6 +8,13 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ---
 
+## 2026-08-28
+
+### [2026-08-28] [SAFE-002] [IMPL] Live Emergency SOS Alert Dispatch
+- Updated `SkillsExchangeViewModel.triggerSosAlert()` to wire SOS panic button to `repository.triggerEmergencySos()` with live GPS telemetry.
+- Added `SmsNotificationService` constructor parameter to `SkillsExchangeRepository` for SOS dispatch dependency injection.
+- SOS button now dispatches high-priority SMS with worker GPS coordinates to emergency contacts via `SmsNotificationService.dispatchEmergencySosAlert()`.
+
 ## 2026-08-27
 
 ### [2026-08-27] [COMM-001] [IMPL] Real-Time Firestore Chat & Phone Masking
