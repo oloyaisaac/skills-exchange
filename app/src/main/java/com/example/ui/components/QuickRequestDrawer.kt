@@ -24,6 +24,116 @@ import com.example.util.CurrencyRegion
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+fun JobTypeSelector(
+    jobType: String,
+    recurringSchedule: String,
+    onJobTypeChange: (String) -> Unit,
+    onScheduleChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val jobTypes = listOf(
+        Triple("ONE_TIME", "One-Time Job", "Single execution task"),
+        Triple("RECURRING", "Recurring Contract", "Ongoing service schedule")
+    )
+
+    val schedules = listOf(
+        Triple("DAILY", "Daily", "Every day"),
+        Triple("WEEKLY", "Weekly", "Once a week"),
+        Triple("BI_WEEKLY", "Bi-Weekly", "Every 2 weeks"),
+        Triple("MONTHLY", "Monthly", "Once a month"),
+        Triple("CUSTOM", "Custom Days", "Pick specific days")
+    )
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = "JOB TYPE",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = Slate500
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            jobTypes.forEach { (code, label, desc) ->
+                val isSelected = jobType == code
+                Surface(
+                    onClick = { onJobTypeChange(code) },
+                    shape = RoundedCornerShape(6.dp),
+                    color = if (isSelected) SignalBlueLight else Slate50,
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        if (isSelected) SignalBlue else Slate300
+                    ),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = label,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isSelected) SignalBlueDark else Slate700
+                        )
+                        Text(
+                            text = desc,
+                            fontSize = 9.sp,
+                            color = Slate500,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+
+        if (jobType == "RECURRING") {
+            Text(
+                text = "REPEAT SCHEDULE",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = Slate500,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                schedules.forEach { (code, label, _) ->
+                    val isSelected = recurringSchedule == code
+                    Surface(
+                        onClick = { onScheduleChange(code) },
+                        shape = RoundedCornerShape(6.dp),
+                        color = if (isSelected) Emerald100 else Slate100,
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (isSelected) Emerald500 else Slate300
+                        ),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = label,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isSelected) Emerald700 else Slate600,
+                            modifier = Modifier.padding(vertical = 6.dp),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun QuickRequestDrawer(
     onPostJob: (
         title: String,
@@ -33,7 +143,9 @@ fun QuickRequestDrawer(
         urgency: String,
         materialsProvidedBy: String,
         laborHours: Double,
-        laborRate: Double
+        laborRate: Double,
+        jobType: String,
+        recurringSchedule: String
     ) -> Unit,
     onStartVoiceRecord: () -> Unit = {},
     onStopVoiceRecordAndTranscribe: () -> Unit = {},
@@ -52,6 +164,8 @@ fun QuickRequestDrawer(
     var materialsProvidedBy by remember { mutableStateOf("RESIDENT") } // "RESIDENT" vs "PROVIDER" vs "NONE_NEEDED"
     var laborHoursText by remember { mutableStateOf("2.0") }
     var laborRateText by remember { mutableStateOf("60.0") }
+    var jobType by remember { mutableStateOf("ONE_TIME") }
+    var recurringSchedule by remember { mutableStateOf("WEEKLY") }
 
     // Auto-populate when AI Voice Transcription completes
     LaunchedEffect(transcribedVoiceJob) {
@@ -296,6 +410,14 @@ fun QuickRequestDrawer(
                     }
                 }
 
+                JobTypeSelector(
+                    jobType = jobType,
+                    recurringSchedule = recurringSchedule,
+                    onJobTypeChange = { jobType = it },
+                    onScheduleChange = { recurringSchedule = it },
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+
                 3 -> {
                     // Step 3: Material Ownership & Labor Budget
                     Text(
@@ -466,7 +588,9 @@ fun QuickRequestDrawer(
                                 urgency,
                                 materialsProvidedBy,
                                 hrs,
-                                rate
+                                rate,
+                                jobType,
+                                if (jobType == "RECURRING") recurringSchedule else "WEEKLY"
                             )
                         }
                     },

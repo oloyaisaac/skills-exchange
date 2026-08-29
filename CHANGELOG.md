@@ -10,6 +10,13 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ## 2026-08-29
 
+### [2026-08-29] [JOB-002] [IMPL] Recurring Schedule Configuration UI
+- Created `JobTypeSelector` composable with One-Time/Recurring toggle and schedule frequency picker (Daily, Weekly, Bi-Weekly, Monthly, Custom).
+- Integrated `JobTypeSelector` into `QuickRequestDrawer` between Step 2 and Step 3.
+- Updated `QuickRequestDrawer` onPostJob callback to include `jobType` and `recurringSchedule` parameters.
+- Updated `SkillsExchangeViewModel.postQuickJob` and `SkillsExchangeRepository.addJobPost` to persist new fields.
+- Recurring schedule stored in `JobPostEntity.recurringSchedule` (empty for one-time jobs).
+
 ### [2026-08-29] [TRAIN-003] [IMPL] Admin Activation Gate requiring Verification + Training
 - Added `activateWorker(userId)` repository method enforcing both KYC approval and training completion.
 - Added `ActivationResult` sealed class with Success/Failure outcomes.

@@ -279,7 +279,9 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         urgency: String,
         materialsProvidedBy: String = "RESIDENT",
         laborHours: Double = 2.0,
-        laborRate: Double = 60.0
+        laborRate: Double = 60.0,
+        jobType: String = "ONE_TIME",
+        recurringSchedule: String = "WEEKLY"
     ) {
         viewModelScope.launch {
             val district = filterState.value.district
@@ -292,14 +294,14 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 district = district,
                 materialsProvidedBy = materialsProvidedBy,
                 laborHours = laborHours,
-                laborRate = laborRate
+                laborRate = laborRate,
+                jobType = jobType,
+                recurringSchedule = recurringSchedule
             )
             setQuickRequestOpen(false)
-            // Auto select created job
             val createdJob = repository.jobs.first().find { it.id == jobId }
             if (createdJob != null) {
                 selectedJob.value = createdJob
-                // Sync to Firestore
                 firebaseService.syncJobToFirestore(createdJob)
             }
         }

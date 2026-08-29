@@ -516,7 +516,7 @@ fun MainScreen(
 
     if (isQuickRequestOpen) {
         QuickRequestDrawer(
-            onPostJob = { title, category, description, budget, urgency, materialsProvidedBy, laborHours, laborRate ->
+            onPostJob = { title, category, description, budget, urgency, materialsProvidedBy, laborHours, laborRate, jobType, recurringSchedule ->
                 viewModel.postQuickJob(
                     title = title,
                     category = category,
@@ -525,7 +525,9 @@ fun MainScreen(
                     urgency = urgency,
                     materialsProvidedBy = materialsProvidedBy,
                     laborHours = laborHours,
-                    laborRate = laborRate
+                    laborRate = laborRate,
+                    jobType = jobType,
+                    recurringSchedule = recurringSchedule
                 )
             },
             onStartVoiceRecord = { viewModel.startVoiceRecording() },

@@ -1,7 +1,7 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-08-29T18:02:00+03:00
+2026-08-29T18:12:00+03:00
 
 ---
 
@@ -12,14 +12,14 @@
 ---
 
 ## Current PRD Story
-**Story ID**: JOB-002  
-**Title**: Implement Recurring Schedule Configuration UI  
+**Story ID**: JOB-003  
+**Title**: Implement Recurring Contract Pricing Negotiation Workflow  
 **Status**: Next eligible task
 
 ---
 
 ## Current Objective
-Progress through Phase 10 (JOB-002, JOB-003, MARKET-002, MARKET-003), remaining eligible stories in Phases 14, 15.
+Progress through Phase 10 (JOB-003, MARKET-002, MARKET-003), remaining eligible stories in Phases 14, 15.
 
 ---
 
@@ -96,7 +96,7 @@ Progress through Phase 10 (JOB-002, JOB-003, MARKET-002, MARKET-003), remaining 
 ---
 
 ## Work In Progress / Next Task
-1. **JOB-002** (P2): Implement Recurring Schedule Configuration UI.
+1. **JOB-003** (P2): Implement Recurring Contract Pricing Negotiation Workflow.
 
 ---
 
@@ -185,7 +185,7 @@ Progress through Phase 10 (JOB-002, JOB-003, MARKET-002, MARKET-003), remaining 
 | PAY-003 Escrow Release & Payout | Code inspection functions/src/index.ts | PASS — releaseEscrowToWorker Cloud Function, worker payout |
 | PAY-004 Material Advance Disbursement | Code inspection Repository | PASS — approveMaterialAdvance method, 50% disbursement logic |
 | MAP-001 Google Maps SDK | Code inspection InteractiveMapView/build.gradle | PASS — Google Maps MapView composable, play-services-maps dep |
-| TRAIN-003 Activation Gate | Code inspection repository/functions | PASS — activateWorker enforces KYC APPROVED + Training COMPLETED |
+| JOB-002 Recurring UI | Code inspection QuickRequestDrawer/ViewModel | PASS — JobTypeSelector with schedule picker, wired to postQuickJob |
 | TRAIN-002 Training UI | Code inspection AccountComplianceDialog/MainScreen | PASS — WorkerTrainingScreen with module completion, wired to MainScreen |
 | TRAIN-001 Training Schema | Code inspection Entities/Daos/AppDatabase | PASS — WorkerTrainingEntity, WorkerTrainingDao, DB v9 |
 | ADMIN-001..004 Admin Cloud Functions | Code inspection functions/src/index.ts | PASS — getPendingVerificationQueue, reviewWorkerApplication, setWorkerActivationStatus with admin auth |
@@ -205,13 +205,13 @@ Progress through Phase 10 (JOB-002, JOB-003, MARKET-002, MARKET-003), remaining 
 
 ```
 Current session:          Continuation session
-Current PRD story:        JOB-002 (Implement Recurring Schedule Configuration UI)
+Current PRD story:        JOB-003 (Implement Recurring Contract Pricing Negotiation Workflow)
 Current task:             Phase 10 Core Marketplace, Quotes & Job Types
-Completed stories (41):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, COMM-001, AI-001, AI-002, SAFE-001, SAFE-002, ADMIN-001, ADMIN-002, ADMIN-003, ADMIN-004, TRAIN-001, TRAIN-002, TRAIN-003
-Last completed action:    Implemented TRAIN-003
-Last verified action:     Code inspection of activation gate
-Files modified:           prd.json, TASKS.md, AGENT_STATE.md, CHANGELOG.md, SkillsExchangeRepository.kt, functions/src/index.ts, SkillsExchangeViewModel.kt
-Next action:              Implement JOB-002 (Implement Recurring Schedule Configuration UI)
+Completed stories (42):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, COMM-001, AI-001, AI-002, SAFE-001, SAFE-002, ADMIN-001, ADMIN-002, ADMIN-003, ADMIN-004, TRAIN-001, TRAIN-002, TRAIN-003, JOB-002
+Last completed action:    Implemented JOB-002
+Last verified action:     Code inspection of recurring schedule UI
+Files modified:           prd.json, TASKS.md, AGENT_STATE.md, CHANGELOG.md, QuickRequestDrawer.kt, SkillsExchangeViewModel.kt, SkillsExchangeRepository.kt, MainScreen.kt
+Next action:              Implement JOB-003 (Implement Recurring Contract Pricing Negotiation Workflow)
 Handoff status:           Ready for immediate continuation
 ```
 

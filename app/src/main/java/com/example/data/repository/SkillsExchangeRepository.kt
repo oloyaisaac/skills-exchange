@@ -133,13 +133,15 @@ class SkillsExchangeRepository(
         district: String,
         materialsProvidedBy: String = "RESIDENT",
         laborHours: Double = 2.0,
-        laborRate: Double = 60.0
+        laborRate: Double = 60.0,
+        jobType: String = "ONE_TIME",
+        recurringSchedule: String = "WEEKLY"
     ): String {
         val newJobId = "job_${System.currentTimeMillis()}"
         val laborTotal = laborHours * laborRate
         val isLaborOnly = materialsProvidedBy == "RESIDENT" || materialsProvidedBy == "NONE_NEEDED"
         val materialsSubtotal = if (isLaborOnly) 0.0 else (budget - laborTotal).coerceAtLeast(0.0)
-        val platformFee = laborTotal * 0.10 // 10% platform fee on labor only
+        val platformFee = laborTotal * 0.10
         val grandTotal = laborTotal + materialsSubtotal + platformFee
 
         val randomDoorstepPin = (1000..9999).random().toString()
@@ -170,7 +172,9 @@ class SkillsExchangeRepository(
             paymentChannel = "MTN_MOMO",
             momoPhoneNumber = "+256 772 198 420",
             escrowStatus = "QUOTE_PENDING",
-            doorstepPin = randomDoorstepPin
+            doorstepPin = randomDoorstepPin,
+            jobType = jobType,
+            recurringSchedule = if (jobType == "RECURRING") recurringSchedule else ""
         )
         db.jobPostDao().insertJob(job)
         
