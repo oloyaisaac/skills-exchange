@@ -14,9 +14,10 @@ import androidx.room.RoomDatabase
         NeighborhoodPostEntity::class,
         UserProfileEntity::class,
         WorkerKycEntity::class,
-        GuarantorEntity::class
+        GuarantorEntity::class,
+        WorkerTrainingEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -28,6 +29,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun userProfileDao(): UserProfileDao
     abstract fun workerKycDao(): WorkerKycDao
     abstract fun guarantorDao(): GuarantorDao
+    abstract fun workerTrainingDao(): WorkerTrainingDao
 
     companion object {
         @Volatile

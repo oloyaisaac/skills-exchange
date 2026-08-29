@@ -162,3 +162,27 @@ interface UserProfileDao {
     suspend fun updateWalletBalance(userId: String, newBalance: Double, timestamp: Long = System.currentTimeMillis())
 }
 
+/**
+ * TRAIN-001: Worker Training Progress Data Access Object
+ */
+@Dao
+interface WorkerTrainingDao {
+    @Query("SELECT * FROM worker_training WHERE userId = :userId")
+    fun getTrainingForUser(userId: String): Flow<WorkerTrainingEntity?>
+
+    @Query("SELECT * FROM worker_training LIMIT 1")
+    fun getCurrentUserTraining(): Flow<WorkerTrainingEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTraining(training: WorkerTrainingEntity)
+
+    @Query("UPDATE worker_training SET status = :status, updatedAt = :timestamp WHERE userId = :userId")
+    suspend fun updateTrainingStatus(userId: String, status: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE worker_training SET completedModulesCsv = :modules, currentModuleIndex = :index, updatedAt = :timestamp WHERE userId = :userId")
+    suspend fun updateCompletedModules(userId: String, modules: String, index: Int, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE worker_training SET status = 'COMPLETED', completionTimestamp = :timestamp, updatedAt = :timestamp WHERE userId = :userId")
+    suspend fun completeTraining(userId: String, timestamp: Long = System.currentTimeMillis())
+}
+

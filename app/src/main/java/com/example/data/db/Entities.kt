@@ -184,3 +184,24 @@ data class UserProfileEntity(
     val updatedAtTimestamp: Long = System.currentTimeMillis()
 )
 
+/**
+ * TRAIN-001: Worker Training Progress & Content Data Schema
+ * Tracks 2-3 day training module completion separately from identity verification status.
+ */
+@Entity(tableName = "worker_training")
+data class WorkerTrainingEntity(
+    @PrimaryKey val userId: String,
+    val status: String = "NOT_STARTED", // "NOT_STARTED", "IN_PROGRESS", "COMPLETED"
+    val completedModulesCsv: String = "",
+    val startedAt: Long = 0,
+    val completionTimestamp: Long = 0,
+    val currentModuleIndex: Int = 0,
+    val totalModules: Int = 3,
+    val platformRulesCompleted: Boolean = false,
+    val escrowGuidelinesCompleted: Boolean = false,
+    val customerEtiquetteCompleted: Boolean = false,
+    val safetyProtocolsCompleted: Boolean = false,
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis()
+)
+

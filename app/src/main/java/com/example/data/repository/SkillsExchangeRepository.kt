@@ -472,6 +472,38 @@ class SkillsExchangeRepository(
         return firebaseService.setWorkerActivationStatus(userId, activate)
     }
 
+    fun getTrainingForUser(userId: String): Flow<WorkerTrainingEntity?> {
+        return db.workerTrainingDao().getTrainingForUser(userId)
+    }
+
+    fun getCurrentUserTraining(): Flow<WorkerTrainingEntity?> {
+        return db.workerTrainingDao().getCurrentUserTraining()
+    }
+
+    suspend fun startTraining(userId: String) {
+        val training = WorkerTrainingEntity(
+            userId = userId,
+            status = "IN_PROGRESS",
+            startedAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+        db.workerTrainingDao().insertTraining(training)
+    }
+
+    suspend fun updateTrainingModule(userId: String, modulesCsv: String, moduleIndex: Int) {
+        db.workerTrainingDao().updateCompletedModules(
+            userId = userId,
+            modules = modulesCsv,
+            index = moduleIndex,
+            timestamp = System.currentTimeMillis()
+        )
+    }
+
+    suspend fun completeTraining(userId: String) {
+        db.workerTrainingDao().completeTraining(userId)
+        db.userProfileDao().updateTrainingStatus(userId, true)
+    }
+
     companion object {
         val initialProviders = listOf(
             ServiceProviderEntity(
