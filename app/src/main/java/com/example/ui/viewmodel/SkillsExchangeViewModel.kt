@@ -729,4 +729,21 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             }
         }
     }
+
+    fun submitRecurringProposal(jobId: String, proposedRate: Double, terms: String) {
+        viewModelScope.launch {
+            val userId = currentUser.value?.id ?: "worker_default"
+            repository.submitRecurringProposal(jobId, userId, proposedRate, terms)
+            val updatedJob = repository.jobs.first().find { it.id == jobId }
+            selectedJob.value = updatedJob
+        }
+    }
+
+    fun respondToRecurringProposal(jobId: String, accept: Boolean) {
+        viewModelScope.launch {
+            repository.respondToRecurringProposal(jobId, accept)
+            val updatedJob = repository.jobs.first().find { it.id == jobId }
+            selectedJob.value = updatedJob
+        }
+    }
 }

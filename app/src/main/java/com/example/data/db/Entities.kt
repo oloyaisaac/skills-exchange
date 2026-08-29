@@ -91,7 +91,10 @@ data class JobPostEntity(
     val calloutFee: Double = 5.0,
     val jobType: String = "ONE_TIME", // "ONE_TIME", "RECURRING"
     val recurringSchedule: String = "", // "DAILY", "WEEKLY", "BI_WEEKLY", "MONTHLY", "CUSTOM"
-    val recurringStartDate: String = ""
+    val recurringStartDate: String = "",
+    val recurringContractProposal: String = "", // JSON or description of negotiated terms
+    val recurringNegotiatedRate: Double = 0.0, // Worker's proposed rate for recurring contract
+    val recurringProposalStatus: String = "NONE" // "NONE", "PENDING", "ACCEPTED", "REJECTED"
 )
 
 @Entity(tableName = "chat_messages")

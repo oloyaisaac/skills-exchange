@@ -477,6 +477,50 @@ class SkillsExchangeRepository(
         return firebaseService.setWorkerActivationStatus(userId, activate)
     }
 
+    suspend fun submitRecurringProposal(jobId: String, workerId: String, proposedRate: Double, proposalTerms: String) {
+        val proposal = mapOf(
+            "workerId" to workerId,
+            "proposedRate" to proposedRate,
+            "terms" to proposalTerms,
+            "submittedAt" to System.currentTimeMillis(),
+            "status" to "PENDING"
+        )
+        db.jobPostDao().updateRecurringProposal(
+            jobId = jobId,
+            proposalJson = "Worker $workerId proposes UGX $proposedRate/${proposalTerms.ifBlank { "recurring schedule" }}",
+            negotiatedRate = proposedRate,
+            status = "PENDING"
+        )
+        db.chatMessageDao().insertMessage(
+            ChatMessageEntity(
+                id = "msg_${System.currentTimeMillis()}",
+                jobId = jobId,
+                senderName = "Worker",
+                isFromUser = false,
+                message = "📋 Recurring contract proposal submitted: UGX $proposedRate/${proposalTerms.ifBlank { "recurring schedule" }}. Awaiting client acceptance.",
+                timestampText = "Just now",
+                isSystemNotification = false
+            )
+        )
+    }
+
+    suspend fun respondToRecurringProposal(jobId: String, accept: Boolean) {
+        val newStatus = if (accept) "ACCEPTED" else "REJECTED"
+        db.jobPostDao().updateRecurringProposalStatus(jobId, newStatus)
+
+        db.chatMessageDao().insertMessage(
+            ChatMessageEntity(
+                id = "msg_${System.currentTimeMillis()}",
+                jobId = jobId,
+                senderName = "System",
+                isFromUser = false,
+                message = if (accept) "✅ Recurring contract proposal accepted! Negotiated rate is now locked." else "❌ Recurring contract proposal declined by client.",
+                timestampText = "Just now",
+                isSystemNotification = true
+            )
+        )
+    }
+
     fun getTrainingForUser(userId: String): Flow<WorkerTrainingEntity?> {
         return db.workerTrainingDao().getTrainingForUser(userId)
     }

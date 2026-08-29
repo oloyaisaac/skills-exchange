@@ -1254,7 +1254,9 @@
       "phase": 10,
       "title": "Implement Recurring Contract Pricing Negotiation Workflow",
       "priority": "P2",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-08-29T18:23:00+03:00",
+      "verified_by": "code_inspection",
       "depends_on": [
         "JOB-001"
       ],
@@ -1813,7 +1815,7 @@
       "notes": "Production release sign-off."
     }
   ],
-    "current_story": "JOB-003",
+    "current_story": "MARKET-002",
     "completed_stories": [
     "STAB-001",
     "STAB-002",
@@ -1856,11 +1858,12 @@
       "TRAIN-001",
       "TRAIN-002",
       "TRAIN-003",
-      "JOB-002"
+      "JOB-002",
+      "JOB-003"
     ],
   "blocked_stories": [
     "STAB-003"
   ],
-    "last_updated": "2026-08-29T18:12:00+03:00"
+    "last_updated": "2026-08-29T18:23:00+03:00"
 }
 

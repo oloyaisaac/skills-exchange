@@ -10,6 +10,13 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ## 2026-08-29
 
+### [2026-08-29] [JOB-003] [IMPL] Recurring Contract Pricing Negotiation Workflow
+- Added `recurringContractProposal`, `recurringNegotiatedRate`, `recurringProposalStatus` fields to `JobPostEntity`.
+- Added DAO methods: `updateRecurringProposal`, `updateRecurringProposalStatus`.
+- Added repository methods: `submitRecurringProposal`, `respondToRecurringProposal`.
+- Added ViewModel methods: `submitRecurringProposal`, `respondToRecurringProposal`.
+- Workers can propose custom recurring rates; clients can accept/decline with chat notifications.
+
 ### [2026-08-29] [JOB-002] [IMPL] Recurring Schedule Configuration UI
 - Created `JobTypeSelector` composable with One-Time/Recurring toggle and schedule frequency picker (Daily, Weekly, Bi-Weekly, Monthly, Custom).
 - Integrated `JobTypeSelector` into `QuickRequestDrawer` between Step 2 and Step 3.

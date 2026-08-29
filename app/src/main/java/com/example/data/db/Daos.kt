@@ -67,6 +67,12 @@ interface JobPostDao {
 
     @Query("UPDATE job_posts SET isSosTriggered = :sosTriggered WHERE id = :jobId")
     suspend fun setSosAlert(jobId: String, sosTriggered: Boolean)
+
+    @Query("UPDATE job_posts SET recurringContractProposal = :proposalJson, recurringNegotiatedRate = :negotiatedRate, recurringProposalStatus = :status WHERE id = :jobId")
+    suspend fun updateRecurringProposal(jobId: String, proposalJson: String, negotiatedRate: Double, status: String)
+
+    @Query("UPDATE job_posts SET recurringProposalStatus = :status WHERE id = :jobId")
+    suspend fun updateRecurringProposalStatus(jobId: String, status: String)
 }
 
 @Dao
