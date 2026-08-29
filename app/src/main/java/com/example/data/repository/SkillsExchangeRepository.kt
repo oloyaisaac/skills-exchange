@@ -15,6 +15,7 @@ class SkillsExchangeRepository(
     val jobs: Flow<List<JobPostEntity>> = db.jobPostDao().getAllJobs()
     val neighborhoodPosts: Flow<List<NeighborhoodPostEntity>> = db.neighborhoodPostDao().getAllPosts()
     val currentUser: Flow<UserProfileEntity?> = db.userProfileDao().getCurrentUser()
+    val currentTraining: Flow<WorkerTrainingEntity?> = db.workerTrainingDao().getCurrentUserTraining()
     val serviceTaxonomyCatalog: List<ServiceTaxonomyItem> = ServiceTaxonomyCatalog.services
 
     fun getServicesByCategory(category: String): List<ServiceTaxonomyItem> {

@@ -8,6 +8,14 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ---
 
+## 2026-08-29
+
+### [2026-08-29] [TRAIN-001] [IMPL] Worker Training Progress & Content Data Schema
+- Created `WorkerTrainingEntity` Room table with status, completedModulesCsv, module completion booleans, and timestamps.
+- Created `WorkerTrainingDao` with insert, update, and complete operations.
+- Added `WorkerTrainingEntity` to `AppDatabase` (version 9) and exposed `workerTrainingDao()`.
+- Added repository flows and methods: `currentTraining`, `getTrainingForUser`, `startTraining`, `updateTrainingModule`, `completeTraining`.
+
 ## 2026-08-28
 
 ### [2026-08-28] [ADMIN-001..004] [IMPL] Admin Operations Dashboard Cloud Functions

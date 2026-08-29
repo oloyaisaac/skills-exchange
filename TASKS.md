@@ -1,7 +1,7 @@
 # TASKS.md — Skills Exchange Human-Readable Task Status
 
 Synchronized with `prd.json`. This is the human-readable view of the development backlog.
-Last synchronized: 2026-08-28T18:05:00+03:00
+Last synchronized: 2026-08-29T10:09:00+03:00
 
 Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Failed
 
@@ -84,8 +84,8 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | ID | Priority | Title | Status | Notes |
 |---|---|---|---|---|
-| TRAIN-001 | P2 | Define Worker Training Progress & Content Data Schema | ⏳ Pending | Depends on KYC-006 |
-| TRAIN-002 | P2 | Implement Worker Rule Training UI & Completion Tracking | ⏳ Pending | Depends on TRAIN-001 |
+| TRAIN-001 | P2 | Define Worker Training Progress & Content Data Schema | ✅ Completed | WorkerTrainingEntity, WorkerTrainingDao, AppDatabase v9 |
+| TRAIN-002 | P2 | Implement Worker Rule Training UI & Completion Tracking | 🔄 In Progress | Depends on TRAIN-001 |
 | TRAIN-003 | P1 | Implement Admin Activation Gate requiring Verification + Training | ⏳ Pending | Depends on TRAIN-002 |
 
 ---
@@ -165,9 +165,9 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | Status | Count |
 |---|---|
-| ✅ Completed | 37 (STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, COMM-001, AI-001, AI-002, SAFE-001, SAFE-002, ADMIN-001, ADMIN-002, ADMIN-003, ADMIN-004) |
-| 🔄 In Progress | 0 |
-| ⏳ Pending | 9 (TRAIN-001, TRAIN-002, TRAIN-003, JOB-002, JOB-003, MARKET-002, MARKET-003, OFF-001, REL-001) |
+| ✅ Completed | 39 (STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, COMM-001, AI-001, AI-002, SAFE-001, SAFE-002, ADMIN-001, ADMIN-002, ADMIN-003, ADMIN-004, TRAIN-001) |
+| 🔄 In Progress | 1 (TRAIN-002) |
+| ⏳ Pending | 7 (TRAIN-003, JOB-002, JOB-003, MARKET-002, MARKET-003, OFF-001, REL-001) |
 | 🚫 Blocked | 1 (STAB-003) |
 | ❌ Failed | 0 |
 | **Total** | **48** |

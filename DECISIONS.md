@@ -119,5 +119,17 @@ Context, options considered, decision, rationale, consequences
 
 ---
 
+### [2026-08-29] DEC-009 Training Progress Tracking in Separate Room Table
+
+**Context**: Worker training progress (2-3 day rule training) needs to be tracked separately from identity verification status (KYC).
+
+**Decision**: Create a dedicated `worker_training` Room table with module-level completion booleans (`platformRulesCompleted`, `escrowGuidelinesCompleted`, `customerEtiquetteCompleted`, `safetyProtocolsCompleted`) and a status field (NOT_STARTED, IN_PROGRESS, COMPLETED).
+
+**Rationale**: Separating training from KYC allows independent lifecycle management. Training begins after KYC approval and must be completed before admin activation.
+
+**Consequences**: AppDatabase migrated to version 9. Admin activation gate (TRAIN-003) will require both `kycStatus == APPROVED` and `trainingStatus == COMPLETED`.
+
+---
+
 _This document will be updated whenever significant architectural or design decisions are made._
 

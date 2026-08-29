@@ -934,7 +934,9 @@
       "phase": 8,
       "title": "Define Worker Training Progress & Content Data Schema",
       "priority": "P2",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-08-29T10:09:00+03:00",
+      "verified_by": "code_inspection",
       "depends_on": [
         "KYC-006"
       ],
@@ -1805,7 +1807,7 @@
       "notes": "Production release sign-off."
     }
   ],
-    "current_story": "TRAIN-001",
+    "current_story": "TRAIN-002",
     "completed_stories": [
     "STAB-001",
     "STAB-002",
@@ -1844,11 +1846,12 @@
       "ADMIN-001",
       "ADMIN-002",
       "ADMIN-003",
-      "ADMIN-004"
+      "ADMIN-004",
+      "TRAIN-001"
     ],
   "blocked_stories": [
     "STAB-003"
   ],
-    "last_updated": "2026-08-28T18:05:00+03:00"
+    "last_updated": "2026-08-29T10:09:00+03:00"
 }
 
