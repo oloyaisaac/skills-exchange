@@ -10,6 +10,14 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ## 2026-08-29
 
+### [2026-08-29] [MARKET-002] [IMPL] Open Job Posting & Multi-Quote Bidding
+- Created `JobQuoteEntity` Room table for storing worker quote proposals.
+- Created `JobQuoteDao` with queries for job quotes, worker quotes, and status updates.
+- Added `JobQuoteEntity` to `AppDatabase` (version 10) and exposed `jobQuoteDao()`.
+- Added repository methods: `submitQuote`, `respondToQuote`, `getQuotesForJob`, `getQuotesByWorker`, `countPendingQuotesForJob`.
+- Added ViewModel methods: `submitQuote`, `respondToQuote`, `getQuotesForJob`, `getQuotesByWorker`.
+- Workers can submit quotes with rate, hours, and notes; clients can accept/decline with chat notifications.
+
 ### [2026-08-29] [JOB-003] [IMPL] Recurring Contract Pricing Negotiation Workflow
 - Added `recurringContractProposal`, `recurringNegotiatedRate`, `recurringProposalStatus` fields to `JobPostEntity`.
 - Added DAO methods: `updateRecurringProposal`, `updateRecurringProposalStatus`.

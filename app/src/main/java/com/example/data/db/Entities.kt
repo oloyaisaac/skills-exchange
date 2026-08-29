@@ -188,6 +188,25 @@ data class UserProfileEntity(
 )
 
 /**
+ * MARKET-002: Multi-Quote Bidding Entity
+ * Stores worker quote proposals for open jobs.
+ */
+@Entity(tableName = "job_quotes")
+data class JobQuoteEntity(
+    @PrimaryKey val id: String,
+    val jobId: String,
+    val workerId: String,
+    val workerName: String,
+    val proposedRate: Double,
+    val proposedHours: Double,
+    val totalQuote: Double,
+    val notes: String = "",
+    val status: String = "PENDING", // "PENDING", "ACCEPTED", "REJECTED", "WITHDRAWN"
+    val submittedAt: Long = System.currentTimeMillis(),
+    val respondedAt: Long = 0
+)
+
+/**
  * TRAIN-001: Worker Training Progress & Content Data Schema
  * Tracks 2-3 day training module completion separately from identity verification status.
  */

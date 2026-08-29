@@ -75,6 +75,27 @@ interface JobPostDao {
     suspend fun updateRecurringProposalStatus(jobId: String, status: String)
 }
 
+/**
+ * MARKET-002: Job Quote Data Access Object
+ */
+@Dao
+interface JobQuoteDao {
+    @Query("SELECT * FROM job_quotes WHERE jobId = :jobId ORDER BY totalQuote ASC")
+    fun getQuotesForJob(jobId: String): Flow<List<JobQuoteEntity>>
+
+    @Query("SELECT * FROM job_quotes WHERE workerId = :workerId ORDER BY submittedAt DESC")
+    fun getQuotesByWorker(workerId: String): Flow<List<JobQuoteEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertQuote(quote: JobQuoteEntity)
+
+    @Query("UPDATE job_quotes SET status = :status, respondedAt = :respondedAt WHERE id = :quoteId")
+    suspend fun updateQuoteStatus(quoteId: String, status: String, respondedAt: Long = System.currentTimeMillis())
+
+    @Query("SELECT COUNT(*) FROM job_quotes WHERE jobId = :jobId AND status = 'PENDING'")
+    suspend fun countPendingQuotesForJob(jobId: String): Int
+}
+
 @Dao
 interface ChatMessageDao {
     @Query("SELECT * FROM chat_messages WHERE jobId = :jobId ORDER BY id ASC")

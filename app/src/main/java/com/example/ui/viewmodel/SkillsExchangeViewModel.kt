@@ -739,6 +739,27 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    fun submitQuote(jobId: String, workerName: String, proposedRate: Double, proposedHours: Double, notes: String) {
+        viewModelScope.launch {
+            val userId = currentUser.value?.id ?: "worker_default"
+            repository.submitQuote(jobId, userId, workerName, proposedRate, proposedHours, notes)
+        }
+    }
+
+    fun respondToQuote(quoteId: String, jobId: String, accept: Boolean) {
+        viewModelScope.launch {
+            repository.respondToQuote(quoteId, jobId, accept)
+        }
+    }
+
+    fun getQuotesForJob(jobId: String): Flow<List<com.example.data.db.JobQuoteEntity>> {
+        return repository.getQuotesForJob(jobId)
+    }
+
+    fun getQuotesByWorker(workerId: String): Flow<List<com.example.data.db.JobQuoteEntity>> {
+        return repository.getQuotesByWorker(workerId)
+    }
+
     fun respondToRecurringProposal(jobId: String, accept: Boolean) {
         viewModelScope.launch {
             repository.respondToRecurringProposal(jobId, accept)

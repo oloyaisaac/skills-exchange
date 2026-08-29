@@ -1,7 +1,7 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-08-29T18:23:00+03:00
+2026-08-29T18:42:00+03:00
 
 ---
 
@@ -12,14 +12,14 @@
 ---
 
 ## Current PRD Story
-**Story ID**: MARKET-002  
-**Title**: Implement Open Job Posting & Multi-Quote Bidding  
+**Story ID**: MARKET-003  
+**Title**: Implement Resident Quote Review & Worker Selection  
 **Status**: Next eligible task
 
 ---
 
 ## Current Objective
-Progress through Phase 10 (MARKET-002, MARKET-003), remaining eligible stories in Phases 14, 15.
+Progress through Phase 10 (MARKET-003), remaining eligible stories in Phases 14, 15.
 
 ---
 
@@ -96,7 +96,7 @@ Progress through Phase 10 (MARKET-002, MARKET-003), remaining eligible stories i
 ---
 
 ## Work In Progress / Next Task
-1. **MARKET-002** (P1): Implement Open Job Posting & Multi-Quote Bidding.
+1. **MARKET-003** (P1): Implement Resident Quote Review & Worker Selection.
 
 ---
 
@@ -185,7 +185,7 @@ Progress through Phase 10 (MARKET-002, MARKET-003), remaining eligible stories i
 | PAY-003 Escrow Release & Payout | Code inspection functions/src/index.ts | PASS — releaseEscrowToWorker Cloud Function, worker payout |
 | PAY-004 Material Advance Disbursement | Code inspection Repository | PASS — approveMaterialAdvance method, 50% disbursement logic |
 | MAP-001 Google Maps SDK | Code inspection InteractiveMapView/build.gradle | PASS — Google Maps MapView composable, play-services-maps dep |
-| JOB-003 Recurring Negotiation | Code inspection repository/ViewModel | PASS — submitRecurringProposal/respondToRecurringProposal with chat notifications |
+| MARKET-002 Multi-Quote | Code inspection Entities/Daos/Repository | PASS — JobQuoteEntity, submit/respond to quotes with chat notifications |
 | JOB-002 Recurring UI | Code inspection QuickRequestDrawer/ViewModel | PASS — JobTypeSelector with schedule picker, wired to postQuickJob |
 | TRAIN-002 Training UI | Code inspection AccountComplianceDialog/MainScreen | PASS — WorkerTrainingScreen with module completion, wired to MainScreen |
 | TRAIN-001 Training Schema | Code inspection Entities/Daos/AppDatabase | PASS — WorkerTrainingEntity, WorkerTrainingDao, DB v9 |
@@ -206,13 +206,13 @@ Progress through Phase 10 (MARKET-002, MARKET-003), remaining eligible stories i
 
 ```
 Current session:          Continuation session
-Current PRD story:        MARKET-002 (Implement Open Job Posting & Multi-Quote Bidding)
+Current PRD story:        MARKET-003 (Implement Resident Quote Review & Worker Selection)
 Current task:             Phase 10 Core Marketplace, Quotes & Job Types
-Completed stories (43):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, COMM-001, AI-001, AI-002, SAFE-001, SAFE-002, ADMIN-001, ADMIN-002, ADMIN-003, ADMIN-004, TRAIN-001, TRAIN-002, TRAIN-003, JOB-002, JOB-003
-Last completed action:    Implemented JOB-003
-Last verified action:     Code inspection of recurring proposal workflow
-Files modified:           prd.json, TASKS.md, AGENT_STATE.md, CHANGELOG.md, Entities.kt, Daos.kt, SkillsExchangeRepository.kt, SkillsExchangeViewModel.kt
-Next action:              Implement MARKET-002 (Implement Open Job Posting & Multi-Quote Bidding)
+Completed stories (44):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, COMM-001, AI-001, AI-002, SAFE-001, SAFE-002, ADMIN-001, ADMIN-002, ADMIN-003, ADMIN-004, TRAIN-001, TRAIN-002, TRAIN-003, JOB-002, JOB-003, MARKET-002
+Last completed action:    Implemented MARKET-002
+Last verified action:     Code inspection of multi-quote bidding
+Files modified:           prd.json, TASKS.md, AGENT_STATE.md, CHANGELOG.md, Entities.kt, Daos.kt, AppDatabase.kt, SkillsExchangeRepository.kt, SkillsExchangeViewModel.kt
+Next action:              Implement MARKET-003 (Implement Resident Quote Review & Worker Selection)
 Handoff status:           Ready for immediate continuation
 ```
 

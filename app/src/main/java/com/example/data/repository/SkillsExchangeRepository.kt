@@ -521,6 +521,64 @@ class SkillsExchangeRepository(
         )
     }
 
+    fun getQuotesForJob(jobId: String): Flow<List<JobQuoteEntity>> {
+        return db.jobQuoteDao().getQuotesForJob(jobId)
+    }
+
+    fun getQuotesByWorker(workerId: String): Flow<List<JobQuoteEntity>> {
+        return db.jobQuoteDao().getQuotesByWorker(workerId)
+    }
+
+    suspend fun submitQuote(jobId: String, workerId: String, workerName: String, proposedRate: Double, proposedHours: Double, notes: String): String {
+        val quoteId = "quote_${System.currentTimeMillis()}"
+        val totalQuote = proposedRate * proposedHours
+        val quote = JobQuoteEntity(
+            id = quoteId,
+            jobId = jobId,
+            workerId = workerId,
+            workerName = workerName,
+            proposedRate = proposedRate,
+            proposedHours = proposedHours,
+            totalQuote = totalQuote,
+            notes = notes,
+            status = "PENDING"
+        )
+        db.jobQuoteDao().insertQuote(quote)
+        db.chatMessageDao().insertMessage(
+            ChatMessageEntity(
+                id = "msg_${System.currentTimeMillis()}",
+                jobId = jobId,
+                senderName = workerName,
+                isFromUser = false,
+                message = "📋 Quote submitted: UGX ${"%.0f".format(totalQuote)} (${proposedHours}hrs @ UGX ${"%.0f".format(proposedRate)}/hr). ${if (notes.isNotBlank()) "Note: $notes" else ""}",
+                timestampText = "Just now",
+                isSystemNotification = false
+            )
+        )
+        return quoteId
+    }
+
+    suspend fun respondToQuote(quoteId: String, jobId: String, accept: Boolean) {
+        val newStatus = if (accept) "ACCEPTED" else "REJECTED"
+        db.jobQuoteDao().updateQuoteStatus(quoteId, newStatus)
+
+        db.chatMessageDao().insertMessage(
+            ChatMessageEntity(
+                id = "msg_${System.currentTimeMillis()}",
+                jobId = jobId,
+                senderName = "System",
+                isFromUser = false,
+                message = if (accept) "✅ Quote accepted! Worker has been assigned to this job." else "❌ Quote declined.",
+                timestampText = "Just now",
+                isSystemNotification = true
+            )
+        )
+    }
+
+    suspend fun countPendingQuotesForJob(jobId: String): Int {
+        return db.jobQuoteDao().countPendingQuotesForJob(jobId)
+    }
+
     fun getTrainingForUser(userId: String): Flow<WorkerTrainingEntity?> {
         return db.workerTrainingDao().getTrainingForUser(userId)
     }
