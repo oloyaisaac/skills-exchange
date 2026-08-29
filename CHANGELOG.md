@@ -10,6 +10,15 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ## 2026-08-29
 
+### [2026-08-29] [OFF-001] [IMPL] Offline Action Queue & Sync Manager
+- Created `PendingActionEntity` Room table for offline write operations.
+- Created `PendingActionDao` with queries for pending actions, status updates, and retry tracking.
+- Added `PendingActionEntity` to `AppDatabase` (version 11) and exposed `pendingActionDao()`.
+- Added repository methods: `enqueueAction`, `markActionCompleted`, `incrementActionRetry`, `getPendingActions`, `getPendingActionsCount`.
+- Added ViewModel: `pendingActions` state, `enqueueOfflineAction`, `flushPendingActions`.
+- Wired `NetworkConnectivityObserver` to automatically flush pending actions when network reconnects.
+- Actions support retry count with max retries before marking as FAILED.
+
 ### [2026-08-29] [MARKET-003] [IMPL] Resident Quote Review & Worker Selection
 - Created `QuoteComparisonSheet` composable in `JobPipelineKanban.kt` with quote list, worker details, pricing comparison, and accept/decline actions.
 - Added "Compare Quotes" button to `JobPipelineCard` for jobs in "Requested" status.

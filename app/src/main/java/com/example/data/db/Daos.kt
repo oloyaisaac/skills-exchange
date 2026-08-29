@@ -96,6 +96,30 @@ interface JobQuoteDao {
     suspend fun countPendingQuotesForJob(jobId: String): Int
 }
 
+/**
+ * OFF-001: Pending Action Queue Data Access Object
+ */
+@Dao
+interface PendingActionDao {
+    @Query("SELECT * FROM pending_actions WHERE status = 'PENDING' ORDER BY createdAt ASC")
+    fun getPendingActions(): Flow<List<PendingActionEntity>>
+
+    @Query("SELECT * FROM pending_actions WHERE status = 'PENDING' ORDER BY createdAt ASC")
+    suspend fun getPendingActionsList(): List<PendingActionEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAction(action: PendingActionEntity)
+
+    @Query("UPDATE pending_actions SET status = :status, retryCount = :retryCount WHERE id = :id")
+    suspend fun updateActionStatus(id: String, status: String, retryCount: Int = 0)
+
+    @Query("DELETE FROM pending_actions WHERE id = :id")
+    suspend fun deleteAction(id: String)
+
+    @Query("SELECT COUNT(*) FROM pending_actions WHERE status = 'PENDING'")
+    suspend fun countPendingActions(): Int
+}
+
 @Dao
 interface ChatMessageDao {
     @Query("SELECT * FROM chat_messages WHERE jobId = :jobId ORDER BY id ASC")

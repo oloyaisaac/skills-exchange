@@ -227,3 +227,18 @@ data class WorkerTrainingEntity(
     val updatedAt: Long = System.currentTimeMillis()
 )
 
+/**
+ * OFF-001: Offline Action Queue Entity
+ * Records write operations performed while offline for later sync.
+ */
+@Entity(tableName = "pending_actions")
+data class PendingActionEntity(
+    @PrimaryKey val id: String,
+    val actionType: String, // "CREATE_JOB", "UPDATE_STATUS", "SEND_MESSAGE", "SUBMIT_QUOTE", etc.
+    val payloadJson: String, // Serialized action data
+    val createdAt: Long = System.currentTimeMillis(),
+    val retryCount: Int = 0,
+    val maxRetries: Int = 3,
+    val status: String = "PENDING" // "PENDING", "SYNCING", "COMPLETED", "FAILED"
+)
+

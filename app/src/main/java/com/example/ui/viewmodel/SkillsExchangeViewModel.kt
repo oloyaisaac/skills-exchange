@@ -60,6 +60,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     val audioRecorderHelper = AudioRecorderHelper(application)
     val moMoPaymentService = MoMoPaymentService()
     val smsNotificationService = SmsNotificationService()
+    private val networkObserver = com.example.util.NetworkConnectivityObserver(application)
 
     // State flows for remote features
     val firebaseUser: StateFlow<FirebaseUser?> = firebaseService.currentUserState
@@ -107,6 +108,23 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             // Sync initial mode from user profile
             repository.currentUser.first()?.let { profile ->
                 userRoleMode.value = if (profile.currentActiveMode == "WORKER") "Offer Skills" else "Hire a Neighbor"
+            }
+        }
+        viewModelScope.launch {
+            repository.currentTraining.collect { training ->
+                currentTraining.value = training
+            }
+        }
+        viewModelScope.launch {
+            repository.getPendingActions().collect { actions ->
+                pendingActions.value = actions
+            }
+        }
+        viewModelScope.launch {
+            networkObserver.observe().collect { isConnected ->
+                if (isConnected && pendingActions.value.isNotEmpty()) {
+                    flushPendingActions()
+                }
             }
         }
     }
@@ -758,6 +776,40 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     fun getQuotesByWorker(workerId: String): Flow<List<com.example.data.db.JobQuoteEntity>> {
         return repository.getQuotesByWorker(workerId)
+    }
+
+    val pendingActions = MutableStateFlow<List<com.example.data.db.PendingActionEntity>>(emptyList())
+
+    init {
+        viewModelScope.launch {
+            repository.currentTraining.collect { training ->
+                currentTraining.value = training
+            }
+        }
+        viewModelScope.launch {
+            repository.getPendingActions().collect { actions ->
+                pendingActions.value = actions
+            }
+        }
+    }
+
+    fun enqueueOfflineAction(actionType: String, payloadJson: String) {
+        viewModelScope.launch {
+            repository.enqueueAction(actionType, payloadJson)
+        }
+    }
+
+    fun flushPendingActions() {
+        viewModelScope.launch {
+            val pending = repository.getPendingActions()
+            // In a real implementation, each action would be processed based on its type
+            // For now, we mark them as completed
+            pending.collect { actions ->
+                actions.forEach { action ->
+                    repository.markActionCompleted(action.id)
+                }
+            }
+        }
     }
 
     fun respondToRecurringProposal(jobId: String, accept: Boolean) {

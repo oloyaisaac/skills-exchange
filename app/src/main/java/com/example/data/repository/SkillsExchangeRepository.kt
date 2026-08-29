@@ -579,6 +579,39 @@ class SkillsExchangeRepository(
         return db.jobQuoteDao().countPendingQuotesForJob(jobId)
     }
 
+    fun getPendingActions(): Flow<List<PendingActionEntity>> {
+        return db.pendingActionDao().getPendingActions()
+    }
+
+    suspend fun enqueueAction(actionType: String, payloadJson: String) {
+        val action = PendingActionEntity(
+            id = "action_${System.currentTimeMillis()}",
+            actionType = actionType,
+            payloadJson = payloadJson
+        )
+        db.pendingActionDao().insertAction(action)
+    }
+
+    suspend fun markActionCompleted(actionId: String) {
+        db.pendingActionDao().deleteAction(actionId)
+    }
+
+    suspend fun incrementActionRetry(actionId: String) {
+        val pending = db.pendingActionDao().getPendingActionsList()
+        pending.find { it.id == actionId }?.let { action ->
+            val newRetry = action.retryCount + 1
+            if (newRetry >= action.maxRetries) {
+                db.pendingActionDao().updateActionStatus(actionId, "FAILED", newRetry)
+            } else {
+                db.pendingActionDao().updateActionStatus(actionId, "PENDING", newRetry)
+            }
+        }
+    }
+
+    suspend fun getPendingActionsCount(): Int {
+        return db.pendingActionDao().countPendingActions()
+    }
+
     fun getTrainingForUser(userId: String): Flow<WorkerTrainingEntity?> {
         return db.workerTrainingDao().getTrainingForUser(userId)
     }

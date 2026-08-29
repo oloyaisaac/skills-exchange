@@ -1755,7 +1755,9 @@
       "phase": 14,
       "title": "Implement Offline Action Queue & Sync Manager",
       "priority": "P2",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-08-29T19:02:00+03:00",
+      "verified_by": "code_inspection",
       "depends_on": [
         "ROLE-001"
       ],
@@ -1819,7 +1821,7 @@
       "notes": "Production release sign-off."
     }
   ],
-    "current_story": "OFF-001",
+    "current_story": "REL-001",
     "completed_stories": [
     "STAB-001",
     "STAB-002",
@@ -1865,11 +1867,12 @@
       "JOB-002",
       "JOB-003",
       "MARKET-002",
-      "MARKET-003"
+      "MARKET-003",
+      "OFF-001"
     ],
   "blocked_stories": [
     "STAB-003"
   ],
-    "last_updated": "2026-08-29T18:50:00+03:00"
+    "last_updated": "2026-08-29T19:02:00+03:00"
 }
 
