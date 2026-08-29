@@ -143,5 +143,24 @@ Context, options considered, decision, rationale, consequences
 
 ---
 
+## 2026-08-29
+
+### [2026-08-29] DEC-011 ProGuard Keep Rules for Release Build
+
+**Context**: REL-001 requires ProGuard rules to prevent minification reflection crashes in release builds. The app uses Room (reflection-based entity mapping), Firebase serialization, and Moshi JSON adapters.
+
+**Options Considered**:
+1. Use `@Keep` annotations on every entity class individually
+2. Use broad ProGuard keep rules covering entire packages
+3. Hybrid: package-level keep rules plus annotation-based keeps for external consumers
+
+**Decision**: Adopted package-level keep rules in `app/proguard-rules.pro` covering `com.example.data.db.**`, Firebase/Gson annotated fields, Kotlin metadata, and coroutines internals. Also preserved SourceFile/LineNumberTable for debugging release crashes.
+
+**Rationale**: Package-level rules are less error-prone than annotating 20+ entities individually and ensure future entities added to the package are automatically covered. Keeping Kotlin metadata and coroutines internals is required for structured concurrency to work under minification.
+
+**Consequences**: Release APK will retain entity class names and prevent reflection crashes. APK size will be slightly larger due to kept classes, but correctness is prioritized over size optimization.
+
+---
+
 _This document will be updated whenever significant architectural or design decisions are made._
 

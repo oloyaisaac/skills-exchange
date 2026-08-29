@@ -1792,7 +1792,9 @@
       "phase": 15,
       "title": "Production Build ProGuard Rules & Release Sign-Off",
       "priority": "P3",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-08-29T19:12:00+03:00",
+      "verified_by": "code_inspection",
       "depends_on": [
         "STAB-001"
       ],
@@ -1866,13 +1868,14 @@
       "TRAIN-003",
       "JOB-002",
       "JOB-003",
-      "MARKET-002",
-      "MARKET-003",
-      "OFF-001"
-    ],
+    "MARKET-002",
+    "MARKET-003",
+    "OFF-001",
+    "REL-001"
+  ],
   "blocked_stories": [
     "STAB-003"
   ],
-    "last_updated": "2026-08-29T19:02:00+03:00"
+  "last_updated": "2026-08-29T19:15:00+03:00"
 }
 

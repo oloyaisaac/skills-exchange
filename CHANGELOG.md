@@ -10,6 +10,15 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ## 2026-08-29
 
+### [2026-08-29] [REL-001] [INFRA] Production Build ProGuard Rules & Release Sign-Off
+- Added comprehensive ProGuard rules to `app/proguard-rules.pro` for release builds.
+- Keep rules for Room entities, DAOs, and `@Entity`/`@Database`/`@Dao` annotated classes.
+- Keep rules for Firebase and Google Play Services classes.
+- Keep rules for Moshi/JSON serialization with `@SerializedName` annotations.
+- Preserved Kotlin metadata, annotations, signatures, and coroutine internals.
+- Added SourceFile/LineNumberTable attributes for debugging release crashes.
+- All 47 of 48 stories now complete. STAB-003 remains blocked on JDK/Gradle environment conflict.
+
 ### [2026-08-29] [OFF-001] [IMPL] Offline Action Queue & Sync Manager
 - Created `PendingActionEntity` Room table for offline write operations.
 - Created `PendingActionDao` with queries for pending actions, status updates, and retry tracking.
