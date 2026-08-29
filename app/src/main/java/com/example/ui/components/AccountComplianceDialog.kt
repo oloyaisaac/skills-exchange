@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
@@ -654,6 +655,197 @@ fun ChangesRequiredView(
             Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(8.dp))
             Text("Update Documents", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        }
+
+        OutlinedButton(
+            onClick = onSwitchToClientMode,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Text("Switch to Client Mode", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+data class TrainingModule(
+    val id: String,
+    val title: String,
+    val description: String,
+    val videoUrl: String,
+    val durationMinutes: Int
+)
+
+@Composable
+fun WorkerTrainingScreen(
+    training: com.example.data.db.WorkerTrainingEntity?,
+    onStartTraining: () -> Unit,
+    onCompleteModule: (String, Int) -> Unit,
+    onCompleteTraining: () -> Unit,
+    onSwitchToClientMode: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val modules = remember {
+        listOf(
+            TrainingModule("platform_rules", "Platform Rules", "Learn community guidelines, trust standards, and worker conduct expectations.", "https://training.skillsexchange.app/videos/platform_rules", 45),
+            TrainingModule("escrow_guidelines", "Escrow & Payment Guidelines", "Understand escrow locking, fund release conditions, and dispute resolution.", "https://training.skillsexchange.app/videos/escrow", 30),
+            TrainingModule("customer_etiquette", "Customer Etiquette & Safety", "Best practices for professional conduct, doorstep safety, and emergency protocols.", "https://training.skillsexchange.app/videos/etiquette", 25)
+        )
+    }
+
+    val status = training?.status ?: "NOT_STARTED"
+    val completedModules = training?.completedModulesCsv?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
+    val allModulesCompleted = completedModules.size >= modules.size
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(20.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = SignalBlueLight,
+            border = androidx.compose.foundation.BorderStroke(2.dp, SignalBlue),
+            modifier = Modifier.size(64.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                Icon(
+                    imageVector = Icons.Default.Policy,
+                    contentDescription = "Training",
+                    tint = SignalBlue,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+        }
+
+        Text(
+            text = "WORKER TRAINING PROGRAM",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = SignalBlue,
+            letterSpacing = 0.5.sp
+        )
+
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = Slate50,
+            border = androidx.compose.foundation.BorderStroke(1.dp, Slate200),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "2-3 Day Rule Training",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Slate800
+                )
+                Text(
+                    text = "Complete all modules to activate your worker account and start receiving job bids. Training covers platform rules, escrow guidelines, and customer safety.",
+                    fontSize = 11.sp,
+                    color = Slate600,
+                    lineHeight = 16.sp
+                )
+            }
+        }
+
+        when (status) {
+            "COMPLETED" -> {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFFE8F5E9),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4CAF50)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(24.dp))
+                        Column {
+                            Text("Training Completed", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
+                            Text("Your account is eligible for admin activation.", fontSize = 11.sp, color = Color(0xFF388E3C))
+                        }
+                    }
+                }
+            }
+            "IN_PROGRESS" -> {
+                Text(
+                    text = "Training Progress",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Slate800,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                modules.forEachIndexed { index, module ->
+                    val isCompleted = completedModules.contains(module.id)
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (isCompleted) Color(0xFFE8F5E9) else Slate50,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, if (isCompleted) Color(0xFF4CAF50) else Slate200),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .background(
+                                        if (isCompleted) Color(0xFF4CAF50) else Slate200,
+                                        CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (isCompleted) {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                } else {
+                                    Text("${index + 1}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Slate600)
+                                }
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(module.title, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Slate800)
+                                Text(module.description, fontSize = 10.sp, color = Slate500, lineHeight = 14.sp)
+                                Text("${module.durationMinutes} min", fontSize = 9.sp, color = Slate400, fontWeight = FontWeight.Medium)
+                            }
+                            if (!isCompleted) {
+                                OutlinedButton(
+                                    onClick = { onCompleteModule(module.id, index + 1) },
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text("Complete", fontSize = 10.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (allModulesCompleted) {
+                    Button(
+                        onClick = onCompleteTraining,
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                    ) {
+                        Text("Finish Training & Activate", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+            else -> {
+                Button(
+                    onClick = onStartTraining,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = SignalBlue)
+                ) {
+                    Text("Start Training Program", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                }
+            }
         }
 
         OutlinedButton(

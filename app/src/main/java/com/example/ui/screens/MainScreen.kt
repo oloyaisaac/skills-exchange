@@ -350,13 +350,28 @@ fun MainScreen(
                         )
                     } else {
                         // ROLE-003: Worker Verification & Activation Gating View
-                        WorkerVerificationStatusView(
-                            userProfile = currentUserProfile,
-                            onStartVerification = { viewModel.setQuickRequestOpen(true) },
-                            onStartTraining = { viewModel.setQuickRequestOpen(true) },
-                            onSwitchToClientMode = { viewModel.setUserRoleMode("Hire a Neighbor") },
-                            modifier = Modifier.fillMaxSize()
-                        )
+                        val training by viewModel.currentTraining.collectAsStateWithLifecycle(initialValue = null)
+                        val kycStatus = currentUserProfile?.workerKycStatus
+                        val isTrainingDone = currentUserProfile?.trainingCompleted ?: false
+
+                        if (kycStatus == "APPROVED" && !isTrainingDone) {
+                            WorkerTrainingScreen(
+                                training = training,
+                                onStartTraining = { viewModel.startTraining() },
+                                onCompleteModule = { modules, index -> viewModel.completeTrainingModule(modules, index) },
+                                onCompleteTraining = { viewModel.completeTraining() },
+                                onSwitchToClientMode = { viewModel.setUserRoleMode("Hire a Neighbor") },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            WorkerVerificationStatusView(
+                                userProfile = currentUserProfile,
+                                onStartVerification = { viewModel.setQuickRequestOpen(true) },
+                                onStartTraining = { viewModel.startTraining() },
+                                onSwitchToClientMode = { viewModel.setUserRoleMode("Hire a Neighbor") },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
                     }
                 } else if (isWideScreen) {
                     // Desktop / Tablet Split View: Left list / pipeline / feed, Right map

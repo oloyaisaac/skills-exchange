@@ -10,6 +10,13 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ## 2026-08-29
 
+### [2026-08-29] [TRAIN-002] [IMPL] Worker Rule Training UI & Completion Tracking
+- Created `WorkerTrainingScreen` composable in `AccountComplianceDialog.kt` with training module list, progress tracking, and completion buttons.
+- Added `TrainingModule` data class for module metadata (Platform Rules, Escrow Guidelines, Customer Etiquette).
+- Added ViewModel methods: `startTraining`, `completeTrainingModule`, `completeTraining`, `currentTraining` state flow.
+- Wired training screen into `MainScreen.kt` — shown when KYC is approved but training not completed.
+- Training completion updates both `worker_training` table and `user_profiles.trainingCompleted` flag.
+
 ### [2026-08-29] [TRAIN-001] [IMPL] Worker Training Progress & Content Data Schema
 - Created `WorkerTrainingEntity` Room table with status, completedModulesCsv, module completion booleans, and timestamps.
 - Created `WorkerTrainingDao` with insert, update, and complete operations.

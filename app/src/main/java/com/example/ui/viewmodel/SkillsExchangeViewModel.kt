@@ -662,6 +662,16 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     val adminVerificationQueue = MutableStateFlow<List<Map<String, Any>>>(emptyList())
 
+    val currentTraining = MutableStateFlow<com.example.data.db.WorkerTrainingEntity?>(null)
+
+    init {
+        viewModelScope.launch {
+            repository.currentTraining.collect { training ->
+                currentTraining.value = training
+            }
+        }
+    }
+
     fun loadAdminVerificationQueue() {
         viewModelScope.launch {
             val queue = repository.getAdminVerificationQueue()
@@ -681,6 +691,27 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         viewModelScope.launch {
             val success = repository.setWorkerActivation(userId, activate)
             onResult(success)
+        }
+    }
+
+    fun startTraining() {
+        viewModelScope.launch {
+            val userId = currentUser.value?.id ?: "user_default_me"
+            repository.startTraining(userId)
+        }
+    }
+
+    fun completeTrainingModule(modulesCsv: String, moduleIndex: Int) {
+        viewModelScope.launch {
+            val userId = currentUser.value?.id ?: "user_default_me"
+            repository.updateTrainingModule(userId, modulesCsv, moduleIndex)
+        }
+    }
+
+    fun completeTraining() {
+        viewModelScope.launch {
+            val userId = currentUser.value?.id ?: "user_default_me"
+            repository.completeTraining(userId)
         }
     }
 }

@@ -971,7 +971,9 @@
       "phase": 8,
       "title": "Implement Worker Rule Training UI & Completion Tracking",
       "priority": "P2",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-08-29T10:21:00+03:00",
+      "verified_by": "code_inspection",
       "depends_on": [
         "TRAIN-001"
       ],
@@ -1807,7 +1809,7 @@
       "notes": "Production release sign-off."
     }
   ],
-    "current_story": "TRAIN-002",
+    "current_story": "TRAIN-003",
     "completed_stories": [
     "STAB-001",
     "STAB-002",
@@ -1847,11 +1849,12 @@
       "ADMIN-002",
       "ADMIN-003",
       "ADMIN-004",
-      "TRAIN-001"
+      "TRAIN-001",
+      "TRAIN-002"
     ],
   "blocked_stories": [
     "STAB-003"
   ],
-    "last_updated": "2026-08-29T10:09:00+03:00"
+    "last_updated": "2026-08-29T10:21:00+03:00"
 }
 

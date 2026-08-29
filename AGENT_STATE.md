@@ -1,7 +1,7 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-08-29T10:09:00+03:00
+2026-08-29T10:21:00+03:00
 
 ---
 
@@ -12,14 +12,14 @@
 ---
 
 ## Current PRD Story
-**Story ID**: TRAIN-002  
-**Title**: Implement Worker Rule Training UI & Completion Tracking  
+**Story ID**: TRAIN-003  
+**Title**: Implement Admin Activation Gate requiring Verification + Training  
 **Status**: Next eligible task
 
 ---
 
 ## Current Objective
-Progress through Phase 8 (TRAIN-002, TRAIN-003), remaining eligible stories in Phases 10, 14, 15.
+Progress through Phase 8 (TRAIN-003), remaining eligible stories in Phases 10, 14, 15.
 
 ---
 
@@ -85,6 +85,7 @@ Progress through Phase 8 (TRAIN-002, TRAIN-003), remaining eligible stories in P
 
 ### Phase 8 — Worker Training Tracking & Activation Gating
 - **TRAIN-001**: Define Worker Training Progress & Content Data Schema (Created WorkerTrainingEntity, WorkerTrainingDao, AppDatabase v9)
+- **TRAIN-002**: Implement Worker Rule Training UI & Completion Tracking (Created WorkerTrainingScreen with module completion tracking)
 
 ### Phase 13 — Communication, Safety & Doorstep Safeguards
 - **COMM-001**: Implement Real-Time Firestore Chat & Phone Masking (Added streamChatMessages, sendChatMessage, maskPhoneNumbers to FirebaseService; realtime chat flow in repository/ViewModel)
@@ -94,18 +95,20 @@ Progress through Phase 8 (TRAIN-002, TRAIN-003), remaining eligible stories in P
 ---
 
 ## Work In Progress / Next Task
-1. **TRAIN-002** (P2): Implement Worker Rule Training UI & Completion Tracking.
+1. **TRAIN-003** (P1): Implement Admin Activation Gate requiring Verification + Training.
 
 ---
 
 ## Files Recently Modified
+- `app/src/main/java/com/example/ui/components/AccountComplianceDialog.kt` (TRAIN-002 WorkerTrainingScreen + KYC-004/005/007)
+- `app/src/main/java/com/example/ui/screens/MainScreen.kt` (TRAIN-002 training screen wiring + ROLE-003)
+- `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt` (TRAIN-002 training methods + ADMIN + SAFE-002)
 - `app/src/main/java/com/example/data/db/Entities.kt` (TRAIN-001 WorkerTrainingEntity + MARKET-001, JOB-001, KYC, LOC)
 - `app/src/main/java/com/example/data/db/Daos.kt` (TRAIN-001 WorkerTrainingDao)
 - `app/src/main/java/com/example/data/db/AppDatabase.kt` (TRAIN-001 AppDatabase v9)
-- `app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt` (TRAIN-001 training flows + ADMIN + SAFE-002 + COMM-001 + PAY-004 + KYC)
+- `app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt` (TRAIN-001/002 training flows + ADMIN + SAFE-002 + COMM-001 + PAY-004 + KYC)
 - `functions/src/index.ts` (ADMIN-001..004: getPendingVerificationQueue, reviewWorkerApplication, setWorkerActivationStatus)
 - `app/src/main/java/com/example/data/remote/FirebaseService.kt` (ADMIN functions + COMM-001 streamChatMessages, sendChatMessage, maskPhoneNumbers)
-- `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt` (ADMIN functions + SAFE-002 triggerSosAlert GPS dispatch)
 - `app/src/main/java/com/example/ui/components/InteractiveMapView.kt` (MAP-001 Google Maps SDK integration)
 - `app/build.gradle.kts` (MAP-001 play-services-maps dependency)
 - `gradle/libs.versions.toml` (MAP-001 play-services-maps version)
@@ -181,6 +184,7 @@ Progress through Phase 8 (TRAIN-002, TRAIN-003), remaining eligible stories in P
 | PAY-003 Escrow Release & Payout | Code inspection functions/src/index.ts | PASS — releaseEscrowToWorker Cloud Function, worker payout |
 | PAY-004 Material Advance Disbursement | Code inspection Repository | PASS — approveMaterialAdvance method, 50% disbursement logic |
 | MAP-001 Google Maps SDK | Code inspection InteractiveMapView/build.gradle | PASS — Google Maps MapView composable, play-services-maps dep |
+| TRAIN-002 Training UI | Code inspection AccountComplianceDialog/MainScreen | PASS — WorkerTrainingScreen with module completion, wired to MainScreen |
 | TRAIN-001 Training Schema | Code inspection Entities/Daos/AppDatabase | PASS — WorkerTrainingEntity, WorkerTrainingDao, DB v9 |
 | ADMIN-001..004 Admin Cloud Functions | Code inspection functions/src/index.ts | PASS — getPendingVerificationQueue, reviewWorkerApplication, setWorkerActivationStatus with admin auth |
 | SAFE-002 SOS Dispatch | Code inspection triggerSosAlert | PASS — GPS-aware dispatch to SmsNotificationService |
@@ -199,13 +203,13 @@ Progress through Phase 8 (TRAIN-002, TRAIN-003), remaining eligible stories in P
 
 ```
 Current session:          Continuation session
-Current PRD story:        TRAIN-002 (Implement Worker Rule Training UI & Completion Tracking)
+Current PRD story:        TRAIN-003 (Implement Admin Activation Gate requiring Verification + Training)
 Current task:             Phase 8 Worker Training Tracking & Activation Gating
-Completed stories (39):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, COMM-001, AI-001, AI-002, SAFE-001, SAFE-002, ADMIN-001, ADMIN-002, ADMIN-003, ADMIN-004, TRAIN-001
-Last completed action:    Implemented TRAIN-001
-Last verified action:     Code inspection of training schema
-Files modified:           prd.json, TASKS.md, AGENT_STATE.md, CHANGELOG.md, Entities.kt, Daos.kt, AppDatabase.kt, SkillsExchangeRepository.kt
-Next action:              Implement TRAIN-002 (Implement Worker Rule Training UI & Completion Tracking)
+Completed stories (40):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, COMM-001, AI-001, AI-002, SAFE-001, SAFE-002, ADMIN-001, ADMIN-002, ADMIN-003, ADMIN-004, TRAIN-001, TRAIN-002
+Last completed action:    Implemented TRAIN-002
+Last verified action:     Code inspection of training UI
+Files modified:           prd.json, TASKS.md, AGENT_STATE.md, CHANGELOG.md, AccountComplianceDialog.kt, MainScreen.kt, SkillsExchangeViewModel.kt
+Next action:              Implement TRAIN-003 (Implement Admin Activation Gate requiring Verification + Training)
 Handoff status:           Ready for immediate continuation
 ```
 

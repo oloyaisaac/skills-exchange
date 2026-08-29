@@ -505,6 +505,30 @@ class SkillsExchangeRepository(
         db.userProfileDao().updateTrainingStatus(userId, true)
     }
 
+    sealed class ActivationResult {
+        object Success : ActivationResult()
+        data class Failure(val reason: String) : ActivationResult()
+    }
+
+    suspend fun activateWorker(userId: String): ActivationResult {
+        val userProfile = db.userProfileDao().getUserProfile(userId).first()
+            ?: return ActivationResult.Failure("User not found")
+
+        if (userProfile.workerKycStatus != "APPROVED") {
+            return ActivationResult.Failure("KYC verification must be approved before activation")
+        }
+
+        val training = db.workerTrainingDao().getTrainingForUser(userId).first()
+        val isTrainingCompleted = training?.status == "COMPLETED" && userProfile.trainingCompleted
+
+        if (!isTrainingCompleted) {
+            return ActivationResult.Failure("Worker must complete mandatory training before activation")
+        }
+
+        db.userProfileDao().updateWorkerActivation(userId, true)
+        return ActivationResult.Success
+    }
+
     companion object {
         val initialProviders = listOf(
             ServiceProviderEntity(
