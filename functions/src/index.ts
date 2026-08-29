@@ -403,6 +403,31 @@ export const setWorkerActivationStatus = functions.https.onCall(async (data, con
     );
   }
 
+  // TRAIN-003: Enforce activation gate - KYC approved + training completed required
+  if (activate) {
+    const kycDoc = await db.collection("worker_kyc").doc(userId).get();
+    const kycData = kycDoc.data();
+    const kycStatus = kycData?.status || "NOT_STARTED";
+
+    if (kycStatus !== "APPROVED") {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Worker KYC verification must be approved before activation."
+      );
+    }
+
+    const trainingDoc = await db.collection("worker_training").doc(userId).get();
+    const trainingData = trainingDoc.data();
+    const trainingStatus = trainingData?.status || "NOT_STARTED";
+
+    if (trainingStatus !== "COMPLETED") {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Worker must complete mandatory training before activation."
+      );
+    }
+  }
+
   await db.collection("providers").doc(userId).update({
     isActivated: activate,
     updatedAt: admin.firestore.FieldValue.serverTimestamp()

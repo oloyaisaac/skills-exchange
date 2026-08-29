@@ -131,5 +131,17 @@ Context, options considered, decision, rationale, consequences
 
 ---
 
+### [2026-08-29] DEC-010 Dual-Gate Admin Activation (KYC + Training)
+
+**Context**: Workers should not be activated until both identity verification (KYC) and mandatory training are complete.
+
+**Decision**: Implement a dual-gate activation check in both the local repository (`activateWorker`) and the Cloud Function (`setWorkerActivationStatus`). Both paths verify `kycStatus == APPROVED` AND `trainingStatus == COMPLETED` before setting `isActivated = true`.
+
+**Rationale**: Enforcing the gate at both client and server levels prevents activation bypass. The Cloud Function provides the authoritative server-side check, while the repository method provides immediate UI feedback.
+
+**Consequences**: Admin activation will fail with descriptive error messages if either gate is not satisfied. Workers must complete both KYC and training before appearing in nearby searches.
+
+---
+
 _This document will be updated whenever significant architectural or design decisions are made._
 

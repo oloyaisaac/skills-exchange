@@ -714,4 +714,17 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             repository.completeTraining(userId)
         }
     }
+
+    fun activateWorkerWithGate(userId: String, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            when (val result = repository.activateWorker(userId)) {
+                is SkillsExchangeRepository.ActivationResult.Success -> {
+                    onResult(true, "Worker activated successfully")
+                }
+                is SkillsExchangeRepository.ActivationResult.Failure -> {
+                    onResult(false, result.reason)
+                }
+            }
+        }
+    }
 }
