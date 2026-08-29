@@ -10,6 +10,12 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ## 2026-08-29
 
+### [2026-08-29] [MARKET-003] [IMPL] Resident Quote Review & Worker Selection
+- Created `QuoteComparisonSheet` composable in `JobPipelineKanban.kt` with quote list, worker details, pricing comparison, and accept/decline actions.
+- Added "Compare Quotes" button to `JobPipelineCard` for jobs in "Requested" status.
+- Wired `QuoteComparisonSheet` into `MainScreen.kt` with state management and accept quote callback.
+- Sheet shows worker name, rate, hours, total, notes, and status (PENDING/ACCEPTED/REJECTED).
+
 ### [2026-08-29] [MARKET-002] [IMPL] Open Job Posting & Multi-Quote Bidding
 - Created `JobQuoteEntity` Room table for storing worker quote proposals.
 - Created `JobQuoteDao` with queries for job quotes, worker quotes, and status updates.

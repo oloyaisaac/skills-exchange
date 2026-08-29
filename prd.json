@@ -1360,7 +1360,9 @@
       "phase": 10,
       "title": "Implement Resident Quote Review & Worker Selection",
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-08-29T18:50:00+03:00",
+      "verified_by": "code_inspection",
       "depends_on": [
         "MARKET-002"
       ],
@@ -1817,7 +1819,7 @@
       "notes": "Production release sign-off."
     }
   ],
-    "current_story": "MARKET-003",
+    "current_story": "OFF-001",
     "completed_stories": [
     "STAB-001",
     "STAB-002",
@@ -1862,11 +1864,12 @@
       "TRAIN-003",
       "JOB-002",
       "JOB-003",
-      "MARKET-002"
+      "MARKET-002",
+      "MARKET-003"
     ],
   "blocked_stories": [
     "STAB-003"
   ],
-    "last_updated": "2026-08-29T18:42:00+03:00"
+    "last_updated": "2026-08-29T18:50:00+03:00"
 }
 

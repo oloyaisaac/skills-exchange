@@ -161,6 +161,8 @@ fun MainScreen(
     var isChatOpen by remember { mutableStateOf(false) }
     var isEscrowSheetOpen by remember { mutableStateOf(false) }
     var escrowJobTarget by remember { mutableStateOf<JobPostEntity?>(null) }
+    var isQuoteComparisonOpen by remember { mutableStateOf(false) }
+    var quoteComparisonJob by remember { mutableStateOf<JobPostEntity?>(null) }
 
     var isDataBackupOpen by remember { mutableStateOf(false) }
     var isPrivacyPolicyOpen by remember { mutableStateOf(false) }
@@ -384,19 +386,23 @@ fun MainScreen(
                         ) {
                             when (activeMobileTab) {
                                 "Jobs" -> {
-                                    JobPipelineKanban(
-                                        jobs = jobs,
-                                        onSelectJob = { viewModel.selectJob(it) },
-                                        onAdvanceStatus = { jobId, newStatus -> viewModel.updateJobStatus(jobId, newStatus) },
-                                        onOpenChat = {
-                                            viewModel.selectJob(it)
-                                            isChatOpen = true
-                                        },
-                                        onOpenEscrowSheet = {
-                                            escrowJobTarget = it
-                                            isEscrowSheetOpen = true
-                                        }
-                                    )
+                            JobPipelineKanban(
+                                jobs = jobs,
+                                onSelectJob = { viewModel.selectJob(it) },
+                                onAdvanceStatus = { jobId, newStatus -> viewModel.updateJobStatus(jobId, newStatus) },
+                                onOpenChat = {
+                                    viewModel.selectJob(it)
+                                    isChatOpen = true
+                                },
+                                onOpenEscrowSheet = {
+                                    escrowJobTarget = it
+                                    isEscrowSheetOpen = true
+                                },
+                                onOpenQuoteComparison = { job ->
+                                    quoteComparisonJob = job
+                                    isQuoteComparisonOpen = true
+                                }
+                            )
                                 }
                                 "Board" -> {
                                     NeighborhoodFeedView(
@@ -574,6 +580,22 @@ fun MainScreen(
             onDismiss = {
                 isEscrowSheetOpen = false
                 escrowJobTarget = null
+            }
+        )
+    }
+
+    if (isQuoteComparisonOpen && quoteComparisonJob != null) {
+        val liveQuoteJob = jobs.find { it.id == quoteComparisonJob!!.id } ?: quoteComparisonJob!!
+        val quotes by viewModel.getQuotesForJob(liveQuoteJob.id).collectAsStateWithLifecycle(initialValue = emptyList())
+        QuoteComparisonSheet(
+            job = liveQuoteJob,
+            quotes = quotes,
+            onAcceptQuote = { quoteId ->
+                viewModel.respondToQuote(quoteId, liveQuoteJob.id, true)
+            },
+            onDismiss = {
+                isQuoteComparisonOpen = false
+                quoteComparisonJob = null
             }
         )
     }

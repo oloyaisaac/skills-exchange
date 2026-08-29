@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Chat
+import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,6 +33,7 @@ fun JobPipelineKanban(
     onAdvanceStatus: (String, String) -> Unit,
     onOpenChat: (JobPostEntity) -> Unit,
     onOpenEscrowSheet: (JobPostEntity) -> Unit,
+    onOpenQuoteComparison: (JobPostEntity) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val statuses = listOf("Requested", "Accepted", "In Progress", "Review", "Completed")
@@ -124,7 +126,8 @@ fun JobPipelineKanban(
                         onSelectJob = { onSelectJob(job) },
                         onAdvanceStatus = { nextStatus -> onAdvanceStatus(job.id, nextStatus) },
                         onOpenChat = { onOpenChat(job) },
-                        onOpenEscrowSheet = { onOpenEscrowSheet(job) }
+                        onOpenEscrowSheet = { onOpenEscrowSheet(job) },
+                        onOpenQuoteComparison = { onOpenQuoteComparison(job) }
                     )
                 }
             }
@@ -138,7 +141,8 @@ fun JobPipelineCard(
     onSelectJob: () -> Unit,
     onAdvanceStatus: (String) -> Unit,
     onOpenChat: () -> Unit,
-    onOpenEscrowSheet: () -> Unit
+    onOpenEscrowSheet: () -> Unit,
+    onOpenQuoteComparison: () -> Unit = {}
 ) {
     var isPricingExpanded by remember { mutableStateOf(false) }
 
@@ -418,6 +422,24 @@ fun JobPipelineCard(
                     else -> null
                 }
 
+                if (job.status == "Requested") {
+                    OutlinedButton(
+                        onClick = onOpenQuoteComparison,
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                        shape = RoundedCornerShape(6.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SignalBlue)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.People,
+                            contentDescription = "Quotes",
+                            modifier = Modifier.size(14.dp),
+                            tint = SignalBlue
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "Compare Quotes", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = SignalBlue)
+                    }
+                }
+
                 if (nextStatus != null) {
                     Button(
                         onClick = {
@@ -437,6 +459,150 @@ fun JobPipelineCard(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun QuoteComparisonSheet(
+    job: JobPostEntity,
+    quotes: List<com.example.data.db.JobQuoteEntity>,
+    onAcceptQuote: (String) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        scrimColor = Slate900.copy(alpha = 0.6f)
+    ) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 24.dp)
+        ) {
+            Text(
+                text = "COMPARE QUOTES",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 1.sp,
+                color = SignalBlue
+            )
+            Text(
+                text = job.title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Slate900,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            if (quotes.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No quotes received yet",
+                        fontSize = 13.sp,
+                        color = Slate500
+                    )
+                }
+            } else {
+                quotes.forEach { quote ->
+                    val isAccepted = quote.status == "ACCEPTED"
+                    val isRejected = quote.status == "REJECTED"
+
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = when {
+                            isAccepted -> Color(0xFFE8F5E9)
+                            isRejected -> Color(0xFFFBE9E7)
+                            else -> Slate50
+                        },
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            when {
+                                isAccepted -> Color(0xFF4CAF50)
+                                isRejected -> Color(0xFFE57373)
+                                else -> Slate200
+                            }
+                        ),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = quote.workerName,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Slate900
+                                )
+                                when {
+                                    isAccepted -> Text("ACCEPTED", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
+                                    isRejected -> Text("DECLINED", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE57373))
+                                    else -> Text("PENDING", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Slate500)
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text("Rate", fontSize = 9.sp, color = Slate500, fontWeight = FontWeight.Bold)
+                                    Text("UGX ${"%.0f".format(quote.proposedRate)}/hr", fontSize = 12.sp, color = Slate800)
+                                }
+                                Column {
+                                    Text("Hours", fontSize = 9.sp, color = Slate500, fontWeight = FontWeight.Bold)
+                                    Text("${quote.proposedHours}hrs", fontSize = 12.sp, color = Slate800)
+                                }
+                                Column {
+                                    Text("Total", fontSize = 9.sp, color = Slate500, fontWeight = FontWeight.Bold)
+                                    Text("UGX ${"%.0f".format(quote.totalQuote)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = IndustrialEmeraldDark)
+                                }
+                            }
+
+                            if (quote.notes.isNotBlank()) {
+                                Text(
+                                    text = quote.notes,
+                                    fontSize = 11.sp,
+                                    color = Slate600,
+                                    modifier = Modifier.padding(top = 6.dp)
+                                )
+                            }
+
+                            if (quote.status == "PENDING") {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    OutlinedButton(
+                                        onClick = { },
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(6.dp)
+                                    ) {
+                                        Text("Decline", fontSize = 11.sp)
+                                    }
+                                    Button(
+                                        onClick = { onAcceptQuote(quote.id) },
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(6.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                                    ) {
+                                        Text("Accept", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
