@@ -3,6 +3,103 @@ package com.example.data.db
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+// JOB-004: Job Status Enum with validated states
+enum class JobStatus(val value: String) {
+    DRAFT("DRAFT"),
+    POSTED("POSTED"),
+    QUOTING("QUOTING"),
+    WORKER_SELECTED("WORKER_SELECTED"),
+    ACCEPTED("ACCEPTED"),
+    WORKER_EN_ROUTE("WORKER_EN_ROUTE"),
+    ARRIVED("ARRIVED"),
+    IN_PROGRESS("IN_PROGRESS"),
+    COMPLETED("COMPLETED"),
+    PAYMENT_RELEASED("PAYMENT_RELEASED"),
+    CANCELLED("CANCELLED"),
+    DISPUTED("DISPUTED"),
+    EXPIRED("EXPIRED");
+
+    companion object {
+        fun fromValue(value: String): JobStatus? = entries.find { it.value == value }
+
+        // JOB-004: Define valid state transitions
+        private val validTransitions = mapOf(
+            DRAFT to setOf(POSTED, CANCELLED),
+            POSTED to setOf(QUOTING, CANCELLED, EXPIRED),
+            QUOTING to setOf(WORKER_SELECTED, CANCELLED, EXPIRED),
+            WORKER_SELECTED to setOf(ACCEPTED, CANCELLED),
+            ACCEPTED to setOf(WORKER_EN_ROUTE, IN_PROGRESS, CANCELLED, DISPUTED),
+            WORKER_EN_ROUTE to setOf(ARRIVED, CANCELLED, DISPUTED),
+            ARRIVED to setOf(IN_PROGRESS, CANCELLED, DISPUTED),
+            IN_PROGRESS to setOf(COMPLETED, CANCELLED, DISPUTED),
+            COMPLETED to setOf(PAYMENT_RELEASED, DISPUTED),
+            PAYMENT_RELEASED to setOf(DISPUTED),
+            DISPUTED to setOf(COMPLETED, CANCELLED),
+            CANCELLED to emptySet(),
+            EXPIRED to emptySet()
+        );
+
+        fun canTransition(from: JobStatus, to: JobStatus): Boolean {
+            return validTransitions[from]?.contains(to) == true;
+        }
+
+        fun isValidTransition(from: String, to: String): Boolean {
+            val fromStatus = fromValue(from) ?: return false;
+            val toStatus = fromValue(to) ?: return false;
+            return canTransition(fromStatus, toStatus);
+        }
+    }
+}
+
+// DISP-001: Dispute Entity
+enum class DisputeStatus(val value: String) {
+    OPEN("OPEN"),
+    UNDER_REVIEW("UNDER_REVIEW"),
+    RESOLVED("RESOLVED"),
+    REJECTED("REJECTED"),
+    ESCALATED("ESCALATED");
+
+    companion object {
+        fun fromValue(value: String): DisputeStatus? = entries.find { it.value == value }
+    }
+}
+
+enum class DisputeReason(val value: String) {
+    QUALITY_ISSUE("QUALITY_ISSUE"),
+    NO_SHOW("NO_SHOW"),
+    INCOMPLETE_WORK("INCOMPLETE_WORK"),
+    OVERCHARGING("OVERCHARGING"),
+    MISREPRESENTATION("MISREPRESENTATION"),
+    SAFETY_CONCERN("SAFETY_CONCERN"),
+    OTHER("OTHER");
+
+    companion object {
+        fun fromValue(value: String): DisputeReason? = entries.find { it.value == value }
+    }
+}
+
+// RATE-001: Rating Entity
+// NOTIF-001: Notification Entity
+enum class NotificationType(val value: String) {
+    NEW_QUOTE("NEW_QUOTE"),
+    QUOTE_ACCEPTED("QUOTE_ACCEPTED"),
+    JOB_ASSIGNED("JOB_ASSIGNED"),
+    WORKER_ARRIVING("WORKER_ARRIVING"),
+    JOB_STATUS_CHANGE("JOB_STATUS_CHANGE"),
+    NEW_MESSAGE("NEW_MESSAGE"),
+    PAYMENT_STATUS("PAYMENT_STATUS"),
+    PAYMENT_RECEIPT("PAYMENT_RECEIPT"),
+    VERIFICATION_DECISION("VERIFICATION_DECISION"),
+    TRAINING_REQUIREMENT("TRAINING_REQUIREMENT"),
+    DISPUTE_UPDATE("DISPUTE_UPDATE"),
+    SOS_EVENT("SOS_EVENT"),
+    ACCOUNT_SECURITY("ACCOUNT_SECURITY");
+
+    companion object {
+        fun fromValue(value: String): NotificationType? = entries.find { it.value == value }
+    }
+}
+
 @Entity(tableName = "service_providers")
 data class ServiceProviderEntity(
     @PrimaryKey val id: String,
@@ -240,5 +337,63 @@ data class PendingActionEntity(
     val retryCount: Int = 0,
     val maxRetries: Int = 3,
     val status: String = "PENDING" // "PENDING", "SYNCING", "COMPLETED", "FAILED"
+)
+
+// DISP-001: Dispute Entity
+@Entity(tableName = "disputes")
+data class DisputeEntity(
+    @PrimaryKey val id: String,
+    val jobId: String,
+    val reportedBy: String, // User ID who reported
+    val reportedUserId: String, // User ID being reported (worker or client)
+    val disputeReason: String, // DisputeReason value
+    val description: String,
+    val evidenceUrlsCsv: String = "", // Comma-separated evidence photo URLs
+    val status: String = DisputeStatus.OPEN.value,
+    val adminNotes: String = "",
+    val resolutionType: String = "", // "REFUND_FULL", "REFUND_PARTIAL", "NO_ACTION", "WORKER_SUSPENDED"
+    val resolutionAmount: Double = 0.0,
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val resolvedAt: Long = 0,
+    val resolvedBy: String = ""
+)
+
+// RATE-001: Rating Entity
+@Entity(tableName = "ratings")
+data class RatingEntity(
+    @PrimaryKey val id: String,
+    val jobId: String,
+    val fromUserId: String, // User who gave the rating
+    val toUserId: String, // User who received the rating
+    val rating: Int, // 1-5 stars
+    val review: String = "",
+    val isFromClient: Boolean = true, // true if from client to worker, false if worker to client
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+// NOTIF-001: Notification Entity
+@Entity(tableName = "notifications")
+data class NotificationEntity(
+    @PrimaryKey val id: String,
+    val userId: String,
+    val type: String, // NotificationType value
+    val title: String,
+    val body: String,
+    val jobId: String = "",
+    val isRead: Boolean = false,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+// JOB-005: Job Status Audit Trail Entity
+@Entity(tableName = "job_status_audit")
+data class JobStatusAuditEntity(
+    @PrimaryKey val id: String,
+    val jobId: String,
+    val fromStatus: String,
+    val toStatus: String,
+    val changedBy: String, // User ID who made the change
+    val changedAt: Long = System.currentTimeMillis(),
+    val reason: String = ""
 )
 

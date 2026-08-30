@@ -5,12 +5,21 @@ import * as crypto from "crypto";
 admin.initializeApp();
 const db = admin.firestore();
 
-const MOMO_WEBHOOK_SECRET = process.env.MOMO_WEBHOOK_SECRET || "momo-webhook-secret-key-default";
+const MOMO_WEBHOOK_SECRET = process.env.MOMO_WEBHOOK_SECRET;
+
+if (!MOMO_WEBHOOK_SECRET) {
+  console.error("FATAL: MOMO_WEBHOOK_SECRET environment variable is not set. Webhook verification will fail.");
+}
 
 /**
  * SEC-002: Helper to verify HMAC-SHA256 signature on incoming payment gateway webhooks.
  */
 function verifyHmacSignature(req: functions.https.Request): boolean {
+  if (!MOMO_WEBHOOK_SECRET) {
+    console.error("MOMO_WEBHOOK_SECRET not configured. Rejecting webhook.");
+    return false;
+  }
+
   const signatureHeader = (
     req.headers["x-momo-signature"] ||
     req.headers["x-signature"] ||
@@ -97,6 +106,7 @@ export const createMoMoCollection = functions.https.onCall(async (data, context)
  * PAY-003: Escrow Release & Worker MoMo Payout
  * Callable function triggered when resident approves job completion.
  * Credits worker's Mobile Money wallet and updates job status.
+ * SEC-004: Fixed to verify job ownership before releasing escrow.
  */
 export const releaseEscrowToWorker = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
@@ -114,6 +124,43 @@ export const releaseEscrowToWorker = functions.https.onCall(async (data, context
     );
   }
 
+  // SEC-004: Verify job ownership - only job owner can release escrow
+  const jobDoc = await db.collection("jobs").doc(jobId).get();
+  if (!jobDoc.exists) {
+    throw new functions.https.HttpsError(
+      "not-found",
+      "Job not found."
+    );
+  }
+
+  const jobData = jobDoc.data();
+  const callerUid = context.auth.uid;
+
+  // Check if caller is the job owner (postedByResident or postedBy UID)
+  if (jobData?.postedByResident !== callerUid && jobData?.postedBy !== callerUid) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "Only the job owner can release escrow."
+    );
+  }
+
+  // SEC-004: Validate job state - escrow can only be released for completed jobs
+  const validStates = ["COMPLETED", "WORK_COMPLETED", "IN_PROGRESS"];
+  if (!validStates.includes(jobData?.status)) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      `Escrow cannot be released for job in status: ${jobData?.status}. Job must be completed.`
+    );
+  }
+
+  // SEC-004: Verify workerId matches assigned provider
+  if (jobData?.assignedProvider !== workerId && jobData?.assignedWorkerId !== workerId) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Worker ID does not match assigned worker for this job."
+    );
+  }
+
   const payoutRef = `PAYOUT-${Date.now()}`;
   const payoutPayload = {
     payoutId: payoutRef,
@@ -124,6 +171,7 @@ export const releaseEscrowToWorker = functions.https.onCall(async (data, context
     currency: "UGX",
     provider: provider || "MTN_MOMO",
     status: "QUEUED",
+    releasedBy: callerUid,
     createdAt: admin.firestore.FieldValue.serverTimestamp()
   };
 
@@ -132,6 +180,8 @@ export const releaseEscrowToWorker = functions.https.onCall(async (data, context
   await db.collection("jobs").doc(jobId).update({
     status: "COMPLETED",
     escrowStatus: "RELEASED_TO_WORKER",
+    releasedBy: callerUid,
+    releasedAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   });
 
@@ -444,4 +494,148 @@ export const setWorkerActivationStatus = functions.https.onCall(async (data, con
   });
 
   return { success: true, userId, isActivated: activate };
+});
+
+// ==================== DISP-003: Admin Dispute Resolution ====================
+
+/**
+ * DISP-003: Resolve Dispute
+ * Admin-only function to resolve disputes with optional refund.
+ */
+export const resolveDispute = functions.https.onCall(async (data, context) => {
+  if (!isAdmin(context)) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "Admin access required to resolve disputes."
+    );
+  }
+
+  const { disputeId, resolution, resolutionType, resolutionAmount, adminNotes } = data;
+  if (!disputeId || !resolution) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Missing required parameters: disputeId, resolution."
+    );
+  }
+
+  const validResolutions = ["RESOLVED", "REJECTED", "ESCALATED"];
+  if (!validResolutions.includes(resolution)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      `Invalid resolution. Must be one of: ${validResolutions.join(", ")}`
+    );
+  }
+
+  const disputeDoc = await db.collection("disputes").doc(disputeId).get();
+  if (!disputeDoc.exists) {
+    throw new functions.https.HttpsError(
+      "not-found",
+      "Dispute not found."
+    );
+  }
+
+  const disputeData = disputeDoc.data();
+  const now = admin.firestore.FieldValue.serverTimestamp();
+
+  // Update dispute status
+  await db.collection("disputes").doc(disputeId).update({
+    status: resolution,
+    resolutionType: resolutionType || "",
+    resolutionAmount: resolutionAmount || 0,
+    adminNotes: adminNotes || "",
+    resolvedAt: now,
+    resolvedBy: context.auth?.uid || "admin",
+    updatedAt: now
+  });
+
+  // If refund approved, process it
+  if (resolutionType === "REFUND_FULL" || resolutionType === "REFUND_PARTIAL") {
+    const refundAmount = resolutionAmount || 0;
+    if (refundAmount > 0) {
+      // Create refund record
+      await db.collection("momo_payouts").add({
+        payoutId: `REFUND-${Date.now()}`,
+        jobId: disputeData?.jobId,
+        userId: disputeData?.reportedBy,
+        amount: refundAmount,
+        currency: "UGX",
+        provider: "REFUND",
+        status: "QUEUED",
+        reason: `Dispute refund: ${resolutionType}`,
+        disputeId: disputeId,
+        createdAt: now
+      });
+
+      // Update job escrow status
+      await db.collection("jobs").doc(disputeData?.jobId).update({
+        escrowStatus: "REFUNDED",
+        updatedAt: now
+      });
+    }
+  }
+
+  // If worker suspended
+  if (resolutionType === "WORKER_SUSPENDED") {
+    await db.collection("providers").doc(disputeData?.reportedUserId).update({
+      isActivated: false,
+      updatedAt: now
+    });
+  }
+
+  // Notify parties
+  await db.collection("notifications").add({
+    userId: disputeData?.reportedBy,
+    type: "DISPUTE_RESOLVED",
+    jobId: disputeData?.jobId,
+    message: `Your dispute has been ${resolution.toLowerCase()}. ${adminNotes || ""}`,
+    createdAt: now,
+    read: false
+  });
+
+  if (disputeData?.reportedUserId) {
+    await db.collection("notifications").add({
+      userId: disputeData.reportedUserId,
+      type: "DISPUTE_RESOLVED",
+      jobId: disputeData?.jobId,
+      message: `A dispute against you has been ${resolution.toLowerCase()}. ${adminNotes || ""}`,
+      createdAt: now,
+      read: false
+    });
+  }
+
+  return {
+    success: true,
+    disputeId,
+    resolution,
+    resolutionType: resolutionType || "",
+    resolutionAmount: resolutionAmount || 0
+  };
+});
+
+/**
+ * DISP-003: Get Disputes Queue
+ * Admin-only function to retrieve disputes for review.
+ */
+export const getDisputesQueue = functions.https.onCall(async (data, context) => {
+  if (!isAdmin(context)) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "Admin access required."
+    );
+  }
+
+  const { status } = data;
+  let query = db.collection("disputes").orderBy("createdAt", "desc");
+
+  if (status) {
+    query = query.where("status", "==", status);
+  }
+
+  const snapshot = await query.limit(50).get();
+  const disputes = snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
+
+  return { success: true, disputes };
 });

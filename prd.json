@@ -1821,9 +1821,777 @@
       ],
       "rollback": "git checkout app/proguard-rules.pro",
       "notes": "Production release sign-off."
+    },
+    {
+      "id": "AUTH-001",
+      "phase": 16,
+      "title": "Implement Phone Authentication with OTP",
+      "priority": "P0",
+      "status": "pending",
+      "depends_on": [],
+      "description": "Implement Firebase Phone Auth with OTP verification for secure user authentication.",
+      "problem": "App uses anonymous-only authentication with no phone verification. Anyone can access any account.",
+      "goal": "Add PhoneAuthProvider flow with OTP verification, replacing anonymous auth.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/components/AuthModal.kt",
+          "app/src/main/java/com/example/data/remote/FirebaseService.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/components/AuthModal.kt",
+        "app/src/main/java/com/example/data/remote/FirebaseService.kt",
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+      ],
+      "acceptance_criteria": [
+        "User can enter phone number and receive OTP",
+        "OTP verification creates authenticated session",
+        "Auth state persists across app restarts"
+      ],
+      "verification": [
+        "Test phone auth flow with test phone numbers"
+      ],
+      "risks": [
+        "Firebase Phone Auth requires SHA-1/SHA-256 fingerprints",
+        "Test phone numbers needed for development"
+      ],
+      "rollback": "git checkout AuthModal.kt FirebaseService.kt"
+    },
+    {
+      "id": "AUTH-002",
+      "phase": 16,
+      "title": "Implement Session Persistence",
+      "priority": "P0",
+      "status": "pending",
+      "depends_on": [
+        "AUTH-001"
+      ],
+      "description": "Persist authentication state across app restarts using DataStore.",
+      "problem": "isAuthenticated flag is in-memory only, resets on app restart.",
+      "goal": "Persist auth state in DataStore and restore on app launch.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+        "app/build.gradle.kts"
+      ],
+      "acceptance_criteria": [
+        "Returning user remains authenticated after app restart",
+        "Auth state syncs with Firebase auth state"
+      ],
+      "verification": [
+        "Restart app and verify auth state persists"
+      ],
+      "risks": [
+        "DataStore dependency"
+      ],
+      "rollback": "git checkout ViewModel.kt"
+    },
+    {
+      "id": "AUTH-003",
+      "phase": 16,
+      "title": "Implement Logout Flow",
+      "priority": "P0",
+      "status": "pending",
+      "depends_on": [
+        "AUTH-001"
+      ],
+      "description": "Implement proper logout that clears Firebase session and local data.",
+      "problem": "Current logout only resets in-memory flags, leaving Room data and Firebase session intact.",
+      "goal": "Clear Firebase auth, Room profile, and DataStore on logout.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+          "app/src/main/java/com/example/data/remote/FirebaseService.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+        "app/src/main/java/com/example/data/remote/FirebaseService.kt"
+      ],
+      "acceptance_criteria": [
+        "Logout clears all local user data",
+        "User must re-authenticate after logout"
+      ],
+      "verification": [
+        "Logout and verify login screen appears"
+      ],
+      "risks": [
+        "Data loss if not implemented carefully"
+      ],
+      "rollback": "git checkout ViewModel.kt FirebaseService.kt"
+    },
+    {
+      "id": "AUTH-004",
+      "phase": 16,
+      "title": "Implement Account Deletion",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "AUTH-001"
+      ],
+      "description": "Allow users to permanently delete their account and all associated data.",
+      "problem": "AccountDeletionDialog only clears in-memory state, no actual data deletion.",
+      "goal": "Delete Firebase account, Room data, and Firestore documents.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/components/AccountDeletionDialog.kt",
+          "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/components/AccountDeletionDialog.kt",
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+      ],
+      "acceptance_criteria": [
+        "Account deletion removes all user data from Firebase and local DB",
+        "Confirmation dialog prevents accidental deletion"
+      ],
+      "verification": [
+        "Delete account and verify data is removed"
+      ],
+      "risks": [
+        "Irreversible action"
+      ],
+      "rollback": "git checkout AccountDeletionDialog.kt"
+    },
+    {
+      "id": "AUTH-005",
+      "phase": 16,
+      "title": "Implement Authentication Error Handling",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "AUTH-001"
+      ],
+      "description": "Add comprehensive error handling for auth failures.",
+      "problem": "Auth failures are silently logged, no user-facing error messages.",
+      "goal": "Display user-friendly error messages for auth failures.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/components/AuthModal.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/components/AuthModal.kt"
+      ],
+      "acceptance_criteria": [
+        "Invalid phone number shows error",
+        "Invalid OTP shows error",
+        "Network failure shows retry option"
+      ],
+      "verification": [
+        "Test with invalid phone/OTP"
+      ],
+      "risks": [
+        "Low risk"
+      ],
+      "rollback": "git checkout AuthModal.kt"
+    },
+    {
+      "id": "SEC-004",
+      "phase": 16,
+      "title": "Fix releaseEscrowToWorker Authorization Vulnerability",
+      "priority": "P0",
+      "status": "completed",
+      "completed_at": "2026-08-30T06:45:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [],
+      "description": "Restrict releaseEscrowToWorker to job owners only, preventing fund theft.",
+      "problem": "Any authenticated user can call releaseEscrowToWorker to credit any wallet for any job.",
+      "goal": "Add job ownership verification and state validation to escrow release.",
+      "scope": {
+        "include": [
+          "functions/src/index.ts"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Only job owner can release escrow",
+        "Escrow release validates job completion status",
+        "Unauthorized calls return 403"
+      ],
+      "verification": [
+        "Test escrow release with non-owner account"
+      ],
+      "risks": [
+        "Critical security fix"
+      ],
+      "rollback": "git checkout functions/src/index.ts"
+    },
+    {
+      "id": "SEC-005",
+      "phase": 16,
+      "title": "Fix Firestore Rules KYC Path Mismatch",
+      "priority": "P0",
+      "status": "completed",
+      "completed_at": "2026-08-30T06:46:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [],
+      "description": "Update firestore.rules to read KYC status from worker_kyc collection.",
+      "problem": "firestore.rules reads users/{uid}/verification but app stores KYC in worker_kyc collection.",
+      "goal": "Align firestore.rules with actual data model.",
+      "scope": {
+        "include": [
+          "firestore.rules"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "firestore.rules"
+      ],
+      "acceptance_criteria": [
+        "Worker KYC approval is correctly enforced",
+        "isWorkerKycApproved helper resolves correctly"
+      ],
+      "verification": [
+        "Test worker write operations with rules"
+      ],
+      "risks": [
+        "Security rule changes"
+      ],
+      "rollback": "git checkout firestore.rules"
+    },
+    {
+      "id": "SEC-006",
+      "phase": 16,
+      "title": "Add Missing Firestore Rules for Collections",
+      "priority": "P1",
+      "status": "completed",
+      "completed_at": "2026-08-30T06:47:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [],
+      "description": "Add security rules for worker_kyc, worker_training, guarantors, job_quotes, notifications.",
+      "problem": "Several collections have no security rules, allowing unauthorized access.",
+      "goal": "Add appropriate read/write rules for all collections.",
+      "scope": {
+        "include": [
+          "firestore.rules"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "firestore.rules"
+      ],
+      "acceptance_criteria": [
+        "All collections have appropriate rules",
+        "Sensitive data is protected"
+      ],
+      "verification": [
+        "Test unauthorized access is denied"
+      ],
+      "risks": [
+        "Over-restriction may break functionality"
+      ],
+      "rollback": "git checkout firestore.rules"
+    },
+    {
+      "id": "SEC-007",
+      "phase": 16,
+      "title": "Remove Hardcoded Webhook Secret Fallback",
+      "priority": "P0",
+      "status": "completed",
+      "completed_at": "2026-08-30T06:48:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [],
+      "description": "Remove default webhook secret fallback to prevent unauthorized webhook processing.",
+      "problem": "MOMO_WEBHOOK_SECRET defaults to 'momo-webhook-secret-key-default' if env unset.",
+      "goal": "Fail loudly if webhook secret is not configured.",
+      "scope": {
+        "include": [
+          "functions/src/index.ts"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Webhook rejects requests if secret not configured",
+        "No default fallback value"
+      ],
+      "verification": [
+        "Test webhook without secret configured"
+      ],
+      "risks": [
+        "May break local development"
+      ],
+      "rollback": "git checkout functions/src/index.ts"
+    },
+    {
+      "id": "JOB-004",
+      "phase": 16,
+      "title": "Implement Job State Machine",
+      "priority": "P0",
+      "status": "completed",
+      "completed_at": "2026-08-30T06:50:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [],
+      "description": "Create proper job status enum with validated state transitions.",
+      "problem": "Job status is a raw string with no validation, three incompatible vocabularies exist.",
+      "goal": "Define JobStatus enum with legal transitions and validation.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/db/Entities.kt",
+          "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/db/Entities.kt",
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+      ],
+      "acceptance_criteria": [
+        "JobStatus enum defines all valid states",
+        "State transitions are validated",
+        "Invalid transitions are rejected"
+      ],
+      "verification": [
+        "Test valid and invalid state transitions"
+      ],
+      "risks": [
+        "May break existing UI that uses string statuses"
+      ],
+      "rollback": "git checkout Entities.kt ViewModel.kt"
+    },
+    {
+      "id": "JOB-005",
+      "phase": 16,
+      "title": "Add Job Status Audit Trail",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "JOB-004"
+      ],
+      "description": "Track all job status changes with timestamps and actor.",
+      "problem": "No history of job status changes exists.",
+      "goal": "Create JobStatusChangeEntity to log all transitions.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/db/Entities.kt",
+          "app/src/main/java/com/example/data/db/Daos.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/db/Entities.kt",
+        "app/src/main/java/com/example/data/db/Daos.kt",
+        "app/src/main/java/com/example/data/db/AppDatabase.kt"
+      ],
+      "acceptance_criteria": [
+        "Every status change is logged with timestamp and actor",
+        "Audit trail is viewable"
+      ],
+      "verification": [
+        "Transition job and verify audit log"
+      ],
+      "risks": [
+        "Database migration required"
+      ],
+      "rollback": "git checkout Entities.kt Daos.kt AppDatabase.kt"
+    },
+    {
+      "id": "DISP-001",
+      "phase": 16,
+      "title": "Implement Dispute Entity and Persistence",
+      "priority": "P0",
+      "status": "completed",
+      "completed_at": "2026-08-30T06:52:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [],
+      "description": "Create DisputeEntity with DAO for persisting dispute data.",
+      "problem": "Dispute UI exists but data is discarded - no entity or persistence.",
+      "goal": "Create DisputeEntity with full fields and DAO.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/db/Entities.kt",
+          "app/src/main/java/com/example/data/db/Daos.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/db/Entities.kt",
+        "app/src/main/java/com/example/data/db/Daos.kt",
+        "app/src/main/java/com/example/data/db/AppDatabase.kt"
+      ],
+      "acceptance_criteria": [
+        "DisputeEntity has fields: id, jobId, reason, status, evidence, timestamps",
+        "DAO supports CRUD operations",
+        "Disputes persist to Room DB"
+      ],
+      "verification": [
+        "Create dispute and verify persistence"
+      ],
+      "risks": [
+        "Database migration required"
+      ],
+      "rollback": "git checkout Entities.kt Daos.kt AppDatabase.kt"
+    },
+    {
+      "id": "DISP-002",
+      "phase": 16,
+      "title": "Implement Dispute UI and Workflow",
+      "priority": "P0",
+      "status": "pending",
+      "depends_on": [
+        "DISP-001"
+      ],
+      "description": "Wire dispute UI to persist data and show dispute history.",
+      "problem": "Dispute dialog discards reason text and navigation never finds disputes.",
+      "goal": "Persist disputes and fix navigation.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/components/EscrowAndProofSheet.kt",
+          "app/src/main/java/com/example/ui/screens/MainScreen.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/components/EscrowAndProofSheet.kt",
+        "app/src/main/java/com/example/ui/screens/MainScreen.kt",
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+      ],
+      "acceptance_criteria": [
+        "Dispute reason is saved to database",
+        "Dispute list shows user's disputes",
+        "Job status updates correctly on dispute"
+      ],
+      "verification": [
+        "Raise dispute and verify it appears in list"
+      ],
+      "risks": [
+        "UI changes"
+      ],
+      "rollback": "git checkout EscrowAndProofSheet.kt MainScreen.kt"
+    },
+    {
+      "id": "DISP-003",
+      "phase": 16,
+      "title": "Implement Admin Dispute Resolution",
+      "priority": "P0",
+      "status": "completed",
+      "completed_at": "2026-08-30T06:54:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "DISP-001"
+      ],
+      "description": "Add Cloud Function for admins to resolve disputes.",
+      "problem": "No admin endpoint exists for dispute resolution.",
+      "goal": "Add resolveDispute Cloud Function with refund support.",
+      "scope": {
+        "include": [
+          "functions/src/index.ts"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Admin can approve/reject dispute",
+        "Resolution triggers appropriate refund",
+        "Dispute status updates correctly"
+      ],
+      "verification": [
+        "Resolve dispute via Cloud Function"
+      ],
+      "risks": [
+        "Financial impact"
+      ],
+      "rollback": "git checkout functions/src/index.ts"
+    },
+    {
+      "id": "DISP-004",
+      "phase": 16,
+      "title": "Implement User/Worker Reporting",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "DISP-001"
+      ],
+      "description": "Allow users to report other users/workers for misconduct.",
+      "problem": "No reporting feature exists.",
+      "goal": "Add report functionality with reason and evidence.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/components/ProviderDetailSheet.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/components/ProviderDetailSheet.kt",
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+      ],
+      "acceptance_criteria": [
+        "User can report another user/worker",
+        "Report includes reason and optional evidence",
+        "Reports are visible to admins"
+      ],
+      "verification": [
+        "Submit report and verify it persists"
+      ],
+      "risks": [
+        "Potential for abuse"
+      ],
+      "rollback": "git checkout ProviderDetailSheet.kt"
+    },
+    {
+      "id": "NOTIF-001",
+      "phase": 16,
+      "title": "Implement Notification Entity and Persistence",
+      "priority": "P0",
+      "status": "completed",
+      "completed_at": "2026-08-30T06:56:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [],
+      "description": "Create NotificationEntity with DAO for persisting notifications.",
+      "problem": "Notifications are mock data, never persisted or server-driven.",
+      "goal": "Create NotificationEntity and DAO.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/db/Entities.kt",
+          "app/src/main/java/com/example/data/db/Daos.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/db/Entities.kt",
+        "app/src/main/java/com/example/data/db/Daos.kt",
+        "app/src/main/java/com/example/data/db/AppDatabase.kt"
+      ],
+      "acceptance_criteria": [
+        "NotificationEntity has fields: id, userId, type, title, body, timestamp, read",
+        "DAO supports CRUD and unread count",
+        "Notifications persist to Room DB"
+      ],
+      "verification": [
+        "Create notification and verify persistence"
+      ],
+      "risks": [
+        "Database migration required"
+      ],
+      "rollback": "git checkout Entities.kt Daos.kt AppDatabase.kt"
+    },
+    {
+      "id": "NOTIF-002",
+      "phase": 16,
+      "title": "Implement FCM Push Notifications",
+      "priority": "P0",
+      "status": "pending",
+      "depends_on": [
+        "NOTIF-001"
+      ],
+      "description": "Add Firebase Cloud Messaging service for push notifications.",
+      "problem": "No FCM integration exists - users receive no real-time notifications.",
+      "goal": "Add FirebaseMessagingService to receive push notifications.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/remote/FirebaseMessagingService.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/remote/FirebaseMessagingService.kt",
+        "app/src/main/AndroidManifest.xml",
+        "app/build.gradle.kts"
+      ],
+      "acceptance_criteria": [
+        "App receives FCM messages",
+        "Notifications are displayed when app is in background",
+        "Notification tap opens relevant screen"
+      ],
+      "verification": [
+        "Send test FCM message"
+      ],
+      "risks": [
+        "FCM dependency"
+      ],
+      "rollback": "git checkout FirebaseMessagingService.kt AndroidManifest.xml"
+    },
+    {
+      "id": "NOTIF-003",
+      "phase": 16,
+      "title": "Wire Notification Triggers to Events",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "NOTIF-001"
+      ],
+      "description": "Trigger notifications on key events (quote, job update, payment, etc).",
+      "problem": "No notifications are sent on events.",
+      "goal": "Add notification creation on key business events.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt",
+          "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt",
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+      ],
+      "acceptance_criteria": [
+        "Notifications sent on: new quote, quote accepted, job update, payment, verification, SOS",
+        "Notifications appear in notification list"
+      ],
+      "verification": [
+        "Trigger each event and verify notification"
+      ],
+      "risks": [
+        "Notification spam"
+      ],
+      "rollback": "git checkout repository ViewModel"
+    },
+    {
+      "id": "RATE-001",
+      "phase": 16,
+      "title": "Implement Rating Entity and Persistence",
+      "priority": "P1",
+      "status": "completed",
+      "completed_at": "2026-08-30T06:58:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [],
+      "description": "Create RatingEntity with DAO for persisting ratings/reviews.",
+      "problem": "Ratings are hardcoded, no submission system exists.",
+      "goal": "Create RatingEntity with full fields and DAO.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/db/Entities.kt",
+          "app/src/main/java/com/example/data/db/Daos.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/db/Entities.kt",
+        "app/src/main/java/com/example/data/db/Daos.kt",
+        "app/src/main/java/com/example/data/db/AppDatabase.kt"
+      ],
+      "acceptance_criteria": [
+        "RatingEntity has fields: id, jobId, fromUserId, toUserId, rating, review, timestamps",
+        "DAO supports CRUD and average calculation",
+        "Ratings persist to Room DB"
+      ],
+      "verification": [
+        "Submit rating and verify persistence"
+      ],
+      "risks": [
+        "Database migration required"
+      ],
+      "rollback": "git checkout Entities.kt Daos.kt AppDatabase.kt"
+    },
+    {
+      "id": "RATE-002",
+      "phase": 16,
+      "title": "Implement Rating Submission UI",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "RATE-001"
+      ],
+      "description": "Add UI for submitting ratings after job completion.",
+      "problem": "No UI exists for submitting ratings.",
+      "goal": "Add rating dialog/sheet accessible from completed jobs.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/components/EscrowAndProofSheet.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/components/EscrowAndProofSheet.kt",
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+      ],
+      "acceptance_criteria": [
+        "User can rate 1-5 stars",
+        "User can write review text",
+        "Rating is associated with completed job"
+      ],
+      "verification": [
+        "Complete job and submit rating"
+      ],
+      "risks": [
+        "UI changes"
+      ],
+      "rollback": "git checkout EscrowAndProofSheet.kt"
+    },
+    {
+      "id": "RATE-003",
+      "phase": 16,
+      "title": "Implement Rating Aggregation",
+      "priority": "P1",
+      "status": "pending",
+      "depends_on": [
+        "RATE-001"
+      ],
+      "description": "Calculate and display average ratings for workers.",
+      "problem": "Worker rating is hardcoded, never calculated from actual ratings.",
+      "goal": "Compute average rating from submitted ratings.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt",
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+      ],
+      "acceptance_criteria": [
+        "Average rating is calculated from all ratings",
+        "Rating updates when new rating is submitted",
+        "Worker profile shows actual average"
+      ],
+      "verification": [
+        "Submit multiple ratings and verify average"
+      ],
+      "risks": [
+        "Performance with many ratings"
+      ],
+      "rollback": "git checkout repository ViewModel"
+    },
+    {
+      "id": "DB-001",
+      "phase": 16,
+      "title": "Add Proper Room Migrations",
+      "priority": "P1",
+      "status": "completed",
+      "completed_at": "2026-08-30T07:00:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [],
+      "description": "Replace fallbackToDestructiveMigration with proper migrations.",
+      "problem": "fallbackToDestructiveMigration wipes all data on schema change.",
+      "goal": "Add proper migrations for all schema versions.",
+      "scope": "app/src/main/java/com/example/data/db/AppDatabase.kt",
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/db/AppDatabase.kt"
+      ],
+      "acceptance_criteria": [
+        "Migrations exist for all version upgrades",
+        "Data is preserved across schema changes"
+      ],
+      "verification": [
+        "Test migration from old to new version"
+      ],
+      "risks": [
+        "Data loss if migration is incorrect"
+      ],
+      "rollback": "git checkout AppDatabase.kt"
     }
   ],
-    "current_story": "REL-001",
+    "current_story": "SEC-004",
     "completed_stories": [
     "STAB-001",
     "STAB-002",
@@ -1871,11 +2639,21 @@
     "MARKET-002",
     "MARKET-003",
     "OFF-001",
-    "REL-001"
+    "REL-001",
+    "SEC-004",
+    "SEC-005",
+    "SEC-006",
+    "SEC-007",
+    "JOB-004",
+    "DISP-001",
+    "DISP-003",
+    "NOTIF-001",
+    "RATE-001",
+    "DB-001"
   ],
   "blocked_stories": [
     "STAB-003"
   ],
-  "last_updated": "2026-08-29T19:15:00+03:00"
+  "last_updated": "2026-08-30T07:00:00+03:00"
 }
 

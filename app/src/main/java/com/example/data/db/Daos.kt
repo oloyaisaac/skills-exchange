@@ -237,3 +237,88 @@ interface WorkerTrainingDao {
     suspend fun completeTraining(userId: String, timestamp: Long = System.currentTimeMillis())
 }
 
+// DISP-001: Dispute Data Access Object
+@Dao
+interface DisputeDao {
+    @Query("SELECT * FROM disputes ORDER BY createdAt DESC")
+    fun getAllDisputes(): Flow<List<DisputeEntity>>
+
+    @Query("SELECT * FROM disputes WHERE reportedBy = :userId OR reportedUserId = :userId ORDER BY createdAt DESC")
+    fun getDisputesForUser(userId: String): Flow<List<DisputeEntity>>
+
+    @Query("SELECT * FROM disputes WHERE jobId = :jobId")
+    suspend fun getDisputeForJob(jobId: String): DisputeEntity?
+
+    @Query("SELECT * FROM disputes WHERE status = :status ORDER BY createdAt DESC")
+    suspend fun getDisputesByStatus(status: String): List<DisputeEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertDispute(dispute: DisputeEntity)
+
+    @Query("UPDATE disputes SET status = :status, adminNotes = :notes, resolutionType = :resolutionType, resolutionAmount = :amount, resolvedAt = :resolvedAt, resolvedBy = :resolvedBy, updatedAt = :timestamp WHERE id = :id")
+    suspend fun updateDisputeStatus(id: String, status: String, notes: String = "", resolutionType: String = "", amount: Double = 0.0, resolvedAt: Long = 0, resolvedBy: String = "", timestamp: Long = System.currentTimeMillis())
+}
+
+// RATE-001: Rating Data Access Object
+@Dao
+interface RatingDao {
+    @Query("SELECT * FROM ratings ORDER BY createdAt DESC")
+    fun getAllRatings(): Flow<List<RatingEntity>>
+
+    @Query("SELECT * FROM ratings WHERE toUserId = :userId ORDER BY createdAt DESC")
+    fun getRatingsForUser(userId: String): Flow<List<RatingEntity>>
+
+    @Query("SELECT * FROM ratings WHERE jobId = :jobId")
+    suspend fun getRatingForJob(jobId: String): RatingEntity?
+
+    @Query("SELECT * FROM ratings WHERE fromUserId = :fromUserId AND toUserId = :toUserId AND jobId = :jobId")
+    suspend fun getRatingFromToJob(fromUserId: String, toUserId: String, jobId: String): RatingEntity?
+
+    @Query("SELECT AVG(rating) FROM ratings WHERE toUserId = :userId")
+    suspend fun getAverageRatingForUser(userId: String): Double?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertRating(rating: RatingEntity)
+}
+
+// NOTIF-001: Notification Data Access Object
+@Dao
+interface NotificationDao {
+    @Query("SELECT * FROM notifications WHERE userId = :userId ORDER BY createdAt DESC")
+    fun getNotificationsForUser(userId: String): Flow<List<NotificationEntity>>
+
+    @Query("SELECT * FROM notifications WHERE userId = :userId AND isRead = 0 ORDER BY createdAt DESC")
+    fun getUnreadNotificationsForUser(userId: String): Flow<List<NotificationEntity>>
+
+    @Query("SELECT COUNT(*) FROM notifications WHERE userId = :userId AND isRead = 0")
+    suspend fun getUnreadCountForUser(userId: String): Int
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertNotification(notification: NotificationEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertNotifications(notifications: List<NotificationEntity>)
+
+    @Query("UPDATE notifications SET isRead = 1 WHERE id = :id")
+    suspend fun markAsRead(id: String)
+
+    @Query("UPDATE notifications SET isRead = 1 WHERE userId = :userId AND isRead = 0")
+    suspend fun markAllAsRead(userId: String)
+
+    @Query("DELETE FROM notifications WHERE userId = :userId")
+    suspend fun deleteAllForUser(userId: String)
+}
+
+// JOB-005: Job Status Audit Trail DAO
+@Dao
+interface JobStatusAuditDao {
+    @Query("SELECT * FROM job_status_audit WHERE jobId = :jobId ORDER BY changedAt ASC")
+    suspend fun getAuditTrailForJob(jobId: String): List<JobStatusAuditEntity>
+
+    @Query("SELECT * FROM job_status_audit ORDER BY changedAt DESC")
+    fun getAllAuditEntries(): Flow<List<JobStatusAuditEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAuditEntry(entry: JobStatusAuditEntity)
+}
+

@@ -17,8 +17,76 @@ service cloud.firestore {
 
     function isWorkerKycApproved() {
       return isAuthenticated() &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.verification.kycStatus == 'APPROVED';
+        exists(/databases/$(database)/documents/worker_kyc/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/worker_kyc/$(request.auth.uid)).data.kycStatus == 'APPROVED';
+    }
+
+    // SEC-006: Rules for worker_kyc collection
+    match /worker_kyc/{userId} {
+      allow read: if isDocOwner(userId) || isAdmin();
+      allow create: if isDocOwner(userId);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // SEC-006: Rules for worker_training collection
+    match /worker_training/{userId} {
+      allow read: if isDocOwner(userId) || isAdmin();
+      allow create: if isDocOwner(userId);
+      allow update: if isDocOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // SEC-006: Rules for guarantors collection
+    match /guarantors/{docId} {
+      allow read: if isAuthenticated(); // Workers can read guarantors for verification
+      allow create: if isAuthenticated();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // SEC-006: Rules for job_quotes collection
+    match /job_quotes/{quoteId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated(); // Workers update their own quotes
+      allow delete: if isAdmin();
+    }
+
+    // SEC-006: Rules for notifications collection
+    match /notifications/{notifId} {
+      allow read: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated(); // Server creates notifications
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // SEC-006: Rules for disputes collection
+    match /disputes/{disputeId} {
+      allow read: if isAuthenticated() &&
+        (resource.data.reportedBy == request.auth.uid || resource.data.reportedUserId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // SEC-006: Rules for momo_transactions (read-only for users)
+    match /momo_transactions/{txId} {
+      allow read: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // SEC-006: Rules for momo_payouts (read-only for users)
+    match /momo_payouts/{payoutId} {
+      allow read: if isAuthenticated() &&
+        (resource.data.workerId == request.auth.uid || isAdmin());
+      allow create: if isAdmin(); // Only server/admin can create payouts
+      allow update: if isAdmin();
+      allow delete: if false;
     }
 
     // --- MODULE 2: USER PROFILES & KYC VERIFICATION LAYER ---

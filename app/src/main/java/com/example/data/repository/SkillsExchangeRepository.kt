@@ -1135,4 +1135,86 @@ class SkillsExchangeRepository(
             district = district
         )
     }
+
+    // ==================== DISP-001: Dispute Methods ====================
+
+    fun getAllDisputes(): Flow<List<DisputeEntity>> = db.disputeDao().getAllDisputes()
+
+    fun getDisputesForUser(userId: String): Flow<List<DisputeEntity>> = db.disputeDao().getDisputesForUser(userId)
+
+    suspend fun getDisputeForJob(jobId: String): DisputeEntity? = db.disputeDao().getDisputeForJob(jobId)
+
+    suspend fun createDispute(dispute: DisputeEntity) {
+        db.disputeDao().insertDispute(dispute)
+    }
+
+    suspend fun updateDisputeStatus(disputeId: String, status: String, adminNotes: String = "", resolutionType: String = "", amount: Double = 0.0, resolvedBy: String = "") {
+        db.disputeDao().updateDisputeStatus(disputeId, status, adminNotes, resolutionType, amount, System.currentTimeMillis(), resolvedBy)
+    }
+
+    // ==================== RATE-001: Rating Methods ====================
+
+    fun getAllRatings(): Flow<List<RatingEntity>> = db.ratingDao().getAllRatings()
+
+    fun getRatingsForUser(userId: String): Flow<List<RatingEntity>> = db.ratingDao().getRatingsForUser(userId)
+
+    suspend fun getRatingForJob(jobId: String): RatingEntity? = db.ratingDao().getRatingForJob(jobId)
+
+    suspend fun hasUserRatedJob(fromUserId: String, toUserId: String, jobId: String): Boolean {
+        return db.ratingDao().getRatingFromToJob(fromUserId, toUserId, jobId) != null
+    }
+
+    suspend fun getAverageRatingForUser(userId: String): Double = db.ratingDao().getAverageRatingForUser(userId) ?: 0.0
+
+    suspend fun submitRating(rating: RatingEntity) {
+        db.ratingDao().insertRating(rating)
+    }
+
+    // ==================== NOTIF-001: Notification Methods ====================
+
+    fun getNotificationsForUser(userId: String): Flow<List<NotificationEntity>> = db.notificationDao().getNotificationsForUser(userId)
+
+    fun getUnreadNotificationsForUser(userId: String): Flow<List<NotificationEntity>> = db.notificationDao().getUnreadNotificationsForUser(userId)
+
+    suspend fun getUnreadNotificationCount(userId: String): Int = db.notificationDao().getUnreadCountForUser(userId)
+
+    suspend fun createNotification(notification: NotificationEntity) {
+        db.notificationDao().insertNotification(notification)
+    }
+
+    suspend fun markNotificationRead(notificationId: String) {
+        db.notificationDao().markAsRead(notificationId)
+    }
+
+    suspend fun markAllNotificationsRead(userId: String) {
+        db.notificationDao().markAllAsRead(userId)
+    }
+
+    // ==================== JOB-004: Job State Machine Methods ====================
+
+    fun isValidJobStatusTransition(fromStatus: String, toStatus: String): Boolean {
+        return JobStatus.isValidTransition(fromStatus, toStatus)
+    }
+
+    suspend fun transitionJobStatus(jobId: String, fromStatus: String, toStatus: String, changedBy: String, reason: String = ""): Boolean {
+        if (!JobStatus.isValidTransition(fromStatus, toStatus)) {
+            return false
+        }
+        db.jobPostDao().updateJobStatus(jobId, toStatus)
+        db.jobStatusAuditDao().insertAuditEntry(
+            JobStatusAuditEntity(
+                id = "audit_${System.currentTimeMillis()}",
+                jobId = jobId,
+                fromStatus = fromStatus,
+                toStatus = toStatus,
+                changedBy = changedBy,
+                reason = reason
+            )
+        )
+        return true
+    }
+
+    suspend fun getJobAuditTrail(jobId: String): List<JobStatusAuditEntity> {
+        return db.jobStatusAuditDao().getAuditTrailForJob(jobId)
+    }
 }

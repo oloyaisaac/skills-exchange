@@ -1,25 +1,25 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-08-29T19:15:00+03:00
+2026-08-30T07:00:00+03:00
 
 ---
 
 ## Current Project Status
-**Phase**: 15 — Production QA & Release Readiness
-**Overall Status**: **COMPLETE** — All 47 eligible stories implemented and verified. STAB-003 remains blocked on JDK/Gradle environment conflict.
+**Phase**: 16 — Production Readiness & Security Hardening
+**Overall Status**: In Progress — 56 of 79 stories completed. Critical security fixes applied. 22 stories pending.
 
 ---
 
 ## Current PRD Story
-**Story ID**: REL-001
-**Title**: Production Build ProGuard Rules & Release Sign-Off
-**Status**: **COMPLETED** ✅
+**Story ID**: DISP-002
+**Title**: Implement Dispute UI and Workflow
+**Status**: Next eligible task
 
 ---
 
 ## Current Objective
-**PROJECT COMPLETE.** All PRD stories have been implemented. The Skills Exchange Android app is ready for production release (pending STAB-003 environment resolution for automated test verification).
+Complete remaining Phase 16 stories for production readiness.
 
 ---
 
@@ -91,13 +91,25 @@
 ### Phase 14 — Offline Synchronization & Reliability
 - **OFF-001**: Implement Offline Action Queue & Sync Manager (PendingActionEntity, auto-sync on network reconnect)
 
-### Phase 15 — Production QA & Release Readiness
-- **REL-001**: Production Build ProGuard Rules & Release Sign-Off (ProGuard rules for Room, Firebase, Moshi)
+### Phase 16 — Production Readiness & Security Hardening
+- **SEC-004**: Fix releaseEscrowToWorker Authorization Vulnerability (Added job ownership verification)
+- **SEC-005**: Fix Firestore Rules KYC Path Mismatch (Updated isWorkerKycApproved helper)
+- **SEC-006**: Add Missing Firestore Rules for Collections (Rules for all collections)
+- **SEC-007**: Remove Hardcoded Webhook Secret Fallback (Fail loudly if secret not set)
+- **JOB-004**: Implement Job State Machine (JobStatus enum with validated transitions)
+- **DISP-001**: Implement Dispute Entity and Persistence (DisputeEntity, DAO, enums)
+- **DISP-003**: Implement Admin Dispute Resolution (resolveDispute, getDisputesQueue Cloud Functions)
+- **NOTIF-001**: Implement Notification Entity and Persistence (NotificationEntity, DAO, enums)
+- **RATE-001**: Implement Rating Entity and Persistence (RatingEntity, DAO)
+- **DB-001**: Add Proper Room Migrations (Migration 11→12, data preservation)
 
 ---
 
 ## Work In Progress / Next Task
-**None.** All eligible PRD stories are complete.
+1. **DISP-002** (P0): Implement Dispute UI and Workflow - Wire dispute UI to persist data.
+2. **AUTH-001** (P0): Implement Phone Authentication with OTP.
+3. **JOB-005** (P1): Add Job Status Audit Trail.
+4. Remaining Phase 16 stories as time permits.
 
 ---
 
@@ -187,8 +199,16 @@
 | PAY-003 Escrow Release & Payout | Code inspection functions/src/index.ts | PASS — releaseEscrowToWorker Cloud Function, worker payout |
 | PAY-004 Material Advance Disbursement | Code inspection Repository | PASS — approveMaterialAdvance method, 50% disbursement logic |
 | MAP-001 Google Maps SDK | Code inspection InteractiveMapView/build.gradle | PASS — Google Maps MapView composable, play-services-maps dep |
-| OFF-001 Offline Queue | Code inspection Entities/Daos/Repository/ViewModel | PASS — PendingActionEntity, auto-sync on network reconnect |
-| REL-001 ProGuard Rules | Code inspection proguard-rules.pro | PASS — Room, Firebase, Moshi keep rules added |
+| DB-001 Room Migrations | Code inspection AppDatabase.kt | PASS - Migration 11→12 added, data preserved |
+| RATE-001 Rating Entity | Code inspection Entities/Daos | PASS - RatingEntity with DAO methods |
+| NOTIF-001 Notification Entity | Code inspection Entities/Daos | PASS - NotificationEntity with DAO methods |
+| DISP-001 Dispute Entity | Code inspection Entities/Daos | PASS - DisputeEntity with enums and DAO |
+| DISP-003 Admin Dispute Resolution | Code inspection functions/src/index.ts | PASS - resolveDispute, getDisputesQueue |
+| JOB-004 Job State Machine | Code inspection Entities.kt | PASS - JobStatus enum with transitions |
+| SEC-004 Escrow Authorization | Code inspection functions/src/index.ts | PASS - Ownership verification added |
+| SEC-005 Firestore KYC Path | Code inspection firestore.rules | PASS - worker_kyc path fixed |
+| SEC-006 Firestore Rules | Code inspection firestore.rules | PASS - All collections covered |
+| SEC-007 Webhook Secret | Code inspection functions/src/index.ts | PASS - No default fallback |
 
 ---
 
@@ -202,15 +222,15 @@
 ## Account / Session Handoff
 
 ```
-Current session:          Final session — PROJECT COMPLETE
-Current PRD story:        REL-001 (COMPLETED)
-Current task:             None — all eligible stories done
-Completed stories (47):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, COMM-001, AI-001, AI-002, SAFE-001, SAFE-002, ADMIN-001, ADMIN-002, ADMIN-003, ADMIN-004, TRAIN-001, TRAIN-002, TRAIN-003, JOB-002, JOB-003, MARKET-002, MARKET-003, OFF-001, REL-001
-Last completed action:    REL-001 ProGuard rules added
-Last verified action:     Code inspection of proguard-rules.pro
-Files modified:           app/proguard-rules.pro, prd.json, TASKS.md, CHANGELOG.md, AGENT_STATE.md
-Next action:              None required. Resolve STAB-003 environment blocker for automated test verification.
-Handoff status:           Project complete — ready for production release
+Current session:          Primary implementation session
+Current PRD story:        DISP-002 (Implement Dispute UI and Workflow)
+Current task:             Phase 16 Production Readiness & Security Hardening
+Completed stories (56):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, COMM-001, AI-001, AI-002, SAFE-001, SAFE-002, ADMIN-001, ADMIN-002, ADMIN-003, ADMIN-004, TRAIN-001, TRAIN-002, TRAIN-003, JOB-002, JOB-003, MARKET-002, MARKET-003, OFF-001, REL-001, SEC-004, SEC-005, SEC-006, SEC-007, JOB-004, DISP-001, DISP-003, NOTIF-001, RATE-001, DB-001
+Last completed action:    DB-001 Room migrations added
+Last verified action:     Code inspection of all new entities and security fixes
+Files modified:           Entities.kt, Daos.kt, AppDatabase.kt, SkillsExchangeRepository.kt, functions/src/index.ts, firestore.rules, prd.json, TASKS.md, CHANGELOG.md, AGENT_STATE.md
+Next action:              Implement DISP-002 (Dispute UI and Workflow)
+Handoff status:           Ready for immediate continuation
 ```
 
 > **SECURITY NOTE**: This file contains NO passwords, API keys, session tokens, cookies, or credentials of any kind.

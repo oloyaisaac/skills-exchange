@@ -8,6 +8,65 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ---
 
+## 2026-08-30
+
+### [2026-08-30] [DB-001] [INFRA] Add Proper Room Migrations
+- Replaced `fallbackToDestiveMigration()` with proper migration from version 11 to 12.
+- Added migration to create new tables: disputes, ratings, notifications, job_status_audit.
+- Data is now preserved across schema changes.
+
+### [2026-08-30] [RATE-001] [IMPL] Implement Rating Entity and Persistence
+- Created `RatingEntity` Room table for storing ratings and reviews.
+- Created `RatingDao` with queries for user ratings, job ratings, and average calculation.
+- Added repository methods: getAllRatings, getRatingsForUser, submitRating, getAverageRatingForUser.
+- Added `hasUserRatedJob` to prevent duplicate reviews.
+
+### [2026-08-30] [NOTIF-001] [IMPL] Implement Notification Entity and Persistence
+- Created `NotificationEntity` Room table for storing user notifications.
+- Created `NotificationDao` with queries for user notifications and unread count.
+- Added repository methods: getNotificationsForUser, createNotification, markNotificationRead.
+- Added NotificationType enum with all notification types.
+
+### [2026-08-30] [DISP-003] [IMPL] Implement Admin Dispute Resolution
+- Added `resolveDispute` Cloud Function for admin dispute resolution.
+- Added `getDisputesQueue` Cloud Function for admin dispute queue.
+- Supports resolution types: REFUND_FULL, REFUND_PARTIAL, NO_ACTION, WORKER_SUSPENDED.
+- Notifies both parties on resolution.
+
+### [2026-08-30] [DISP-001] [IMPL] Implement Dispute Entity and Persistence
+- Created `DisputeEntity` Room table for storing dispute data.
+- Created `DisputeDao` with queries for user disputes and status filtering.
+- Added repository methods: getAllDisputes, getDisputesForUser, createDispute, updateDisputeStatus.
+- Added DisputeStatus and DisputeReason enums.
+
+### [2026-08-30] [JOB-004] [IMPL] Implement Job State Machine
+- Created `JobStatus` enum with all valid job states.
+- Added `isValidTransition` and `canTransition` methods for state validation.
+- Valid states: DRAFT, POSTED, QUOTING, WORKER_SELECTED, ACCEPTED, WORKER_EN_ROUTE, ARRIVED, IN_PROGRESS, COMPLETED, PAYMENT_RELEASED, CANCELLED, DISPUTED, EXPIRED.
+- Added `transitionJobStatus` repository method with audit logging.
+- Added `JobStatusAuditEntity` for tracking all status changes.
+
+### [2026-08-30] [SEC-007] [SECURITY] Remove Hardcoded Webhook Secret Fallback
+- Removed default fallback value for MOMO_WEBHOOK_SECRET.
+- Webhook verification now fails loudly if secret is not configured.
+- Prevents unauthorized webhook processing with default secret.
+
+### [2026-08-30] [SEC-006] [SECURITY] Add Missing Firestore Rules for Collections
+- Added security rules for worker_kyc, worker_training, guarantors, job_quotes, notifications.
+- Added rules for disputes, momo_transactions, momo_payouts collections.
+- Proper access control for each collection based on user role.
+
+### [2026-08-30] [SEC-005] [SECURITY] Fix Firestore Rules KYC Path Mismatch
+- Updated `isWorkerKycApproved` helper to read from `worker_kyc` collection instead of `users/{uid}/verification`.
+- Fixed broken worker-write security enforcement.
+
+### [2026-08-30] [SEC-004] [SECURITY] Fix releaseEscrowToWorker Authorization Vulnerability
+- Added job ownership verification to releaseEscrowToWorker Cloud Function.
+- Only job owner (postedByResident or postedBy) can release escrow.
+- Added state validation - escrow can only be released for completed jobs.
+- Added worker ID verification against assigned provider.
+- Prevents fund theft by unauthorized users.
+
 ## 2026-08-29
 
 ### [2026-08-29] [REL-001] [INFRA] Production Build ProGuard Rules & Release Sign-Off

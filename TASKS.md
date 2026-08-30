@@ -161,18 +161,56 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 ---
 
+## Phase 16 — Production Readiness & Security Hardening
+> Fix critical security vulnerabilities, add missing entities, and prepare for production launch.
+
+| ID | Priority | Title | Status | Notes |
+|---|---|---|---|---|
+| SEC-004 | P0 | Fix releaseEscrowToWorker Authorization Vulnerability | ✅ Completed | Added job ownership verification |
+| SEC-005 | P0 | Fix Firestore Rules KYC Path Mismatch | ✅ Completed | Updated isWorkerKycApproved helper |
+| SEC-006 | P1 | Add Missing Firestore Rules for Collections | ✅ Completed | Rules for all collections |
+| SEC-007 | P0 | Remove Hardcoded Webhook Secret Fallback | ✅ Completed | Fail loudly if secret not set |
+| SEC-008 | P1 | Add Storage Rules for Job Photos | ⏳ Pending | |
+| JOB-004 | P0 | Implement Job State Machine | ✅ Completed | JobStatus enum with transitions |
+| JOB-005 | P1 | Add Job Status Audit Trail | ⏳ Pending | |
+| DISP-001 | P0 | Implement Dispute Entity and Persistence | ✅ Completed | DisputeEntity, DAO |
+| DISP-002 | P0 | Implement Dispute UI and Workflow | ⏳ Pending | |
+| DISP-003 | P0 | Implement Admin Dispute Resolution | ✅ Completed | resolveDispute Cloud Function |
+| DISP-004 | P1 | Implement User/Worker Reporting | ⏳ Pending | |
+| DISP-005 | P1 | Implement Dispute Notification Integration | ⏳ Pending | |
+| NOTIF-001 | P0 | Implement Notification Entity and Persistence | ✅ Completed | NotificationEntity, DAO |
+| NOTIF-002 | P0 | Implement FCM Push Notifications | ⏳ Pending | |
+| NOTIF-003 | P1 | Wire Notification Triggers to Events | ⏳ Pending | |
+| NOTIF-004 | P1 | Implement Notification UI | ⏳ Pending | |
+| RATE-001 | P1 | Implement Rating Entity and Persistence | ✅ Completed | RatingEntity, DAO |
+| RATE-002 | P1 | Implement Rating Submission UI | ⏳ Pending | |
+| RATE-003 | P1 | Implement Rating Aggregation | ⏳ Pending | |
+| AUTH-001 | P0 | Implement Phone Authentication with OTP | ⏳ Pending | |
+| AUTH-002 | P0 | Implement Session Persistence | ⏳ Pending | |
+| AUTH-003 | P0 | Implement Logout Flow | ⏳ Pending | |
+| AUTH-004 | P1 | Implement Account Deletion | ⏳ Pending | |
+| AUTH-005 | P1 | Implement Authentication Error Handling | ⏳ Pending | |
+| AUTH-006 | P1 | Implement Duplicate Account Handling | ⏳ Pending | |
+| AUTH-007 | P1 | Implement Role/Permission Enforcement | ⏳ Pending | |
+| AUTH-008 | P1 | Implement Session/Device Security | ⏳ Pending | |
+| AUTH-009 | P1 | Implement Auth State Restoration | ⏳ Pending | |
+| AUTH-010 | P1 | Implement Authentication Tests | ⏳ Pending | |
+| DB-001 | P1 | Add Proper Room Migrations | ✅ Completed | Migration 11→12 |
+| DB-002 | P1 | Add Room Foreign Keys and Indexes | ⏳ Pending | |
+
+---
+
 ## Summary
 
 | Status | Count |
 |---|---|
-| ✅ Completed | 47 (STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, COMM-001, AI-001, AI-002, SAFE-001, SAFE-002, ADMIN-001, ADMIN-002, ADMIN-003, ADMIN-004, TRAIN-001, TRAIN-002, TRAIN-003, JOB-002, JOB-003, MARKET-002, MARKET-003, OFF-001, REL-001) |
+| ✅ Completed | 56 (47 original + 9 new) |
 | 🔄 In Progress | 0 |
-| ⏳ Pending | 0 |
+| ⏳ Pending | 22 |
 | 🚫 Blocked | 1 (STAB-003) |
-| ❌ Failed | 0 |
-| **Total** | **48** |
+| **Total** | **79** |
 
 ---
 
 _This file is synchronized with `prd.json`. Always update both when story status changes._
-_Last synchronized: 2026-08-29T19:15:00+03:00_
+_Last synchronized: 2026-08-30T07:00:00+03:00_

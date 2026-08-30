@@ -162,5 +162,65 @@ Context, options considered, decision, rationale, consequences
 
 ---
 
+## 2026-08-30
+
+### [2026-08-30] DEC-012 Job State Machine Design
+
+**Context**: JOB-004 required implementing a proper job state machine. The previous implementation used raw strings with no validation, leading to three incompatible vocabularies across UI, backend, and Firestore rules.
+
+**Options Considered**:
+1. Use string constants with validation in ViewModel
+2. Use enum with transition map
+3. Use sealed class with state-specific data
+
+**Decision**: Adopted `JobStatus` enum with a `validTransitions` map defining legal state transitions. States: DRAFT, POSTED, QUOTING, WORKER_SELECTED, ACCEPTED, WORKER_EN_ROUTE, ARRIVED, IN_PROGRESS, COMPLETED, PAYMENT_RELEASED, CANCELLED, DISPUTED, EXPIRED.
+
+**Rationale**: Enum with transition map provides compile-time safety and clear documentation of valid flows. The transition map makes it impossible to define invalid state changes.
+
+**Consequences**: All job status changes must go through `transitionJobStatus` which validates the transition. Invalid transitions are rejected. Audit trail tracks all changes.
+
+---
+
+### [2026-08-30] DEC-013 Escrow Release Security Model
+
+**Context**: SEC-004 fixed a critical vulnerability where any authenticated user could release escrow for any job.
+
+**Options Considered**:
+1. Only check authentication (insecure)
+2. Check job ownership via Firestore document
+3. Check ownership + validate job state + verify worker ID
+
+**Decision**: Implemented triple verification: job ownership (postedByResident or postedBy must match caller), job state (must be COMPLETED or WORK_COMPLETED), and worker ID verification (must match assigned provider).
+
+**Rationale**: Defense in depth - even if one check is bypassed, others prevent unauthorized access. Server-side validation is authoritative.
+
+**Consequences**: Unauthorized escrow release attempts are rejected with 403. Legitimate releases require proper job completion flow.
+
+---
+
+### [2026-08-30] DEC-014 Firestore Rules Alignment
+
+**Context**: SEC-005/SEC-006 fixed Firestore rules that were reading from wrong paths and missing collections.
+
+**Decision**: Updated `isWorkerKycApproved` to read from `worker_kyc` collection. Added rules for all collections: worker_kyc, worker_training, guarantors, job_quotes, notifications, disputes, momo_transactions, momo_payouts.
+
+**Rationale**: Rules must match actual data model. Each collection needs appropriate access control based on user role and ownership.
+
+**Consequences**: Security enforcement now works correctly. Unauthorized access to sensitive collections is denied.
+
+---
+
+### [2026-08-30] DEC-015 Room Migration Strategy
+
+**Context**: DB-001 replaced `fallbackToDestructiveMigration()` with proper migrations.
+
+**Decision**: Added `MIGRATION_11_12` that creates new tables (disputes, ratings, notifications, job_status_audit) without data loss.
+
+**Rationale**: Destructive migration wipes all user data on schema change, unacceptable for production. Proper migrations preserve data.
+
+**Consequences**: Future schema changes must include appropriate migrations. Data is preserved across app updates.
+
+---
+
 _This document will be updated whenever significant architectural or design decisions are made._
 
