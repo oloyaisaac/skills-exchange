@@ -104,6 +104,63 @@ class FirebaseService(private val context: Context? = null) {
         }
     }
 
+    suspend fun deleteCurrentUser(): Boolean {
+        val authInstance = auth ?: return false
+        return try {
+            val user = authInstance.currentUser
+            user?.delete()?.await()
+            _currentUserState.value = null
+            true
+        } catch (e: Exception) {
+            Log.d("FirebaseService", "Delete user error: ${e.message}")
+            false
+        }
+    }
+
+    suspend fun deleteUserFirestoreData(userId: String, userJobIds: List<String> = emptyList()): Boolean {
+        val db = firestore ?: return false
+        return try {
+            db.collection("users").document(userId).delete().await()
+            db.collection("worker_kyc").document(userId).delete().await()
+            db.collection("worker_training").document(userId).delete().await()
+            db.collection("providers").document(userId).delete().await()
+
+            val guarantors = db.collection("guarantors").whereEqualTo("workerKycId", userId).get().await()
+            for (doc in guarantors) {
+                doc.reference.delete().await()
+            }
+
+            val notifications = db.collection("notifications").whereEqualTo("userId", userId).get().await()
+            for (doc in notifications) {
+                doc.reference.delete().await()
+            }
+
+            val disputes1 = db.collection("disputes").whereEqualTo("reportedBy", userId).get().await()
+            val disputes2 = db.collection("disputes").whereEqualTo("reportedUserId", userId).get().await()
+            for (doc in disputes1.documents + disputes2.documents) {
+                doc.reference.delete().await()
+            }
+
+            val quotes = db.collection("job_quotes").whereEqualTo("workerId", userId).get().await()
+            for (doc in quotes) {
+                doc.reference.delete().await()
+            }
+
+            for (jobId in userJobIds) {
+                val messages = db.collection("jobs").document(jobId).collection("messages").get().await()
+                for (msg in messages) {
+                    msg.reference.delete().await()
+                }
+                db.collection("jobs").document(jobId).delete().await()
+            }
+
+            true
+        } catch (e: Exception) {
+            Log.d("FirebaseService", "Delete user Firestore data error: ${e.message}")
+            false
+        }
+    }
+
     // ==================== AUTH-001: Phone Authentication ====================
 
     /**

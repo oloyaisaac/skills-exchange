@@ -104,6 +104,9 @@ interface JobQuoteDao {
     @Query("SELECT COUNT(*) FROM job_quotes WHERE jobId = :jobId AND status = 'PENDING'")
     suspend fun countPendingQuotesForJob(jobId: String): Int
 
+    @Query("SELECT * FROM job_quotes WHERE id = :quoteId")
+    suspend fun getQuoteById(quoteId: String): JobQuoteEntity?
+
     @Query("DELETE FROM job_quotes")
     suspend fun clearAll()
 }
@@ -181,6 +184,9 @@ interface GuarantorDao {
 
     @Query("SELECT COUNT(*) FROM guarantors WHERE workerKycId = :workerKycId")
     suspend fun countGuarantorsForWorker(workerKycId: String): Int
+
+    @Query("DELETE FROM guarantors")
+    suspend fun clearAll()
 }
 
 /**
@@ -202,6 +208,9 @@ interface WorkerKycDao {
 
     @Query("UPDATE worker_kyc SET status = :status, reviewedAt = :reviewedAt, reviewFeedback = :feedback WHERE userId = :userId")
     suspend fun updateKycReview(userId: String, status: String, reviewedAt: Long = System.currentTimeMillis(), feedback: String = "")
+
+    @Query("DELETE FROM worker_kyc")
+    suspend fun clearAll()
 }
 
 /**
@@ -232,6 +241,9 @@ interface UserProfileDao {
 
     @Query("UPDATE user_profiles SET walletBalance = :newBalance, updatedAtTimestamp = :timestamp WHERE id = :userId")
     suspend fun updateWalletBalance(userId: String, newBalance: Double, timestamp: Long = System.currentTimeMillis())
+
+    @Query("DELETE FROM user_profiles")
+    suspend fun clearAll()
 }
 
 /**
@@ -256,6 +268,9 @@ interface WorkerTrainingDao {
 
     @Query("UPDATE worker_training SET status = 'COMPLETED', completionTimestamp = :timestamp, updatedAt = :timestamp WHERE userId = :userId")
     suspend fun completeTraining(userId: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("DELETE FROM worker_training")
+    suspend fun clearAll()
 }
 
 // DISP-001: Dispute Data Access Object
@@ -278,6 +293,9 @@ interface DisputeDao {
 
     @Query("UPDATE disputes SET status = :status, adminNotes = :notes, resolutionType = :resolutionType, resolutionAmount = :amount, resolvedAt = :resolvedAt, resolvedBy = :resolvedBy, updatedAt = :timestamp WHERE id = :id")
     suspend fun updateDisputeStatus(id: String, status: String, notes: String = "", resolutionType: String = "", amount: Double = 0.0, resolvedAt: Long = 0, resolvedBy: String = "", timestamp: Long = System.currentTimeMillis())
+
+    @Query("DELETE FROM disputes")
+    suspend fun clearAll()
 }
 
 // RATE-001: Rating Data Access Object
@@ -300,6 +318,9 @@ interface RatingDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRating(rating: RatingEntity)
+
+    @Query("DELETE FROM ratings")
+    suspend fun clearAll()
 }
 
 // NOTIF-001: Notification Data Access Object
@@ -328,6 +349,9 @@ interface NotificationDao {
 
     @Query("DELETE FROM notifications WHERE userId = :userId")
     suspend fun deleteAllForUser(userId: String)
+
+    @Query("DELETE FROM notifications")
+    suspend fun clearAll()
 }
 
 // JOB-005: Job Status Audit Trail DAO
@@ -341,5 +365,30 @@ interface JobStatusAuditDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAuditEntry(entry: JobStatusAuditEntity)
+}
+
+// DISP-004: User/Worker Reporting DAO
+@Dao
+interface ReportDao {
+    @Query("SELECT * FROM reports ORDER BY createdAt DESC")
+    fun getAllReports(): Flow<List<ReportEntity>>
+
+    @Query("SELECT * FROM reports WHERE reportedBy = :userId ORDER BY createdAt DESC")
+    fun getReportsByUser(userId: String): Flow<List<ReportEntity>>
+
+    @Query("SELECT * FROM reports WHERE reportedUserId = :userId ORDER BY createdAt DESC")
+    fun getReportsForUser(userId: String): Flow<List<ReportEntity>>
+
+    @Query("SELECT * FROM reports WHERE status = :status ORDER BY createdAt DESC")
+    suspend fun getReportsByStatus(status: String): List<ReportEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertReport(report: ReportEntity)
+
+    @Query("UPDATE reports SET status = :status, adminNotes = :adminNotes, resolvedAt = :resolvedAt, resolvedBy = :resolvedBy, updatedAt = :timestamp WHERE id = :id")
+    suspend fun updateReportStatus(id: String, status: String, adminNotes: String = "", resolvedAt: Long = 0, resolvedBy: String = "", timestamp: Long = System.currentTimeMillis())
+
+    @Query("DELETE FROM reports")
+    suspend fun clearAll()
 }
 

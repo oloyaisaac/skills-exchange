@@ -1,6 +1,8 @@
 package com.example.data.db
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 // JOB-004: Job Status Enum with validated states
@@ -132,7 +134,18 @@ data class ServiceProviderEntity(
     val walletBalance: Double = 185.0
 )
 
-@Entity(tableName = "skill_endorsements")
+@Entity(
+    tableName = "skill_endorsements",
+    foreignKeys = [
+        ForeignKey(
+            entity = ServiceProviderEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["providerId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["providerId"])]
+)
 data class SkillEndorsementEntity(
     @PrimaryKey val id: String,
     val providerId: String,
@@ -141,7 +154,18 @@ data class SkillEndorsementEntity(
     val neighborDistrict: String
 )
 
-@Entity(tableName = "job_posts")
+@Entity(
+    tableName = "job_posts",
+    foreignKeys = [
+        ForeignKey(
+            entity = ServiceProviderEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["assignedProviderId"],
+            onDelete = ForeignKey.SET_NULL
+        )
+    ],
+    indices = [Index(value = ["assignedProviderId"]), Index(value = ["status"])]
+)
 data class JobPostEntity(
     @PrimaryKey val id: String,
     val title: String,
@@ -194,7 +218,18 @@ data class JobPostEntity(
     val recurringProposalStatus: String = "NONE" // "NONE", "PENDING", "ACCEPTED", "REJECTED"
 )
 
-@Entity(tableName = "chat_messages")
+@Entity(
+    tableName = "chat_messages",
+    foreignKeys = [
+        ForeignKey(
+            entity = JobPostEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["jobId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["jobId"])]
+)
 data class ChatMessageEntity(
     @PrimaryKey val id: String,
     val jobId: String,
@@ -223,7 +258,18 @@ data class NeighborhoodPostEntity(
  * KYC-001: Worker Identity & National ID data schema
  * Isolated table storing worker KYC metadata separate from public profile data.
  */
-@Entity(tableName = "worker_kyc")
+@Entity(
+    tableName = "worker_kyc",
+    foreignKeys = [
+        ForeignKey(
+            entity = UserProfileEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["userId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["userId"])]
+)
 data class WorkerKycEntity(
     @PrimaryKey val userId: String,
     val fullLegalName: String,
@@ -242,7 +288,18 @@ data class WorkerKycEntity(
  * KYC-003: Two-Guarantor Data Model
  * Each worker application must have exactly two distinct guarantors.
  */
-@Entity(tableName = "guarantors")
+@Entity(
+    tableName = "guarantors",
+    foreignKeys = [
+        ForeignKey(
+            entity = WorkerKycEntity::class,
+            parentColumns = ["userId"],
+            childColumns = ["workerKycId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["workerKycId"])]
+)
 data class GuarantorEntity(
     @PrimaryKey val id: String,
     val workerKycId: String,
@@ -288,7 +345,24 @@ data class UserProfileEntity(
  * MARKET-002: Multi-Quote Bidding Entity
  * Stores worker quote proposals for open jobs.
  */
-@Entity(tableName = "job_quotes")
+@Entity(
+    tableName = "job_quotes",
+    foreignKeys = [
+        ForeignKey(
+            entity = JobPostEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["jobId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = ServiceProviderEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["workerId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["jobId"]), Index(value = ["workerId"])]
+)
 data class JobQuoteEntity(
     @PrimaryKey val id: String,
     val jobId: String,
@@ -307,7 +381,18 @@ data class JobQuoteEntity(
  * TRAIN-001: Worker Training Progress & Content Data Schema
  * Tracks 2-3 day training module completion separately from identity verification status.
  */
-@Entity(tableName = "worker_training")
+@Entity(
+    tableName = "worker_training",
+    foreignKeys = [
+        ForeignKey(
+            entity = UserProfileEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["userId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["userId"])]
+)
 data class WorkerTrainingEntity(
     @PrimaryKey val userId: String,
     val status: String = "NOT_STARTED", // "NOT_STARTED", "IN_PROGRESS", "COMPLETED"
@@ -340,7 +425,18 @@ data class PendingActionEntity(
 )
 
 // DISP-001: Dispute Entity
-@Entity(tableName = "disputes")
+@Entity(
+    tableName = "disputes",
+    foreignKeys = [
+        ForeignKey(
+            entity = JobPostEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["jobId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["jobId"]), Index(value = ["status"])]
+)
 data class DisputeEntity(
     @PrimaryKey val id: String,
     val jobId: String,
@@ -360,7 +456,18 @@ data class DisputeEntity(
 )
 
 // RATE-001: Rating Entity
-@Entity(tableName = "ratings")
+@Entity(
+    tableName = "ratings",
+    foreignKeys = [
+        ForeignKey(
+            entity = JobPostEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["jobId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["jobId"]), Index(value = ["toUserId"])]
+)
 data class RatingEntity(
     @PrimaryKey val id: String,
     val jobId: String,
@@ -373,7 +480,18 @@ data class RatingEntity(
 )
 
 // NOTIF-001: Notification Entity
-@Entity(tableName = "notifications")
+@Entity(
+    tableName = "notifications",
+    foreignKeys = [
+        ForeignKey(
+            entity = UserProfileEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["userId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["userId"]), Index(value = ["createdAt"])]
+)
 data class NotificationEntity(
     @PrimaryKey val id: String,
     val userId: String,
@@ -386,7 +504,18 @@ data class NotificationEntity(
 )
 
 // JOB-005: Job Status Audit Trail Entity
-@Entity(tableName = "job_status_audit")
+@Entity(
+    tableName = "job_status_audit",
+    foreignKeys = [
+        ForeignKey(
+            entity = JobPostEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["jobId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["jobId"])]
+)
 data class JobStatusAuditEntity(
     @PrimaryKey val id: String,
     val jobId: String,
@@ -395,5 +524,39 @@ data class JobStatusAuditEntity(
     val changedBy: String, // User ID who made the change
     val changedAt: Long = System.currentTimeMillis(),
     val reason: String = ""
+)
+
+// DISP-004: User/Worker Reporting Entity
+@Entity(
+    tableName = "reports",
+    foreignKeys = [
+        ForeignKey(
+            entity = UserProfileEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["reportedBy"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = UserProfileEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["reportedUserId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["reportedBy"]), Index(value = ["reportedUserId"]), Index(value = ["status"])]
+)
+data class ReportEntity(
+    @PrimaryKey val id: String,
+    val reportedBy: String, // User ID who submitted the report
+    val reportedUserId: String, // User ID being reported
+    val reportedUserName: String, // Display name of reported user
+    val reason: String, // Report reason
+    val description: String = "",
+    val evidenceUrlsCsv: String = "",
+    val status: String = "PENDING", // "PENDING", "REVIEWED", "RESOLVED", "DISMISSED"
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val resolvedAt: Long = 0,
+    val resolvedBy: String = ""
 )
 

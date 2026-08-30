@@ -22,23 +22,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.db.NotificationEntity
 import com.example.ui.theme.*
 import com.example.util.SystemNotificationHelper
-
-data class NeighborhoodNotification(
-    val id: String,
-    val title: String,
-    val body: String,
-    val timeAgo: String,
-    val isUnread: Boolean
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationDrawer(
-    notifications: List<NeighborhoodNotification>,
+    notifications: List<NotificationEntity>,
     onDismiss: () -> Unit,
-    onRequestPermissionDialog: () -> Unit = {}
+    onRequestPermissionDialog: () -> Unit = {},
+    onNotificationClick: (NotificationEntity) -> Unit = {}
 ) {
     val context = LocalContext.current
     var hasSystemPermission by remember {
@@ -184,14 +178,25 @@ fun NotificationDrawer(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(notifications, key = { it.id }) { item ->
+                    val timeAgo = remember(item.createdAt) {
+                        val diff = System.currentTimeMillis() - item.createdAt
+                        when {
+                            diff < 60000 -> "Just now"
+                            diff < 3600000 -> "${diff / 60000}m ago"
+                            diff < 86400000 -> "${diff / 3600000}h ago"
+                            else -> "${diff / 86400000}d ago"
+                        }
+                    }
                     Surface(
                         shape = RoundedCornerShape(6.dp),
-                        color = if (item.isUnread) SignalBlueLight else Slate50,
+                        color = if (!item.isRead) SignalBlueLight else Slate50,
                         border = androidx.compose.foundation.BorderStroke(
                             1.dp,
-                            if (item.isUnread) SignalBlue else Slate200
+                            if (!item.isRead) SignalBlue else Slate200
                         ),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onNotificationClick(item) }
                     ) {
                         Column(
                             modifier = Modifier
@@ -210,7 +215,7 @@ fun NotificationDrawer(
                                     color = Slate900
                                 )
                                 Text(
-                                    text = item.timeAgo,
+                                    text = timeAgo,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = Slate500

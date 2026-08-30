@@ -8,6 +8,65 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ---
 
+### [2026-08-30] [DB-002] [IMPL] Add Room Foreign Keys and Indexes
+- Added @ForeignKey and @Index annotations to skill_endorsements, job_posts, chat_messages, disputes, ratings, notifications, job_status_audit, reports
+- Updated AppDatabase version to 14
+- Added MIGRATION_13_14 with table recreation SQL for all affected tables
+- Foreign keys enforce referential integrity; indexes improve query performance
+
+### [2026-08-30] [NOTIF-004] [IMPL] Implement Notification UI
+- Updated NotificationDrawer to accept List<NotificationEntity> instead of NeighborhoodNotification
+- Added time-ago formatting for notification timestamps
+- Added click handling on notification items
+- Updated MainScreen to use real notifications from ViewModel instead of mock data
+- Added ViewModel notification state: notifications, unreadNotificationCount
+- Added markAllNotificationsRead() method to ViewModel
+- TopHeaderBar unread badge now reflects real unread count
+
+### [2026-08-30] [NOTIF-003] [IMPL] Wire Notification Triggers to Events
+- Added notification creation in repository.submitQuote for new quote submissions
+- Added notification creation in repository.respondToQuote for quote accept/decline
+- Added notification creation in repository.updateEscrowStatus for payment status changes
+- Added notification creation in repository.triggerSosAlert for emergency SOS events
+- Added notification creation in KYC methods: submitWorkerKycApplication, approveKyc, rejectKyc, requestKycChanges
+- Added notification creation in completeTraining for training completion
+- Added ViewModel.updateJobStatus notification for job status changes
+- All key business events now create NotificationEntity records in local Room DB
+
+### [2026-08-30] [DISP-005] [IMPL] Implement Dispute Notification Integration
+- Added notification creation in repository.updateDisputeStatus for dispute status changes
+- Notifications created for dispute submission and resolution events
+- Notification type DISPUTE_UPDATE with title and body based on resolution type
+
+### [2026-08-30] [DISP-004] [IMPL] Implement User/Worker Reporting
+- Added ReportEntity Room table with ReportDao for persisting user reports
+- Added ReportDao with queries for all reports, user reports, and status filtering
+- Added MIGRATION_12_13 creating reports table in AppDatabase v13
+- Added repository methods: reportUser, getAllReports, getReportsForUser, getPendingReports, updateReportStatus
+- Added ViewModel.reportUser() setting reportedBy from current user
+- Built ReportUserDialog in ProviderDetailSheet with reason and description fields
+- Wired onReportUser callback from MainScreen to ViewModel
+
+### [2026-08-30] [AUTH-005] [IMPL] Implement Authentication Error Handling
+- Added phoneError and otpError state flows to ViewModel for inline validation
+- AuthModal displays red error text below phone and OTP fields on invalid input
+- Added retry button to AuthModal when auth errors are present
+- Added retryAuth() ViewModel method clearing errors and resetting auth state
+- MainScreen passes phoneError, otpError, and onRetry to AuthModal
+
+### [2026-08-30] [AUTH-004] [IMPL] Implement Account Deletion
+- Updated permanentlyDeleteUserAccountAndData() to delete Firebase auth user, Firestore documents, and Room data
+- Added FirebaseService.deleteCurrentUser() for Firebase auth user deletion
+- Added FirebaseService.deleteUserFirestoreData() purging user profile, KYC, training, providers, guarantors, notifications, disputes, quotes, and job messages
+- AccountDeletionDialog confirmation flow already wired to permanent deletion
+- Full account purge requires re-authentication after deletion
+
+### [2026-08-30] [AUTH-003] [IMPL] Implement Logout Flow
+- Updated logoutUser() to clear Firebase auth, Room data via clearAllUserData(), and DataStore session
+- Added repository.clearAllUserData() clearing all user tables on logout
+- Logout resets all auth-related UI state (authState, isAuthenticated, currentUserPhone, selectedProvider, selectedJob)
+- User must re-authenticate after logout as all local session data is purged
+
 ### [2026-08-30] [AUTH-002] [IMPL] Implement Session Persistence
 - Created SessionManager class using DataStore Preferences
 - Added persistence for: isAuthenticated, userPhone, userId, userName, userDistrict, fcmToken

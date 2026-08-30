@@ -367,7 +367,6 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             val fromStatus = currentJob?.status ?: ""
             val userId = currentUser.value?.id ?: "system"
 
-            // JOB-005: Use audited transition
             repository.transitionJobStatus(
                 jobId = jobId,
                 fromStatus = fromStatus,
@@ -375,6 +374,22 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 changedBy = userId,
                 reason = reason
             )
+
+            val assignedProviderId = currentJob?.assignedProviderId
+            if (assignedProviderId != null) {
+                repository.createNotification(
+                    com.example.data.db.NotificationEntity(
+                        id = "notif_${System.currentTimeMillis()}_job",
+                        userId = assignedProviderId,
+                        type = "JOB_STATUS_CHANGE",
+                        title = "Job Status Updated",
+                        body = "Job status changed to: $newStatus",
+                        jobId = jobId,
+                        createdAt = System.currentTimeMillis()
+                    )
+                )
+            }
+
             val updatedJob = repository.jobs.first().find { it.id == jobId }
             selectedJob.value = updatedJob
         }
@@ -625,24 +640,33 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
-    fun logoutUser() {
-        isAuthenticated.value = false
-        currentUserPhone.value = null
-        firebaseService.signOut()
-        // AUTH-002: Clear persisted session
-        viewModelScope.launch {
-            sessionManager.clearSession()
-        }
-    }
-
     fun permanentlyDeleteUserAccountAndData() {
         viewModelScope.launch {
+            val userId = currentUser.value?.id ?: firebaseService.getCurrentUser()?.uid ?: return@launch
+            val userJobIds = repository.jobs.first().map { it.id }
+
+            val firestoreDeleted = firebaseService.deleteUserFirestoreData(userId, userJobIds)
+            val authDeleted = firebaseService.deleteCurrentUser()
+
+            repository.clearAllUserData()
+            sessionManager.clearSession()
+
+            authState.value = AuthState.SignedOut
             isAuthenticated.value = false
+            authError.value = null
             currentUserPhone.value = null
-            firebaseService.signOut()
-            // Reset state
             selectedProvider.value = null
             selectedJob.value = null
+            isAuthModalOpen.value = false
+            authPendingAction.value = null
+            currentTraining.value = null
+            fcmToken.value = null
+            hasNotificationPermission.value = false
+            userRoleMode.value = "Hire a Neighbor"
+
+            if (!firestoreDeleted || !authDeleted) {
+                authError.value = "Account deletion partially failed. Please contact support."
+            }
         }
     }
 
@@ -842,10 +866,16 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     // AUTH-001: Authentication state
     val authState = MutableStateFlow<AuthState>(AuthState.SignedOut)
     val authError = MutableStateFlow<String?>(null)
+    val phoneError = MutableStateFlow<String?>(null)
+    val otpError = MutableStateFlow<String?>(null)
 
     // NOTIF-002: FCM state
     val fcmToken = MutableStateFlow<String?>(null)
     val hasNotificationPermission = MutableStateFlow(false)
+
+    // NOTIF-004: Notification UI state
+    val notifications = MutableStateFlow<List<com.example.data.db.NotificationEntity>>(emptyList())
+    val unreadNotificationCount = MutableStateFlow(0)
 
     // RATE-002: Rating state
     val ratingSubmissionState = MutableStateFlow<RatingSubmissionState>(RatingSubmissionState.Idle)
@@ -887,6 +917,20 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         viewModelScope.launch {
             repository.getAllDisputes().collect { disputeList ->
                 disputes.value = disputeList
+            }
+        }
+        viewModelScope.launch {
+            currentUser.collect { user ->
+                val userId = user?.id ?: return@collect
+                repository.getNotificationsForUser(userId).collect { notifList ->
+                    notifications.value = notifList
+                }
+            }
+        }
+        viewModelScope.launch {
+            currentUser.collect { user ->
+                val userId = user?.id ?: return@collect
+                unreadNotificationCount.value = repository.getUnreadNotificationCount(userId)
             }
         }
     }
@@ -958,6 +1002,21 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
                 repository.createDispute(dispute)
 
+                // DISP-005: Notify both parties about new dispute
+                val job = repository.jobs.first().find { it.id == jobId }
+                val otherPartyId = if (currentUserId == job?.postedByResident) reportedUserId else currentUserId
+                repository.createNotification(
+                    com.example.data.db.NotificationEntity(
+                        id = "notif_${System.currentTimeMillis()}_dispute",
+                        userId = otherPartyId,
+                        type = "DISPUTE_UPDATE",
+                        title = "New Dispute Filed",
+                        body = "A dispute has been filed for job: ${job?.title ?: jobId}",
+                        jobId = jobId,
+                        createdAt = System.currentTimeMillis()
+                    )
+                )
+
                 // Update job status to DISPUTED
                 val job = repository.jobs.first().find { it.id == jobId }
                 job?.let {
@@ -990,12 +1049,21 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         viewModelScope.launch {
             authState.value = AuthState.SendingOtp
             authError.value = null
+            phoneError.value = null
+
+            if (phoneNumber.isBlank() || phoneNumber.length < 10) {
+                val error = "Please enter a valid phone number"
+                phoneError.value = error
+                authState.value = AuthState.Error(error)
+                onResult(false, error)
+                return@launch
+            }
 
             try {
-                // Use Firebase Phone Auth via FirebaseService
                 val result = firebaseService.sendPhoneVerificationCode(phoneNumber)
                 if (result.isSuccess) {
                     authState.value = AuthState.OtpSent
+                    phoneError.value = null
                     onResult(true, null)
                 } else {
                     val error = result.exceptionOrNull()?.message ?: "Failed to send OTP"
@@ -1016,12 +1084,22 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         viewModelScope.launch {
             authState.value = AuthState.VerifyingOtp
             authError.value = null
+            otpError.value = null
+
+            if (otpCode.length != 6) {
+                val error = "Please enter the 6-digit code"
+                otpError.value = error
+                authState.value = AuthState.Error(error)
+                onResult(false, error)
+                return@launch
+            }
 
             try {
                 val result = firebaseService.verifyPhoneCode(otpCode)
                 if (result.isSuccess) {
                     authState.value = AuthState.SignedIn
                     isAuthenticated.value = true
+                    otpError.value = null
                     // AUTH-002: Persist session
                     val phone = pendingPhoneNumber ?: currentUserPhone.value
                     val userId = currentUser.value?.id ?: firebaseService.getCurrentUser()?.uid
@@ -1035,31 +1113,67 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                     val error = result.exceptionOrNull()?.message ?: "Invalid verification code"
                     authState.value = AuthState.Error(error)
                     authError.value = error
+                    otpError.value = error
                     onResult(false, error)
                 }
             } catch (e: Exception) {
                 val error = e.message ?: "Verification failed"
                 authState.value = AuthState.Error(error)
                 authError.value = error
+                otpError.value = error
                 onResult(false, error)
             }
         }
     }
 
+    fun retryAuth() {
+        authError.value = null
+        phoneError.value = null
+        otpError.value = null
+        if (authState.value is AuthState.Error) {
+            authState.value = AuthState.SignedOut
+        }
+    }
+
+    fun reportUser(report: com.example.data.db.ReportEntity) {
+        viewModelScope.launch {
+            val currentUserId = currentUser.value?.id ?: "anonymous"
+            val updatedReport = report.copy(reportedBy = currentUserId)
+            repository.reportUser(updatedReport)
+        }
+    }
+
+    fun markAllNotificationsRead() {
+        viewModelScope.launch {
+            val userId = currentUser.value?.id ?: return@launch
+            repository.markAllNotificationsRead(userId)
+            unreadNotificationCount.value = 0
+        }
+    }
+
     fun logoutUser() {
         viewModelScope.launch {
+            repository.clearAllUserData()
             firebaseService.signOut()
+            sessionManager.clearSession()
             authState.value = AuthState.SignedOut
             isAuthenticated.value = false
             authError.value = null
-            // AUTH-002: Clear persisted session
-            sessionManager.clearSession()
             currentUserPhone.value = null
+            selectedProvider.value = null
+            selectedJob.value = null
+            isAuthModalOpen.value = false
+            authPendingAction.value = null
+            currentTraining.value = null
+            fcmToken.value = null
+            hasNotificationPermission.value = false
         }
     }
 
     fun clearAuthError() {
         authError.value = null
+        phoneError.value = null
+        otpError.value = null
         if (authState.value is AuthState.Error) {
             authState.value = AuthState.SignedOut
         }

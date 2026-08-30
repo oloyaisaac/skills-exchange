@@ -60,6 +60,17 @@ class SkillsExchangeRepository(
 
     suspend fun submitWorkerKycApplication(userId: String) {
         db.workerKycDao().updateKycStatus(userId, "SUBMITTED")
+        createNotification(
+            NotificationEntity(
+                id = "notif_${System.currentTimeMillis()}_kyc",
+                userId = userId,
+                type = "VERIFICATION_DECISION",
+                title = "Application Submitted",
+                body = "Your worker verification application has been submitted for review.",
+                jobId = "",
+                createdAt = System.currentTimeMillis()
+            )
+        )
     }
 
     suspend fun startKycReview(userId: String) {
@@ -68,14 +79,47 @@ class SkillsExchangeRepository(
 
     suspend fun requestKycChanges(userId: String, feedback: String) {
         db.workerKycDao().updateKycReview(userId, "CHANGES_REQUIRED", feedback = feedback)
+        createNotification(
+            NotificationEntity(
+                id = "notif_${System.currentTimeMillis()}_kyc",
+                userId = userId,
+                type = "VERIFICATION_DECISION",
+                title = "Changes Required",
+                body = "Your verification application requires changes: $feedback",
+                jobId = "",
+                createdAt = System.currentTimeMillis()
+            )
+        )
     }
 
     suspend fun approveKyc(userId: String) {
         db.workerKycDao().updateKycReview(userId, "APPROVED")
+        createNotification(
+            NotificationEntity(
+                id = "notif_${System.currentTimeMillis()}_kyc",
+                userId = userId,
+                type = "VERIFICATION_DECISION",
+                title = "Verification Approved",
+                body = "Your worker verification has been approved! You can now proceed to training.",
+                jobId = "",
+                createdAt = System.currentTimeMillis()
+            )
+        )
     }
 
     suspend fun rejectKyc(userId: String, feedback: String) {
         db.workerKycDao().updateKycReview(userId, "REJECTED", feedback = feedback)
+        createNotification(
+            NotificationEntity(
+                id = "notif_${System.currentTimeMillis()}_kyc",
+                userId = userId,
+                type = "VERIFICATION_DECISION",
+                title = "Verification Rejected",
+                body = "Your worker verification was rejected: $feedback",
+                jobId = "",
+                createdAt = System.currentTimeMillis()
+            )
+        )
     }
 
     fun getKycSlaDeadline(submittedAt: Long): Long {
@@ -210,7 +254,7 @@ class SkillsExchangeRepository(
 
     suspend fun updateEscrowStatus(jobId: String, newEscrowStatus: String) {
         db.jobPostDao().updateEscrowStatus(jobId, newEscrowStatus)
-        
+
         val notificationMsg = when (newEscrowStatus) {
             "DEPOSIT_PROMPTED" -> "USSD push sent to resident phone to lock funds in escrow."
             "FUNDS_LOCKED_IN_ESCROW" -> "🔒 Escrow Locked! Customer approved MoMo transfer into secure escrow."
@@ -220,7 +264,27 @@ class SkillsExchangeRepository(
             else -> "Escrow status updated to $newEscrowStatus."
         }
 
-        // Map escrow status to main job pipeline status if helpful
+        val job = db.jobPostDao().getAllJobs().first().find { it.id == jobId }
+        val assignedProviderId = job?.assignedProviderId
+
+        if (assignedProviderId != null && (newEscrowStatus == "FUNDS_LOCKED_IN_ESCROW" || newEscrowStatus == "RELEASED_TO_WORKER")) {
+            createNotification(
+                NotificationEntity(
+                    id = "notif_${System.currentTimeMillis()}_escrow",
+                    userId = assignedProviderId,
+                    type = "PAYMENT_STATUS",
+                    title = when (newEscrowStatus) {
+                        "FUNDS_LOCKED_IN_ESCROW" -> "Payment Secured"
+                        "RELEASED_TO_WORKER" -> "Payment Released"
+                        else -> "Payment Update"
+                    },
+                    body = notificationMsg,
+                    jobId = jobId,
+                    createdAt = System.currentTimeMillis()
+                )
+            )
+        }
+
         val mappedJobStatus = when (newEscrowStatus) {
             "FUNDS_LOCKED_IN_ESCROW", "WORK_IN_PROGRESS" -> "In Progress"
             "PROOF_SUBMITTED" -> "Review"
@@ -377,6 +441,19 @@ class SkillsExchangeRepository(
                 message = "🚨 EMERGENCY PANIC BUTTON TRIGGERED! Live GPS location & job telemetry broadcasted to local emergency contacts and platform security.",
                 timestampText = "Just now",
                 isSystemNotification = true
+            )
+        )
+
+        val currentUserId = currentUser.first()?.id ?: "worker_default"
+        createNotification(
+            NotificationEntity(
+                id = "notif_${System.currentTimeMillis()}_sos",
+                userId = currentUserId,
+                type = "SOS_EVENT",
+                title = "Emergency SOS Triggered",
+                body = "Your emergency alert has been sent. Help is on the way.",
+                jobId = jobId,
+                createdAt = System.currentTimeMillis()
             )
         )
     }
@@ -555,12 +632,28 @@ class SkillsExchangeRepository(
                 isSystemNotification = false
             )
         )
+
+        createNotification(
+            NotificationEntity(
+                id = "notif_${System.currentTimeMillis()}_quote",
+                userId = workerId,
+                type = "NEW_QUOTE",
+                title = "Quote Submitted",
+                body = "Your quote for job $jobId has been submitted successfully.",
+                jobId = jobId,
+                createdAt = System.currentTimeMillis()
+            )
+        )
+
         return quoteId
     }
 
     suspend fun respondToQuote(quoteId: String, jobId: String, accept: Boolean) {
         val newStatus = if (accept) "ACCEPTED" else "REJECTED"
         db.jobQuoteDao().updateQuoteStatus(quoteId, newStatus)
+
+        val quote = db.jobQuoteDao().getQuoteById(quoteId)
+        val workerId = quote?.workerId ?: "worker_default"
 
         db.chatMessageDao().insertMessage(
             ChatMessageEntity(
@@ -571,6 +664,18 @@ class SkillsExchangeRepository(
                 message = if (accept) "✅ Quote accepted! Worker has been assigned to this job." else "❌ Quote declined.",
                 timestampText = "Just now",
                 isSystemNotification = true
+            )
+        )
+
+        createNotification(
+            NotificationEntity(
+                id = "notif_${System.currentTimeMillis()}_quote_$quoteId",
+                userId = workerId,
+                type = if (accept) "QUOTE_ACCEPTED" else "QUOTE_REJECTED",
+                title = if (accept) "Quote Accepted!" else "Quote Declined",
+                body = if (accept) "Your quote for job $jobId has been accepted!" else "Your quote for job $jobId has been declined.",
+                jobId = jobId,
+                createdAt = System.currentTimeMillis()
             )
         )
     }
@@ -642,6 +747,17 @@ class SkillsExchangeRepository(
     suspend fun completeTraining(userId: String) {
         db.workerTrainingDao().completeTraining(userId)
         db.userProfileDao().updateTrainingStatus(userId, true)
+        createNotification(
+            NotificationEntity(
+                id = "notif_${System.currentTimeMillis()}_training",
+                userId = userId,
+                type = "TRAINING_REQUIREMENT",
+                title = "Training Completed",
+                body = "You have completed the worker training. You can now be activated.",
+                jobId = "",
+                createdAt = System.currentTimeMillis()
+            )
+        )
     }
 
     sealed class ActivationResult {
@@ -1150,6 +1266,33 @@ class SkillsExchangeRepository(
 
     suspend fun updateDisputeStatus(disputeId: String, status: String, adminNotes: String = "", resolutionType: String = "", amount: Double = 0.0, resolvedBy: String = "") {
         db.disputeDao().updateDisputeStatus(disputeId, status, adminNotes, resolutionType, amount, System.currentTimeMillis(), resolvedBy)
+
+        val dispute = db.disputeDao().getDisputeForJob(disputeId)
+        dispute?.let {
+            val title = when (status) {
+                "RESOLVED" -> "Dispute Resolved"
+                "REJECTED" -> "Dispute Rejected"
+                "ESCALATED" -> "Dispute Escalated"
+                else -> "Dispute Updated"
+            }
+            val body = when (status) {
+                "RESOLVED" -> "Your dispute has been resolved. Resolution: $resolutionType"
+                "REJECTED" -> "Your dispute has been rejected."
+                "ESCALATED" -> "Your dispute has been escalated for further review."
+                else -> "Dispute status updated to $status."
+            }
+            createNotification(
+                com.example.data.db.NotificationEntity(
+                    id = "notif_${System.currentTimeMillis()}_dispute_$disputeId",
+                    userId = it.reportedBy,
+                    type = "DISPUTE_UPDATE",
+                    title = title,
+                    body = body,
+                    jobId = it.jobId,
+                    createdAt = System.currentTimeMillis()
+                )
+            )
+        }
     }
 
     // ==================== RATE-001: Rating Methods ====================
@@ -1235,5 +1378,24 @@ class SkillsExchangeRepository(
         db.neighborhoodPostDao().clearAll()
         db.pendingActionDao().clearAll()
         db.jobStatusAuditDao().clearAll()
+        db.reportDao().clearAll()
+    }
+
+    // ==================== DISP-004: User/Worker Reporting ====================
+
+    fun getAllReports(): Flow<List<ReportEntity>> = db.reportDao().getAllReports()
+
+    fun getReportsForUser(userId: String): Flow<List<ReportEntity>> = db.reportDao().getReportsForUser(userId)
+
+    suspend fun reportUser(report: ReportEntity) {
+        db.reportDao().insertReport(report)
+    }
+
+    suspend fun getPendingReports(): List<ReportEntity> {
+        return db.reportDao().getReportsByStatus("PENDING")
+    }
+
+    suspend fun updateReportStatus(reportId: String, status: String, adminNotes: String = "", resolvedBy: String = "") {
+        db.reportDao().updateReportStatus(reportId, status, adminNotes, System.currentTimeMillis(), resolvedBy)
     }
 }

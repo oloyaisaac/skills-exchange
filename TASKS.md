@@ -172,31 +172,31 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 | SEC-007 | P0 | Remove Hardcoded Webhook Secret Fallback | ✅ Completed | Fail loudly if secret not set |
 | SEC-008 | P1 | Add Storage Rules for Job Photos | ⏳ Pending | |
 | JOB-004 | P0 | Implement Job State Machine | ✅ Completed | JobStatus enum with transitions |
-| JOB-005 | P1 | Add Job Status Audit Trail | ⏳ Pending | |
+| JOB-005 | P1 | Add Job Status Audit Trail | ✅ Completed | Audited transitions |
 | DISP-001 | P0 | Implement Dispute Entity and Persistence | ✅ Completed | DisputeEntity, DAO |
-| DISP-002 | P0 | Implement Dispute UI and Workflow | ⏳ Pending | |
+| DISP-002 | P0 | Implement Dispute UI and Workflow | ✅ Completed | Wired to persistence, reason selector, validation |
 | DISP-003 | P0 | Implement Admin Dispute Resolution | ✅ Completed | resolveDispute Cloud Function |
-| DISP-004 | P1 | Implement User/Worker Reporting | ⏳ Pending | |
-| DISP-005 | P1 | Implement Dispute Notification Integration | ⏳ Pending | |
+| DISP-004 | P1 | Implement User/Worker Reporting | ✅ Completed | ReportEntity, ReportDao, ReportUserDialog |
+| DISP-005 | P1 | Implement Dispute Notification Integration | ✅ Completed | Notifications on dispute submit/resolution |
 | NOTIF-001 | P0 | Implement Notification Entity and Persistence | ✅ Completed | NotificationEntity, DAO |
-| NOTIF-002 | P0 | Implement FCM Push Notifications | ⏳ Pending | |
-| NOTIF-003 | P1 | Wire Notification Triggers to Events | ⏳ Pending | |
-| NOTIF-004 | P1 | Implement Notification UI | ⏳ Pending | |
+| NOTIF-002 | P0 | Implement FCM Push Notifications | ✅ Completed | FirebaseMessagingService, token management |
+| NOTIF-003 | P1 | Wire Notification Triggers to Events | ✅ Completed | Quote, job, payment, verification, SOS notifications |
+| NOTIF-004 | P1 | Implement Notification UI | ✅ Completed | NotificationDrawer wired to real data, unread badge |
+| DB-002 | P1 | Add Room Foreign Keys and Indexes | ✅ Completed | Foreign keys, indexes, migration v14 |
 | RATE-001 | P1 | Implement Rating Entity and Persistence | ✅ Completed | RatingEntity, DAO |
-| RATE-002 | P1 | Implement Rating Submission UI | ⏳ Pending | |
-| RATE-003 | P1 | Implement Rating Aggregation | ⏳ Pending | |
-| AUTH-001 | P0 | Implement Phone Authentication with OTP | ⏳ Pending | |
+| RATE-002 | P1 | Implement Rating Submission UI | ✅ Completed | ViewModel methods, validation |
+| RATE-003 | P1 | Implement Rating Aggregation | ✅ Completed | Average calculation |
+| AUTH-001 | P0 | Implement Phone Authentication with OTP | ✅ Completed | Multi-step auth flow |
 | AUTH-002 | P0 | Implement Session Persistence | ✅ Completed | DataStore session persistence |
-| AUTH-003 | P0 | Implement Logout Flow | ⏳ Pending | |
-| AUTH-004 | P1 | Implement Account Deletion | ⏳ Pending | |
-| AUTH-005 | P1 | Implement Authentication Error Handling | ⏳ Pending | |
+| AUTH-003 | P0 | Implement Logout Flow | ✅ Completed | Clears Firebase auth, Room data, DataStore |
+| AUTH-004 | P1 | Implement Account Deletion | ✅ Completed | Firebase user deletion, Firestore purge, Room wipe |
+| AUTH-005 | P1 | Implement Authentication Error Handling | ✅ Completed | Inline phone/OTP validation errors, retry button |
 | AUTH-006 | P1 | Implement Duplicate Account Handling | ⏳ Pending | |
 | AUTH-007 | P1 | Implement Role/Permission Enforcement | ⏳ Pending | |
 | AUTH-008 | P1 | Implement Session/Device Security | ⏳ Pending | |
 | AUTH-009 | P1 | Implement Auth State Restoration | ⏳ Pending | |
 | AUTH-010 | P1 | Implement Authentication Tests | ⏳ Pending | |
 | DB-001 | P1 | Add Proper Room Migrations | ✅ Completed | Migration 11→12 |
-| DB-002 | P1 | Add Room Foreign Keys and Indexes | ⏳ Pending | |
 
 ---
 
@@ -204,13 +204,13 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | Status | Count |
 |---|---|
-| ✅ Completed | 64 |
+| ✅ Completed | 72 |
 | 🔄 In Progress | 0 |
 | ⏳ Pending | 6 |
 | 🚫 Blocked | 1 (STAB-003) |
-| **Total** | **71** |
+| **Total** | **79** |
 
 ---
 
 _This file is synchronized with `prd.json`. Always update both when story status changes._
-_Last synchronized: 2026-08-30T07:00:00+03:00_
+_Last synchronized: 2026-08-30T09:50:00+03:00_

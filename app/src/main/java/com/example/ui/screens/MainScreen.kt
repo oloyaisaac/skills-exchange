@@ -169,32 +169,8 @@ fun MainScreen(
     var isAccountDeletionOpen by remember { mutableStateOf(false) }
     var isPermissionRationaleOpen by remember { mutableStateOf(false) }
 
-    // Sample mock notifications
-    val mockNotifications = remember {
-        listOf(
-            NeighborhoodNotification(
-                id = "n1",
-                title = "Job Request Accepted",
-                body = "Elena Rostova accepted your emergency sink leak request in Sunnyside.",
-                timeAgo = "10 mins ago",
-                isUnread = true
-            ),
-            NeighborhoodNotification(
-                id = "n2",
-                title = "New Skill Endorsement",
-                body = "Marcus Vance endorsed your Electrical Wiring skill.",
-                timeAgo = "1 hr ago",
-                isUnread = true
-            ),
-            NeighborhoodNotification(
-                id = "n3",
-                title = "Neighborhood Post Verified",
-                body = "Grace Taylor posted a 5-star review for Elena Rostova.",
-                timeAgo = "2 hrs ago",
-                isUnread = false
-            )
-        )
-    }
+    val notifications by viewModel.notifications.collectAsStateWithLifecycle(initialValue = emptyList())
+    val unreadNotificationCount by viewModel.unreadNotificationCount.collectAsStateWithLifecycle(initialValue = 0)
 
     Scaffold(
         topBar = {
@@ -215,7 +191,7 @@ fun MainScreen(
                 userRoleMode = userRoleMode,
                 onToggleUserRole = { viewModel.toggleUserRoleMode() },
                 activeFilterCount = if (filterState.category != null) 1 else 0,
-                unreadNotificationCount = mockNotifications.count { it.isUnread },
+                unreadNotificationCount = unreadNotificationCount,
                 isAuthenticated = isAuthenticated,
                 onTriggerAuth = { viewModel.triggerAuthFlow("Sign in to unlock neighbor contact") },
                 onLogout = { viewModel.logoutUser() },
@@ -506,6 +482,7 @@ fun MainScreen(
             onRequestJob = { prov ->
                 viewModel.setQuickRequestOpen(true)
             },
+            onReportUser = { report -> viewModel.reportUser(report) },
             isAuthenticated = isAuthenticated,
             onTriggerAuth = onTriggerAuth,
             onDismiss = { viewModel.selectProvider(null) }
@@ -645,9 +622,13 @@ fun MainScreen(
 
     if (isNotificationDrawerOpen) {
         NotificationDrawer(
-            notifications = mockNotifications,
+            notifications = notifications,
             onDismiss = { viewModel.setNotificationDrawerOpen(false) },
-            onRequestPermissionDialog = { isPermissionRationaleOpen = true }
+            onRequestPermissionDialog = { isPermissionRationaleOpen = true },
+            onNotificationClick = { notification ->
+                viewModel.markAllNotificationsRead()
+                viewModel.setNotificationDrawerOpen(false)
+            }
         )
     }
 
@@ -711,6 +692,8 @@ fun MainScreen(
     if (isAuthModalOpen) {
         val authState by viewModel.authState.collectAsStateWithLifecycle()
         val authError by viewModel.authError.collectAsStateWithLifecycle()
+        val phoneError by viewModel.phoneError.collectAsStateWithLifecycle()
+        val otpError by viewModel.otpError.collectAsStateWithLifecycle()
         AuthModal(
             pendingActionReason = authPendingAction,
             initialDistrict = filterState.district,
@@ -722,7 +705,10 @@ fun MainScreen(
             onVerifyOtp = { otp, callback -> viewModel.verifyOtp(otp) { success, error -> callback(success, error) } },
             isSendingOtp = authState is SkillsExchangeViewModel.AuthState.SendingOtp,
             isVerifyingOtp = authState is SkillsExchangeViewModel.AuthState.VerifyingOtp,
-            authError = authError
+            authError = authError,
+            phoneError = phoneError,
+            otpError = otpError,
+            onRetry = { viewModel.retryAuth() }
         )
     }
 }

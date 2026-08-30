@@ -1895,7 +1895,9 @@
       "phase": 16,
       "title": "Implement Logout Flow",
       "priority": "P0",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-08-30T09:15:00+03:00",
+      "verified_by": "code_inspection",
       "depends_on": [
         "AUTH-001"
       ],
@@ -1905,13 +1907,13 @@
       "scope": {
         "include": [
           "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
-          "app/src/main/java/com/example/data/remote/FirebaseService.kt"
+          "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
         ],
         "exclude": []
       },
       "files_likely_affected": [
         "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
-        "app/src/main/java/com/example/data/remote/FirebaseService.kt"
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt"
       ],
       "acceptance_criteria": [
         "Logout clears all local user data",
@@ -1923,14 +1925,16 @@
       "risks": [
         "Data loss if not implemented carefully"
       ],
-      "rollback": "git checkout ViewModel.kt FirebaseService.kt"
+      "rollback": "git checkout ViewModel.kt"
     },
     {
       "id": "AUTH-004",
       "phase": 16,
       "title": "Implement Account Deletion",
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-08-30T09:20:00+03:00",
+      "verified_by": "code_inspection",
       "depends_on": [
         "AUTH-001"
       ],
@@ -1940,13 +1944,15 @@
       "scope": {
         "include": [
           "app/src/main/java/com/example/ui/components/AccountDeletionDialog.kt",
-          "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+          "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+          "app/src/main/java/com/example/data/remote/FirebaseService.kt"
         ],
         "exclude": []
       },
       "files_likely_affected": [
         "app/src/main/java/com/example/ui/components/AccountDeletionDialog.kt",
-        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+        "app/src/main/java/com/example/data/remote/FirebaseService.kt"
       ],
       "acceptance_criteria": [
         "Account deletion removes all user data from Firebase and local DB",
@@ -1958,14 +1964,16 @@
       "risks": [
         "Irreversible action"
       ],
-      "rollback": "git checkout AccountDeletionDialog.kt"
+      "rollback": "git checkout AccountDeletionDialog.kt ViewModel.kt FirebaseService.kt"
     },
     {
       "id": "AUTH-005",
       "phase": 16,
       "title": "Implement Authentication Error Handling",
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-08-30T09:25:00+03:00",
+      "verified_by": "code_inspection",
       "depends_on": [
         "AUTH-001"
       ],
@@ -1974,12 +1982,16 @@
       "goal": "Display user-friendly error messages for auth failures.",
       "scope": {
         "include": [
-          "app/src/main/java/com/example/ui/components/AuthModal.kt"
+          "app/src/main/java/com/example/ui/components/AuthModal.kt",
+          "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+          "app/src/main/java/com/example/ui/screens/MainScreen.kt"
         ],
         "exclude": []
       },
       "files_likely_affected": [
-        "app/src/main/java/com/example/ui/components/AuthModal.kt"
+        "app/src/main/java/com/example/ui/components/AuthModal.kt",
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+        "app/src/main/java/com/example/ui/screens/MainScreen.kt"
       ],
       "acceptance_criteria": [
         "Invalid phone number shows error",
@@ -1992,7 +2004,7 @@
       "risks": [
         "Low risk"
       ],
-      "rollback": "git checkout AuthModal.kt"
+      "rollback": "git checkout AuthModal.kt ViewModel.kt MainScreen.kt"
     },
     {
       "id": "SEC-004",
@@ -2319,7 +2331,9 @@
       "phase": 16,
       "title": "Implement User/Worker Reporting",
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-08-30T09:30:00+03:00",
+      "verified_by": "code_inspection",
       "depends_on": [
         "DISP-001"
       ],
@@ -2328,7 +2342,11 @@
       "goal": "Add report functionality with reason and evidence.",
       "scope": {
         "include": [
-          "app/src/main/java/com/example/ui/components/ProviderDetailSheet.kt"
+          "app/src/main/java/com/example/ui/components/ProviderDetailSheet.kt",
+          "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+          "app/src/main/java/com/example/data/db/Entities.kt",
+          "app/src/main/java/com/example/data/db/Daos.kt",
+          "app/src/main/java/com/example/data/db/AppDatabase.kt"
         ],
         "exclude": []
       },
@@ -2348,6 +2366,45 @@
         "Potential for abuse"
       ],
       "rollback": "git checkout ProviderDetailSheet.kt"
+    },
+    {
+      "id": "DISP-005",
+      "phase": 16,
+      "title": "Implement Dispute Notification Integration",
+      "priority": "P1",
+      "status": "completed",
+      "completed_at": "2026-08-30T09:35:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "DISP-001",
+        "NOTIF-001"
+      ],
+      "description": "Trigger notifications when disputes are filed, updated, or resolved.",
+      "problem": "Dispute status changes do not notify affected parties.",
+      "goal": "Create notifications on dispute submission and resolution.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt",
+          "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt",
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+      ],
+      "acceptance_criteria": [
+        "New dispute creates notification for both parties",
+        "Dispute resolution sends notification to reporter"
+      ],
+      "verification": [
+        "File dispute and verify notification created",
+        "Resolve dispute and verify notification created"
+      ],
+      "risks": [
+        "Notification spam"
+      ],
+      "rollback": "git checkout repository ViewModel"
     },
     {
       "id": "NOTIF-001",
@@ -2429,7 +2486,9 @@
       "phase": 16,
       "title": "Wire Notification Triggers to Events",
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-08-30T09:40:00+03:00",
+      "verified_by": "code_inspection",
       "depends_on": [
         "NOTIF-001"
       ],
@@ -2458,6 +2517,42 @@
         "Notification spam"
       ],
       "rollback": "git checkout repository ViewModel"
+    },
+    {
+      "id": "NOTIF-004",
+      "phase": 16,
+      "title": "Implement Notification UI",
+      "priority": "P1",
+      "status": "completed",
+      "completed_at": "2026-08-30T09:45:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "NOTIF-001"
+      ],
+      "description": "Build UI for displaying notifications to users.",
+      "problem": "Notifications are stored but no UI exists to view them.",
+      "goal": "Add notification list screen and badge indicators.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/components"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/components"
+      ],
+      "acceptance_criteria": [
+        "User can view notification list",
+        "Unread count badge shown",
+        "Tapping notification navigates to relevant screen"
+      ],
+      "verification": [
+        "View notifications and verify list displays"
+      ],
+      "risks": [
+        "UI complexity"
+      ],
+      "rollback": "git checkout notification UI components"
     },
     {
       "id": "RATE-001",
@@ -2597,9 +2692,46 @@
         "Data loss if migration is incorrect"
       ],
       "rollback": "git checkout AppDatabase.kt"
+    },
+    {
+      "id": "DB-002",
+      "phase": 16,
+      "title": "Add Room Foreign Keys and Indexes",
+      "priority": "P1",
+      "status": "completed",
+      "completed_at": "2026-08-30T09:50:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "DB-001"
+      ],
+      "description": "Add foreign key constraints and indexes to Room entities for data integrity and query performance.",
+      "problem": "Room entities lack foreign key relationships and indexes, risking data integrity and slow queries.",
+      "goal": "Add @ForeignKey and @Index annotations to related entities.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/db/Entities.kt",
+          "app/src/main/java/com/example/data/db/Daos.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/db/Entities.kt",
+        "app/src/main/java/com/example/data/db/Daos.kt"
+      ],
+      "acceptance_criteria": [
+        "Foreign key constraints enforce referential integrity",
+        "Indexes improve query performance"
+      ],
+      "verification": [
+        "Verify foreign key constraints and indexes in schema"
+      ],
+      "risks": [
+        "Migration required"
+      ],
+      "rollback": "git checkout Entities.kt Daos.kt"
     }
   ],
-    "current_story": "SEC-004",
+    "current_story": "AUTH-006",
     "completed_stories": [
     "STAB-001",
     "STAB-002",
@@ -2663,10 +2795,20 @@
     "DB-001",
     "AUTH-001",
     "JOB-005",
-    "NOTIF-002",\n    "AUTH-002"\n  ],
+    "NOTIF-002",
+    "NOTIF-003",
+    "NOTIF-004",
+    "DB-002",
+    "AUTH-002",
+    "AUTH-003",
+    "AUTH-004",
+    "AUTH-005",
+    "DISP-004",
+    "DISP-005"
+  ],
   "blocked_stories": [
     "STAB-003"
   ],
-  "last_updated": "2026-08-30T07:42:00+03:00"
+  "last_updated": "2026-08-30T09:50:00+03:00"
 }
 

@@ -52,7 +52,10 @@ fun AuthModal(
     onVerifyOtp: ((otp: String, onResult: (Boolean, String?) -> Unit) -> Unit)? = null,
     isSendingOtp: Boolean = false,
     isVerifyingOtp: Boolean = false,
-    authError: String? = null
+    authError: String? = null,
+    phoneError: String? = null,
+    otpError: String? = null,
+    onRetry: (() -> Unit)? = null
 ) {
     var fullName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
@@ -283,7 +286,7 @@ fun AuthModal(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal: 10.dp, vertical: 8.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
@@ -293,8 +296,20 @@ fun AuthModal(
                 }
             }
 
+            if (onRetry != null && (authError != null || phoneError != null || otpError != null)) {
+                TextButton(
+                    onClick = onRetry,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "Retry", fontSize = 12.sp, color = SignalBlue)
+                }
+            }
+
             when (currentStep) {
                 AuthStep.PHONE_ENTRY -> {
+                    if (phoneError != null) {
+                        Text(text = phoneError, fontSize = 11.sp, color = Color.Red, modifier = Modifier.fillMaxWidth())
+                    }
                     OutlinedTextField(
                         value = phoneNumber,
                         onValueChange = { phoneNumber = it },
@@ -332,6 +347,9 @@ fun AuthModal(
                 }
 
                 AuthStep.OTP_VERIFICATION -> {
+                    if (otpError != null) {
+                        Text(text = otpError, fontSize = 11.sp, color = Color.Red, modifier = Modifier.fillMaxWidth())
+                    }
                     OutlinedTextField(
                         value = otpCode,
                         onValueChange = { if (it.length <= 6) otpCode = it },

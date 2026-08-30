@@ -23,9 +23,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         DisputeEntity::class,
         RatingEntity::class,
         NotificationEntity::class,
-        JobStatusAuditEntity::class
+        JobStatusAuditEntity::class,
+        ReportEntity::class
     ],
-    version = 12,
+    version = 14,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -44,6 +45,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun ratingDao(): RatingDao
     abstract fun notificationDao(): NotificationDao
     abstract fun jobStatusAuditDao(): JobStatusAuditDao
+    abstract fun reportDao(): ReportDao
 
     companion object {
         @Volatile
@@ -116,6 +118,239 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // DISP-004: Create reports table
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS reports (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        reportedBy TEXT NOT NULL,
+                        reportedUserId TEXT NOT NULL,
+                        reportedUserName TEXT NOT NULL,
+                        reason TEXT NOT NULL,
+                        description TEXT NOT NULL DEFAULT '',
+                        evidenceUrlsCsv TEXT NOT NULL DEFAULT '',
+                        status TEXT NOT NULL DEFAULT 'PENDING',
+                        adminNotes TEXT NOT NULL DEFAULT '',
+                        createdAt INTEGER NOT NULL DEFAULT 0,
+                        updatedAt INTEGER NOT NULL DEFAULT 0,
+                        resolvedAt INTEGER NOT NULL DEFAULT 0,
+                        resolvedBy TEXT NOT NULL DEFAULT ''
+                    )
+                """.trimIndent())
+            }
+        }
+
+        val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // DB-002: Add foreign keys and indexes
+                // Recreate skill_endorsements with foreign key
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS skill_endorsements_new (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        providerId TEXT NOT NULL,
+                        skillName TEXT NOT NULL,
+                        endorsedByNeighborName TEXT NOT NULL,
+                        neighborDistrict TEXT NOT NULL,
+                        FOREIGN KEY (providerId) REFERENCES service_providers(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                database.execSQL("INSERT INTO skill_endorsements_new SELECT * FROM skill_endorsements")
+                database.execSQL("DROP TABLE skill_endorsements")
+                database.execSQL("ALTER TABLE skill_endorsements_new RENAME TO skill_endorsements")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_skill_endorsements_providerId ON skill_endorsements(providerId)")
+
+                // Recreate job_posts with foreign key and indexes
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS job_posts_new (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        title TEXT NOT NULL,
+                        category TEXT NOT NULL,
+                        description TEXT NOT NULL,
+                        postedByResident TEXT NOT NULL,
+                        district TEXT NOT NULL,
+                        budget REAL NOT NULL,
+                        urgency TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        assignedProviderId TEXT,
+                        assignedProviderName TEXT,
+                        createdTimestamp INTEGER NOT NULL,
+                        estimatedHours REAL NOT NULL,
+                        materialsCost REAL NOT NULL,
+                        safetyFee REAL NOT NULL,
+                        materialsProvidedBy TEXT NOT NULL DEFAULT 'RESIDENT',
+                        laborHours REAL NOT NULL DEFAULT 2.0,
+                        laborRate REAL NOT NULL DEFAULT 60.0,
+                        laborTotal REAL NOT NULL DEFAULT 120.0,
+                        materialsSubtotal REAL NOT NULL DEFAULT 0.0,
+                        platformFee REAL NOT NULL DEFAULT 12.0,
+                        grandTotal REAL NOT NULL DEFAULT 132.0,
+                        materialReceiptsCsv TEXT NOT NULL DEFAULT '',
+                        beforePhotoUrl TEXT,
+                        afterPhotoUrl TEXT,
+                        emergencyAddonRequested INTEGER NOT NULL DEFAULT 0,
+                        emergencyAddonAmount REAL NOT NULL DEFAULT 0.0,
+                        emergencyAddonReason TEXT NOT NULL DEFAULT '',
+                        emergencyAddonReceiptUrl TEXT NOT NULL DEFAULT '',
+                        emergencyAddonStatus TEXT NOT NULL DEFAULT 'NONE',
+                        paymentChannel TEXT NOT NULL DEFAULT 'MTN_MOMO',
+                        momoPhoneNumber TEXT NOT NULL DEFAULT '+256 772 198 420',
+                        escrowStatus TEXT NOT NULL DEFAULT 'QUOTE_PENDING',
+                        doorstepPin TEXT NOT NULL DEFAULT '4829',
+                        isDoorstepVerified INTEGER NOT NULL DEFAULT 0,
+                        materialAdvanceRequested INTEGER NOT NULL DEFAULT 0,
+                        materialAdvanceAmount REAL NOT NULL DEFAULT 0.0,
+                        materialAdvanceReceiptUrl TEXT NOT NULL DEFAULT '',
+                        materialAdvanceStatus TEXT NOT NULL DEFAULT 'NONE',
+                        isSosTriggered INTEGER NOT NULL DEFAULT 0,
+                        calloutFee REAL NOT NULL DEFAULT 5.0,
+                        jobType TEXT NOT NULL DEFAULT 'ONE_TIME',
+                        recurringSchedule TEXT NOT NULL DEFAULT '',
+                        recurringStartDate TEXT NOT NULL DEFAULT '',
+                        recurringContractProposal TEXT NOT NULL DEFAULT '',
+                        recurringNegotiatedRate REAL NOT NULL DEFAULT 0.0,
+                        recurringProposalStatus TEXT NOT NULL DEFAULT 'NONE',
+                        FOREIGN KEY (assignedProviderId) REFERENCES service_providers(id) ON DELETE SET NULL
+                    )
+                """.trimIndent())
+                database.execSQL("INSERT INTO job_posts_new SELECT * FROM job_posts")
+                database.execSQL("DROP TABLE job_posts")
+                database.execSQL("ALTER TABLE job_posts_new RENAME TO job_posts")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_job_posts_assignedProviderId ON job_posts(assignedProviderId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_job_posts_status ON job_posts(status)")
+
+                // Recreate chat_messages with foreign key
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS chat_messages_new (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        jobId TEXT NOT NULL,
+                        senderName TEXT NOT NULL,
+                        isFromUser INTEGER NOT NULL,
+                        message TEXT NOT NULL,
+                        timestampText TEXT NOT NULL,
+                        isSystemNotification INTEGER NOT NULL,
+                        FOREIGN KEY (jobId) REFERENCES job_posts(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                database.execSQL("INSERT INTO chat_messages_new SELECT * FROM chat_messages")
+                database.execSQL("DROP TABLE chat_messages")
+                database.execSQL("ALTER TABLE chat_messages_new RENAME TO chat_messages")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_chat_messages_jobId ON chat_messages(jobId)")
+
+                // Recreate disputes with foreign key
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS disputes_new (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        jobId TEXT NOT NULL,
+                        reportedBy TEXT NOT NULL,
+                        reportedUserId TEXT NOT NULL,
+                        disputeReason TEXT NOT NULL,
+                        description TEXT NOT NULL,
+                        evidenceUrlsCsv TEXT NOT NULL DEFAULT '',
+                        status TEXT NOT NULL DEFAULT 'OPEN',
+                        adminNotes TEXT NOT NULL DEFAULT '',
+                        resolutionType TEXT NOT NULL DEFAULT '',
+                        resolutionAmount REAL NOT NULL DEFAULT 0.0,
+                        createdAt INTEGER NOT NULL DEFAULT 0,
+                        updatedAt INTEGER NOT NULL DEFAULT 0,
+                        resolvedAt INTEGER NOT NULL DEFAULT 0,
+                        resolvedBy TEXT NOT NULL DEFAULT '',
+                        FOREIGN KEY (jobId) REFERENCES job_posts(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                database.execSQL("INSERT INTO disputes_new SELECT * FROM disputes")
+                database.execSQL("DROP TABLE disputes")
+                database.execSQL("ALTER TABLE disputes_new RENAME TO disputes")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_disputes_jobId ON disputes(jobId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_disputes_status ON disputes(status)")
+
+                // Recreate ratings with foreign key
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS ratings_new (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        jobId TEXT NOT NULL,
+                        fromUserId TEXT NOT NULL,
+                        toUserId TEXT NOT NULL,
+                        rating INTEGER NOT NULL,
+                        review TEXT NOT NULL DEFAULT '',
+                        isFromClient INTEGER NOT NULL DEFAULT 1,
+                        createdAt INTEGER NOT NULL DEFAULT 0,
+                        FOREIGN KEY (jobId) REFERENCES job_posts(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                database.execSQL("INSERT INTO ratings_new SELECT * FROM ratings")
+                database.execSQL("DROP TABLE ratings")
+                database.execSQL("ALTER TABLE ratings_new RENAME TO ratings")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_ratings_jobId ON ratings(jobId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_ratings_toUserId ON ratings(toUserId)")
+
+                // Recreate notifications with foreign key
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS notifications_new (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        userId TEXT NOT NULL,
+                        type TEXT NOT NULL,
+                        title TEXT NOT NULL,
+                        body TEXT NOT NULL,
+                        jobId TEXT NOT NULL DEFAULT '',
+                        isRead INTEGER NOT NULL DEFAULT 0,
+                        createdAt INTEGER NOT NULL DEFAULT 0,
+                        FOREIGN KEY (userId) REFERENCES user_profiles(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                database.execSQL("INSERT INTO notifications_new SELECT * FROM notifications")
+                database.execSQL("DROP TABLE notifications")
+                database.execSQL("ALTER TABLE notifications_new RENAME TO notifications")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_notifications_userId ON notifications(userId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_notifications_createdAt ON notifications(createdAt)")
+
+                // Recreate job_status_audit with foreign key
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS job_status_audit_new (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        jobId TEXT NOT NULL,
+                        fromStatus TEXT NOT NULL,
+                        toStatus TEXT NOT NULL,
+                        changedBy TEXT NOT NULL,
+                        changedAt INTEGER NOT NULL DEFAULT 0,
+                        reason TEXT NOT NULL DEFAULT '',
+                        FOREIGN KEY (jobId) REFERENCES job_posts(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                database.execSQL("INSERT INTO job_status_audit_new SELECT * FROM job_status_audit")
+                database.execSQL("DROP TABLE job_status_audit")
+                database.execSQL("ALTER TABLE job_status_audit_new RENAME TO job_status_audit")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_job_status_audit_jobId ON job_status_audit(jobId)")
+
+                // Recreate reports with foreign keys
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS reports_new (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        reportedBy TEXT NOT NULL,
+                        reportedUserId TEXT NOT NULL,
+                        reportedUserName TEXT NOT NULL,
+                        reason TEXT NOT NULL,
+                        description TEXT NOT NULL DEFAULT '',
+                        evidenceUrlsCsv TEXT NOT NULL DEFAULT '',
+                        status TEXT NOT NULL DEFAULT 'PENDING',
+                        adminNotes TEXT NOT NULL DEFAULT '',
+                        createdAt INTEGER NOT NULL DEFAULT 0,
+                        updatedAt INTEGER NOT NULL DEFAULT 0,
+                        resolvedAt INTEGER NOT NULL DEFAULT 0,
+                        resolvedBy TEXT NOT NULL DEFAULT '',
+                        FOREIGN KEY (reportedBy) REFERENCES user_profiles(id) ON DELETE CASCADE,
+                        FOREIGN KEY (reportedUserId) REFERENCES user_profiles(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                database.execSQL("INSERT INTO reports_new SELECT * FROM reports")
+                database.execSQL("DROP TABLE reports")
+                database.execSQL("ALTER TABLE reports_new RENAME TO reports")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_reports_reportedBy ON reports(reportedBy)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_reports_reportedUserId ON reports(reportedUserId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_reports_status ON reports(status)")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -123,7 +358,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "skills_exchange_database"
                 )
-                    .addMigrations(MIGRATION_11_12)
+                    .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14)
                     .build()
                 INSTANCE = instance
                 instance

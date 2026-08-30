@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.db.ServiceProviderEntity
 import com.example.data.db.SkillEndorsementEntity
+import com.example.data.db.ReportEntity
 import com.example.ui.theme.*
 import com.example.util.CurrencyRegion
 import com.example.util.ShareHelper
@@ -32,11 +33,69 @@ fun ProviderDetailSheet(
     districtJobStats: Map<String, Int> = emptyMap(),
     onEndorseSkill: (String) -> Unit,
     onRequestJob: (ServiceProviderEntity) -> Unit,
+    onReportUser: (ReportEntity) -> Unit = {},
     activeRegion: CurrencyRegion = CurrencyRegion.currentRegion,
     isAuthenticated: Boolean = false,
     onTriggerAuth: (String) -> Unit = {},
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
+    var isReportDialogOpen by remember { mutableStateOf(false) }
+    var reportReason by remember { mutableStateOf("") }
+    var reportDescription by remember { mutableStateOf("") }
+
+    if (isReportDialogOpen) {
+        AlertDialog(
+            onDismissRequest = { isReportDialogOpen = false },
+            title = { Text("Report User") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Why are you reporting ${provider.name}?", fontSize = 12.sp, color = Slate600)
+                    OutlinedTextField(
+                        value = reportReason,
+                        onValueChange = { reportReason = it },
+                        label = { Text("Reason") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = reportDescription,
+                        onValueChange = { reportDescription = it },
+                        label = { Text("Description (optional)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (reportReason.isNotBlank()) {
+                            onReportUser(
+                                ReportEntity(
+                                    id = "report_${System.currentTimeMillis()}",
+                                    reportedBy = "",
+                                    reportedUserId = provider.id,
+                                    reportedUserName = provider.name,
+                                    reason = reportReason,
+                                    description = reportDescription
+                                )
+                            )
+                            isReportDialogOpen = false
+                            reportReason = ""
+                            reportDescription = ""
+                        }
+                    },
+                    enabled = reportReason.isNotBlank()
+                ) {
+                    Text("Submit Report")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { isReportDialogOpen = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
     val context = LocalContext.current
 
     ModalBottomSheet(
@@ -424,6 +483,15 @@ fun ProviderDetailSheet(
                         }
                     }
                 }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            TextButton(
+                onClick = { isReportDialogOpen = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Report User", fontSize = 12.sp, color = Color.Red)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
