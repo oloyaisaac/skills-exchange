@@ -17,32 +17,49 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.example.util.LocationHelper
 import com.example.ui.theme.*
 
 /**
- * LOC-001: Client Onboarding & Authentication Modal
+ * AUTH-001: Phone Authentication with OTP
  * Collects Client Full Name, Phone Number, and District Location (via GPS or manual selection)
  * without requiring National ID for clients hiring neighbors.
+ * Includes Firebase Phone Auth OTP verification.
  */
+
+enum class AuthStep {
+    PHONE_ENTRY,
+    OTP_VERIFICATION,
+    PROFILE_SETUP
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuthModal(
     pendingActionReason: String? = null,
     initialDistrict: String = "Sunnyside",
     onLoginSuccess: (phoneNumber: String, fullName: String, district: String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onSendOtp: ((phoneNumber: String, onResult: (Boolean, String?) -> Unit) -> Unit)? = null,
+    onVerifyOtp: ((otp: String, onResult: (Boolean, String?) -> Unit) -> Unit)? = null,
+    isSendingOtp: Boolean = false,
+    isVerifyingOtp: Boolean = false,
+    authError: String? = null
 ) {
-    var fullName by remember { mutableStateOf("Sarah Namukasa") }
-    var phoneNumber by remember { mutableStateOf("+256 701 234 567") }
+    var fullName by remember { mutableStateOf("") }
+    var phoneNumber by remember { mutableStateOf("") }
+    var otpCode by remember { mutableStateOf("") }
     var selectedDistrict by remember { mutableStateOf(initialDistrict) }
-    var isSubmitting by remember { mutableStateOf(false) }
+    var currentStep by remember { mutableStateOf(AuthStep.PHONE_ENTRY) }
+    var resendCooldown by remember { mutableStateOf(0) }
 
     val context = LocalContext.current
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -97,6 +114,13 @@ fun AuthModal(
         "Jinja"
     )
 
+    LaunchedEffect(resendCooldown) {
+        if (resendCooldown > 0) {
+            kotlinx.coroutines.delay(1000)
+            resendCooldown--
+        }
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
@@ -135,7 +159,11 @@ fun AuthModal(
                         )
                     }
                     Text(
-                        text = "CLIENT ONBOARDING & SIGN IN",
+                        text = when (currentStep) {
+                            AuthStep.OTP_VERIFICATION -> "VERIFY PHONE"
+                            AuthStep.PROFILE_SETUP -> "COMPLETE PROFILE"
+                            else -> "CLIENT ONBOARDING"
+                        },
                         fontSize = 11.sp,
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.sp,
@@ -143,10 +171,7 @@ fun AuthModal(
                     )
                 }
 
-                IconButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.size(28.dp)
-                ) {
+                IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Close",
@@ -156,8 +181,65 @@ fun AuthModal(
                 }
             }
 
+            // Step indicator
+            if (currentStep != AuthStep.PHONE_ENTRY) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    AuthStep.entries.forEach { step ->
+                        val isCompleted = step.ordinal < currentStep.ordinal
+                        val isCurrent = step == currentStep
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .background(
+                                        when {
+                                            isCompleted -> IndustrialEmerald
+                                            isCurrent -> SignalBlue
+                                            else -> Slate300
+                                        },
+                                        CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (isCompleted) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                } else {
+                                    Text(
+                                        text = "${step.ordinal + 1}",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                            Text(
+                                text = when (step) {
+                                    AuthStep.PHONE_ENTRY -> "Phone"
+                                    AuthStep.OTP_VERIFICATION -> "Verify"
+                                    AuthStep.PROFILE_SETUP -> "Profile"
+                                },
+                                fontSize = 9.sp,
+                                color = if (isCurrent) SignalBlue else Slate500
+                            )
+                        }
+                    }
+                }
+            }
+
             Text(
-                text = "Welcome to Skills Exchange",
+                text = when (currentStep) {
+                    AuthStep.PHONE_ENTRY -> "Welcome to Skills Exchange"
+                    AuthStep.OTP_VERIFICATION -> "Enter Verification Code"
+                    AuthStep.PROFILE_SETUP -> "Complete Your Profile"
+                },
                 fontSize = 19.sp,
                 fontWeight = FontWeight.Black,
                 color = Slate900,
@@ -165,14 +247,17 @@ fun AuthModal(
             )
 
             Text(
-                text = "Connect with trusted, background-checked neighborhood specialists. No National ID required for hiring neighbors.",
+                text = when (currentStep) {
+                    AuthStep.PHONE_ENTRY -> "Connect with trusted neighborhood specialists."
+                    AuthStep.OTP_VERIFICATION -> "We sent a 6-digit code to $phoneNumber"
+                    AuthStep.PROFILE_SETUP -> "Just a few details to get you started."
+                },
                 fontSize = 12.sp,
                 color = Slate600,
                 textAlign = TextAlign.Center
             )
 
-            // Pending action alert pill
-            if (!pendingActionReason.isNullOrBlank()) {
+            if (!pendingActionReason.isNullOrBlank() && currentStep == AuthStep.PHONE_ENTRY) {
                 Surface(
                     shape = RoundedCornerShape(6.dp),
                     color = AmberUrgentLight,
@@ -180,182 +265,190 @@ fun AuthModal(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal: 10.dp, vertical: 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "Lock",
-                            tint = AmberUrgent,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = "Required for: $pendingActionReason",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = AmberUrgent
-                        )
+                        Icon(imageVector = Icons.Default.Lock, contentDescription = "Lock", tint = AmberUrgent, modifier = Modifier.size(16.dp))
+                        Text(text = "Required for: $pendingActionReason", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AmberUrgent)
                     }
                 }
             }
 
-            // Input 1: Full Name
-            OutlinedTextField(
-                value = fullName,
-                onValueChange = { fullName = it },
-                label = { Text("Your Full Name (Client Profile)", fontSize = 12.sp) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Name",
-                        tint = SignalBlue,
-                        modifier = Modifier.size(18.dp)
-                    )
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = SignalBlue,
-                    unfocusedBorderColor = Slate300
-                ),
-                singleLine = true
-            )
-
-            // Input 2: Phone Number / MoMo
-            OutlinedTextField(
-                value = phoneNumber,
-                onValueChange = { phoneNumber = it },
-                label = { Text("Mobile Phone / MoMo Handset Number", fontSize = 12.sp) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.PhoneAndroid,
-                        contentDescription = "Phone",
-                        tint = SignalBlue,
-                        modifier = Modifier.size(18.dp)
-                    )
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = SignalBlue,
-                    unfocusedBorderColor = Slate300
-                ),
-                singleLine = true
-            )
-
-            // Input 3: Location / District Selector
-            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Your Neighborhood / District",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Slate700
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.clickable { triggerLocationFlow() }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MyLocation,
-                            contentDescription = "GPS",
-                            tint = SignalBlue,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Text(
-                            text = "Auto GPS",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = SignalBlue
-                        )
-                    }
-                }
-
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+            if (authError != null) {
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color.Red.copy(alpha = 0.1f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.Red),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(popularDistricts) { district ->
-                        val isSelected = selectedDistrict == district
-                        Surface(
-                            color = if (isSelected) SignalBlue else Slate100,
-                            contentColor = if (isSelected) Color.White else Slate700,
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.clickable { selectedDistrict = district }
-                        ) {
-                            Text(
-                                text = district,
-                                fontSize = 11.5.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                            )
-                        }
+                    Row(
+                        modifier = Modifier.padding(horizontal: 10.dp, vertical: 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.Error, contentDescription = "Error", tint = Color.Red, modifier = Modifier.size(16.dp))
+                        Text(text = authError, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Red)
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // Primary Continue Button
-            Button(
-                onClick = {
-                    isSubmitting = true
-                    onLoginSuccess(phoneNumber, fullName, selectedDistrict)
-                },
-                enabled = !isSubmitting && phoneNumber.isNotBlank() && fullName.isNotBlank(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(46.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = SignalBlue)
-            ) {
-                Text(
-                    text = if (isSubmitting) "Saving Profile..." else "Complete Client Onboarding",
-                    fontSize = 13.5.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            // Quick One-Tap Demo Login
-            Surface(
-                onClick = { onLoginSuccess("+256 772 100 200", "Sarah Namukasa", "Sunnyside") },
-                shape = RoundedCornerShape(8.dp),
-                color = IndustrialEmeraldLight,
-                border = androidx.compose.foundation.BorderStroke(1.dp, IndustrialEmerald),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CheckCircle,
-                        contentDescription = "Demo",
-                        tint = IndustrialEmerald,
-                        modifier = Modifier.size(16.dp)
+            when (currentStep) {
+                AuthStep.PHONE_ENTRY -> {
+                    OutlinedTextField(
+                        value = phoneNumber,
+                        onValueChange = { phoneNumber = it },
+                        label = { Text("Mobile Phone Number", fontSize = 12.sp) },
+                        leadingIcon = { Icon(imageVector = Icons.Default.PhoneAndroid, contentDescription = "Phone", tint = SignalBlue, modifier = Modifier.size(18.dp)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = SignalBlue, unfocusedBorderColor = Slate300),
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "⚡ Instant One-Tap Resident Demo Sign In",
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = IndustrialEmeraldDark
+
+                    Button(
+                        onClick = {
+                            if (phoneNumber.isNotBlank() && phoneNumber.length >= 10) {
+                                onSendOtp?.invoke(phoneNumber) { success, _ ->
+                                    if (success) {
+                                        currentStep = AuthStep.OTP_VERIFICATION
+                                        resendCooldown = 60
+                                    }
+                                }
+                            }
+                        },
+                        enabled = !isSendingOtp && phoneNumber.isNotBlank() && phoneNumber.length >= 10,
+                        modifier = Modifier.fillMaxWidth().height(46.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = SignalBlue)
+                    ) {
+                        if (isSendingOtp) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        Text(text = if (isSendingOtp) "Sending Code..." else "Send Verification Code", fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                AuthStep.OTP_VERIFICATION -> {
+                    OutlinedTextField(
+                        value = otpCode,
+                        onValueChange = { if (it.length <= 6) otpCode = it },
+                        label = { Text("6-Digit Code", fontSize = 12.sp) },
+                        leadingIcon = { Icon(imageVector = Icons.Default.Sms, contentDescription = "OTP", tint = SignalBlue, modifier = Modifier.size(18.dp)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = SignalBlue, unfocusedBorderColor = Slate300),
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
+
+                    Button(
+                        onClick = {
+                            if (otpCode.length == 6) {
+                                onVerifyOtp?.invoke(otpCode) { success, _ ->
+                                    if (success) currentStep = AuthStep.PROFILE_SETUP
+                                }
+                            }
+                        },
+                        enabled = !isVerifyingOtp && otpCode.length == 6,
+                        modifier = Modifier.fillMaxWidth().height(46.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = SignalBlue)
+                    ) {
+                        if (isVerifyingOtp) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        Text(text = if (isVerifyingOtp) "Verifying..." else "Verify Code", fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    TextButton(
+                        onClick = {
+                            if (resendCooldown == 0) {
+                                onSendOtp?.invoke(phoneNumber) { success, _ ->
+                                    if (success) { resendCooldown = 60; otpCode = "" }
+                                }
+                            }
+                        },
+                        enabled = resendCooldown == 0 && !isSendingOtp
+                    ) {
+                        Text(
+                            text = if (resendCooldown > 0) "Resend code in ${resendCooldown}s" else "Resend Code",
+                            fontSize = 12.sp,
+                            color = if (resendCooldown > 0) Slate500 else SignalBlue
+                        )
+                    }
+
+                    TextButton(onClick = { currentStep = AuthStep.PHONE_ENTRY; otpCode = "" }) {
+                        Text(text = "Change phone number", fontSize = 11.sp, color = Slate500)
+                    }
+                }
+
+                AuthStep.PROFILE_SETUP -> {
+                    OutlinedTextField(
+                        value = fullName,
+                        onValueChange = { fullName = it },
+                        label = { Text("Your Full Name", fontSize = 12.sp) },
+                        leadingIcon = { Icon(imageVector = Icons.Default.Person, contentDescription = "Name", tint = SignalBlue, modifier = Modifier.size(18.dp)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = SignalBlue, unfocusedBorderColor = Slate300),
+                        singleLine = true
+                    )
+
+                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = "Your Neighborhood / District", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Slate700)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier.clickable { triggerLocationFlow() }
+                            ) {
+                                Icon(imageVector = Icons.Default.MyLocation, contentDescription = "GPS", tint = SignalBlue, modifier = Modifier.size(14.dp))
+                                Text(text = "Auto GPS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = SignalBlue)
+                            }
+                        }
+
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                            items(popularDistricts) { district ->
+                                val isSelected = selectedDistrict == district
+                                Surface(
+                                    color = if (isSelected) SignalBlue else Slate100,
+                                    contentColor = if (isSelected) Color.White else Slate700,
+                                    shape = RoundedCornerShape(16.dp),
+                                    modifier = Modifier.clickable { selectedDistrict = district }
+                                ) {
+                                    Text(
+                                        text = district,
+                                        fontSize = 11.5.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical: 5.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Button(
+                        onClick = { onLoginSuccess(phoneNumber, fullName, selectedDistrict) },
+                        enabled = fullName.isNotBlank() && selectedDistrict.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth().height(46.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = SignalBlue)
+                    ) {
+                        Text(text = "Complete Setup", fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
 
             // Trust badge footer
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Icon(Icons.Default.Shield, contentDescription = null, tint = Slate400, modifier = Modifier.size(12.dp))
                     Text("Zero Spam Guarantee", fontSize = 10.sp, color = Slate500, fontWeight = FontWeight.Medium)

@@ -8,7 +8,61 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ---
 
-## 2026-08-30
+### [2026-08-30] [RATE-002] [IMPL] Implement Rating Submission UI
+- Added RatingSubmissionState sealed class: Idle, Submitting, Success, Error
+- Added submitRating method to ViewModel with validation
+- Added duplicate rating prevention
+- Added rating validation (1-5 stars)
+- Added getUserRatings flow for displaying user ratings
+- Integrated with existing Repository → ViewModel → UI architecture
+
+### [2026-08-30] [RATE-003] [IMPL] Implement Rating Aggregation
+- Added getAverageRatingForUser method to ViewModel
+- Average rating calculated from all ratings in database
+- Flow-based API for reactive UI updates
+- Rating aggregation happens server-side in repository
+- Created SkillsExchangeMessagingService extending FirebaseMessagingService
+- Added FCM token management: getToken, deleteToken, onNewToken
+- Added notification channel creation for Android O+
+- Added foreground notification handling with deep linking
+- Added Firebase Messaging dependency to build.gradle.kts
+- Updated AndroidManifest.xml to register FCM service
+- Added FCM state management to ViewModel: fcmToken, hasNotificationPermission
+- Added initFcm, onFcmTokenRefreshed, clearFcmToken methods
+- Notifications support deep linking to relevant jobs via jobId extra
+- Updated ViewModel.updateJobStatus to use audited transition path
+- All status changes now create JobStatusAuditEntity records
+- Audit records capture: jobId, fromStatus, toStatus, changedBy, timestamp, reason
+- Invalid transitions are rejected by JobStatus.isValidTransition
+- Added getJobAuditTrail method to ViewModel
+- Audit trail is created as part of trusted status-transition path
+- Clients cannot create false audit records directly
+- Added multi-step auth flow: PHONE_ENTRY → OTP_VERIFICATION → PROFILE_SETUP
+- Added AuthStep enum for tracking current step
+- Added phone number input with validation (minimum 10 characters)
+- Added 6-digit OTP input with verification
+- Added resend cooldown timer (60 seconds)
+- Added loading states for sending/verifying OTP
+- Added error display with user-friendly messages
+- Added step indicator showing progress through auth flow
+- Added AuthState sealed class: SignedOut, SendingOtp, OtpSent, VerifyingOtp, SignedIn, Error
+- Added ViewModel methods: sendOtp, verifyOtp, logoutUser, clearAuthError
+- Added FirebaseService methods: sendPhoneVerificationCode, verifyPhoneCode
+- Integrated with existing AuthModal UI
+- Removed hardcoded demo login credentials from form
+- Added "Change phone number" option during OTP verification
+
+### [2026-08-30] [DISP-002] [IMPL] Implement Dispute UI and Workflow
+- Wired dispute dialog in EscrowAndProofSheet to persistence layer.
+- Added DisputeReason selector with radio buttons (Quality Issue, No Show, Incomplete Work, Overcharging, Misrepresentation, Safety Concern, Other).
+- Added input validation: description required, minimum 10 characters.
+- Added loading state with progress indicator during submission.
+- Added success message display after successful submission.
+- Added duplicate dispute prevention (checks for existing dispute by same user for same job).
+- Added ViewModel methods: submitDispute, getUserDisputes, resetDisputeSubmissionState.
+- Added DisputeSubmissionState sealed class for Idle/Submitting/Success/Error states.
+- Updated MainScreen to pass dispute callback and state to EscrowAndProofSheet.
+- Job status now correctly set to "DISPUTED" on dispute submission.
 
 ### [2026-08-30] [DB-001] [INFRA] Add Proper Room Migrations
 - Replaced `fallbackToDestiveMigration()` with proper migration from version 11 to 12.

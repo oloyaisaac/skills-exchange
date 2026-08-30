@@ -1,19 +1,19 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-08-30T07:00:00+03:00
+2026-08-30T07:42:00+03:00
 
 ---
 
 ## Current Project Status
 **Phase**: 16 — Production Readiness & Security Hardening
-**Overall Status**: In Progress — 56 of 79 stories completed. Critical security fixes applied. 22 stories pending.
+**Overall Status**: In Progress — 62 of 79 stories completed. 16 stories pending.
 
 ---
 
 ## Current PRD Story
-**Story ID**: DISP-002
-**Title**: Implement Dispute UI and Workflow
+**Story ID**: RATE-002
+**Title**: Implement Rating Submission UI
 **Status**: Next eligible task
 
 ---
@@ -98,18 +98,25 @@ Complete remaining Phase 16 stories for production readiness.
 - **SEC-007**: Remove Hardcoded Webhook Secret Fallback (Fail loudly if secret not set)
 - **JOB-004**: Implement Job State Machine (JobStatus enum with validated transitions)
 - **DISP-001**: Implement Dispute Entity and Persistence (DisputeEntity, DAO, enums)
+- **DISP-002**: Implement Dispute UI and Workflow (Wired to persistence, reason selector, validation)
 - **DISP-003**: Implement Admin Dispute Resolution (resolveDispute, getDisputesQueue Cloud Functions)
 - **NOTIF-001**: Implement Notification Entity and Persistence (NotificationEntity, DAO, enums)
+- **NOTIF-002**: Implement FCM Push Notifications (FirebaseMessagingService, token management)
 - **RATE-001**: Implement Rating Entity and Persistence (RatingEntity, DAO)
+- **RATE-002**: Implement Rating Submission UI (ViewModel methods, validation)
+- **RATE-003**: Implement Rating Aggregation (Average calculation)
 - **DB-001**: Add Proper Room Migrations (Migration 11→12, data preservation)
+- **AUTH-001**: Implement Phone Authentication with OTP (Multi-step auth flow)
+- **JOB-005**: Add Job Status Audit Trail (Audited transitions)
 
 ---
 
 ## Work In Progress / Next Task
-1. **DISP-002** (P0): Implement Dispute UI and Workflow - Wire dispute UI to persist data.
-2. **AUTH-001** (P0): Implement Phone Authentication with OTP.
-3. **JOB-005** (P1): Add Job Status Audit Trail.
-4. Remaining Phase 16 stories as time permits.
+Continue with remaining Phase 16 stories:
+1. **AUTH-002** (P0): Implement Session Persistence.
+2. **AUTH-003** (P0): Implement Logout Flow.
+3. **NOTIF-003** (P1): Wire Notification Triggers to Events.
+4. **DISP-004** (P1): Implement User/Worker Reporting.
 
 ---
 

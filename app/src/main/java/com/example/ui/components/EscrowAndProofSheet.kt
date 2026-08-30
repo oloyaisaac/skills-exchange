@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.db.JobPostEntity
+import com.example.data.db.DisputeReason
 import com.example.ui.theme.*
 import com.example.util.CurrencyRegion
 
@@ -48,7 +49,10 @@ fun EscrowAndProofSheet(
     onVerifyDoorstepPin: ((enteredPin: String, expectedPin: String, onResult: (Boolean) -> Unit) -> Unit)? = null,
     onRequestMaterialAdvance: ((amount: Double) -> Unit)? = null,
     onRespondMaterialAdvance: ((approve: Boolean) -> Unit)? = null,
-    onTriggerSosAlert: (() -> Unit)? = null
+    onTriggerSosAlert: (() -> Unit)? = null,
+    onSubmitDispute: ((reason: com.example.data.db.DisputeReason, description: String) -> Unit)? = null,
+    isSubmittingDispute: Boolean = false,
+    disputeSubmissionSuccess: Boolean = false
 ) {
     var selectedChannel by remember { mutableStateOf(job.paymentChannel) }
     var phoneNumber by remember { mutableStateOf(job.momoPhoneNumber) }
@@ -69,7 +73,9 @@ fun EscrowAndProofSheet(
     var showMaterialAdvanceDialog by remember { mutableStateOf(false) }
 
     var showDisputeDialog by remember { mutableStateOf(false) }
-    var disputeReasonText by remember { mutableStateOf("Shutoff valve fitting is weeping water after 10 mins") }
+    var disputeReasonText by remember { mutableStateOf("") }
+    var selectedDisputeReason by remember { mutableStateOf(DisputeReason.QUALITY_ISSUE) }
+    var disputeError by remember { mutableStateOf("") }
 
     var beforePhoto by remember { mutableStateOf(job.beforePhotoUrl ?: "img_before_leak") }
     var afterPhoto by remember { mutableStateOf(job.afterPhotoUrl ?: "") }
@@ -1346,10 +1352,16 @@ fun EscrowAndProofSheet(
         )
     }
 
-    // QUALITY DISPUTE DIALOG
+    // QUALITY DISPUTE DIALOG - DISP-002: Wired to persistence
     if (showDisputeDialog) {
         AlertDialog(
-            onDismissRequest = { showDisputeDialog = false },
+            onDismissRequest = {
+                if (!isSubmittingDispute) {
+                    showDisputeDialog = false
+                    disputeReasonText = ""
+                    disputeError = ""
+                }
+            },
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(imageVector = Icons.Default.Gavel, contentDescription = "Dispute", tint = Color.Red)
@@ -1364,12 +1376,44 @@ fun EscrowAndProofSheet(
                         color = Slate600
                     )
 
+                    // DISP-002: Reason selector
+                    Text("Reason", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        DisputeReason.entries.forEach { reason ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { selectedDisputeReason = reason }
+                                    .padding(4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = selectedDisputeReason == reason,
+                                    onClick = { selectedDisputeReason = reason }
+                                )
+                                Text(
+                                    text = reason.value.replace("_", " ").lowercase()
+                                        .replaceFirstChar { it.uppercase() },
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+                    }
+
                     OutlinedTextField(
                         value = disputeReasonText,
-                        onValueChange = { disputeReasonText = it },
-                        label = { Text("Reason / Defect Description", fontSize = 11.sp) },
+                        onValueChange = {
+                            disputeReasonText = it
+                            disputeError = ""
+                        },
+                        label = { Text("Description / Details", fontSize = 11.sp) },
                         modifier = Modifier.fillMaxWidth(),
-                        minLines = 2
+                        minLines = 3,
+                        enabled = !isSubmittingDispute,
+                        isError = disputeError.isNotEmpty(),
+                        supportingText = if (disputeError.isNotEmpty()) {
+                            { Text(disputeError, color = Color.Red, fontSize = 10.sp) }
+                        } else null
                     )
 
                     Surface(
@@ -1383,7 +1427,25 @@ fun EscrowAndProofSheet(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Icon(imageVector = Icons.Default.CameraAlt, contentDescription = "Evidence", tint = Slate600, modifier = Modifier.size(18.dp))
-                            Text(text = "Counter-evidence photo attached from site inspection", fontSize = 10.sp, color = Slate700)
+                            Text(text = "Counter-evidence photos from site inspection", fontSize = 10.sp, color = Slate700)
+                        }
+                    }
+
+                    // DISP-002: Success message
+                    if (disputeSubmissionSuccess) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = Color(0xFF4CAF50).copy(alpha = 0.1f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4CAF50))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.CheckCircle, contentDescription = "Success", tint = Color(0xFF4CAF50), modifier = Modifier.size(18.dp))
+                                Text(text = "Dispute submitted successfully. Funds are now frozen pending review.", fontSize = 10.sp, color = Color(0xFF2E7D32))
+                            }
                         }
                     }
                 }
@@ -1391,17 +1453,47 @@ fun EscrowAndProofSheet(
             confirmButton = {
                 Button(
                     onClick = {
-                        showDisputeDialog = false
-                        onUpdateEscrowStatus("DISPUTE_RAISED")
+                        // DISP-002: Validate input
+                        if (disputeReasonText.isBlank()) {
+                            disputeError = "Please provide a description"
+                            return@Button
+                        }
+                        if (disputeReasonText.length < 10) {
+                            disputeError = "Description must be at least 10 characters"
+                            return@Button
+                        }
+
+                        // DISP-002: Submit via callback
+                        onSubmitDispute?.invoke(selectedDisputeReason, disputeReasonText)
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                    shape = RoundedCornerShape(6.dp)
+                    shape = RoundedCornerShape(6.dp),
+                    enabled = !isSubmittingDispute
                 ) {
-                    Text(text = "Submit Evidence & Freeze Escrow", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    if (isSubmittingDispute) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                    }
+                    Text(
+                        text = if (isSubmittingDispute) "Submitting..." else "Submit Evidence & Freeze Escrow",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDisputeDialog = false }) {
+                TextButton(
+                    onClick = {
+                        showDisputeDialog = false
+                        disputeReasonText = ""
+                        disputeError = ""
+                    },
+                    enabled = !isSubmittingDispute
+                ) {
                     Text(text = "Cancel", color = Slate600)
                 }
             }

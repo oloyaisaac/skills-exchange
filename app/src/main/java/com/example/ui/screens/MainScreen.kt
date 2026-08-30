@@ -513,10 +513,17 @@ fun MainScreen(
     }
 
     if (isAuthModalOpen) {
+        val authState by viewModel.authState.collectAsStateWithLifecycle()
+        val authError by viewModel.authError.collectAsStateWithLifecycle()
         AuthModal(
             pendingActionReason = authPendingAction,
-            onLoginSuccess = { phone -> viewModel.loginUser(phone) },
-            onDismiss = { viewModel.closeAuthModal() }
+            onLoginSuccess = { phone, name, district -> viewModel.loginUser(phone, name, district) },
+            onDismiss = { viewModel.closeAuthModal() },
+            onSendOtp = { phone, callback -> viewModel.sendOtp(phone) { success, error -> callback(success, error) } },
+            onVerifyOtp = { otp, callback -> viewModel.verifyOtp(otp) { success, error -> callback(success, error) } },
+            isSendingOtp = authState is SkillsExchangeViewModel.AuthState.SendingOtp,
+            isVerifyingOtp = authState is SkillsExchangeViewModel.AuthState.VerifyingOtp,
+            authError = authError
         )
     }
 
@@ -548,6 +555,7 @@ fun MainScreen(
     if (isEscrowSheetOpen && escrowJobTarget != null) {
         // Find latest updated job state from repository
         val liveJob = jobs.find { it.id == escrowJobTarget!!.id } ?: escrowJobTarget!!
+        val disputeState by viewModel.disputeSubmissionState.collectAsStateWithLifecycle()
         EscrowAndProofSheet(
             job = liveJob,
             onUpdateEscrowStatus = { newEscrowStatus ->
@@ -577,9 +585,21 @@ fun MainScreen(
             onTriggerSosAlert = {
                 viewModel.triggerSosAlert(liveJob.id)
             },
+            onSubmitDispute = { reason, description ->
+                val workerId = liveJob.assignedProviderId ?: "unknown_worker"
+                viewModel.submitDispute(
+                    jobId = liveJob.id,
+                    reportedUserId = workerId,
+                    reason = reason,
+                    description = description
+                )
+            },
+            isSubmittingDispute = disputeState is SkillsExchangeViewModel.DisputeSubmissionState.Submitting,
+            disputeSubmissionSuccess = disputeState is SkillsExchangeViewModel.DisputeSubmissionState.Success,
             onDismiss = {
                 isEscrowSheetOpen = false
                 escrowJobTarget = null
+                viewModel.resetDisputeSubmissionState()
             }
         )
     }
@@ -689,13 +709,20 @@ fun MainScreen(
     )
 
     if (isAuthModalOpen) {
+        val authState by viewModel.authState.collectAsStateWithLifecycle()
+        val authError by viewModel.authError.collectAsStateWithLifecycle()
         AuthModal(
             pendingActionReason = authPendingAction,
             initialDistrict = filterState.district,
             onLoginSuccess = { phone, name, district ->
                 viewModel.loginUser(phone, name, district)
             },
-            onDismiss = { viewModel.closeAuthModal() }
+            onDismiss = { viewModel.closeAuthModal() },
+            onSendOtp = { phone, callback -> viewModel.sendOtp(phone) { success, error -> callback(success, error) } },
+            onVerifyOtp = { otp, callback -> viewModel.verifyOtp(otp) { success, error -> callback(success, error) } },
+            isSendingOtp = authState is SkillsExchangeViewModel.AuthState.SendingOtp,
+            isVerifyingOtp = authState is SkillsExchangeViewModel.AuthState.VerifyingOtp,
+            authError = authError
         )
     }
 }

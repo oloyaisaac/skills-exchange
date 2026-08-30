@@ -5,6 +5,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.db.AppDatabase
 import com.example.data.db.ChatMessageEntity
+import com.example.data.db.DisputeEntity
+import com.example.data.db.DisputeReason
+import com.example.data.db.DisputeStatus
 import com.example.data.db.JobPostEntity
 import com.example.data.db.NeighborhoodPostEntity
 import com.example.data.db.ServiceProviderEntity
@@ -334,12 +337,28 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
-    fun updateJobStatus(jobId: String, newStatus: String) {
+    fun updateJobStatus(jobId: String, newStatus: String, reason: String = "") {
         viewModelScope.launch {
-            repository.updateJobStatus(jobId, newStatus)
+            val currentJob = repository.jobs.first().find { it.id == jobId }
+            val fromStatus = currentJob?.status ?: ""
+            val userId = currentUser.value?.id ?: "system"
+
+            // JOB-005: Use audited transition
+            repository.transitionJobStatus(
+                jobId = jobId,
+                fromStatus = fromStatus,
+                toStatus = newStatus,
+                changedBy = userId,
+                reason = reason
+            )
             val updatedJob = repository.jobs.first().find { it.id == jobId }
             selectedJob.value = updatedJob
         }
+    }
+
+    // JOB-005: Get audit trail for a job
+    suspend fun getJobAuditTrail(jobId: String): List<com.example.data.db.JobStatusAuditEntity> {
+        return repository.getJobAuditTrail(jobId)
     }
 
     fun updateEscrowStatus(jobId: String, newEscrowStatus: String) {
@@ -780,6 +799,44 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     val pendingActions = MutableStateFlow<List<com.example.data.db.PendingActionEntity>>(emptyList())
 
+    // DISP-002: Dispute state
+    val disputes = MutableStateFlow<List<DisputeEntity>>(emptyList())
+    val disputeSubmissionState = MutableStateFlow<DisputeSubmissionState>(DisputeSubmissionState.Idle)
+
+    // AUTH-001: Authentication state
+    val authState = MutableStateFlow<AuthState>(AuthState.SignedOut)
+    val authError = MutableStateFlow<String?>(null)
+
+    // NOTIF-002: FCM state
+    val fcmToken = MutableStateFlow<String?>(null)
+    val hasNotificationPermission = MutableStateFlow(false)
+
+    // RATE-002: Rating state
+    val ratingSubmissionState = MutableStateFlow<RatingSubmissionState>(RatingSubmissionState.Idle)
+
+    sealed class RatingSubmissionState {
+        object Idle : RatingSubmissionState()
+        object Submitting : RatingSubmissionState()
+        object Success : RatingSubmissionState()
+        data class Error(val message: String) : RatingSubmissionState()
+    }
+
+    sealed class AuthState {
+        object SignedOut : AuthState()
+        object SendingOtp : AuthState()
+        object OtpSent : AuthState()
+        object VerifyingOtp : AuthState()
+        object SignedIn : AuthState()
+        data class Error(val message: String) : AuthState()
+    }
+
+    sealed class DisputeSubmissionState {
+        object Idle : DisputeSubmissionState()
+        object Submitting : DisputeSubmissionState()
+        object Success : DisputeSubmissionState()
+        data class Error(val message: String) : DisputeSubmissionState()
+    }
+
     init {
         viewModelScope.launch {
             repository.currentTraining.collect { training ->
@@ -789,6 +846,11 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         viewModelScope.launch {
             repository.getPendingActions().collect { actions ->
                 pendingActions.value = actions
+            }
+        }
+        viewModelScope.launch {
+            repository.getAllDisputes().collect { disputeList ->
+                disputes.value = disputeList
             }
         }
     }
@@ -818,5 +880,212 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             val updatedJob = repository.jobs.first().find { it.id == jobId }
             selectedJob.value = updatedJob
         }
+    }
+
+    // ==================== DISP-002: Dispute Methods ====================
+
+    fun submitDispute(
+        jobId: String,
+        reportedUserId: String,
+        reason: DisputeReason,
+        description: String,
+        evidenceUrls: List<String> = emptyList()
+    ) {
+        viewModelScope.launch {
+            disputeSubmissionState.value = DisputeSubmissionState.Submitting
+
+            try {
+                val currentUserId = currentUser.value?.id ?: run {
+                    disputeSubmissionState.value = DisputeSubmissionState.Error("User not authenticated")
+                    return@launch
+                }
+
+                // Check for duplicate dispute
+                val existingDispute = repository.getDisputeForJob(jobId)
+                if (existingDispute != null && existingDispute.reportedBy == currentUserId) {
+                    disputeSubmissionState.value = DisputeSubmissionState.Error("A dispute has already been filed for this job")
+                    return@launch
+                }
+
+                val dispute = DisputeEntity(
+                    id = "dispute_${System.currentTimeMillis()}",
+                    jobId = jobId,
+                    reportedBy = currentUserId,
+                    reportedUserId = reportedUserId,
+                    disputeReason = reason.value,
+                    description = description,
+                    evidenceUrlsCsv = evidenceUrls.joinToString(","),
+                    status = DisputeStatus.OPEN.value,
+                    createdAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis()
+                )
+
+                repository.createDispute(dispute)
+
+                // Update job status to DISPUTED
+                val job = repository.jobs.first().find { it.id == jobId }
+                job?.let {
+                    repository.updateJobStatus(jobId, "DISPUTED")
+                }
+
+                disputeSubmissionState.value = DisputeSubmissionState.Success
+            } catch (e: Exception) {
+                disputeSubmissionState.value = DisputeSubmissionState.Error(e.message ?: "Failed to submit dispute")
+            }
+        }
+    }
+
+    fun resetDisputeSubmissionState() {
+        disputeSubmissionState.value = DisputeSubmissionState.Idle
+    }
+
+    fun getUserDisputes(): Flow<List<DisputeEntity>> {
+        val userId = currentUser.value?.id ?: return flowOf(emptyList())
+        return repository.getDisputesForUser(userId)
+    }
+
+    // ==================== AUTH-001: Phone Authentication Methods ====================
+
+    fun sendOtp(phoneNumber: String, onResult: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            authState.value = AuthState.SendingOtp
+            authError.value = null
+
+            try {
+                // Use Firebase Phone Auth via FirebaseService
+                val result = firebaseService.sendPhoneVerificationCode(phoneNumber)
+                if (result.isSuccess) {
+                    authState.value = AuthState.OtpSent
+                    onResult(true, null)
+                } else {
+                    val error = result.exceptionOrNull()?.message ?: "Failed to send OTP"
+                    authState.value = AuthState.Error(error)
+                    authError.value = error
+                    onResult(false, error)
+                }
+            } catch (e: Exception) {
+                val error = e.message ?: "Failed to send OTP"
+                authState.value = AuthState.Error(error)
+                authError.value = error
+                onResult(false, error)
+            }
+        }
+    }
+
+    fun verifyOtp(otpCode: String, onResult: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            authState.value = AuthState.VerifyingOtp
+            authError.value = null
+
+            try {
+                val result = firebaseService.verifyPhoneCode(otpCode)
+                if (result.isSuccess) {
+                    authState.value = AuthState.SignedIn
+                    isAuthenticated.value = true
+                    onResult(true, null)
+                } else {
+                    val error = result.exceptionOrNull()?.message ?: "Invalid verification code"
+                    authState.value = AuthState.Error(error)
+                    authError.value = error
+                    onResult(false, error)
+                }
+            } catch (e: Exception) {
+                val error = e.message ?: "Verification failed"
+                authState.value = AuthState.Error(error)
+                authError.value = error
+                onResult(false, error)
+            }
+        }
+    }
+
+    fun logoutUser() {
+        viewModelScope.launch {
+            firebaseService.signOut()
+            authState.value = AuthState.SignedOut
+            isAuthenticated.value = false
+            authError.value = null
+        }
+    }
+
+    fun clearAuthError() {
+        authError.value = null
+        if (authState.value is AuthState.Error) {
+            authState.value = AuthState.SignedOut
+        }
+    }
+
+    // ==================== NOTIF-002: FCM Methods ====================
+
+    fun initFcm() {
+        com.example.data.remote.SkillsExchangeMessagingService.getToken { token ->
+            fcmToken.value = token
+        }
+    }
+
+    fun onFcmTokenRefreshed(token: String) {
+        fcmToken.value = token
+        // NOTIF-002: Send token to backend in production
+    }
+
+    fun clearFcmToken() {
+        com.example.data.remote.SkillsExchangeMessagingService.deleteToken()
+        fcmToken.value = null
+    }
+
+    // ==================== RATE-002/RATE-003: Rating Methods ====================
+
+    fun submitRating(jobId: String, toUserId: String, rating: Int, review: String, isFromClient: Boolean = true) {
+        viewModelScope.launch {
+            ratingSubmissionState.value = RatingSubmissionState.Submitting
+
+            try {
+                val fromUserId = currentUser.value?.id ?: run {
+                    ratingSubmissionState.value = RatingSubmissionState.Error("User not authenticated")
+                    return@launch
+                }
+
+                // Validate rating
+                if (rating < 1 || rating > 5) {
+                    ratingSubmissionState.value = RatingSubmissionState.Error("Rating must be between 1 and 5")
+                    return@launch
+                }
+
+                // Check for duplicate rating
+                if (repository.hasUserRatedJob(fromUserId, toUserId, jobId)) {
+                    ratingSubmissionState.value = RatingSubmissionState.Error("You have already rated this job")
+                    return@launch
+                }
+
+                val ratingEntity = com.example.data.db.RatingEntity(
+                    id = "rating_${System.currentTimeMillis()}",
+                    jobId = jobId,
+                    fromUserId = fromUserId,
+                    toUserId = toUserId,
+                    rating = rating,
+                    review = review,
+                    isFromClient = isFromClient,
+                    createdAt = System.currentTimeMillis()
+                )
+
+                repository.submitRating(ratingEntity)
+                ratingSubmissionState.value = RatingSubmissionState.Success
+            } catch (e: Exception) {
+                ratingSubmissionState.value = RatingSubmissionState.Error(e.message ?: "Failed to submit rating")
+            }
+        }
+    }
+
+    fun getAverageRatingForUser(userId: String): Flow<Double> {
+        return flow {
+            emit(repository.getAverageRatingForUser(userId))
+        }
+    }
+
+    fun getUserRatings(userId: String): Flow<List<com.example.data.db.RatingEntity>> {
+        return repository.getRatingsForUser(userId)
+    }
+
+    fun resetRatingSubmissionState() {
+        ratingSubmissionState.value = RatingSubmissionState.Idle
     }
 }
