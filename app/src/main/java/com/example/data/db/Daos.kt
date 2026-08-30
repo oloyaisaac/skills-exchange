@@ -19,6 +19,9 @@ interface ServiceProviderDao {
 
     @Query("UPDATE service_providers SET endorsementsCount = endorsementsCount + 1 WHERE id = :providerId")
     suspend fun incrementEndorsements(providerId: String)
+
+    @Query("DELETE FROM service_providers")
+    suspend fun clearAll()
 }
 
 @Dao
@@ -28,6 +31,9 @@ interface SkillEndorsementDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEndorsement(endorsement: SkillEndorsementEntity)
+
+    @Query("DELETE FROM skill_endorsements")
+    suspend fun clearAll()
 }
 
 @Dao
@@ -73,6 +79,9 @@ interface JobPostDao {
 
     @Query("UPDATE job_posts SET recurringProposalStatus = :status WHERE id = :jobId")
     suspend fun updateRecurringProposalStatus(jobId: String, status: String)
+
+    @Query("DELETE FROM job_posts")
+    suspend fun clearAll()
 }
 
 /**
@@ -94,6 +103,9 @@ interface JobQuoteDao {
 
     @Query("SELECT COUNT(*) FROM job_quotes WHERE jobId = :jobId AND status = 'PENDING'")
     suspend fun countPendingQuotesForJob(jobId: String): Int
+
+    @Query("DELETE FROM job_quotes")
+    suspend fun clearAll()
 }
 
 /**
@@ -118,6 +130,9 @@ interface PendingActionDao {
 
     @Query("SELECT COUNT(*) FROM pending_actions WHERE status = 'PENDING'")
     suspend fun countPendingActions(): Int
+
+    @Query("DELETE FROM pending_actions")
+    suspend fun clearAll()
 }
 
 @Dao
@@ -130,6 +145,9 @@ interface ChatMessageDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMessages(messages: List<ChatMessageEntity>)
+
+    @Query("DELETE FROM chat_messages")
+    suspend fun clearAll()
 }
 
 @Dao
@@ -139,6 +157,9 @@ interface NeighborhoodPostDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPosts(posts: List<NeighborhoodPostEntity>)
+
+    @Query("DELETE FROM neighborhood_posts")
+    suspend fun clearAll()
 }
 
 /**

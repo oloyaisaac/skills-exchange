@@ -8,6 +8,14 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ---
 
+### [2026-08-30] [AUTH-002] [IMPL] Implement Session Persistence
+- Created SessionManager class using DataStore Preferences
+- Added persistence for: isAuthenticated, userPhone, userId, userName, userDistrict, fcmToken
+- Updated ViewModel to restore session on app launch
+- Updated loginUser, verifyOtp, logoutUser to sync with SessionManager
+- Added DataStore dependency to build.gradle.kts
+- Session survives app restarts and process death
+
 ### [2026-08-30] [RATE-002] [IMPL] Implement Rating Submission UI
 - Added RatingSubmissionState sealed class: Idle, Submitting, Success, Error
 - Added submitRating method to ViewModel with validation

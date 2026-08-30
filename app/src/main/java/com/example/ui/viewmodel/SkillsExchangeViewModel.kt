@@ -55,6 +55,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     private val db = AppDatabase.getDatabase(application)
     private val repository = SkillsExchangeRepository(db)
+    private val sessionManager = com.example.data.local.SessionManager(application)
 
     // Remote Services for Firebase, Maps AI Grounding, Audio AI, MoMo, and SMS
     val firebaseService = FirebaseService(application)
@@ -108,6 +109,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     init {
         viewModelScope.launch {
             repository.seedInitialDataIfNeeded()
+            // AUTH-002: Restore session from DataStore
+            restoreSession()
             // Sync initial mode from user profile
             repository.currentUser.first()?.let { profile ->
                 userRoleMode.value = if (profile.currentActiveMode == "WORKER") "Offer Skills" else "Hire a Neighbor"
@@ -129,6 +132,27 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                     flushPendingActions()
                 }
             }
+        }
+    }
+
+    private suspend fun restoreSession() {
+        try {
+            val authenticated = sessionManager.getIsAuthenticated()
+            if (authenticated) {
+                val phone = sessionManager.getUserPhone()
+                val userId = sessionManager.getUserId()
+                isAuthenticated.value = true
+                currentUserPhone.value = phone
+                authState.value = AuthState.SignedIn
+                // Restore FCM token if available
+                sessionManager.fcmToken.collect { token ->
+                    if (token != null) fcmToken.value = token
+                }
+            }
+        } catch (e: Exception) {
+            // Session restoration failed, user needs to re-authenticate
+            isAuthenticated.value = false
+            authState.value = AuthState.SignedOut
         }
     }
 
@@ -561,6 +585,14 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             )
             repository.saveUserProfile(profile)
             setDistrict(district)
+            // AUTH-002: Persist session
+            sessionManager.saveSession(
+                isAuthenticated = true,
+                phone = phone,
+                userId = profile.id,
+                name = fullName,
+                district = district
+            )
         }
 
         if (action?.startsWith("hire_") == true) {
@@ -597,6 +629,10 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         isAuthenticated.value = false
         currentUserPhone.value = null
         firebaseService.signOut()
+        // AUTH-002: Clear persisted session
+        viewModelScope.launch {
+            sessionManager.clearSession()
+        }
     }
 
     fun permanentlyDeleteUserAccountAndData() {
@@ -946,7 +982,11 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     // ==================== AUTH-001: Phone Authentication Methods ====================
 
+    // AUTH-002: Store phone number for session persistence
+    private var pendingPhoneNumber: String? = null
+
     fun sendOtp(phoneNumber: String, onResult: (Boolean, String?) -> Unit) {
+        pendingPhoneNumber = phoneNumber
         viewModelScope.launch {
             authState.value = AuthState.SendingOtp
             authError.value = null
@@ -982,6 +1022,14 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 if (result.isSuccess) {
                     authState.value = AuthState.SignedIn
                     isAuthenticated.value = true
+                    // AUTH-002: Persist session
+                    val phone = pendingPhoneNumber ?: currentUserPhone.value
+                    val userId = currentUser.value?.id ?: firebaseService.getCurrentUser()?.uid
+                    sessionManager.saveSession(
+                        isAuthenticated = true,
+                        phone = phone,
+                        userId = userId
+                    )
                     onResult(true, null)
                 } else {
                     val error = result.exceptionOrNull()?.message ?: "Invalid verification code"
@@ -1004,6 +1052,9 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             authState.value = AuthState.SignedOut
             isAuthenticated.value = false
             authError.value = null
+            // AUTH-002: Clear persisted session
+            sessionManager.clearSession()
+            currentUserPhone.value = null
         }
     }
 
@@ -1024,7 +1075,10 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     fun onFcmTokenRefreshed(token: String) {
         fcmToken.value = token
-        // NOTIF-002: Send token to backend in production
+        // AUTH-002: Persist FCM token
+        viewModelScope.launch {
+            sessionManager.saveFcmToken(token)
+        }
     }
 
     fun clearFcmToken() {

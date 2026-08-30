@@ -1217,4 +1217,23 @@ class SkillsExchangeRepository(
     suspend fun getJobAuditTrail(jobId: String): List<JobStatusAuditEntity> {
         return db.jobStatusAuditDao().getAuditTrailForJob(jobId)
     }
+
+    // ==================== AUTH-003: Logout & Session Clearing ====================
+
+    suspend fun clearAllUserData() {
+        db.userProfileDao().clearAll()
+        db.workerKycDao().clearAll()
+        db.guarantorDao().clearAll()
+        db.workerTrainingDao().clearAll()
+        db.jobPostDao().clearAll()
+        db.jobQuoteDao().clearAll()
+        db.chatMessageDao().clearAll()
+        db.disputeDao().clearAll()
+        db.ratingDao().clearAll()
+        db.notificationDao().clearAll()
+        db.skillEndorsementDao().clearAll()
+        db.neighborhoodPostDao().clearAll()
+        db.pendingActionDao().clearAll()
+        db.jobStatusAuditDao().clearAll()
+    }
 }
