@@ -141,9 +141,37 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             if (authenticated) {
                 val phone = sessionManager.getUserPhone()
                 val userId = sessionManager.getUserId()
+                val sessionTimestamp = sessionManager.getSessionTimestamp()
+                val savedDeviceId = sessionManager.getDeviceId()
+                val currentDeviceId = sessionManager.getDeviceId(application)
+
+                // AUTH-008: Validate session expiration (7 days)
+                val sessionAge = System.currentTimeMillis() - sessionTimestamp
+                if (sessionAge > 7 * 24 * 60 * 60 * 1000L) {
+                    sessionManager.clearSession()
+                    isAuthenticated.value = false
+                    authState.value = AuthState.SignedOut
+                    return
+                }
+
+                // AUTH-008: Validate device ID
+                if (savedDeviceId != null && savedDeviceId != currentDeviceId) {
+                    sessionManager.clearSession()
+                    isAuthenticated.value = false
+                    authState.value = AuthState.SignedOut
+                    return
+                }
+
                 isAuthenticated.value = true
                 currentUserPhone.value = phone
                 authState.value = AuthState.SignedIn
+
+                // AUTH-009: Restore user profile and role mode
+                val userProfile = repository.currentUser.first()
+                userProfile?.let { profile ->
+                    userRoleMode.value = if (profile.currentActiveMode == "WORKER") "Offer Skills" else "Hire a Neighbor"
+                }
+
                 // Restore FCM token if available
                 sessionManager.fcmToken.collect { token ->
                     if (token != null) fcmToken.value = token
@@ -151,6 +179,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             }
         } catch (e: Exception) {
             // Session restoration failed, user needs to re-authenticate
+            sessionManager.clearSession()
             isAuthenticated.value = false
             authState.value = AuthState.SignedOut
         }
@@ -165,8 +194,18 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    // AUTH-007: Permission enforcement
+    fun canAccessWorkerFeatures(): Boolean {
+        val user = currentUser.value ?: return false
+        return user.isWorkerActivated && user.workerKycStatus == "APPROVED"
+    }
+
     fun toggleUserRoleMode() {
         val newMode = if (userRoleMode.value == "Hire a Neighbor") "Offer Skills" else "Hire a Neighbor"
+        if (newMode == "Offer Skills" && !canAccessWorkerFeatures()) {
+            authError.value = "Worker verification and activation required to switch to worker mode."
+            return
+        }
         setUserRoleMode(newMode)
     }
 
@@ -585,28 +624,42 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
         viewModelScope.launch {
             firebaseService.signInAnonymously()
-            val existing = repository.currentUser.first()
-            val profile = existing?.copy(
-                phoneNumber = phone,
-                fullName = fullName,
-                district = district,
-                updatedAtTimestamp = System.currentTimeMillis()
-            ) ?: UserProfileEntity(
-                phoneNumber = phone,
-                fullName = fullName,
-                district = district,
-                initialRole = "CLIENT",
-                currentActiveMode = "CLIENT"
-            )
+
+            // AUTH-006: Check for existing account by phone number to prevent duplicates
+            val existingByPhone = repository.getUserProfileByPhone(phone).first()
+            val profile = if (existingByPhone != null) {
+                existingByPhone.copy(
+                    phoneNumber = phone,
+                    fullName = fullName.ifBlank { existingByPhone.fullName },
+                    district = district.ifBlank { existingByPhone.district },
+                    updatedAtTimestamp = System.currentTimeMillis()
+                )
+            } else {
+                val existing = repository.currentUser.first()
+                existing?.copy(
+                    phoneNumber = phone,
+                    fullName = fullName,
+                    district = district,
+                    updatedAtTimestamp = System.currentTimeMillis()
+                ) ?: UserProfileEntity(
+                    phoneNumber = phone,
+                    fullName = fullName,
+                    district = district,
+                    initialRole = "CLIENT",
+                    currentActiveMode = "CLIENT"
+                )
+            }
             repository.saveUserProfile(profile)
             setDistrict(district)
             // AUTH-002: Persist session
+            val deviceId = sessionManager.getDeviceId(application)
             sessionManager.saveSession(
                 isAuthenticated = true,
                 phone = phone,
                 userId = profile.id,
                 name = fullName,
-                district = district
+                district = district,
+                deviceId = deviceId
             )
         }
 
@@ -837,6 +890,10 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun submitQuote(jobId: String, workerName: String, proposedRate: Double, proposedHours: Double, notes: String) {
+        if (!canAccessWorkerFeatures()) {
+            authError.value = "Only verified and activated workers can submit quotes."
+            return
+        }
         viewModelScope.launch {
             val userId = currentUser.value?.id ?: "worker_default"
             repository.submitQuote(jobId, userId, workerName, proposedRate, proposedHours, notes)
@@ -1103,10 +1160,12 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                     // AUTH-002: Persist session
                     val phone = pendingPhoneNumber ?: currentUserPhone.value
                     val userId = currentUser.value?.id ?: firebaseService.getCurrentUser()?.uid
+                    val deviceId = sessionManager.getDeviceId(application)
                     sessionManager.saveSession(
                         isAuthenticated = true,
                         phone = phone,
-                        userId = userId
+                        userId = userId,
+                        deviceId = deviceId
                     )
                     onResult(true, null)
                 } else {

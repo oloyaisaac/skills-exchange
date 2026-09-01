@@ -44,10 +44,20 @@ service firebase.storage {
       allow write: if isOwner(userId) || isAdmin();
     }
 
-    // --- JOB BEFORE/AFTER PHOTOS & RECEIPTS ---
+    // --- SEC-008: JOB BEFORE/AFTER PHOTOS & RECEIPTS ---
+    // SEC-008: Restrict job photo access to job owner, assigned provider, and admin
+    // Files must include custom metadata: jobOwnerId and assignedProviderId
     match /jobs/{jobId}/{allPaths=**} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        request.resource.data.jobOwnerId == request.auth.uid ||
+        request.resource.data.assignedProviderId == request.auth.uid
+      );
+      allow write: if isAuthenticated() && (
+        isAdmin() ||
+        request.resource.data.jobOwnerId == request.auth.uid ||
+        request.resource.data.assignedProviderId == request.auth.uid
+      );
     }
 
     // --- PUBLIC ASSETS & AVATARS ---

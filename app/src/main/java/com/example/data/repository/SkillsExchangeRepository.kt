@@ -30,6 +30,10 @@ class SkillsExchangeRepository(
         return db.userProfileDao().getUserProfile(userId)
     }
 
+    fun getUserProfileByPhone(phoneNumber: String): Flow<UserProfileEntity?> {
+        return db.userProfileDao().getUserProfileByPhoneNumber(phoneNumber)
+    }
+
     fun getChatMessages(jobId: String): Flow<List<ChatMessageEntity>> {
         return db.chatMessageDao().getMessagesForJob(jobId)
     }

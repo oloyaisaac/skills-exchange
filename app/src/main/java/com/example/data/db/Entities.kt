@@ -316,7 +316,10 @@ data class GuarantorEntity(
  * ROLE-001: Unified Account Identity Model
  * Single profile supporting both Client and Worker modes without duplicate accounts.
  */
-@Entity(tableName = "user_profiles")
+@Entity(
+    tableName = "user_profiles",
+    indices = [Index(value = ["phoneNumber"], unique = true)]
+)
 data class UserProfileEntity(
     @PrimaryKey val id: String = "user_default_me",
     val phoneNumber: String = "+256 772 198 420",

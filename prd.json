@@ -2007,6 +2007,203 @@
       "rollback": "git checkout AuthModal.kt ViewModel.kt MainScreen.kt"
     },
     {
+      "id": "AUTH-006",
+      "phase": 16,
+      "title": "Implement Duplicate Account Handling",
+      "priority": "P1",
+      "status": "completed",
+      "completed_at": "2026-08-31T12:30:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "AUTH-001"
+      ],
+      "description": "Prevent duplicate accounts for the same phone number.",
+      "problem": "Multiple accounts can be created for the same individual.",
+      "goal": "Enforce phone number uniqueness and reuse existing accounts.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/db/Entities.kt",
+          "app/src/main/java/com/example/data/db/Daos.kt",
+          "app/src/main/java/com/example/data/db/AppDatabase.kt",
+          "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt",
+          "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/db/Entities.kt",
+        "app/src/main/java/com/example/data/db/Daos.kt",
+        "app/src/main/java/com/example/data/db/AppDatabase.kt",
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt",
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+      ],
+      "acceptance_criteria": [
+        "Phone number is unique in local database",
+        "Existing account is reused on duplicate sign-in",
+        "No duplicate local profiles created"
+      ],
+      "verification": [
+        "Sign in with same phone number twice and verify single profile"
+      ],
+      "risks": [
+        "Migration required for unique index"
+      ],
+      "rollback": "git checkout Entities.kt Daos.kt AppDatabase.kt Repository.kt ViewModel.kt"
+    },
+    {
+      "id": "AUTH-007",
+      "phase": 16,
+      "title": "Implement Role/Permission Enforcement",
+      "priority": "P1",
+      "status": "completed",
+      "completed_at": "2026-08-31T12:32:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "AUTH-006"
+      ],
+      "description": "Enforce role-based access control for client/worker/admin features.",
+      "problem": "Users can access features not allowed by their role.",
+      "goal": "Gate features based on user role and verification status.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+          "app/src/main/java/com/example/ui/screens/MainScreen.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+        "app/src/main/java/com/example/ui/screens/MainScreen.kt"
+      ],
+      "acceptance_criteria": [
+        "Unverified workers cannot submit quotes",
+        "Inactive workers cannot access worker dashboard",
+        "Clients cannot access worker-only features"
+      ],
+      "verification": [
+        "Test role switching with unverified worker",
+        "Verify feature gating"
+      ],
+      "risks": [
+        "UI complexity"
+      ],
+      "rollback": "git checkout ViewModel.kt MainScreen.kt"
+    },
+    {
+      "id": "AUTH-008",
+      "phase": 16,
+      "title": "Implement Session/Device Security",
+      "priority": "P1",
+      "status": "completed",
+      "completed_at": "2026-08-31T12:35:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "AUTH-007"
+      ],
+      "description": "Add session timeout, device validation, and security monitoring.",
+      "problem": "Sessions never expire and device changes are not detected.",
+      "goal": "Implement session expiration and device fingerprinting.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+          "app/src/main/java/com/example/util/SessionManager.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+        "app/src/main/java/com/example/util/SessionManager.kt"
+      ],
+      "acceptance_criteria": [
+        "Session expires after inactivity period",
+        "Device ID is recorded on login",
+        "Session is invalidated on device change"
+      ],
+      "verification": [
+        "Wait for session timeout and verify auto-logout",
+        "Change device ID and verify session invalidation"
+      ],
+      "risks": [
+        "User experience impact"
+      ],
+      "rollback": "git checkout ViewModel.kt SessionManager.kt"
+    },
+    {
+      "id": "AUTH-009",
+      "phase": 16,
+      "title": "Implement Auth State Restoration",
+      "priority": "P1",
+      "status": "completed",
+      "completed_at": "2026-08-31T12:37:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "AUTH-008"
+      ],
+      "description": "Ensure auth state is properly restored on app startup.",
+      "problem": "Auth state restoration is incomplete and doesn't handle all edge cases.",
+      "goal": "Restore full auth state including user profile, role mode, and notifications.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+          "app/src/main/java/com/example/util/SessionManager.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+        "app/src/main/java/com/example/util/SessionManager.kt"
+      ],
+      "acceptance_criteria": [
+        "User profile is restored on app startup",
+        "Role mode is restored correctly",
+        "Corrupted session data triggers re-authentication"
+      ],
+      "verification": [
+        "Close and reopen app, verify auth state persists",
+        "Corrupt session data and verify re-authentication"
+      ],
+      "risks": [
+        "Session corruption edge cases"
+      ],
+      "rollback": "git checkout ViewModel.kt SessionManager.kt"
+    },
+    {
+      "id": "AUTH-010",
+      "phase": 16,
+      "title": "Implement Authentication Tests",
+      "priority": "P1",
+      "status": "completed",
+      "completed_at": "2026-08-31T12:40:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [
+        "AUTH-009"
+      ],
+      "description": "Add unit tests for authentication flow and edge cases.",
+      "problem": "Auth flows lack test coverage.",
+      "goal": "Add tests for login, logout, duplicate handling, and session expiration.",
+      "scope": {
+        "include": [
+          "app/src/test/java/com/example"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/test/java/com/example"
+      ],
+      "acceptance_criteria": [
+        "Tests cover login/logout flows",
+        "Tests cover duplicate account handling",
+        "Tests cover session expiration"
+      ],
+      "verification": [
+        "Run ./gradlew testDebugUnitTest"
+      ],
+      "risks": [
+        "Test environment setup"
+      ],
+      "rollback": "git checkout app/src/test/java/com/example"
+    },
+    {
       "id": "SEC-004",
       "phase": 16,
       "title": "Fix releaseEscrowToWorker Authorization Vulnerability",
@@ -2138,6 +2335,40 @@
         "May break local development"
       ],
       "rollback": "git checkout functions/src/index.ts"
+    },
+    {
+      "id": "SEC-008",
+      "phase": 16,
+      "title": "Add Storage Rules for Job Photos",
+      "priority": "P1",
+      "status": "completed",
+      "completed_at": "2026-08-31T12:42:00+03:00",
+      "verified_by": "code_inspection",
+      "depends_on": [],
+      "description": "Add restrictive Firebase Storage security rules for job photos and receipts.",
+      "problem": "Job photos and receipts are readable and writable by any authenticated user.",
+      "goal": "Restrict storage access to job owner, assigned provider, and admin only.",
+      "scope": {
+        "include": [
+          "storage.rules"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "storage.rules"
+      ],
+      "acceptance_criteria": [
+        "Job photos only accessible to job owner and assigned provider",
+        "Admin retains full access",
+        "Unauthenticated users cannot access job photos"
+      ],
+      "verification": [
+        "Verify storage rules restrict access appropriately"
+      ],
+      "risks": [
+        "May break existing uploads if metadata not set"
+      ],
+      "rollback": "git checkout storage.rules"
     },
     {
       "id": "JOB-004",
@@ -2731,7 +2962,7 @@
       "rollback": "git checkout Entities.kt Daos.kt"
     }
   ],
-    "current_story": "AUTH-006",
+    "current_story": null,
     "completed_stories": [
     "STAB-001",
     "STAB-002",
@@ -2784,6 +3015,7 @@
     "SEC-005",
     "SEC-006",
     "SEC-007",
+    "SEC-008",
     "JOB-004",
     "DISP-001",
     "DISP-002",
@@ -2803,12 +3035,17 @@
     "AUTH-003",
     "AUTH-004",
     "AUTH-005",
+    "AUTH-006",
+    "AUTH-007",
+    "AUTH-008",
+    "AUTH-009",
+    "AUTH-010",
     "DISP-004",
     "DISP-005"
   ],
   "blocked_stories": [
     "STAB-003"
   ],
-  "last_updated": "2026-08-30T09:50:00+03:00"
+  "last_updated": "2026-08-31T12:42:00+03:00"
 }
 

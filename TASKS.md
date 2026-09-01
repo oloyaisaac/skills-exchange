@@ -170,7 +170,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 | SEC-005 | P0 | Fix Firestore Rules KYC Path Mismatch | ✅ Completed | Updated isWorkerKycApproved helper |
 | SEC-006 | P1 | Add Missing Firestore Rules for Collections | ✅ Completed | Rules for all collections |
 | SEC-007 | P0 | Remove Hardcoded Webhook Secret Fallback | ✅ Completed | Fail loudly if secret not set |
-| SEC-008 | P1 | Add Storage Rules for Job Photos | ⏳ Pending | |
+| SEC-008 | P1 | Add Storage Rules for Job Photos | ✅ Completed | Restrictive storage rules for job photos |
 | JOB-004 | P0 | Implement Job State Machine | ✅ Completed | JobStatus enum with transitions |
 | JOB-005 | P1 | Add Job Status Audit Trail | ✅ Completed | Audited transitions |
 | DISP-001 | P0 | Implement Dispute Entity and Persistence | ✅ Completed | DisputeEntity, DAO |
@@ -191,11 +191,11 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 | AUTH-003 | P0 | Implement Logout Flow | ✅ Completed | Clears Firebase auth, Room data, DataStore |
 | AUTH-004 | P1 | Implement Account Deletion | ✅ Completed | Firebase user deletion, Firestore purge, Room wipe |
 | AUTH-005 | P1 | Implement Authentication Error Handling | ✅ Completed | Inline phone/OTP validation errors, retry button |
-| AUTH-006 | P1 | Implement Duplicate Account Handling | ⏳ Pending | |
-| AUTH-007 | P1 | Implement Role/Permission Enforcement | ⏳ Pending | |
-| AUTH-008 | P1 | Implement Session/Device Security | ⏳ Pending | |
-| AUTH-009 | P1 | Implement Auth State Restoration | ⏳ Pending | |
-| AUTH-010 | P1 | Implement Authentication Tests | ⏳ Pending | |
+| AUTH-006 | P1 | Implement Duplicate Account Handling | ✅ Completed | Phone uniqueness, existing account reuse |
+| AUTH-007 | P1 | Implement Role/Permission Enforcement | ✅ Completed | Worker mode gating, quote submission gating |
+| AUTH-008 | P1 | Implement Session/Device Security | ✅ Completed | Session timeout, device validation |
+| AUTH-009 | P1 | Implement Auth State Restoration | ✅ Completed | User profile, role mode, FCM token restoration |
+| AUTH-010 | P1 | Implement Authentication Tests | ✅ Completed | Auth flow unit tests |
 | DB-001 | P1 | Add Proper Room Migrations | ✅ Completed | Migration 11→12 |
 
 ---
@@ -204,13 +204,13 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | Status | Count |
 |---|---|
-| ✅ Completed | 72 |
+| ✅ Completed | 78 |
 | 🔄 In Progress | 0 |
-| ⏳ Pending | 6 |
+| ⏳ Pending | 0 |
 | 🚫 Blocked | 1 (STAB-003) |
 | **Total** | **79** |
 
 ---
 
 _This file is synchronized with `prd.json`. Always update both when story status changes._
-_Last synchronized: 2026-08-30T09:50:00+03:00_
+_Last synchronized: 2026-08-31T12:42:00+03:00_

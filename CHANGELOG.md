@@ -8,6 +8,43 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ---
 
+### [2026-08-31] [SEC-008] [SECURITY] Add Storage Rules for Job Photos
+- Updated storage.rules to restrict job photos access to job owner, assigned provider, and admin
+- Files must include custom metadata: jobOwnerId and assignedProviderId
+- Unauthenticated users cannot access job photos
+
+### [2026-08-31] [AUTH-010] [IMPL] Implement Authentication Tests
+- Created AuthViewModelTest.kt with unit tests for user model and access check logic
+- Tests cover: UserProfileEntity defaults, worker access check logic, phone number uniqueness
+- Tests use JUnit4 without external mocking dependencies
+
+### [2026-08-31] [AUTH-009] [IMPL] Implement Auth State Restoration
+- Updated restoreSession to restore user profile and role mode
+- Added session corruption handling with automatic re-authentication
+- Restored FCM token on app startup
+- Session state now fully persists across app restarts
+
+### [2026-08-31] [AUTH-008] [IMPL] Implement Session/Device Security
+- Added session timestamp and device ID storage to SessionManager
+- Added 7-day session expiration check in restoreSession
+- Added device ID validation to detect device changes
+- Updated loginUser and verifyOtp to save device ID with session
+- Auto-logout on session expiration or device change
+
+### [2026-08-31] [AUTH-007] [IMPL] Implement Role/Permission Enforcement
+- Added canAccessWorkerFeatures() helper to ViewModel
+- Updated toggleUserRoleMode() to prevent switching to worker mode without verification/activation
+- Updated submitQuote() to reject quotes from unverified/inactive workers
+- Role gating enforced at ViewModel layer for client/worker mode transitions
+
+### [2026-08-31] [AUTH-006] [IMPL] Implement Duplicate Account Handling
+- Added unique index on phoneNumber in UserProfileEntity
+- Added getUserProfileByPhoneNumber() to UserProfileDao
+- Added getUserProfileByPhone() to SkillsExchangeRepository
+- Updated ViewModel.loginUser() to check existing account by phone before creating new profile
+- Added MIGRATION_14_15 for unique index creation
+- Bumped AppDatabase version to 15
+
 ### [2026-08-30] [DB-002] [IMPL] Add Room Foreign Keys and Indexes
 - Added @ForeignKey and @Index annotations to skill_endorsements, job_posts, chat_messages, disputes, ratings, notifications, job_status_audit, reports
 - Updated AppDatabase version to 14

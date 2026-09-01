@@ -221,6 +221,9 @@ interface UserProfileDao {
     @Query("SELECT * FROM user_profiles WHERE id = :userId")
     fun getUserProfile(userId: String): Flow<UserProfileEntity?>
 
+    @Query("SELECT * FROM user_profiles WHERE phoneNumber = :phoneNumber LIMIT 1")
+    fun getUserProfileByPhoneNumber(phoneNumber: String): Flow<UserProfileEntity?>
+
     @Query("SELECT * FROM user_profiles LIMIT 1")
     fun getCurrentUser(): Flow<UserProfileEntity?>
 
