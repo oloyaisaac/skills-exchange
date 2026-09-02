@@ -95,8 +95,7 @@ fun ProviderDetailSheet(
                 }
             }
         )
-    }
-    val context = LocalContext.current
+    } // AlertDialog
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,

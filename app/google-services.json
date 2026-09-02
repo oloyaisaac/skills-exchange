@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "420248329042",
+    "project_id": "skills-exchange-f9189",
+    "storage_bucket": "skills-exchange-f9189.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:420248329042:android:7fa8317859e131243e388b",
+        "android_client_info": {
+          "package_name": "com.aistudio.skillsexchange.nxptvq"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5zetgxjY0pkoTWJf272fZLNSNv-9YtpA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

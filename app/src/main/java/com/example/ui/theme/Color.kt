@@ -26,3 +26,20 @@ val AmberUrgentLight = Color(0xFFFFFBEB)
 
 val RedDanger = Color(0xFFDC2626)
 val RedDangerLight = Color(0xFFFEF2F2)
+
+val Emerald50 = Color(0xFFECFDF5)
+val Emerald100 = Color(0xFFDCFCE7)
+val Emerald500 = Color(0xFF10B981)
+val Emerald600 = IndustrialEmerald
+val Emerald700 = IndustrialEmeraldDark
+
+val Blue50 = SignalBlueLight
+
+val ForestGreen = Color(0xFF15803D)
+
+val PrimaryIndigo = SignalBlueDark
+
+val Amber100 = Color(0xFFFEF3C7)
+val Amber500 = Color(0xFFF59E0B)
+val Amber700 = Color(0xFFB45309)
+val Amber800 = Color(0xFF92400E)

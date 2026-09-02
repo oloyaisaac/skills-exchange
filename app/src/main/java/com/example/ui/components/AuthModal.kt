@@ -268,7 +268,7 @@ fun AuthModal(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal: 10.dp, vertical: 8.dp),
+                                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
@@ -446,7 +446,7 @@ fun AuthModal(
                                         text = district,
                                         fontSize = 11.5.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical: 5.dp)
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                                     )
                                 }
                             }

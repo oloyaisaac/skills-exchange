@@ -408,15 +408,15 @@ fun QuickRequestDrawer(
                             }
                         }
                     }
-                }
 
-                JobTypeSelector(
-                    jobType = jobType,
-                    recurringSchedule = recurringSchedule,
-                    onJobTypeChange = { jobType = it },
-                    onScheduleChange = { recurringSchedule = it },
-                    modifier = Modifier.padding(top = 16.dp)
-                )
+                    JobTypeSelector(
+                        jobType = jobType,
+                        recurringSchedule = recurringSchedule,
+                        onJobTypeChange = { jobType = it },
+                        onScheduleChange = { recurringSchedule = it },
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                }
 
                 3 -> {
                     // Step 3: Material Ownership & Labor Budget

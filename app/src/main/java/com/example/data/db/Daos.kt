@@ -368,6 +368,9 @@ interface JobStatusAuditDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAuditEntry(entry: JobStatusAuditEntity)
+
+    @Query("DELETE FROM job_status_audit")
+    suspend fun clearAll()
 }
 
 // DISP-004: User/Worker Reporting DAO

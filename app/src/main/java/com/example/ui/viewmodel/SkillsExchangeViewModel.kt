@@ -53,6 +53,7 @@ data class GpsLocationState(
 
 class SkillsExchangeViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val appContext: Application = application
     private val db = AppDatabase.getDatabase(application)
     private val repository = SkillsExchangeRepository(db)
     private val sessionManager = com.example.data.local.SessionManager(application)
@@ -143,7 +144,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 val userId = sessionManager.getUserId()
                 val sessionTimestamp = sessionManager.getSessionTimestamp()
                 val savedDeviceId = sessionManager.getDeviceId()
-                val currentDeviceId = sessionManager.getDeviceId(application)
+                val currentDeviceId = sessionManager.getDeviceId(appContext)
 
                 // AUTH-008: Validate session expiration (7 days)
                 val sessionAge = System.currentTimeMillis() - sessionTimestamp
@@ -496,12 +497,12 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     fun triggerSosAlert(jobId: String) {
         viewModelScope.launch {
-            val job = repository.jobs.first().find { it.id == jobId } ?: return@launch
+            val jobPost = repository.jobs.first().find { it.id == jobId } ?: return@launch
             val user = repository.currentUser.first()
             val gps = gpsLocationState.value
             val latitude = gps.latitude ?: user?.latitude ?: 0.3476
             val longitude = gps.longitude ?: user?.longitude ?: 32.5825
-            repository.triggerEmergencySos(jobId, latitude, longitude, job.district)
+            repository.triggerEmergencySos(jobId, latitude, longitude, jobPost.district)
             val updatedJob = repository.jobs.first().find { it.id == jobId }
             selectedJob.value = updatedJob
         }
@@ -642,7 +643,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             repository.saveUserProfile(profile)
             setDistrict(district)
             // AUTH-002: Persist session
-            val deviceId = sessionManager.getDeviceId(application)
+            val deviceId = sessionManager.getDeviceId(appContext)
             sessionManager.saveSession(
                 isAuthenticated = true,
                 phone = phone,
@@ -716,7 +717,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     // --- MODULE 1: ESCROW STATE MACHINE TRANSITIONS ---
     fun transitionJobState(jobId: String, newStatus: String, newEscrowStatus: String) {
         viewModelScope.launch {
-            val job = repository.jobs.first().find { it.id == jobId } ?: return@launch
+            val jobPost = repository.jobs.first().find { it.id == jobId } ?: return@launch
             val updated = job.copy(
                 status = newStatus,
                 escrowStatus = newEscrowStatus
@@ -790,7 +791,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
-    fun isValidGuarantorCount(workerKycId: String): Boolean {
+    suspend fun isValidGuarantorCount(workerKycId: String): Boolean {
         return repository.validateGuarantorCount(workerKycId)
     }
 
@@ -1050,23 +1051,23 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 repository.createDispute(dispute)
 
                 // DISP-005: Notify both parties about new dispute
-                val job = repository.jobs.first().find { it.id == jobId }
-                val otherPartyId = if (currentUserId == job?.postedByResident) reportedUserId else currentUserId
+                val jobPost = repository.jobs.first().find { it.id == jobId }
+                val otherPartyId = if (currentUserId == jobPost?.postedByResident) reportedUserId else currentUserId
                 repository.createNotification(
                     com.example.data.db.NotificationEntity(
                         id = "notif_${System.currentTimeMillis()}_dispute",
                         userId = otherPartyId,
                         type = "DISPUTE_UPDATE",
                         title = "New Dispute Filed",
-                        body = "A dispute has been filed for job: ${job?.title ?: jobId}",
+                        body = "A dispute has been filed for job: ${jobPost?.title ?: jobId}",
                         jobId = jobId,
                         createdAt = System.currentTimeMillis()
                     )
                 )
 
                 // Update job status to DISPUTED
-                val job = repository.jobs.first().find { it.id == jobId }
-                job?.let {
+                val jobPost = repository.jobs.first().find { it.id == jobId }
+                jobPost?.let {
                     repository.updateJobStatus(jobId, "DISPUTED")
                 }
 
@@ -1150,7 +1151,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                     // AUTH-002: Persist session
                     val phone = pendingPhoneNumber ?: currentUserPhone.value
                     val userId = currentUser.value?.id ?: firebaseService.getCurrentUser()?.uid
-                    val deviceId = sessionManager.getDeviceId(application)
+                    val deviceId = sessionManager.getDeviceId(appContext)
                     sessionManager.saveSession(
                         isAuthenticated = true,
                         phone = phone,

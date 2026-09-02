@@ -33,7 +33,7 @@ class MoMoPaymentService(
 ) {
 
     private val logging = HttpLoggingInterceptor { message -> Log.d("MoMoPaymentService", message) }
-    logging.setLevel(HttpLoggingInterceptor.Level.BODY)
+        .apply { setLevel(HttpLoggingInterceptor.Level.BODY) }
 
     private val client = OkHttpClient.Builder()
         .addInterceptor(logging)

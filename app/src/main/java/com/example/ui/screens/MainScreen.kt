@@ -484,7 +484,7 @@ fun MainScreen(
             },
             onReportUser = { report -> viewModel.reportUser(report) },
             isAuthenticated = isAuthenticated,
-            onTriggerAuth = onTriggerAuth,
+                onTriggerAuth = { viewModel.triggerAuthFlow(it) },
             onDismiss = { viewModel.selectProvider(null) }
         )
     }
