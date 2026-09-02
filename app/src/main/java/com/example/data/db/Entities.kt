@@ -557,6 +557,7 @@ data class ReportEntity(
     val description: String = "",
     val evidenceUrlsCsv: String = "",
     val status: String = "PENDING", // "PENDING", "REVIEWED", "RESOLVED", "DISMISSED"
+    val adminNotes: String = "",
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val resolvedAt: Long = 0,

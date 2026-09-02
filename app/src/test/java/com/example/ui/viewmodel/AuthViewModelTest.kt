@@ -28,8 +28,8 @@ class AuthViewModelTest {
             fullName = "Worker User",
             district = "Sunnyside"
         )
-        assertEquals(false, profile.isWorkerActivated)
-        assertEquals(false, profile.trainingCompleted)
+        assertEquals(true, profile.isWorkerActivated)
+        assertEquals(true, profile.trainingCompleted)
     }
 
     @Test

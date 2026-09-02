@@ -7,10 +7,3 @@ plugins {
   alias(libs.plugins.secrets) apply false
   alias(libs.plugins.google.services) apply false
 }
-
-// Ensure a compatible Java toolchain is used for Kotlin compilation
-java {
-  toolchain {
-    languageVersion.set(JavaLanguageVersion.of(11))
-  }
-}

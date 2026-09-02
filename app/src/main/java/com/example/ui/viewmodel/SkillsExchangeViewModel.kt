@@ -314,16 +314,6 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         isWorkerOnline.update { !it }
     }
 
-    fun setUserRoleMode(mode: String) {
-        userRoleMode.value = mode
-    }
-
-    fun toggleUserRoleMode() {
-        userRoleMode.update {
-            if (it == "Hire a Neighbor") "Offer Skills" else "Hire a Neighbor"
-        }
-    }
-
     fun setMobileTab(tab: String) {
         activeMobileTab.value = tab
     }
@@ -616,7 +606,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         authPendingAction.value = null
     }
 
-    fun loginUser(phone: String, fullName: String = "Sarah Namukasa", district: String = "Sunnyside") {
+    fun loginUser(phone: String, fullName: String = "", district: String = "") {
         isAuthenticated.value = true
         currentUserPhone.value = phone
         val action = authPendingAction.value
