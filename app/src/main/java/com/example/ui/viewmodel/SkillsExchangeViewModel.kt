@@ -718,7 +718,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     fun transitionJobState(jobId: String, newStatus: String, newEscrowStatus: String) {
         viewModelScope.launch {
             val jobPost = repository.jobs.first().find { it.id == jobId } ?: return@launch
-            val updated = job.copy(
+            val updated = jobPost.copy(
                 status = newStatus,
                 escrowStatus = newEscrowStatus
             )
@@ -1066,7 +1066,6 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 )
 
                 // Update job status to DISPUTED
-                val jobPost = repository.jobs.first().find { it.id == jobId }
                 jobPost?.let {
                     repository.updateJobStatus(jobId, "DISPUTED")
                 }

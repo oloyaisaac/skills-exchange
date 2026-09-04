@@ -24,6 +24,7 @@ import com.example.data.db.ServiceProviderEntity
 import com.example.ui.theme.*
 import com.example.util.CurrencyRegion
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
@@ -39,13 +40,14 @@ fun InteractiveMapView(
     modifier: Modifier = Modifier
 ) {
     var mapView: MapView? = null
+    var googleMapInstance: GoogleMap? by remember { mutableStateOf(null) }
     var markers by remember { mutableStateOf<List<Marker>>(emptyList()) }
 
-    LaunchedEffect(providers, selectedProvider) {
+    LaunchedEffect(providers, selectedProvider, googleMapInstance) {
         markers.forEach { it.remove() }
         markers = providers.map { provider ->
             val position = LatLng(provider.latitude, provider.longitude)
-            val marker = mapView?.map?.addMarker(
+            val marker = googleMapInstance?.addMarker(
                 MarkerOptions()
                     .position(position)
                     .title(provider.name)
@@ -58,7 +60,7 @@ fun InteractiveMapView(
             val selectedIndex = providers.indexOfFirst { it.id == selectedProvider.id }
             if (selectedIndex >= 0 && selectedIndex < markers.size) {
                 val marker = markers[selectedIndex]
-                mapView?.map?.animateCamera(
+                googleMapInstance?.animateCamera(
                     CameraUpdateFactory.newLatLngZoom(marker.position, 15f)
                 )
             }
@@ -78,6 +80,8 @@ fun InteractiveMapView(
             update = { map ->
                 map.onCreate(null)
                 map.getMapAsync { googleMap ->
+                    googleMapInstance = googleMap
+
                     googleMap.uiSettings.isZoomControlsEnabled = true
                     googleMap.uiSettings.isMyLocationButtonEnabled = true
                     googleMap.uiSettings.isMapToolbarEnabled = true
