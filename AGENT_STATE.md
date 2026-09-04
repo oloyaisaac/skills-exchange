@@ -1,7 +1,7 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-08-31T12:42:00+03:00
+2026-09-04T21:30:00+03:00
 
 ---
 
@@ -127,7 +127,7 @@ All Phase 16 implementable stories are complete. Only STAB-003 (build verificati
 
 ## Work In Progress / Next Task
 All implementable Phase 16 stories are complete.
-Only remaining item is STAB-003 (blocked): Resolve JDK/Gradle compatibility to enable build verification.
+Only remaining item is STAB-003 (blocked): Resolve the local Gradle/JDK and disk-space environment blockers to enable build verification.
 All implementation work is done and documented.
 
 ---
@@ -234,21 +234,21 @@ All implementation work is done and documented.
 ## Known Blockers
 | Blocker | Reason | Needed |
 |---|---|---|
-| STAB-003 Automated test execution | JVM 25 / Gradle 8.9 foojay resolver plugin incompatibility | Environment JDK configuration |
+| STAB-003 Automated test execution | Supported Gradle 9.3.1/JDK 17/Android SDK setup now works, but dependency resolution cannot resolve dl.google.com for play-services-stats:17.0.2 | Restore DNS/network access to Google's Maven repository, then rerun ./gradlew test |
 
 ---
 
 ## Account / Session Handoff
 
 ```
-Current session:          Primary implementation session
+Current session:          Build verification continuation session
 Current PRD story:        ALL COMPLETE (SEC-008 done; STAB-003 blocked)
-Current task:             Phase 16 Production Readiness & Security Hardening
+Current task:             Verify the existing InteractiveMapView fix and resolve build blockers
 Completed stories (78):   STAB-001, STAB-002, SEC-001, SEC-002, SEC-003, ROLE-001, ROLE-002, ROLE-003, SKILL-001, SKILL-002, SKILL-003, LOC-001, LOC-002, LOC-003, LOC-004, KYC-001, KYC-002, KYC-003, KYC-004, KYC-005, KYC-006, KYC-007, JOB-001, MARKET-001, PAY-001, PAY-002, PAY-003, PAY-004, MAP-001, COMM-001, AI-001, AI-002, SAFE-001, SAFE-002, ADMIN-001, ADMIN-002, ADMIN-003, ADMIN-004, TRAIN-001, TRAIN-002, TRAIN-003, JOB-002, JOB-003, MARKET-002, MARKET-003, OFF-001, REL-001, SEC-004, SEC-005, SEC-006, SEC-007, SEC-008, JOB-004, DISP-001, DISP-002, DISP-003, DISP-004, DISP-005, NOTIF-001, NOTIF-002, NOTIF-003, NOTIF-004, DB-002, AUTH-006, AUTH-007, AUTH-008, AUTH-009, AUTH-010, RATE-001, RATE-002, RATE-003, DB-001, AUTH-001, AUTH-002, AUTH-003, AUTH-004, AUTH-005, JOB-005
-Last completed action:    SEC-008 Add Storage Rules for Job Photos (Storage rules for job photos)
-Last verified action:     Code inspection of storage.rules job photos restrictions
-Files modified:           storage.rules
-Next action:              All implementable stories complete. Resolve STAB-003 to enable build verification.
+Last completed action:    MAP-001 follow-up: initialize MapView once and retain GoogleMap from getMapAsync
+Last verified action:     Gradle reached dependency resolution with supported toolchain; DNS blocked play-services-stats download
+Files modified:           app/src/main/java/com/example/ui/components/InteractiveMapView.kt
+Next action:              Restore DNS/network access to dl.google.com, then run ./gradlew test.
 Handoff status:           Ready for immediate continuation
 ```
 

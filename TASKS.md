@@ -1,7 +1,7 @@
 # TASKS.md — Skills Exchange Human-Readable Task Status
 
 Synchronized with `prd.json`. This is the human-readable view of the development backlog.
-Last synchronized: 2026-08-29T19:02:00+03:00
+Last synchronized: 2026-09-04T21:30:00+03:00
 
 Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Failed
 
@@ -14,7 +14,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 |---|---|---|---|---|
 | STAB-001 | P0 | Fix Robolectric unit test assertion mismatch | ✅ Completed | Code verified correct — asserts "Skills Exchange" |
 | STAB-002 | P0 | Fix GreetingScreenshotTest theme and composable imports | ✅ Completed | Code verified correct — uses SkillsExchangeTheme |
-| STAB-003 | P3 | Establish automated test verification script | 🚫 Blocked | JDK 25 / Gradle 8.9 foojay plugin environment conflict |
+| STAB-003 | P3 | Establish automated test verification script | 🚫 Blocked | Gradle 9.3.1/JDK 17/SDK setup works; DNS cannot resolve dl.google.com for play-services-stats:17.0.2 |
 
 ---
 

@@ -39,11 +39,18 @@ fun InteractiveMapView(
     activeRegion: CurrencyRegion = CurrencyRegion.currentRegion,
     modifier: Modifier = Modifier
 ) {
-    var mapView: MapView? = null
     var googleMapInstance: GoogleMap? by remember { mutableStateOf(null) }
     var markers by remember { mutableStateOf<List<Marker>>(emptyList()) }
 
     LaunchedEffect(providers, selectedProvider, googleMapInstance) {
+        googleMapInstance?.setOnMarkerClickListener { marker ->
+            val provider = providers.find { provider ->
+                LatLng(provider.latitude, provider.longitude) == marker.position
+            }
+            provider?.let { onSelectProvider(it) }
+            true
+        }
+
         markers.forEach { it.remove() }
         markers = providers.map { provider ->
             val position = LatLng(provider.latitude, provider.longitude)
@@ -75,29 +82,21 @@ fun InteractiveMapView(
     ) {
         AndroidView(
             factory = { context ->
-                MapView(context).also { mapView = it }
-            },
-            update = { map ->
-                map.onCreate(null)
-                map.getMapAsync { googleMap ->
-                    googleMapInstance = googleMap
+                MapView(context).also { map ->
+                    map.onCreate(null)
+                    map.getMapAsync { googleMap ->
+                        googleMapInstance = googleMap
 
-                    googleMap.uiSettings.isZoomControlsEnabled = true
-                    googleMap.uiSettings.isMyLocationButtonEnabled = true
-                    googleMap.uiSettings.isMapToolbarEnabled = true
+                        googleMap.uiSettings.isZoomControlsEnabled = true
+                        googleMap.uiSettings.isMyLocationButtonEnabled = true
+                        googleMap.uiSettings.isMapToolbarEnabled = true
 
-                    val userLocation = LatLng(0.0, 0.0)
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 12f))
-
-                    googleMap.setOnMarkerClickListener { marker ->
-                        val provider = providers.find { provider ->
-                            LatLng(provider.latitude, provider.longitude) == marker.position
-                        }
-                        provider?.let { onSelectProvider(it) }
-                        true
+                        val userLocation = LatLng(0.0, 0.0)
+                        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 12f))
                     }
                 }
             },
+            update = {},
             modifier = Modifier.fillMaxSize()
         )
 

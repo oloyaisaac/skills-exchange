@@ -2,6 +2,12 @@
 
 All meaningful development changes are recorded here in reverse chronological order.
 
+### [2026-09-04] [MAP-001] [FIX] Stabilize Google Maps Compose initialization
+- Initialize `MapView` and call `getMapAsync` once from `AndroidView.factory` instead of repeating lifecycle setup during recomposition
+- Retain the `GoogleMap` instance in Compose state and keep marker creation/camera movement dependent on map readiness
+- Preserve provider marker selection through the state-driven map effect
+- Kotlin static diagnostics pass; Gradle verification reached dependency resolution but is blocked by DNS failure resolving dl.google.com
+
 Format: `[DATE] [STORY-ID] [TYPE] Description`
 
 Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrastructure), `DOCS` (documentation), `SECURITY` (security)

@@ -195,7 +195,7 @@
         "Low risk"
       ],
       "rollback": "N/A",
-      "notes": "Ensures clean test baseline."
+      "notes": "Ensures clean test baseline. Supported Gradle 9.3.1, JDK 17, and Android SDK setup now run; verification is blocked because DNS cannot resolve dl.google.com while downloading play-services-stats:17.0.2."
     },
     {
       "id": "SEC-001",
@@ -1861,7 +1861,13 @@
       "rollback": "git checkout AuthModal.kt FirebaseService.kt"
     },
     {
-      "id": "AUTH-002",\n      "phase": 16,\n      "title": "Implement Session Persistence",\n      "priority": "P0",\n      "status": "completed",\n      "completed_at": "2026-08-30T08:00:00+03:00",\n      "verified_by": "code_inspection",
+      "id": "AUTH-002",
+      "phase": 16,
+      "title": "Implement Session Persistence",
+      "priority": "P0",
+      "status": "completed",
+      "completed_at": "2026-08-30T08:00:00+03:00",
+      "verified_by": "code_inspection",
       "depends_on": [
         "AUTH-001"
       ],
@@ -3046,6 +3052,6 @@
   "blocked_stories": [
     "STAB-003"
   ],
-  "last_updated": "2026-08-31T12:42:00+03:00"
+  "last_updated": "2026-09-04T21:30:00+03:00"
 }
 
