@@ -169,7 +169,9 @@
       "phase": 1,
       "title": "Establish automated test verification script",
       "priority": "P3",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-09-05T08:15:00+03:00",
+      "verified_by": "./gradlew test",
       "depends_on": [
         "STAB-002"
       ],
@@ -195,7 +197,7 @@
         "Low risk"
       ],
       "rollback": "N/A",
-      "notes": "Ensures clean test baseline. Supported Gradle 9.3.1, JDK 17, and Android SDK setup now run; verification is blocked because DNS cannot resolve dl.google.com while downloading play-services-stats:17.0.2."
+      "notes": "Verified with BUILD SUCCESSFUL using Gradle 9.3.1, Android Studio JDK 17, Android SDK, and D:-hosted Gradle/Robolectric temporary directories."
     },
     {
       "id": "SEC-001",
@@ -3047,11 +3049,10 @@
     "AUTH-009",
     "AUTH-010",
     "DISP-004",
-    "DISP-005"
-  ],
-  "blocked_stories": [
+    "DISP-005",
     "STAB-003"
   ],
-  "last_updated": "2026-09-04T21:30:00+03:00"
+  "blocked_stories": [],
+  "last_updated": "2026-09-05T08:15:00+03:00"
 }
 

@@ -6,7 +6,17 @@ All meaningful development changes are recorded here in reverse chronological or
 - Initialize `MapView` and call `getMapAsync` once from `AndroidView.factory` instead of repeating lifecycle setup during recomposition
 - Retain the `GoogleMap` instance in Compose state and keep marker creation/camera movement dependent on map readiness
 - Preserve provider marker selection through the state-driven map effect
-- Kotlin static diagnostics pass; Gradle verification reached dependency resolution but is blocked by DNS failure resolving dl.google.com
+- Kotlin static diagnostics pass; full Gradle verification completed in the subsequent STAB-003 entry below
+
+### [2026-09-05] [STAB-003] [TEST] Complete automated verification
+- Full `./gradlew test` completed with `BUILD SUCCESSFUL`
+- Robolectric and Roborazzi tests passed after redirecting Gradle and Robolectric temporary/cache directories to D: because C: had insufficient free space
+- Verified with Gradle 9.3.1, Android Studio JDK 17, and the installed Android SDK
+
+### [2026-09-05] [REL-001] [FIX] Restore debug APK packaging
+- Removed the invalid custom debug signing configuration that referenced a missing repository-root `debug.keystore`
+- Debug APK now uses the Android Gradle Plugin's standard debug signing behavior
+- `./gradlew assembleDebug` completed with `BUILD SUCCESSFUL`
 
 Format: `[DATE] [STORY-ID] [TYPE] Description`
 

@@ -1,7 +1,7 @@
 # TASKS.md — Skills Exchange Human-Readable Task Status
 
 Synchronized with `prd.json`. This is the human-readable view of the development backlog.
-Last synchronized: 2026-09-04T21:30:00+03:00
+Last synchronized: 2026-09-05T08:15:00+03:00
 
 Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Failed
 
@@ -14,7 +14,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 |---|---|---|---|---|
 | STAB-001 | P0 | Fix Robolectric unit test assertion mismatch | ✅ Completed | Code verified correct — asserts "Skills Exchange" |
 | STAB-002 | P0 | Fix GreetingScreenshotTest theme and composable imports | ✅ Completed | Code verified correct — uses SkillsExchangeTheme |
-| STAB-003 | P3 | Establish automated test verification script | 🚫 Blocked | Gradle 9.3.1/JDK 17/SDK setup works; DNS cannot resolve dl.google.com for play-services-stats:17.0.2 |
+| STAB-003 | P3 | Establish automated test verification script | ✅ Completed | `./gradlew test` passed with BUILD SUCCESSFUL using D:-hosted Gradle/Robolectric temp directories |
 
 ---
 
@@ -204,10 +204,10 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | Status | Count |
 |---|---|
-| ✅ Completed | 78 |
+| ✅ Completed | 79 |
 | 🔄 In Progress | 0 |
 | ⏳ Pending | 0 |
-| 🚫 Blocked | 1 (STAB-003) |
+| 🚫 Blocked | 0 |
 | **Total** | **79** |
 
 ---
