@@ -378,7 +378,7 @@ fun GuarantorFormSheet(
 }
 
 @Composable
-private fun PhotoPickerButton(label: String, hasPhoto: Boolean, onClick: () -> Unit) {
+private fun RowScope.PhotoPickerButton(label: String, hasPhoto: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(8.dp),
@@ -392,7 +392,7 @@ private fun PhotoPickerButton(label: String, hasPhoto: Boolean, onClick: () -> U
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Icon(
-                imageVector = CameraAlt,
+                imageVector = Icons.Outlined.CameraAlt,
                 contentDescription = label,
                 tint = if (hasPhoto) IndustrialEmerald else Slate500,
                 modifier = Modifier.size(20.dp)
@@ -503,7 +503,7 @@ fun QualificationEvidenceSheet(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Icon(
-                            imageVector = CameraAlt,
+                            imageVector = Icons.Outlined.CameraAlt,
                             contentDescription = "Upload",
                             tint = if (selectedImageUri != null) IndustrialEmerald else Slate500,
                             modifier = Modifier.size(18.dp)

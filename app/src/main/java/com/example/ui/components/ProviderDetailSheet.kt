@@ -341,6 +341,8 @@ fun ProviderDetailSheet(
                             )
                         }
                     }
+                }
+            }
             // LOC-004: Public Location Privacy & District-Level Job Aggregation
             Surface(
                 modifier = Modifier

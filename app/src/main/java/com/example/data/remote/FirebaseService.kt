@@ -396,6 +396,7 @@ class FirebaseService(private val context: Context? = null) {
             val result = functions
                 .getHttpsCallable("getPendingVerificationQueue")
                 .call(mapOf<String, Any>())
+                .await()
             @Suppress("UNCHECKED_CAST")
             val data = result.data as? Map<String, Any> ?: emptyMap()
             @Suppress("UNCHECKED_CAST")
@@ -411,6 +412,7 @@ class FirebaseService(private val context: Context? = null) {
             val result = functions
                 .getHttpsCallable("reviewWorkerApplication")
                 .call(mapOf("userId" to userId, "decision" to decision, "feedback" to feedback))
+                .await()
             @Suppress("UNCHECKED_CAST")
             val data = result.data as? Map<String, Any> ?: emptyMap()
             data["success"] as? Boolean ?: false
@@ -425,6 +427,7 @@ class FirebaseService(private val context: Context? = null) {
             val result = functions
                 .getHttpsCallable("setWorkerActivationStatus")
                 .call(mapOf("userId" to userId, "activate" to activate))
+                .await()
             @Suppress("UNCHECKED_CAST")
             val data = result.data as? Map<String, Any> ?: emptyMap()
             data["success"] as? Boolean ?: false
