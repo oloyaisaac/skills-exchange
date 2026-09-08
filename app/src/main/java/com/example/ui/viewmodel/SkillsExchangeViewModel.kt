@@ -99,6 +99,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     val isFilterDrawerOpen = MutableStateFlow(false)
     val isSearchModalOpen = MutableStateFlow(false)
     val isNotificationDrawerOpen = MutableStateFlow(false)
+    // Pending actions queue for offline actions
+    val pendingActions = MutableStateFlow<List<com.example.data.db.PendingActionEntity>>(emptyList())
 
     val currentUser: StateFlow<UserProfileEntity?> = repository.currentUser
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -905,8 +907,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         return repository.getQuotesByWorker(workerId)
     }
 
-    val pendingActions = MutableStateFlow<List<com.example.data.db.PendingActionEntity>>(emptyList())
-
+    // pendingActions moved above init block
     // DISP-002: Dispute state
     val disputes = MutableStateFlow<List<DisputeEntity>>(emptyList())
     val disputeSubmissionState = MutableStateFlow<DisputeSubmissionState>(DisputeSubmissionState.Idle)
