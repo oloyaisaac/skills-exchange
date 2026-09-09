@@ -492,16 +492,23 @@ fun MainScreen(
     if (isAuthModalOpen) {
         val authState by viewModel.authState.collectAsStateWithLifecycle()
         val authError by viewModel.authError.collectAsStateWithLifecycle()
+        val phoneError by viewModel.phoneError.collectAsStateWithLifecycle()
+        val otpError by viewModel.otpError.collectAsStateWithLifecycle()
         AuthModal(
             pendingActionReason = authPendingAction,
-            onLoginSuccess = { phone, name, district -> viewModel.loginUser(phone, name, district) },
+            initialDistrict = filterState.district,
+            onLoginSuccess = { phone, name, district ->
+                viewModel.loginUser(phone, name, district)
+            },
             onDismiss = { viewModel.closeAuthModal() },
             onSendOtp = { phone, callback -> viewModel.sendOtp(phone) { success, error -> callback(success, error) } },
             onVerifyOtp = { otp, callback -> viewModel.verifyOtp(otp) { success, error -> callback(success, error) } },
             onGoogleSignIn = { token -> viewModel.loginWithGoogle(token) },
             isSendingOtp = authState is SkillsExchangeViewModel.AuthState.SendingOtp,
             isVerifyingOtp = authState is SkillsExchangeViewModel.AuthState.VerifyingOtp,
-            authError = authError
+            authError = authError,
+            phoneError = phoneError,
+            otpError = otpError
         )
     }
 
