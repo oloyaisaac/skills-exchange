@@ -26,6 +26,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.example.util.LocationHelper
+import com.example.util.GoogleSignInHelper
 import com.example.ui.theme.*
 
 /**
@@ -55,7 +56,8 @@ fun AuthModal(
     authError: String? = null,
     phoneError: String? = null,
     otpError: String? = null,
-    onRetry: (() -> Unit)? = null
+    onRetry: (() -> Unit)? = null,
+    onGoogleSignIn: ((idToken: String) -> Unit)? = null
 ) {
     var fullName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
@@ -80,6 +82,20 @@ fun AuthModal(
                     selectedDistrict = "Sunnyside"
                 }
             )
+        }
+    }
+
+    // Google Sign-In launcher
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            task.addOnSuccessListener { account ->
+                account.idToken?.let { token ->
+                    onGoogleSignIn?.invoke(token)
+                }
+            }
         }
     }
 
@@ -181,6 +197,29 @@ fun AuthModal(
                         tint = Slate500,
                         modifier = Modifier.size(16.dp)
                     )
+                }
+
+                // Google Sign-In button (if callback provided)
+                onGoogleSignIn?.let { callback ->
+                    Button(
+                        onClick = {
+                            val client = GoogleSignInHelper.getClient(context)
+                            googleSignInLauncher.launch(client.signInIntent)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp)
+                            .padding(top = 8.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Slate900)
+                    ) {
+                        Text(
+                            text = "Continue with Google",
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
                 }
             }
 

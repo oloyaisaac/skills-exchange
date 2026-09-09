@@ -668,6 +668,42 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    // Google Sign-In handling
+    fun loginWithGoogle(idToken: String) {
+        viewModelScope.launch {
+            val result = firebaseService.signInWithGoogle(idToken)
+            if (result.isSuccess) {
+                isAuthenticated.value = true
+                // Optionally create a minimal user profile
+                val user = result.getOrNull()
+                val uid = user?.uid ?: "google_user"
+                val profile = UserProfileEntity(
+                    phoneNumber = "",
+                    fullName = user?.displayName ?: "Google User",
+                    district = "",
+                    initialRole = "CLIENT",
+                    currentActiveMode = "CLIENT",
+                    id = uid
+                )
+                repository.saveUserProfile(profile)
+                // Persist session (no phone)
+                val deviceId = sessionManager.getDeviceId(appContext)
+                sessionManager.saveSession(
+                    isAuthenticated = true,
+                    phone = "",
+                    userId = uid,
+                    name = profile.fullName,
+                    district = "",
+                    deviceId = deviceId
+                )
+                // Close modal after login
+                closeAuthModal()
+            } else {
+                authError.value = "Google sign-in failed"
+            }
+        }
+    }
+
     /**
      * LOC-003: Update worker operating district and coordinates
      */
