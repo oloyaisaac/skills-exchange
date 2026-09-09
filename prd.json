@@ -2974,7 +2974,12 @@
         "phase": 16,
         "title": "Implement Google Sign-In Authentication",
         "priority": "P0",
-        "status": "pending",
+        "status": "completed",
+        "completed_at": "2026-09-09T15:12:00+03:00",
+        "verification": ["Manual test of Google Sign-In flow", "Automated unit test for GoogleSignInHelper"],
+        "risks": ["OAuth token handling", "Dependency on Google Play Services"],
+        "rollback": "git checkout AuthModal.kt GoogleSignInHelper.kt"
+
         "depends_on": ["AUTH-001"],
         "description": "Add Google Sign-In button to AuthModal and handle OAuth flow using Firebase Auth.",
         "problem": "Users can only sign in with phone; need alternative Google authentication.",

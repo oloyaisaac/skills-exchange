@@ -162,6 +162,26 @@ class FirebaseService(private val context: Context? = null) {
     }
 
     // ==================== AUTH-001: Phone Authentication ====================
+    // Google Sign-In authentication
+    suspend fun signInWithGoogle(idToken: String): Result<FirebaseUser> {
+        return try {
+            val credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(idToken, null)
+            val authResult = auth?.signInWithCredential(credential)?.await()
+            val user = authResult?.user
+            if (user != null) {
+                _currentUserState.value = user
+                Result.success(user)
+            } else {
+                Result.failure(Exception("Google sign-in returned null user"))
+            }
+        } catch (e: Exception) {
+            Log.d("FirebaseService", "Google sign-in error: ${e.message}")
+            Result.failure(e)
+        }
+    }
+    
+    // ==================== AUTH-001: Phone Authentication ====================
+
 
     /**
      * Sends a phone verification code via Firebase Phone Auth.
