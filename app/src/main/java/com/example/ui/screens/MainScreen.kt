@@ -704,6 +704,7 @@ fun MainScreen(
             onDismiss = { viewModel.closeAuthModal() },
             onSendOtp = { phone, callback -> viewModel.sendOtp(phone) { success, error -> callback(success, error) } },
             onVerifyOtp = { otp, callback -> viewModel.verifyOtp(otp) { success, error -> callback(success, error) } },
+            onGoogleSignIn = { token -> viewModel.loginWithGoogle(token) },
             isSendingOtp = authState is SkillsExchangeViewModel.AuthState.SendingOtp,
             isVerifyingOtp = authState is SkillsExchangeViewModel.AuthState.VerifyingOtp,
             authError = authError,

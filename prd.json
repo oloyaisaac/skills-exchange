@@ -2970,30 +2970,55 @@
       "rollback": "git checkout Entities.kt Daos.kt"
     },
     {
-        "id": "AUTH-011",
-        "phase": 16,
-        "title": "Implement Google Sign-In Authentication",
-        "priority": "P0",
-        "status": "completed",
-        "completed_at": "2026-09-09T15:12:00+03:00",
-        "verification": ["Manual test of Google Sign-In flow", "Automated unit test for GoogleSignInHelper"],
-        "risks": ["OAuth token handling", "Dependency on Google Play Services"],
-        "rollback": "git checkout AuthModal.kt GoogleSignInHelper.kt"
-
-        "depends_on": ["AUTH-001"],
-        "description": "Add Google Sign-In button to AuthModal and handle OAuth flow using Firebase Auth.",
-        "problem": "Users can only sign in with phone; need alternative Google authentication.",
-        "goal": "Enable Google Sign-In as an alternative login method.",
-        "scope": {"include": ["app/src/main/java/com/example/ui/components/AuthModal.kt", "app/src/main/java/com/example/util/GoogleSignInHelper.kt"], "exclude": []},
-        "files_likely_affected": ["app/src/main/java/com/example/ui/components/AuthModal.kt", "app/src/main/java/com/example/util/GoogleSignInHelper.kt"],
-        "acceptance_criteria": ["Google Sign-In button appears in AuthModal", "Successful login with Google creates user profile", "Auth state restored after Google login"],
-        "verification": ["Manual test of Google Sign-In flow", "Automated unit test for GoogleSignInHelper"],
-        "risks": ["OAuth token handling", "Dependency on Google Play Services"],
-        "rollback": "git checkout AuthModal.kt GoogleSignInHelper.kt"
+      "id": "AUTH-011",
+      "phase": 16,
+      "title": "Implement Google Sign-In Authentication",
+      "priority": "P0",
+      "status": "completed",
+      "completed_at": "2026-09-09T15:12:00+03:00",
+      "verification": [
+        "Manual test of Google Sign-In flow",
+        "Automated unit test for GoogleSignInHelper"
+      ],
+      "risks": [
+        "OAuth token handling",
+        "Dependency on Google Play Services"
+      ],
+      "rollback": "git checkout AuthModal.kt GoogleSignInHelper.kt""depends_on": [
+        "AUTH-001"
+      ],
+      "description": "Add Google Sign-In button to AuthModal and handle OAuth flow using Firebase Auth.",
+      "problem": "Users can only sign in with phone; need alternative Google authentication.",
+      "goal": "Enable Google Sign-In as an alternative login method.",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/ui/components/AuthModal.kt",
+          "app/src/main/java/com/example/util/GoogleSignInHelper.kt"
+        ],
+        "exclude": []
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/components/AuthModal.kt",
+        "app/src/main/java/com/example/util/GoogleSignInHelper.kt"
+      ],
+      "acceptance_criteria": [
+        "Google Sign-In button appears in AuthModal",
+        "Successful login with Google creates user profile",
+        "Auth state restored after Google login"
+      ],
+      "verification": [
+        "Manual test of Google Sign-In flow",
+        "Automated unit test for GoogleSignInHelper"
+      ],
+      "risks": [
+        "OAuth token handling",
+        "Dependency on Google Play Services"
+      ],
+      "rollback": "git checkout AuthModal.kt GoogleSignInHelper.kt"
     }
   ],
-    "current_story": null,
-    "completed_stories": [
+  "current_story": null,
+  "completed_stories": [
     "STAB-001",
     "STAB-002",
     "SEC-001",
@@ -3026,17 +3051,17 @@
     "COMM-001",
     "AI-001",
     "AI-002",
-      "SAFE-001",
-      "SAFE-002",
-      "ADMIN-001",
-      "ADMIN-002",
-      "ADMIN-003",
-      "ADMIN-004",
-      "TRAIN-001",
-      "TRAIN-002",
-      "TRAIN-003",
-      "JOB-002",
-      "JOB-003",
+    "SAFE-001",
+    "SAFE-002",
+    "ADMIN-001",
+    "ADMIN-002",
+    "ADMIN-003",
+    "ADMIN-004",
+    "TRAIN-001",
+    "TRAIN-002",
+    "TRAIN-003",
+    "JOB-002",
+    "JOB-003",
     "MARKET-002",
     "MARKET-003",
     "OFF-001",
@@ -3077,4 +3102,3 @@
   "blocked_stories": [],
   "last_updated": "2026-09-05T08:15:00+03:00"
 }
-
