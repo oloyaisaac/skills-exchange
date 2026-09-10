@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -171,12 +172,11 @@ fun AuthModal(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.VerifiedUser,
-                            contentDescription = "Shield",
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                                imageVector = Icons.Default.Email, // placeholder icon for Google
+                                contentDescription = "Google",
+                                tint = SignalBlue,
+                                modifier = Modifier.size(18.dp)
+                            )                  }
                     Text(
                         text = when (currentStep) {
                             AuthStep.OTP_VERIFICATION -> "VERIFY PHONE"
@@ -197,29 +197,6 @@ fun AuthModal(
                         tint = Slate500,
                         modifier = Modifier.size(16.dp)
                     )
-                }
-
-                // Google Sign-In button (if callback provided)
-                onGoogleSignIn?.let { callback ->
-                    Button(
-                        onClick = {
-                            val client = GoogleSignInHelper.getClient(context)
-                            googleSignInLauncher.launch(client.signInIntent)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(46.dp)
-                            .padding(top = 8.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Slate900)
-                    ) {
-                        Text(
-                            text = "Continue with Google",
-                            fontSize = 13.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    }
                 }
             }
 
@@ -360,6 +337,23 @@ fun AuthModal(
                         singleLine = true,
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone)
                     )
+                    
+                    // Google Sign-In button
+                    Button(
+                        onClick = {
+                            val signInIntent = GoogleSignInHelper.getClient(context).signInIntent
+                            googleSignInLauncher.launch(signInIntent)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp)
+                            .padding(top = 8.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                        border = BorderStroke(1.dp, SignalBlue)
+                    ) {
+                        Text(text = "Continue with Google", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = SignalBlue)
+                    }
 
                     Button(
                         onClick = {
