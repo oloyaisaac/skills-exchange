@@ -352,7 +352,7 @@ fun MainScreen(
                         }
                     }
                 } else if (isWideScreen) {
-                    // Desktop / Tablet Split View: Left list / pipeline / feed, Right map
+                    // Desktop / Tablet Split View: Left list / pipeline / feed, Right map (only when doing provider discovery)
                     Row(modifier = Modifier.fillMaxSize()) {
                         Column(
                             modifier = Modifier
@@ -403,16 +403,27 @@ fun MainScreen(
 
                         VerticalDivider(thickness = 1.dp, color = Slate300)
 
-                        // Map View
-                        InteractiveMapView(
-                            providers = providers,
-                            selectedProvider = selectedProvider,
-                            onSelectProvider = { viewModel.selectProvider(it) },
-                            radiusMiles = filterState.radiusMiles,
-                            modifier = Modifier
-                                .weight(1.2f)
-                                .fillMaxHeight()
-                        )
+                        // MAP-001: Lazy Load Google Maps — Only load map for provider discovery ("List" or "Map" tab)
+                        // Do not load map for "Jobs" (job pipeline) or "Board" (community feed) views
+                        if (activeMobileTab == "List" || activeMobileTab == "Map") {
+                            InteractiveMapView(
+                                providers = providers,
+                                selectedProvider = selectedProvider,
+                                onSelectProvider = { viewModel.selectProvider(it) },
+                                radiusMiles = filterState.radiusMiles,
+                                modifier = Modifier
+                                    .weight(1.2f)
+                                    .fillMaxHeight()
+                            )
+                        } else {
+                            // Placeholder for non-map tabs to maintain split layout structure
+                            Box(
+                                modifier = Modifier
+                                    .weight(1.2f)
+                                    .fillMaxHeight()
+                                    .background(Slate50)
+                            )
+                        }
                     }
                 } else {
                     // Mobile View: Displays content based on activeMobileTab
@@ -489,28 +500,6 @@ fun MainScreen(
         )
     }
 
-    if (isAuthModalOpen) {
-        val authState by viewModel.authState.collectAsStateWithLifecycle()
-        val authError by viewModel.authError.collectAsStateWithLifecycle()
-        val phoneError by viewModel.phoneError.collectAsStateWithLifecycle()
-        val otpError by viewModel.otpError.collectAsStateWithLifecycle()
-        AuthModal(
-            pendingActionReason = authPendingAction,
-            initialDistrict = filterState.district,
-            onLoginSuccess = { phone, name, district ->
-                viewModel.loginUser(phone, name, district)
-            },
-            onDismiss = { viewModel.closeAuthModal() },
-            onSendOtp = { phone, callback -> viewModel.sendOtp(phone) { success, error -> callback(success, error) } },
-            onVerifyOtp = { otp, callback -> viewModel.verifyOtp(otp) { success, error -> callback(success, error) } },
-            onGoogleSignIn = { token -> viewModel.loginWithGoogle(token) },
-            isSendingOtp = authState is SkillsExchangeViewModel.AuthState.SendingOtp,
-            isVerifyingOtp = authState is SkillsExchangeViewModel.AuthState.VerifyingOtp,
-            authError = authError,
-            phoneError = phoneError,
-            otpError = otpError
-        )
-    }
 
     if (isQuickRequestOpen) {
         QuickRequestDrawer(
@@ -711,7 +700,7 @@ fun MainScreen(
             onDismiss = { viewModel.closeAuthModal() },
             onSendOtp = { phone, callback -> viewModel.sendOtp(phone) { success, error -> callback(success, error) } },
             onVerifyOtp = { otp, callback -> viewModel.verifyOtp(otp) { success, error -> callback(success, error) } },
-            onGoogleSignIn = { token -> viewModel.loginWithGoogle(token) },
+            onGoogleSignIn = { token, onComplete -> viewModel.loginWithGoogle(token, onComplete) },
             isSendingOtp = authState is SkillsExchangeViewModel.AuthState.SendingOtp,
             isVerifyingOtp = authState is SkillsExchangeViewModel.AuthState.VerifyingOtp,
             authError = authError,

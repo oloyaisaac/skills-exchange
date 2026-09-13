@@ -616,42 +616,46 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         closeAuthModal()
 
         viewModelScope.launch {
-            firebaseService.signInAnonymously()
+            val firebaseUser = firebaseService.getCurrentUser()
+            val uid = firebaseUser?.uid ?: "user_${System.currentTimeMillis()}"
+            if (firebaseUser == null) {
+                firebaseService.signInAnonymously()
+            }
 
-            // AUTH-006: Check for existing account by phone number to prevent duplicates
-            val existingByPhone = repository.getUserProfileByPhone(phone).first()
-            val profile = if (existingByPhone != null) {
-                existingByPhone.copy(
-                    phoneNumber = phone,
-                    fullName = fullName.ifBlank { existingByPhone.fullName },
-                    district = district.ifBlank { existingByPhone.district },
+            // AUTH-006: Check for existing account by phone number or UID to prevent duplicates
+            val existingByPhone = if (phone.isNotBlank()) repository.getUserProfileByPhone(phone).first() else null
+            val existingByUid = repository.getUserProfile(uid).first()
+            val existing = existingByPhone ?: existingByUid ?: repository.currentUser.first()
+
+            val profile = if (existing != null) {
+                existing.copy(
+                    phoneNumber = if (phone.isNotBlank()) phone else existing.phoneNumber,
+                    fullName = fullName.ifBlank { existing.fullName },
+                    district = district.ifBlank { existing.district },
                     updatedAtTimestamp = System.currentTimeMillis()
                 )
             } else {
-                val existing = repository.currentUser.first()
-                existing?.copy(
+                UserProfileEntity(
+                    id = uid,
                     phoneNumber = phone,
-                    fullName = fullName,
-                    district = district,
-                    updatedAtTimestamp = System.currentTimeMillis()
-                ) ?: UserProfileEntity(
-                    phoneNumber = phone,
-                    fullName = fullName,
+                    fullName = fullName.ifBlank { firebaseUser?.displayName ?: "Neighbor" },
                     district = district,
                     initialRole = "CLIENT",
                     currentActiveMode = "CLIENT"
                 )
             }
             repository.saveUserProfile(profile)
-            setDistrict(district)
+            if (district.isNotBlank()) {
+                setDistrict(district)
+            }
             // AUTH-002: Persist session
             val deviceId = sessionManager.getDeviceId(appContext)
             sessionManager.saveSession(
                 isAuthenticated = true,
-                phone = phone,
+                phone = profile.phoneNumber,
                 userId = profile.id,
-                name = fullName,
-                district = district,
+                name = profile.fullName,
+                district = profile.district,
                 deviceId = deviceId
             )
         }
@@ -669,37 +673,48 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     // Google Sign-In handling
-    fun loginWithGoogle(idToken: String) {
+    fun loginWithGoogle(idToken: String, onComplete: (Boolean) -> Unit = {}) {
         viewModelScope.launch {
             val result = firebaseService.signInWithGoogle(idToken)
             if (result.isSuccess) {
-                isAuthenticated.value = true
-                // Optionally create a minimal user profile
                 val user = result.getOrNull()
                 val uid = user?.uid ?: "google_user"
-                val profile = UserProfileEntity(
-                    phoneNumber = "",
-                    fullName = user?.displayName ?: "Google User",
-                    district = "",
-                    initialRole = "CLIENT",
-                    currentActiveMode = "CLIENT",
-                    id = uid
-                )
-                repository.saveUserProfile(profile)
-                // Persist session (no phone)
-                val deviceId = sessionManager.getDeviceId(appContext)
-                sessionManager.saveSession(
-                    isAuthenticated = true,
-                    phone = "",
-                    userId = uid,
-                    name = profile.fullName,
-                    district = "",
-                    deviceId = deviceId
-                )
-                // Close modal after login
-                closeAuthModal()
+
+                // Check if user already exists with an established profile
+                val existing = repository.getUserProfile(uid).first()
+                if (existing != null && existing.fullName.isNotBlank() && existing.district.isNotBlank()) {
+                    isAuthenticated.value = true
+                    currentUserPhone.value = existing.phoneNumber
+                    setDistrict(existing.district)
+                    val deviceId = sessionManager.getDeviceId(appContext)
+                    sessionManager.saveSession(
+                        isAuthenticated = true,
+                        phone = existing.phoneNumber,
+                        userId = uid,
+                        name = existing.fullName,
+                        district = existing.district,
+                        deviceId = deviceId
+                    )
+                    val action = authPendingAction.value
+                    closeAuthModal()
+                    if (action?.startsWith("hire_") == true) {
+                        val providerId = action.substringAfter("hire_")
+                        val p = providers.value.find { it.id == providerId }
+                        if (p != null) {
+                            selectedProvider.value = p
+                            isQuickRequestOpen.value = true
+                        }
+                    } else if (action == "post_job") {
+                        isQuickRequestOpen.value = true
+                    }
+                    onComplete(false)
+                } else {
+                    // Follow agreed flow: Google Sign-In -> RegistrationScreen/onboarding
+                    onComplete(true)
+                }
             } else {
-                authError.value = "Google sign-in failed"
+                authError.value = "Google sign-in failed. Please try again."
+                onComplete(false)
             }
         }
     }

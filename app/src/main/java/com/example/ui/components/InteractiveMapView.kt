@@ -41,6 +41,7 @@ fun InteractiveMapView(
 ) {
     var googleMapInstance: GoogleMap? by remember { mutableStateOf(null) }
     var markers by remember { mutableStateOf<List<Marker>>(emptyList()) }
+    var mapViewReference by remember { mutableStateOf<MapView?>(null) }
 
     LaunchedEffect(providers, selectedProvider, googleMapInstance) {
         googleMapInstance?.setOnMarkerClickListener { marker ->
@@ -74,6 +75,16 @@ fun InteractiveMapView(
         }
     }
 
+    // Cleanup MapView resources when leaving the map view to reduce memory usage
+    DisposableEffect(Unit) {
+        onDispose {
+            mapViewReference?.onPause()
+            mapViewReference?.onDestroy()
+            googleMapInstance = null
+            mapViewReference = null
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -83,6 +94,7 @@ fun InteractiveMapView(
         AndroidView(
             factory = { context ->
                 MapView(context).also { map ->
+                    mapViewReference = map
                     map.onCreate(null)
                     map.getMapAsync { googleMap ->
                         googleMapInstance = googleMap

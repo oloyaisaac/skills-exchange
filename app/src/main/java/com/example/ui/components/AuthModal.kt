@@ -58,7 +58,7 @@ fun AuthModal(
     phoneError: String? = null,
     otpError: String? = null,
     onRetry: (() -> Unit)? = null,
-    onGoogleSignIn: ((idToken: String) -> Unit)? = null
+    onGoogleSignIn: ((idToken: String, onComplete: (Boolean) -> Unit) -> Unit)? = null
 ) {
     var fullName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
@@ -66,6 +66,7 @@ fun AuthModal(
     var selectedDistrict by remember { mutableStateOf(initialDistrict) }
     var currentStep by remember { mutableStateOf(AuthStep.PHONE_ENTRY) }
     var resendCooldown by remember { mutableStateOf(0) }
+    var isGoogleSigningIn by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -90,13 +91,30 @@ fun AuthModal(
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(result.data)
-            task.addOnSuccessListener { account ->
-                account.idToken?.let { token ->
-                    onGoogleSignIn?.invoke(token)
+        try {
+            if (result.resultCode == android.app.Activity.RESULT_OK) {
+                val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                task.addOnSuccessListener { account ->
+                    account.displayName?.let { name ->
+                        if (name.isNotBlank()) fullName = name
+                    }
+                    account.idToken?.let { token ->
+                        onGoogleSignIn?.invoke(token) { needsOnboarding ->
+                            isGoogleSigningIn = false
+                            if (needsOnboarding) {
+                                currentStep = AuthStep.PROFILE_SETUP
+                            }
+                        }
+                    }
                 }
+                task.addOnFailureListener { exception ->
+                    isGoogleSigningIn = false
+                }
+            } else {
+                isGoogleSigningIn = false
             }
+        } catch (e: Exception) {
+            isGoogleSigningIn = false
         }
     }
 
@@ -172,11 +190,12 @@ fun AuthModal(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                                imageVector = Icons.Default.Email, // placeholder icon for Google
-                                contentDescription = "Google",
-                                tint = SignalBlue,
-                                modifier = Modifier.size(18.dp)
-                            )                  }
+                            imageVector = Icons.Default.VerifiedUser,
+                            contentDescription = "Shield",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                     Text(
                         text = when (currentStep) {
                             AuthStep.OTP_VERIFICATION -> "VERIFY PHONE"
@@ -323,6 +342,70 @@ fun AuthModal(
 
             when (currentStep) {
                 AuthStep.PHONE_ENTRY -> {
+                    // Google Sign-In button (Prominent Primary Social Action)
+                    Button(
+                        onClick = {
+                            isGoogleSigningIn = true
+                            val signInIntent = GoogleSignInHelper.getClient(context).signInIntent
+                            googleSignInLauncher.launch(signInIntent)
+                        },
+                        enabled = !isGoogleSigningIn,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Slate900,
+                            contentColor = Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            if (isGoogleSigningIn) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.AccountCircle,
+                                    contentDescription = "Google",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Text(
+                                text = if (isGoogleSigningIn) "Signing In..." else "Continue with Google",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    }
+
+                    // Divider separating Social and Phone Auth
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        HorizontalDivider(modifier = Modifier.weight(1f), color = Slate200)
+                        Text(
+                            text = "OR CONTINUE WITH PHONE",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Slate500,
+                            letterSpacing = 0.5.sp
+                        )
+                        HorizontalDivider(modifier = Modifier.weight(1f), color = Slate200)
+                    }
+
                     if (phoneError != null) {
                         Text(text = phoneError, fontSize = 11.sp, color = Color.Red, modifier = Modifier.fillMaxWidth())
                     }
@@ -337,23 +420,6 @@ fun AuthModal(
                         singleLine = true,
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone)
                     )
-                    
-                    // Google Sign-In button
-                    Button(
-                        onClick = {
-                            val signInIntent = GoogleSignInHelper.getClient(context).signInIntent
-                            googleSignInLauncher.launch(signInIntent)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(46.dp)
-                            .padding(top = 8.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                        border = BorderStroke(1.dp, SignalBlue)
-                    ) {
-                        Text(text = "Continue with Google", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = SignalBlue)
-                    }
 
                     Button(
                         onClick = {
