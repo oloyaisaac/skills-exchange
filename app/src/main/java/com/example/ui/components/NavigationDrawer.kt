@@ -35,8 +35,8 @@ fun extractInitials(fullName: String?): String {
     if (fullName.isNullOrBlank()) return "N"
     val parts = fullName.trim().split("\\s+".toRegex()).filter { it.isNotEmpty() }
     return when {
-        parts.size >= 2 -> (parts[0].firstOrNull() ?: 'N').toString() + (parts[1].firstOrNull() ?: '').toString()
-        parts.size == 1 -> parts[0].firstOrNull()?.toString() ?: "N"
+        parts.size >= 2 -> "${parts[0].first()}${parts[1].first()}"
+        parts.size == 1 -> "${parts[0].first()}"
         else -> "N"
     }.uppercase()
 }
@@ -182,8 +182,13 @@ fun AppNavigationDrawer(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
+                                        val displayName = if (isAuthenticated) {
+                                            currentUserProfile?.fullName?.ifBlank { null } ?: currentUserPhone ?: "+256 700 123 456"
+                                        } else {
+                                            "Guest Neighbor"
+                                        }
                                         Text(
-                                            text = if (isAuthenticated) (currentUserPhone ?: "+256 700 123 456") else "Guest Neighbor",
+                                            text = displayName,
                                             fontSize = 15.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White
@@ -196,6 +201,13 @@ fun AppNavigationDrawer(
                                                 modifier = Modifier.size(16.dp)
                                             )
                                         }
+                                    }
+                                    if (isAuthenticated && !currentUserProfile?.fullName.isNullOrBlank() && currentUserPhone != null) {
+                                        Text(
+                                            text = currentUserPhone,
+                                            fontSize = 11.5.sp,
+                                            color = Slate400
+                                        )
                                     }
                                 }
                             }

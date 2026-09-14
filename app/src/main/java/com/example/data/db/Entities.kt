@@ -340,6 +340,7 @@ data class UserProfileEntity(
     val latitude: Double? = null,
     val longitude: Double? = null,
     val address: String? = null,
+    val isOnboardingCompleted: Boolean = true,
     val createdAtTimestamp: Long = System.currentTimeMillis(),
     val updatedAtTimestamp: Long = System.currentTimeMillis()
 )

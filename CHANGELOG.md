@@ -8,6 +8,12 @@ All meaningful development changes are recorded here in reverse chronological or
 - Preserve provider marker selection through the state-driven map effect
 - Kotlin static diagnostics pass; full Gradle verification completed in the subsequent STAB-003 entry below
 
+### [2026-09-14] [AUTH-009] [FIX] Profile Name & Dynamic Initials Display Fix
+- Updated `NavigationDrawer.kt` profile header to reactively display `currentUserProfile?.fullName` when authenticated.
+- Implemented `extractInitials` function returning uppercase initials ("Isaac Kato" → "IK", "Isaac" → "I", empty/null → "N", guest → "G").
+- Added secondary display of user's phone number under full name in drawer header.
+- Added unit tests in `AuthViewModelTest.kt` verifying initials extraction logic.
+
 ### [2026-09-05] [STAB-003] [TEST] Complete automated verification
 - Full `./gradlew test` completed with `BUILD SUCCESSFUL`
 - Robolectric and Roborazzi tests passed after redirecting Gradle and Robolectric temporary/cache directories to D: because C: had insufficient free space

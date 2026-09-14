@@ -696,12 +696,23 @@ fun MainScreen(
             pendingActionReason = authPendingAction,
             initialDistrict = filterState.district,
             onLoginSuccess = { phone, name, district ->
-                viewModel.loginUser(phone, name, district)
+                viewModel.loginUser(
+                    phone = phone,
+                    fullName = name,
+                    district = district,
+                    initialRole = if (userRoleMode == "Offer Skills") "WORKER" else "CLIENT"
+                )
             },
             onDismiss = { viewModel.closeAuthModal() },
             onSendOtp = { phone, callback -> viewModel.sendOtp(phone) { success, error -> callback(success, error) } },
             onVerifyOtp = { otp, callback -> viewModel.verifyOtp(otp) { success, error -> callback(success, error) } },
-            onGoogleSignIn = { token, onComplete -> viewModel.loginWithGoogle(token, onComplete) },
+            onGoogleSignIn = { token, onComplete ->
+                viewModel.loginWithGoogle(
+                    idToken = token,
+                    initialRole = if (userRoleMode == "Offer Skills") "WORKER" else "CLIENT",
+                    onComplete = onComplete
+                )
+            },
             isSendingOtp = authState is SkillsExchangeViewModel.AuthState.SendingOtp,
             isVerifyingOtp = authState is SkillsExchangeViewModel.AuthState.VerifyingOtp,
             authError = authError,

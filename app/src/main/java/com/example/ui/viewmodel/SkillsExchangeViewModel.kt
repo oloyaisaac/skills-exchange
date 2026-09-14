@@ -91,6 +91,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     val currentUserPhone = MutableStateFlow<String?>(null)
     val isAuthModalOpen = MutableStateFlow(false)
     val authPendingAction = MutableStateFlow<String?>(null)
+    val isOnboardingCompleted = MutableStateFlow(false)
+    val isSessionRestored = MutableStateFlow(false)
 
     val selectedProvider = MutableStateFlow<ServiceProviderEntity?>(null)
     val selectedJob = MutableStateFlow<JobPostEntity?>(null)
@@ -141,6 +143,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     private suspend fun restoreSession() {
         try {
             val authenticated = sessionManager.getIsAuthenticated()
+            val onboardingDone = sessionManager.getIsOnboardingCompleted()
             if (authenticated) {
                 val phone = sessionManager.getUserPhone()
                 val userId = sessionManager.getUserId()
@@ -154,6 +157,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                     sessionManager.clearSession()
                     isAuthenticated.value = false
                     authState.value = AuthState.SignedOut
+                    isOnboardingCompleted.value = onboardingDone
+                    isSessionRestored.value = true
                     return
                 }
 
@@ -162,6 +167,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                     sessionManager.clearSession()
                     isAuthenticated.value = false
                     authState.value = AuthState.SignedOut
+                    isOnboardingCompleted.value = onboardingDone
+                    isSessionRestored.value = true
                     return
                 }
 
@@ -179,12 +186,19 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 sessionManager.fcmToken.collect { token ->
                     if (token != null) fcmToken.value = token
                 }
+                isOnboardingCompleted.value = true
+                sessionManager.setOnboardingCompleted(true)
+            } else {
+                isOnboardingCompleted.value = onboardingDone
             }
         } catch (e: Exception) {
             // Session restoration failed, user needs to re-authenticate
             sessionManager.clearSession()
             isAuthenticated.value = false
             authState.value = AuthState.SignedOut
+            isOnboardingCompleted.value = false
+        } finally {
+            isSessionRestored.value = true
         }
     }
 
@@ -609,7 +623,21 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         authPendingAction.value = null
     }
 
-    fun loginUser(phone: String, fullName: String = "", district: String = "") {
+    fun completeOnboarding(
+        phone: String,
+        fullName: String,
+        district: String,
+        selectedRole: String
+    ) {
+        loginUser(
+            phone = phone,
+            fullName = fullName,
+            district = district,
+            initialRole = selectedRole
+        )
+    }
+
+    fun loginUser(phone: String, fullName: String = "", district: String = "", initialRole: String = "CLIENT") {
         isAuthenticated.value = true
         currentUserPhone.value = phone
         val action = authPendingAction.value
@@ -625,29 +653,39 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             // AUTH-006: Check for existing account by phone number or UID to prevent duplicates
             val existingByPhone = if (phone.isNotBlank()) repository.getUserProfileByPhone(phone).first() else null
             val existingByUid = repository.getUserProfile(uid).first()
-            val existing = existingByPhone ?: existingByUid ?: repository.currentUser.first()
+            val existing = existingByPhone ?: existingByUid ?: if (repository.currentUser.first()?.isOnboardingCompleted == true && repository.currentUser.first()?.id != "user_default_me") repository.currentUser.first() else null
 
             val profile = if (existing != null) {
                 existing.copy(
                     phoneNumber = if (phone.isNotBlank()) phone else existing.phoneNumber,
                     fullName = fullName.ifBlank { existing.fullName },
                     district = district.ifBlank { existing.district },
+                    isOnboardingCompleted = true,
                     updatedAtTimestamp = System.currentTimeMillis()
                 )
             } else {
+                val isWorker = initialRole == "WORKER"
                 UserProfileEntity(
                     id = uid,
                     phoneNumber = phone,
-                    fullName = fullName.ifBlank { firebaseUser?.displayName ?: "Neighbor" },
+                    fullName = fullName.ifBlank { firebaseUser?.displayName ?: if (isWorker) "Specialist" else "Neighbor" },
                     district = district,
-                    initialRole = "CLIENT",
-                    currentActiveMode = "CLIENT"
+                    initialRole = initialRole,
+                    currentActiveMode = initialRole,
+                    workerKycStatus = if (isWorker) "UNVERIFIED" else "APPROVED",
+                    isWorkerActivated = !isWorker,
+                    trainingCompleted = !isWorker,
+                    isOnboardingCompleted = true
                 )
             }
             repository.saveUserProfile(profile)
             if (district.isNotBlank()) {
                 setDistrict(district)
             }
+            userRoleMode.value = if (profile.currentActiveMode == "WORKER") "Offer Skills" else "Hire a Neighbor"
+            isOnboardingCompleted.value = true
+            sessionManager.setOnboardingCompleted(true)
+
             // AUTH-002: Persist session
             val deviceId = sessionManager.getDeviceId(appContext)
             sessionManager.saveSession(
@@ -673,7 +711,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     // Google Sign-In handling
-    fun loginWithGoogle(idToken: String, onComplete: (Boolean) -> Unit = {}) {
+    fun loginWithGoogle(idToken: String, initialRole: String = "CLIENT", onComplete: (Boolean) -> Unit = {}) {
         viewModelScope.launch {
             val result = firebaseService.signInWithGoogle(idToken)
             if (result.isSuccess) {
@@ -682,10 +720,11 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
                 // Check if user already exists with an established profile
                 val existing = repository.getUserProfile(uid).first()
-                if (existing != null && existing.fullName.isNotBlank() && existing.district.isNotBlank()) {
+                if (existing != null && existing.fullName.isNotBlank() && existing.district.isNotBlank() && existing.isOnboardingCompleted) {
                     isAuthenticated.value = true
                     currentUserPhone.value = existing.phoneNumber
                     setDistrict(existing.district)
+                    userRoleMode.value = if (existing.currentActiveMode == "WORKER") "Offer Skills" else "Hire a Neighbor"
                     val deviceId = sessionManager.getDeviceId(appContext)
                     sessionManager.saveSession(
                         isAuthenticated = true,
@@ -695,6 +734,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                         district = existing.district,
                         deviceId = deviceId
                     )
+                    sessionManager.setOnboardingCompleted(true)
+                    isOnboardingCompleted.value = true
                     val action = authPendingAction.value
                     closeAuthModal()
                     if (action?.startsWith("hire_") == true) {

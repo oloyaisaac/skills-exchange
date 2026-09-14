@@ -10,7 +10,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.Alignment
 import com.example.ui.screens.MainScreen
+import com.example.ui.screens.OnboardingScreen
+import com.example.ui.theme.SignalBlue
 import com.example.ui.theme.SkillsExchangeTheme
 import com.example.ui.viewmodel.SkillsExchangeViewModel
 
@@ -21,9 +26,28 @@ class MainActivity : ComponentActivity() {
     setContent {
       val viewModel: SkillsExchangeViewModel = viewModel()
       val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+      val isOnboardingCompleted by viewModel.isOnboardingCompleted.collectAsStateWithLifecycle()
+      val isSessionRestored by viewModel.isSessionRestored.collectAsStateWithLifecycle()
+
       SkillsExchangeTheme(themeMode = themeMode) {
         Surface(modifier = Modifier.fillMaxSize()) {
-          MainScreen(viewModel = viewModel)
+          if (!isSessionRestored) {
+            Box(
+              modifier = Modifier.fillMaxSize(),
+              contentAlignment = Alignment.Center
+            ) {
+              CircularProgressIndicator(color = SignalBlue)
+            }
+          } else if (isOnboardingCompleted) {
+            MainScreen(viewModel = viewModel)
+          } else {
+            OnboardingScreen(
+              viewModel = viewModel,
+              onOnboardingComplete = {
+                // State change automatically renders MainScreen
+              }
+            )
+          }
         }
       }
     }

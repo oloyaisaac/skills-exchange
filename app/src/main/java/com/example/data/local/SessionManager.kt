@@ -26,10 +26,15 @@ class SessionManager(private val context: Context) {
         private val KEY_FCM_TOKEN = stringPreferencesKey("fcm_token")
         private val KEY_SESSION_TIMESTAMP = longPreferencesKey("session_timestamp")
         private val KEY_DEVICE_ID = stringPreferencesKey("device_id")
+        private val KEY_ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
     }
 
     val isAuthenticated: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[KEY_IS_AUTHENTICATED] ?: false
+    }
+
+    val isOnboardingCompleted: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[KEY_ONBOARDING_COMPLETED] ?: false
     }
 
     val userPhone: Flow<String?> = context.dataStore.data.map { preferences ->
@@ -84,6 +89,16 @@ class SessionManager(private val context: Context) {
         }
     }
 
+    suspend fun setOnboardingCompleted(completed: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_ONBOARDING_COMPLETED] = completed
+        }
+    }
+
+    suspend fun getIsOnboardingCompleted(): Boolean {
+        return context.dataStore.data.first()[KEY_ONBOARDING_COMPLETED] ?: false
+    }
+
     suspend fun saveFcmToken(token: String) {
         context.dataStore.edit { preferences ->
             preferences[KEY_FCM_TOKEN] = token
@@ -92,7 +107,11 @@ class SessionManager(private val context: Context) {
 
     suspend fun clearSession() {
         context.dataStore.edit { preferences ->
+            val wasOnboardingCompleted = preferences[KEY_ONBOARDING_COMPLETED] ?: false
             preferences.clear()
+            if (wasOnboardingCompleted) {
+                preferences[KEY_ONBOARDING_COMPLETED] = true
+            }
         }
     }
 
