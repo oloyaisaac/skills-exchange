@@ -23,8 +23,23 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.db.UserProfileEntity
 import com.example.ui.theme.*
 import com.example.util.CurrencyRegion
+
+/**
+ * Extract initials from a full name string.
+ * Examples: "Isaac Kato" → "IK", "Isaac" → "I", empty/null → "N"
+ */
+fun extractInitials(fullName: String?): String {
+    if (fullName.isNullOrBlank()) return "N"
+    val parts = fullName.trim().split("\\s+".toRegex()).filter { it.isNotEmpty() }
+    return when {
+        parts.size >= 2 -> (parts[0].firstOrNull() ?: 'N').toString() + (parts[1].firstOrNull() ?: '').toString()
+        parts.size == 1 -> parts[0].firstOrNull()?.toString() ?: "N"
+        else -> "N"
+    }.uppercase()
+}
 
 @Composable
 fun AppNavigationDrawer(
@@ -39,6 +54,7 @@ fun AppNavigationDrawer(
     currentDistrict: String,
     onTriggerAuth: () -> Unit,
     onLogout: () -> Unit,
+    currentUserProfile: UserProfileEntity? = null,
     onOpenWallet: () -> Unit = {},
     onOpenHistory: () -> Unit = {},
     onOpenDisputes: () -> Unit = {},
@@ -150,7 +166,11 @@ fun AppNavigationDrawer(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        text = if (isAuthenticated) "RN" else "G",
+                                        text = if (isAuthenticated) {
+                                            extractInitials(currentUserProfile?.fullName)
+                                        } else {
+                                            "G"
+                                        },
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color.White
