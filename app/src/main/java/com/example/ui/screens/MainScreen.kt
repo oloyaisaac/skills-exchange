@@ -641,6 +641,7 @@ fun MainScreen(
         currentDistrict = filterState.district,
         onTriggerAuth = { viewModel.triggerAuthFlow("Unlock account & verified credentials") },
         onLogout = { viewModel.logoutUser() },
+        currentUserProfile = currentUserProfile,
         onOpenWallet = { viewModel.setMobileTab("Jobs") },
         onOpenHistory = { viewModel.setMobileTab("Jobs") },
         onOpenDisputes = {
