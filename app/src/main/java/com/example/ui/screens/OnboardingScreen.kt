@@ -537,7 +537,7 @@ fun OnboardingScreen(
                     OutlinedButton(
                         onClick = {
                             isGoogleSigningIn = true
-                            val signInIntent = GoogleSignInHelper.getSignInIntent(context)
+                            val signInIntent = GoogleSignInHelper.getClient(context).signInIntent
                             googleSignInLauncher.launch(signInIntent)
                         },
                         modifier = Modifier
