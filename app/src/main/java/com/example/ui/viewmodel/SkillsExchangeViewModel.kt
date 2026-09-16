@@ -177,15 +177,47 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 authState.value = AuthState.SignedIn
 
                 // AUTH-009: Restore user profile and role mode
-                val userProfile = repository.currentUser.first()
+                var userProfile = repository.currentUser.first()
+                // AUTH-002 / ROLE-001: Existing-user restore. If the persisted session is valid but the
+                // Room profile row is missing (cleared or recreated database, legacy demo-id session),
+                // rebuild it from the persisted session so that currentUser becomes available reactively
+                // and the NavigationDrawer shows the real name/initials instead of a guest fallback.
+                if (userProfile == null) {
+                    val sessionUserId = userId?.takeIf { it != DEMO_PROFILE_ID }
+                        ?: firebaseService.getCurrentUser()?.uid
+                    userProfile = sessionUserId?.let { repository.getUserProfile(it).first() }
+                        ?: sessionUserId?.let { restoredId ->
+                            val restoredRole = sessionManager.getUserRole()
+                                ?: if (userRoleMode.value == "Offer Skills") "WORKER" else "CLIENT"
+                            val isWorker = restoredRole == "WORKER"
+                            val restoredProfile = UserProfileEntity(
+                                id = restoredId,
+                                phoneNumber = phone.orEmpty(),
+                                fullName = sessionManager.getUserName().orEmpty(),
+                                district = sessionManager.getUserDistrict().orEmpty(),
+                                initialRole = restoredRole,
+                                currentActiveMode = restoredRole,
+                                // Fail closed: a restored worker must re-verify before activation.
+                                workerKycStatus = if (isWorker) "UNVERIFIED" else "APPROVED",
+                                isWorkerActivated = !isWorker,
+                                trainingCompleted = !isWorker,
+                                isOnboardingCompleted = true
+                            )
+                            repository.saveUserProfile(restoredProfile)
+                            restoredProfile
+                        }
+                }
                 userProfile?.let { profile ->
                     userRoleMode.value = if (profile.currentActiveMode == "WORKER") "Offer Skills" else "Hire a Neighbor"
                 }
 
-                // Restore FCM token if available
-                sessionManager.fcmToken.collect { token ->
-                    if (token != null) fcmToken.value = token
-                }
+                // Restore FCM token if available.
+                // NOTE: must be a terminating read. Collecting sessionManager.fcmToken here used to
+                // suspend restoreSession() forever (DataStore flows never complete), so
+                // isSessionRestored was never set to true and the app hung on the loading spinner
+                // after every relaunch of an authenticated session.
+                val restoredFcmToken = sessionManager.fcmToken.first()
+                if (restoredFcmToken != null) fcmToken.value = restoredFcmToken
                 isOnboardingCompleted.value = true
                 sessionManager.setOnboardingCompleted(true)
             } else {
@@ -650,10 +682,17 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 firebaseService.signInAnonymously()
             }
 
-            // AUTH-006: Check for existing account by phone number or UID to prevent duplicates
-            val existingByPhone = if (phone.isNotBlank()) repository.getUserProfileByPhone(phone).first() else null
-            val existingByUid = repository.getUserProfile(uid).first()
-            val existing = existingByPhone ?: existingByUid ?: if (repository.currentUser.first()?.isOnboardingCompleted == true && repository.currentUser.first()?.id != "user_default_me") repository.currentUser.first() else null
+            // AUTH-006: Check for existing account by phone number or UID to prevent duplicates.
+            // The seeded demo row (DEMO_PROFILE_ID) is never a real account, so it is never reused:
+            // reusing it would keep the demo identity AND silently downgrade a selected WORKER to the
+            // demo row's CLIENT role.
+            val existingByPhone = if (phone.isNotBlank()) {
+                repository.getUserProfileByPhone(phone).first()?.takeIf { it.id != DEMO_PROFILE_ID }
+            } else null
+            val existingByUid = repository.getUserProfile(uid).first()?.takeIf { it.id != DEMO_PROFILE_ID }
+            val existing = existingByPhone
+                ?: existingByUid
+                ?: repository.currentUser.first()?.takeIf { it.isOnboardingCompleted && it.id != DEMO_PROFILE_ID }
 
             val profile = if (existing != null) {
                 existing.copy(
@@ -694,7 +733,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 userId = profile.id,
                 name = profile.fullName,
                 district = profile.district,
-                deviceId = deviceId
+                deviceId = deviceId,
+                role = profile.currentActiveMode
             )
         }
 
@@ -732,7 +772,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                         userId = uid,
                         name = existing.fullName,
                         district = existing.district,
-                        deviceId = deviceId
+                        deviceId = deviceId,
+                        role = existing.currentActiveMode
                     )
                     sessionManager.setOnboardingCompleted(true)
                     isOnboardingCompleted.value = true
@@ -1397,5 +1438,13 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     fun resetRatingSubmissionState() {
         ratingSubmissionState.value = RatingSubmissionState.Idle
+    }
+
+    companion object {
+        /**
+         * Legacy/seed placeholder profile id. It is never an authenticated account and must never
+         * satisfy getCurrentUser() or the onboarding "existing account" lookup.
+         */
+        const val DEMO_PROFILE_ID = "user_default_me"
     }
 }

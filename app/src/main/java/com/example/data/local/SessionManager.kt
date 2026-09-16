@@ -26,6 +26,7 @@ class SessionManager(private val context: Context) {
         private val KEY_FCM_TOKEN = stringPreferencesKey("fcm_token")
         private val KEY_SESSION_TIMESTAMP = longPreferencesKey("session_timestamp")
         private val KEY_DEVICE_ID = stringPreferencesKey("device_id")
+        private val KEY_USER_ROLE = stringPreferencesKey("user_role")
         private val KEY_ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
     }
 
@@ -65,13 +66,18 @@ class SessionManager(private val context: Context) {
         preferences[KEY_DEVICE_ID]
     }
 
+    val userRole: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[KEY_USER_ROLE]
+    }
+
     suspend fun saveSession(
         isAuthenticated: Boolean,
         phone: String? = null,
         userId: String? = null,
         name: String? = null,
         district: String? = null,
-        deviceId: String? = null
+        deviceId: String? = null,
+        role: String? = null
     ) {
         context.dataStore.edit { preferences ->
             preferences[KEY_IS_AUTHENTICATED] = isAuthenticated
@@ -79,6 +85,7 @@ class SessionManager(private val context: Context) {
             userId?.let { preferences[KEY_USER_ID] = it } ?: preferences.remove(KEY_USER_ID)
             name?.let { preferences[KEY_USER_NAME] = it } ?: preferences.remove(KEY_USER_NAME)
             district?.let { preferences[KEY_USER_DISTRICT] = it } ?: preferences.remove(KEY_USER_DISTRICT)
+            role?.let { preferences[KEY_USER_ROLE] = it } ?: preferences.remove(KEY_USER_ROLE)
             if (isAuthenticated) {
                 preferences[KEY_SESSION_TIMESTAMP] = System.currentTimeMillis()
                 deviceId?.let { preferences[KEY_DEVICE_ID] = it }
@@ -125,6 +132,18 @@ class SessionManager(private val context: Context) {
 
     suspend fun getUserId(): String? {
         return context.dataStore.data.first()[KEY_USER_ID]
+    }
+
+    suspend fun getUserName(): String? {
+        return context.dataStore.data.first()[KEY_USER_NAME]
+    }
+
+    suspend fun getUserDistrict(): String? {
+        return context.dataStore.data.first()[KEY_USER_DISTRICT]
+    }
+
+    suspend fun getUserRole(): String? {
+        return context.dataStore.data.first()[KEY_USER_ROLE]
     }
 
     suspend fun getSessionTimestamp(): Long {

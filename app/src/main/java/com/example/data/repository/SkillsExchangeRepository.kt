@@ -6,7 +6,6 @@ import com.example.data.remote.SmsNotificationService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.map
 
 class SkillsExchangeRepository(
     private val db: AppDatabase,
@@ -170,7 +169,9 @@ class SkillsExchangeRepository(
             initialEndorsements.forEach {
                 db.skillEndorsementDao().insertEndorsement(it)
             }
-            db.userProfileDao().insertUserProfile(UserProfileEntity())
+            // NOTE: No demo user_profiles row is seeded. The authenticated user's profile is
+            // persisted from the onboarding/auth flow (loginUser -> repository.saveUserProfile).
+            // Seeding a fake identity used to shadow the real profile in getCurrentUser().
         }
     }
 

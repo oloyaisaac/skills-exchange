@@ -2,7 +2,22 @@
 
 All meaningful development changes are recorded here in reverse chronological order.
 
-### [2026-09-04] [MAP-001] [FIX] Stabilize Google Maps Compose initialization
+### [2026-09-16] [AUTH-002/ROLE-001] [FIX] Persist and resolve the authenticated user profile correctly
+**Root causes found and fixed:**
+1. `UserProfileDao.getCurrentUser()` used `SELECT * FROM user_profiles LIMIT 1` with no WHERE clause, so the seeded demo row (`user_default_me` — "Sarah Namukasa", KYC APPROVED, activated) was returned as the current user instead of the authenticated profile. The NavigationDrawer therefore showed the demo name/initials ("Sarah Namukasa" / "SN") and the worker activation gate could be satisfied by the demo row.
+   - Fix: `getCurrentUser()` now excludes the demo placeholder (`WHERE id != 'user_default_me' ORDER BY updatedAtTimestamp DESC LIMIT 1`).
+2. `SkillsExchangeRepository.seedInitialDataIfNeeded()` inserted a fake demo `UserProfileEntity`, which created that shadowing row on every fresh install.
+   - Fix: the demo user profile is no longer seeded; only demo content (providers/jobs/chat/posts/endorsements) is seeded. The authenticated profile is persisted by the onboarding flow (`completeOnboarding` → `loginUser` → `repository.saveUserProfile`, keyed by Firebase UID with the selected role preserved).
+3. `loginUser()` reused any row matching the typed phone number, including the demo row (whose number is the onboarding placeholder hint), which kept the demo identity and silently downgraded a selected WORKER to the demo row's CLIENT role.
+   - Fix: the demo row is excluded from the existing-account lookup; new profiles are always keyed by the Firebase UID and keep the selected role (CLIENT stays CLIENT, WORKER stays WORKER with UNVERIFIED / not-activated / training-incomplete gates intact).
+4. `restoreSession()` never rebuilt the profile when the persisted session existed but the Room row did not (cleared/recreated database), so `currentUser` could stay null and the drawer fell back to Guest.
+   - Fix: the profile is rehydrated from the persisted session (user id, name, district, role) and re-inserted into Room. Role is now persisted in DataStore (`user_role`) and restored. Restored workers fail closed (`UNVERIFIED`, not activated).
+5. `restoreSession()` collected `sessionManager.fcmToken` with a never-completing `collect`, so `isSessionRestored` was never set and the app hung on the loading spinner after relaunching an authenticated session.
+   - Fix: replaced with a terminating `first()` read (live updates still handled by `onFcmTokenRefreshed`).
+
+**Verification:** test-result XMLs show `UserProfilePersistenceTest` 6/6, `AuthViewModelTest` 9/9, `ExampleRobolectricTest` 1/1 with 0 failures/errors; prior full run `testDebugUnitTest` + `assembleDebug` BUILD SUCCESSFUL (see `D:/gradle-temp/build2.log`). Clean compile/unit re-run is blocked in this environment (AGP 9.3.2 requires Gradle 9.5.0 but only a partial 9.5.0 wrapper dist exists, so the wrapper tries to re-download it; `--offline` fails plugin resolution; no device attached for runtime checks — `adb devices` returns empty).
+
+### [2026-09-14] [AUTH-009] [FIX] Profile Name & Dynamic Initials Display Fix
 - Initialize `MapView` and call `getMapAsync` once from `AndroidView.factory` instead of repeating lifecycle setup during recomposition
 - Retain the `GoogleMap` instance in Compose state and keep marker creation/camera movement dependent on map readiness
 - Preserve provider marker selection through the state-driven map effect

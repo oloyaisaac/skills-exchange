@@ -224,7 +224,13 @@ interface UserProfileDao {
     @Query("SELECT * FROM user_profiles WHERE phoneNumber = :phoneNumber LIMIT 1")
     fun getUserProfileByPhoneNumber(phoneNumber: String): Flow<UserProfileEntity?>
 
-    @Query("SELECT * FROM user_profiles LIMIT 1")
+    /**
+     * ROLE-001/AUTH-002: The current user is the most recently updated REAL profile row.
+     * The seeded demo row ("user_default_me") is never an authenticated account, so it is
+     * excluded. This prevents the demo identity ("Sarah Namukasa", KYC APPROVED, activated)
+     * from leaking into the NavigationDrawer and from satisfying the worker access gates.
+     */
+    @Query("SELECT * FROM user_profiles WHERE id != 'user_default_me' ORDER BY updatedAtTimestamp DESC LIMIT 1")
     fun getCurrentUser(): Flow<UserProfileEntity?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
