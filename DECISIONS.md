@@ -224,3 +224,27 @@ Context, options considered, decision, rationale, consequences
 
 _This document will be updated whenever significant architectural or design decisions are made._
 
+---
+
+## 2026-09-16
+
+### [2026-09-16] DEC-016 Future Requirements Documentation Capture
+
+**Context**: 12 new future requirements were identified that need to be permanently recorded in the project documentation so they are not forgotten. These requirements span payment fees, worker registration, guarantor verification, GPS location, maps usage, community removal, dashboard security, and legal/disclaimer items.
+
+**Decision**: Create Phase 17 "Future Requirements & Post-Launch Enhancements" in prd.json and document all 12 requirements with clear "FUTURE / PLANNED / NOT IMPLEMENTED" markers. Update requirement_file.md, TASKS.md, AGENT_STATE.md, and CHANGELOG.md to reflect the new requirements.
+
+**Rationale**: 
+- Centralized documentation ensures future Anti-Gravity sessions can discover these requirements
+- Clear "NOT IMPLEMENTED" status prevents premature implementation
+- Open questions are explicitly recorded for future resolution
+- Existing PRD structure and story IDs are preserved
+
+**Consequences**:
+- 12 new story IDs added: PAY-005, REG-001, REG-002, REG-003, REG-004, LOC-005, MAP-002, COMM-002, SEC-009, LEGAL-001, LEGAL-002, AUTH-012
+- All new stories have status "pending" (NOT completed)
+- Existing 79 completed stories unchanged
+- No code changes made
+
+---
+

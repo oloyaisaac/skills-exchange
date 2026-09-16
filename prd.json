@@ -87,6 +87,11 @@
       "id": 15,
       "name": "Production QA & Release Readiness",
       "goal": "Configure ProGuard rules, release build signing, and end-to-end user journey validation."
+    },
+    {
+      "id": 17,
+      "name": "Future Requirements & Post-Launch Enhancements",
+      "goal": "Document planned future requirements for payment fees, worker registration, guarantor verification, GPS location, maps usage, community removal, dashboard security, legal disclaimers, and privacy/terms without implementation."
     }
   ],
   "stories": [
@@ -2984,7 +2989,8 @@
         "OAuth token handling",
         "Dependency on Google Play Services"
       ],
-      "rollback": "git checkout AuthModal.kt GoogleSignInHelper.kt""depends_on": [
+      "rollback": "git checkout AuthModal.kt GoogleSignInHelper.kt",
+      "depends_on": [
         "AUTH-001"
       ],
       "description": "Add Google Sign-In button to AuthModal and handle OAuth flow using Firebase Auth.",
@@ -3015,6 +3021,297 @@
         "Dependency on Google Play Services"
       ],
       "rollback": "git checkout AuthModal.kt GoogleSignInHelper.kt"
+    },
+    {
+      "id": "PAY-005",
+      "phase": 17,
+      "title": "Job Payment Fees & Platform Deductions (Future)",
+      "priority": "P2",
+      "status": "pending",
+      "description": "For every successfully completed job: worker-side commission 5% + app/platform fee 5% = total 10% platform deductions. The two 5% charges must remain conceptually distinct in requirements and future UI/business logic. Implementation must clearly show: job/payment amount, 5% commission, 5% app/platform fee, total deductions, and resulting amount received by the relevant party.",
+      "problem": "Payment fee structure not yet defined in requirements.",
+      "goal": "Document the 5% commission + 5% platform fee structure as a future requirement without implementation.",
+      "scope": {
+        "include": [],
+        "exclude": []
+      },
+      "files_likely_affected": [],
+      "acceptance_criteria": [
+        "Requirements document clearly distinguishes 5% worker commission from 5% app/platform fee",
+        "Total deductions (10%) and resulting amount are documented as future display requirements"
+      ],
+      "verification": [],
+      "risks": [],
+      "rollback": "Edit PRD documentation",
+      "notes": "FUTURE / PLANNED / NOT IMPLEMENTED. Do not implement now. Edge cases (refunds, cancellations, partial payments, disputes) remain to be clarified.",
+      "depends_on": []
+    },
+    {
+      "id": "REG-001",
+      "phase": 17,
+      "title": "First-Time Worker Registration Fee (Future)",
+      "priority": "P2",
+      "status": "pending",
+      "description": "First-time worker registration requires UGX 20,000 registration fee. Worker registration UI must clearly communicate that the applicant should prepare/pay UGX 20,000 for registration. The exact internal breakdown/purpose of the UGX 20,000 has NOT yet been specified. Do not invent a breakdown. Do not implement payment processing now.",
+      "problem": "Worker registration fee not yet documented.",
+      "goal": "Document the UGX 20,000 registration fee requirement as a future requirement without implementation.",
+      "scope": {
+        "include": [],
+        "exclude": []
+      },
+      "files_likely_affected": [],
+      "acceptance_criteria": [
+        "Registration UI requirement notes UGX 20,000 fee communication"
+      ],
+      "verification": [],
+      "risks": [],
+      "rollback": "Edit PRD documentation",
+      "notes": "FUTURE / PLANNED / NOT IMPLEMENTED. Open question: What exactly does the UGX 20,000 cover? What payment mechanism will be used?",
+      "depends_on": []
+    },
+    {
+      "id": "REG-002",
+      "phase": 17,
+      "title": "Worker Registration Guarantor Verification Requirements (Future)",
+      "priority": "P2",
+      "status": "pending",
+      "description": "Worker registration must include two guarantors. Each guarantor must provide: full name, NIN number, contact number, guarantor photograph, and photograph showing the worker together with that guarantor. The second guarantor must provide the same information. There must also be a group photograph containing worker + guarantor 1 + guarantor 2. The worker-registration flow should eventually be organized into clear steps so the applicant can complete these requirements progressively.",
+      "problem": "Detailed guarantor verification requirements for registration not yet documented.",
+      "goal": "Document the two-guarantor verification requirements (including photographs) as a future requirement without implementation.",
+      "scope": {
+        "include": [],
+        "exclude": []
+      },
+      "files_likely_affected": [],
+      "acceptance_criteria": [
+        "Requirements specify 2 guarantors with full name, NIN, contact, guarantor photo, and joint worker-guarantor photo",
+        "Group photograph requirement (worker + 2 guarantors) is documented",
+        "Progressive step-by-step registration flow is noted as a future UI requirement"
+      ],
+      "verification": [],
+      "risks": [],
+      "rollback": "Edit PRD documentation",
+      "notes": "FUTURE / PLANNED / NOT IMPLEMENTED. Note: This augments but does not replace existing KYC-003 two-guarantor data model (which covers National ID uploads).",
+      "depends_on": []
+    },
+    {
+      "id": "REG-003",
+      "phase": 17,
+      "title": "Worker Backup Contact Number (Future)",
+      "priority": "P2",
+      "status": "pending",
+      "description": "Worker registration/profile must contain primary contact number and backup contact number. The backup number is intended to provide an alternative way to reach the worker when the primary contact is unavailable. IMPORTANT: Do not invent whether the backup number must belong to the worker or another person. That detail remains to be clarified later. Do not implement this now.",
+      "problem": "Worker backup contact requirement not yet documented.",
+      "goal": "Document the backup contact number requirement as a future requirement without implementation.",
+      "scope": {
+        "include": [],
+        "exclude": []
+      },
+      "files_likely_affected": [],
+      "acceptance_criteria": [
+        "Worker profile requirements include primary + backup contact numbers"
+      ],
+      "verification": [],
+      "risks": [],
+      "rollback": "Edit PRD documentation",
+      "notes": "FUTURE / PLANNED / NOT IMPLEMENTED. Open question: Should the backup number belong to the worker or an alternate/emergency contact person?",
+      "depends_on": []
+    },
+    {
+      "id": "REG-004",
+      "phase": 17,
+      "title": "Worker Profile Photo (Future)",
+      "priority": "P2",
+      "status": "pending",
+      "description": "During worker registration/profile setup: the worker selects a profile picture. This is the picture that clients will see when viewing the worker.",
+      "problem": "Worker profile photo selection not yet specified as a requirement.",
+      "goal": "Document the worker profile photo requirement as a future requirement without implementation.",
+      "scope": {
+        "include": [],
+        "exclude": []
+      },
+      "files_likely_affected": [],
+      "acceptance_criteria": [
+        "Worker selects profile picture during registration/profile setup",
+        "Profile picture is the image clients see when viewing the worker"
+      ],
+      "verification": [],
+      "risks": [],
+      "rollback": "Edit PRD documentation",
+      "notes": "FUTURE / PLANNED / NOT IMPLEMENTED.",
+      "depends_on": []
+    },
+    {
+      "id": "LOC-005",
+      "phase": 17,
+      "title": "Worker Location Using Device GPS (Future)",
+      "priority": "P2",
+      "status": "pending",
+      "description": "Remove the old concept of manually relying on outdated district/location fields such as 'Sunside/Sun-side district.' The intended future behavior is: worker enables location/GPS permission, the app obtains the worker's device location, and the worker's location can be used for relevant Skills Exchange functionality. The implementation must respect Android location permissions and device accuracy limitations. Do not claim that GPS is always perfectly exact. Do not implement this now.",
+      "problem": "Location management relies on manual district fields; GPS-based location not yet specified as future requirement.",
+      "goal": "Document the GPS-based worker location requirement as a future requirement without implementation.",
+      "scope": {
+        "include": [],
+        "exclude": []
+      },
+      "files_likely_affected": [],
+      "acceptance_criteria": [
+        "Requirements specify GPS permission enablement for workers",
+        "Requirements acknowledge Android location permission and accuracy limitations",
+        "Old manual district/location concepts (e.g., Sunside/Sun-side) noted for removal"
+      ],
+      "verification": [],
+      "risks": [],
+      "rollback": "Edit PRD documentation",
+      "notes": "FUTURE / PLANNED / NOT IMPLEMENTED. Existing LOC-001..004 implementation uses GPS for clients and district/location fields for workers; this requirement proposes future GPS-based worker location.",
+      "depends_on": []
+    },
+    {
+      "id": "MAP-002",
+      "phase": 17,
+      "title": "Google Maps Usage Minimization (Future)",
+      "priority": "P2",
+      "status": "pending",
+      "description": "The general map should not be permanently displayed throughout the normal app experience. Maps should be used only when relevant to an active client-worker interaction, particularly when: a client accepts/hires a worker, there is an active job, and location/map information is actually needed for that job. This requirement is intended to minimize unnecessary Google Maps usage/cost. Do not implement this now.",
+      "problem": "Map usage strategy not yet documented.",
+      "goal": "Document the maps-usage-minimization requirement as a future requirement without implementation.",
+      "scope": {
+        "include": [],
+        "exclude": []
+      },
+      "files_likely_affected": [],
+      "acceptance_criteria": [
+        "Requirements specify that maps are shown only during active client-worker interactions (job acceptance, active job)",
+        "Requirements note the goal of minimizing Google Maps usage/cost"
+      ],
+      "verification": [],
+      "risks": [],
+      "rollback": "Edit PRD documentation",
+      "notes": "FUTURE / PLANNED / NOT IMPLEMENTED. Existing MAP-001 implemented Google Maps SDK; this requirement guides when maps should be displayed.",
+      "depends_on": []
+    },
+    {
+      "id": "COMM-002",
+      "phase": 17,
+      "title": "Community Feature Removal (Future)",
+      "priority": "P3",
+      "status": "pending",
+      "description": "The Community feature should eventually be removed permanently. When implementation begins, the agent must audit and safely remove all relevant: navigation entries, screens, routes, ViewModels, repository logic, entities/data structures where applicable, PRD/requirements references, and other obsolete Community-related code. Do not remove Community during this documentation task.",
+      "problem": "Community feature exists but is planned for future removal.",
+      "goal": "Document the Community feature removal requirement as a future requirement without implementation.",
+      "scope": {
+        "include": [],
+        "exclude": []
+      },
+      "files_likely_affected": [],
+      "acceptance_criteria": [
+        "Future removal requirement is documented",
+        "Implementation checklist includes audit of navigation, screens, routes, ViewModels, repositories, entities, and PRD references"
+      ],
+      "verification": [],
+      "risks": [],
+      "rollback": "Edit PRD documentation",
+      "notes": "FUTURE / PLANNED / NOT IMPLEMENTED. Do NOT remove Community now. Related existing code: NeighborhoodFeedView, NeighborhoodPostEntity, and related MainScreen navigation.",
+      "depends_on": []
+    },
+    {
+      "id": "SEC-009",
+      "phase": 17,
+      "title": "Worker Dashboard Security & Access Control (Future)",
+      "priority": "P1",
+      "status": "pending",
+      "description": "A normal Client must NOT be able to access the Worker dashboard. Worker dashboard access must require that the account: has been registered as a Worker, has completed the required worker verification/KYC process, and has been approved/activated by administrators. UI hiding alone is NOT sufficient. The eventual implementation must enforce this at the appropriate business/security/data-access layer as well as the UI. Existing worker KYC, training, approval, and activation requirements must be preserved. Do not implement this now.",
+      "problem": "Worker dashboard access control requirements not yet fully documented for future enforcement.",
+      "goal": "Document the worker dashboard security/access control requirement as a future requirement without implementation.",
+      "scope": {
+        "include": [],
+        "exclude": []
+      },
+      "files_likely_affected": [],
+      "acceptance_criteria": [
+        "Requirements specify that Client cannot access Worker dashboard",
+        "Requirements specify that Worker dashboard access requires: Worker registration + KYC verification completion + admin approval/activation",
+        "Requirements emphasize enforcement at business/security/data-access layer, not just UI hiding"
+      ],
+      "verification": [],
+      "risks": [],
+      "rollback": "Edit PRD documentation",
+      "notes": "FUTURE / PLANNED / NOT IMPLEMENTED. Existing ROLE-003 implemented a WorkerVerificationStatusView gate; this requirement calls for stronger multi-layer enforcement in the future.",
+      "depends_on": []
+    },
+    {
+      "id": "LEGAL-001",
+      "phase": 17,
+      "title": "Liability Disclaimer (Future)",
+      "priority": "P2",
+      "status": "pending",
+      "description": "Skills Exchange should include a short liability disclaimer communicating that Skills Exchange is not responsible for work performed by workers or damages caused by workers/clients, subject to applicable law. The requirement should eventually appear appropriately in: Terms & Conditions, relevant registration/onboarding areas where appropriate, and potentially relevant job acceptance/transaction flows where appropriate. IMPORTANT: Do not invent legal guarantees or claim that the disclaimer eliminates legal responsibility. The final legal wording should be reviewed for applicable Ugandan legal requirements before public launch. Do not implement this now.",
+      "problem": "Liability disclaimer requirement not yet documented.",
+      "goal": "Document the liability disclaimer requirement as a future requirement without implementation.",
+      "scope": {
+        "include": [],
+        "exclude": []
+      },
+      "files_likely_affected": [],
+      "acceptance_criteria": [
+        "Requirements specify a liability disclaimer covering worker work and damages, subject to applicable law",
+        "Requirements note placement in T&C, onboarding, and transaction flows",
+        "Requirements emphasize that final wording needs Ugandan legal review before launch"
+      ],
+      "verification": [],
+      "risks": [],
+      "rollback": "Edit PRD documentation",
+      "notes": "FUTURE / PLANNED / NOT IMPLEMENTED. Open question: What exact legal wording should be used after Ugandan legal review?",
+      "depends_on": []
+    },
+    {
+      "id": "LEGAL-002",
+      "phase": 17,
+      "title": "Privacy Policy / Terms & Conditions / User Consent (Future)",
+      "priority": "P2",
+      "status": "pending",
+      "description": "The project will eventually need proper: Privacy Policy, Terms & Conditions, and user consent/acceptance tracking. The legal/product requirements should cover relevant areas such as: data collection and use, location data, worker KYC/NIN information, mobile money/payment/escrow information, user rights, account deletion, marketplace rules, worker verification, jobs, messaging, ratings, disputes, prohibited activities, account termination, and liability. Do not invent legal requirements that have not been decided. Do not implement these pages or consent tracking now.",
+      "problem": "Privacy policy, T&C, and consent tracking requirements not yet documented.",
+      "goal": "Document the privacy policy/T&C/consent requirements as future requirements without implementation.",
+      "scope": {
+        "include": [],
+        "exclude": []
+      },
+      "files_likely_affected": [],
+      "acceptance_criteria": [
+        "Requirements list coverage areas: data collection/use, location, KYC/NIN, payments/escrow, user rights, account deletion, marketplace rules, verification, jobs, messaging, ratings, disputes, prohibited activities, termination, liability",
+        "Requirements note that consent/acceptance tracking is a future need"
+      ],
+      "verification": [],
+      "risks": [],
+      "rollback": "Edit PRD documentation",
+      "notes": "FUTURE / PLANNED / NOT IMPLEMENTED. Do not invent legal requirements that have not been decided.",
+      "depends_on": []
+    },
+    {
+      "id": "AUTH-012",
+      "phase": 17,
+      "title": "Preserve Existing Authentication/Onboarding Requirements (Future Note)",
+      "priority": "P0",
+      "status": "pending",
+      "description": "Do NOT replace or undo the existing authentication/onboarding requirements. The existing intended flow remains: NEW USER: Role Selection → Authentication → Role-specific onboarding → Main App. EXISTING USER: Restore session → Main App. Worker activation/KYC/approval gates must remain intact. These new requirements are additions to the existing project, not replacements. Do not implement this now (this is a preservation note, not an implementation task).",
+      "problem": "Need to ensure future requirements do not conflict with or replace existing auth/onboarding flow.",
+      "goal": "Document the preservation requirement for existing authentication/onboarding as a future note without implementation.",
+      "scope": {
+        "include": [],
+        "exclude": []
+      },
+      "files_likely_affected": [],
+      "acceptance_criteria": [
+        "Requirements note that existing auth/onboarding flow is preserved: Role Selection → Auth → Onboarding → Main App (new users), Restore session → Main App (existing users)",
+        "Requirements note that worker activation/KYC/approval gates remain intact",
+        "Requirements clarify that new requirements are additions, not replacements"
+      ],
+      "verification": [],
+      "risks": [],
+      "rollback": "Edit PRD documentation",
+      "notes": "FUTURE / PLANNED / NOT IMPLEMENTED. This is a preservation note to prevent future regressions.",
+      "depends_on": []
     }
   ],
   "current_story": null,
@@ -3100,5 +3397,5 @@
     "STAB-003"
   ],
   "blocked_stories": [],
-  "last_updated": "2026-09-05T08:15:00+03:00"
+  "last_updated": "2026-09-16T12:00:00+03:00"
 }

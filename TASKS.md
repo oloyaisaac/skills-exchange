@@ -200,15 +200,36 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 ---
 
+## Phase 17 — Future Requirements & Post-Launch Enhancements
+
+> Document planned future requirements for payment fees, worker registration, guarantor verification, GPS location, maps usage, community removal, dashboard security, legal disclaimers, and privacy/terms without implementation.
+
+| ID | Priority | Title | Status | Notes |
+|---|---|---|---|---|
+| PAY-005 | P2 | Job Payment Fees & Platform Deductions (Future) | ⏳ Pending | 5% commission + 5% platform fee = 10% total. FUTURE / NOT IMPLEMENTED |
+| REG-001 | P2 | First-Time Worker Registration Fee (Future) | ⏳ Pending | UGX 20,000 registration fee. FUTURE / NOT IMPLEMENTED |
+| REG-002 | P2 | Worker Registration Guarantor Verification Requirements (Future) | ⏳ Pending | 2 guarantors with photos + group photo. FUTURE / NOT IMPLEMENTED |
+| REG-003 | P2 | Worker Backup Contact Number (Future) | ⏳ Pending | Primary + backup contact. FUTURE / NOT IMPLEMENTED |
+| REG-004 | P2 | Worker Profile Photo (Future) | ⏳ Pending | Worker selects profile picture for clients. FUTURE / NOT IMPLEMENTED |
+| LOC-005 | P2 | Worker Location Using Device GPS (Future) | ⏳ Pending | GPS-based worker location, remove manual district fields. FUTURE / NOT IMPLEMENTED |
+| MAP-002 | P2 | Google Maps Usage Minimization (Future) | ⏳ Pending | Maps only during active job interactions. FUTURE / NOT IMPLEMENTED |
+| COMM-002 | P3 | Community Feature Removal (Future) | ⏳ Pending | Permanent removal of Community feature. FUTURE / NOT IMPLEMENTED |
+| SEC-009 | P1 | Worker Dashboard Security & Access Control (Future) | ⏳ Pending | Multi-layer enforcement beyond UI hiding. FUTURE / NOT IMPLEMENTED |
+| LEGAL-001 | P2 | Liability Disclaimer (Future) | ⏳ Pending | Liability disclaimer for T&C, onboarding, transactions. FUTURE / NOT IMPLEMENTED |
+| LEGAL-002 | P2 | Privacy Policy / Terms & Conditions / User Consent (Future) | ⏳ Pending | Full legal docs and consent tracking. FUTURE / NOT IMPLEMENTED |
+| AUTH-012 | P0 | Preserve Existing Authentication/Onboarding Requirements (Future Note) | ⏳ Pending | Preservation note for existing auth flow. FUTURE / NOT IMPLEMENTED |
+
+---
+
 ## Summary
 
 | Status | Count |
 |---|---|
 | ✅ Completed | 79 |
 | 🔄 In Progress | 0 |
-| ⏳ Pending | 0 |
+| ⏳ Pending | 12 |
 | 🚫 Blocked | 0 |
-| **Total** | **79** |
+| **Total** | **91** |
 
 ---
 

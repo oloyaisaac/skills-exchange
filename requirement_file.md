@@ -443,3 +443,262 @@ The project backlog is organized into **15 Logical Implementation Phases**:
 13. Phase 13: Communication, Safety & Doorstep Safeguards
 14. Phase 14: Offline Synchronization & Reliability
 15. Phase 15: Production QA & Release Readiness
+
+---
+
+## 13. Future Requirements & Post-Launch Enhancements
+
+**Status: FUTURE / PLANNED / NOT IMPLEMENTED**
+
+The following requirements are documented for future implementation. They are NOT yet implemented and should not be considered part of the current production-ready codebase.
+
+---
+
+### 13.1 Job Payment Fees / Platform Deductions (PAY-005)
+
+For every successfully completed job:
+
+- **Worker-side commission**: 5%
+- **App/platform fee**: 5%
+- **Total platform deductions**: 10% when both are charged from the same transaction.
+
+The two 5% charges must remain conceptually distinct in the requirements and future UI/business logic.
+
+The eventual implementation must clearly show:
+- Job/payment amount
+- 5% commission
+- 5% app/platform fee
+- Total deductions
+- Resulting amount received by the relevant party
+
+**Open Questions:**
+- How exactly will the 5% commission and 5% app fee be calculated/charged in edge cases such as refunds, cancellations, partial payments, or disputes?
+
+---
+
+### 13.2 First-Time Worker Registration Fee (REG-001)
+
+A first-time worker registration requires:
+
+- **UGX 20,000 registration fee.**
+
+The worker registration UI must clearly communicate that the applicant should prepare/pay UGX 20,000 for registration.
+
+**IMPORTANT:** The exact internal breakdown/purpose of the UGX 20,000 has NOT yet been specified. Do not invent a breakdown.
+
+**Open Questions:**
+- What exactly does the UGX 20,000 worker registration fee cover?
+- What exact payment mechanism will be used for the UGX 20,000 registration fee?
+
+---
+
+### 13.3 Worker Registration Guarantor Verification (REG-002)
+
+Worker registration must include **two guarantors**.
+
+Each guarantor must provide:
+- Full name
+- NIN number
+- Contact number
+- Guarantor photograph
+- Photograph showing the worker together with that guarantor
+
+The second guarantor must provide the same information.
+
+There must also be a **group photograph** containing:
+- Worker
+- Guarantor 1
+- Guarantor 2
+
+The worker-registration flow should eventually be organized into clear steps so the applicant can complete these requirements progressively.
+
+**Note:** This augments but does not replace the existing KYC-003 two-guarantor data model (which covers National ID uploads).
+
+---
+
+### 13.4 Worker Backup Contact (REG-003)
+
+Worker registration/profile must contain:
+- Primary contact number
+- Backup contact number
+
+The backup number is intended to provide an alternative way to reach the worker when the primary contact is unavailable.
+
+**IMPORTANT:** Do not invent whether the backup number must belong to the worker or another person. That detail remains to be clarified later.
+
+**Open Questions:**
+- Should the backup contact number belong to the worker or an alternate/emergency contact person?
+
+---
+
+### 13.5 Worker Profile Photo (REG-004)
+
+During worker registration/profile setup:
+- The worker selects a profile picture.
+- This is the picture that clients will see when viewing the worker.
+
+---
+
+### 13.6 Worker Location Using Device GPS (LOC-005)
+
+Remove the old concept of manually relying on outdated district/location fields such as "Sunside/Sun-side district."
+
+The intended future behavior is:
+- Worker enables location/GPS permission.
+- The app obtains the worker's device location.
+- The worker's location can be used for relevant Skills Exchange functionality.
+
+**IMPORTANT:**
+- The implementation must respect Android location permissions and device accuracy limitations.
+- Do not claim that GPS is always perfectly exact.
+
+---
+
+### 13.7 Google Maps / Map Usage Minimization (MAP-002)
+
+The general map should **not** be permanently displayed throughout the normal app experience.
+
+Maps should be used only when relevant to an active client-worker interaction, particularly when:
+- A client accepts/hires a worker.
+- There is an active job.
+- Location/map information is actually needed for that job.
+
+This requirement is intended to minimize unnecessary Google Maps usage/cost.
+
+---
+
+### 13.8 Community Feature Removal (COMM-002)
+
+The Community feature should eventually be removed permanently.
+
+When implementation begins, the agent must audit and safely remove all relevant:
+- Navigation entries
+- Screens
+- Routes
+- ViewModels
+- Repository logic
+- Entities/data structures where applicable
+- PRD/requirements references
+- Other obsolete Community-related code
+
+**IMPORTANT:** Do not remove Community during this documentation task.
+
+**Related existing code:** NeighborhoodFeedView, NeighborhoodPostEntity, and related MainScreen navigation.
+
+---
+
+### 13.9 Worker Dashboard Security / Access Control (SEC-009)
+
+A normal Client must NOT be able to access the Worker dashboard.
+
+Worker dashboard access must require that the account:
+- Has been registered as a Worker
+- Has completed the required worker verification/KYC process
+- Has been approved/activated by administrators
+
+**IMPORTANT:** UI hiding alone is NOT sufficient. The eventual implementation must enforce this at the appropriate business/security/data-access layer as well as the UI.
+
+Existing worker KYC, training, approval, and activation requirements must be preserved.
+
+---
+
+### 13.10 Liability Disclaimer (LEGAL-001)
+
+Skills Exchange should include a short liability disclaimer communicating that Skills Exchange is not responsible for work performed by workers or damages caused by workers/clients, subject to applicable law.
+
+The requirement should eventually appear appropriately in:
+- Terms & Conditions
+- Relevant registration/onboarding areas where appropriate
+- Potentially relevant job acceptance/transaction flows where appropriate
+
+**IMPORTANT:**
+- Do not invent legal guarantees or claim that the disclaimer eliminates legal responsibility.
+- The final legal wording should be reviewed for applicable Ugandan legal requirements before public launch.
+
+**Open Questions:**
+- What exact legal wording should be used after Ugandan legal review?
+
+---
+
+### 13.11 Privacy Policy / Terms & Conditions / User Consent (LEGAL-002)
+
+The project will eventually need proper:
+- Privacy Policy
+- Terms & Conditions
+- User consent/acceptance tracking
+
+The legal/product requirements should cover relevant areas such as:
+- Data collection and use
+- Location data
+- Worker KYC/NIN information
+- Mobile money/payment/escrow information
+- User rights
+- Account deletion
+- Marketplace rules
+- Worker verification
+- Jobs
+- Messaging
+- Ratings
+- Disputes
+- Prohibited activities
+- Account termination
+- Liability
+
+**IMPORTANT:**
+- Do not invent legal requirements that have not been decided.
+- Do not implement these pages or consent tracking now.
+
+---
+
+### 13.12 Preserve Current Authentication/Onboarding Requirements (AUTH-012)
+
+**Do NOT replace or undo the existing authentication/onboarding requirements.**
+
+The existing intended flow remains:
+
+**NEW USER:**
+Role Selection → Authentication → Role-specific onboarding → Main App
+
+**EXISTING USER:**
+Restore session → Main App
+
+Worker activation/KYC/approval gates must remain intact.
+
+These new requirements are additions to the existing project, not replacements.
+
+---
+
+### Open Questions Summary
+
+The following questions remain unresolved and should be answered before implementation:
+
+1. **What exactly does the UGX 20,000 worker registration fee cover?**
+2. **Is the worker backup contact number another number belonging to the worker, or an alternate/emergency contact person?**
+3. **What exact payment mechanism will be used for the UGX 20,000 registration fee?**
+4. **How exactly will the 5% commission and 5% app fee be calculated/charged in edge cases such as refunds, cancellations, partial payments, or disputes?**
+5. **What exact legal wording should be used after Ugandan legal review?**
+
+---
+
+## 14. Implementation Phases Overview
+
+The project backlog is organized into **17 Logical Implementation Phases**:
+1. Phase 1: Baseline, Infrastructure & Test Stabilization
+2. Phase 2: Security, Document Storage & Database Rule Hardening
+3. Phase 3: Unified Account Architecture, Roles & Mode Switching
+4. Phase 4: Service Taxonomy & Skill Catalog System (125 Services)
+5. Phase 5: Client Onboarding & Location Management
+6. Phase 6: Worker KYC Verification & Guarantor Engine (2 Guarantors + Document Upload)
+7. Phase 7: Verification Lifecycle, Changes-Required & 48h SLA Tracking
+8. Phase 8: Worker Training Tracking & Activation Gating
+9. Phase 9: Admin Operations Dashboard & Verification Queue
+10. Phase 10: Core Marketplace, Quotes & Job Types (One-Time & Recurring)
+11. Phase 11: Mobile Money Payments & Escrow Engine
+12. Phase 12: Location Privacy, Google Maps & AI Services
+13. Phase 13: Communication, Safety & Doorstep Safeguards
+14. Phase 14: Offline Synchronization & Reliability
+15. Phase 15: Production QA & Release Readiness
+16. Phase 16: Authentication Hardening & Session Management
+17. Phase 17: Future Requirements & Post-Launch Enhancements
+
+---

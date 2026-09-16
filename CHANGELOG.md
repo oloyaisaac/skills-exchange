@@ -2,6 +2,26 @@
 
 All meaningful development changes are recorded here in reverse chronological order.
 
+### [2026-09-16] [DOC] Future Requirements Documentation Capture (Phase 17)
+
+**Added 12 new future/planned requirements to PRD.json, requirement_file.md, TASKS.md, and AGENT_STATE.md:**
+- PAY-005: Job Payment Fees & Platform Deductions (5% commission + 5% platform fee)
+- REG-001: First-Time Worker Registration Fee (UGX 20,000)
+- REG-002: Worker Registration Guarantor Verification Requirements (2 guarantors + photos)
+- REG-003: Worker Backup Contact Number
+- REG-004: Worker Profile Photo
+- LOC-005: Worker Location Using Device GPS
+- MAP-002: Google Maps Usage Minimization
+- COMM-002: Community Feature Removal
+- SEC-009: Worker Dashboard Security & Access Control
+- LEGAL-001: Liability Disclaimer
+- LEGAL-002: Privacy Policy / Terms & Conditions / User Consent
+- AUTH-012: Preserve Existing Authentication/Onboarding Requirements
+
+**Status:** All new requirements marked as FUTURE / PLANNED / NOT IMPLEMENTED.
+**Documentation files updated:** prd.json, requirement_file.md, TASKS.md, AGENT_STATE.md
+**No code changes.** This is documentation capture only.
+
 ### [2026-09-16] [AUTH-002/ROLE-001] [FIX] Persist and resolve the authenticated user profile correctly
 **Root causes found and fixed:**
 1. `UserProfileDao.getCurrentUser()` used `SELECT * FROM user_profiles LIMIT 1` with no WHERE clause, so the seeded demo row (`user_default_me` — "Sarah Namukasa", KYC APPROVED, activated) was returned as the current user instead of the authenticated profile. The NavigationDrawer therefore showed the demo name/initials ("Sarah Namukasa" / "SN") and the worker activation gate could be satisfied by the demo row.
