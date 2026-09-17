@@ -568,7 +568,9 @@ fun AuthModal(
 
                     Button(
                         onClick = { onLoginSuccess(phoneNumber, fullName, selectedDistrict) },
-                        enabled = fullName.isNotBlank() && selectedDistrict.isNotBlank(),
+                        // C3: explicit completion — legal name AND phone are both required.
+                        // An empty phone must never be submitted as a completed registration.
+                        enabled = fullName.isNotBlank() && phoneNumber.isNotBlank() && selectedDistrict.isNotBlank(),
                         modifier = Modifier.fillMaxWidth().height(46.dp),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = SignalBlue)

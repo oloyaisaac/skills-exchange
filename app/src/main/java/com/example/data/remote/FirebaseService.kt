@@ -88,6 +88,13 @@ class FirebaseService(private val context: Context? = null) {
     suspend fun signInAnonymously(): FirebaseUser? {
         val authInstance = auth ?: return null
         return try {
+            // C2 SAFEGUARD: never silently mint an anonymous identity while a real
+            // Firebase user is already signed in — that would fork the UID and orphan
+            // the durable users/{uid} record the rest of the flow depends on.
+            authInstance.currentUser?.let {
+                _currentUserState.value = it
+                return it
+            }
             val result = authInstance.signInAnonymously().await()
             _currentUserState.value = result.user
             result.user

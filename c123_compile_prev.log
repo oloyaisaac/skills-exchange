@@ -1,0 +1,16 @@
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Unable to download toolchain matching the requirements ({languageVersion=25, vendor=any vendor, implementation=vendor-specific, nativeImageCapable=false}) from 'https://api.foojay.io/disco/v3.0/ids/d76df094a9cbbabd3b08251f9e61444a/redirect', due to: Timeout waiting to lock OpenJDK25U-jdk_x64_windows_hotspot_25-any-vendor-25.0.3_9.zip. It is currently in use by another process.
+Owner PID: 8808
+Our PID: 912
+Owner Operation: Downloading toolchain
+Our operation: Downloading toolchain
+Lock file: D:\skills exchange\.gradle\jdks\OpenJDK25U-jdk_x64_windows_hotspot_25-any-vendor-25.0.3_9.zip.lock
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.

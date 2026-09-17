@@ -1,7 +1,29 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-09-16T18:00:00+03:00
+2026-09-17T20:15:00+03:00 — C1/C2/C3 implemented, verification pending (compile running).
+
+---
+
+## C1/C2/C3 Implementation Status — 2026-09-17 (UNVERIFIED)
+
+**Status: IMPLEMENTED — VERIFICATION PENDING. C1/C2/C3 NOT marked completed.**
+
+Source files changed (6):
+- `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt` (restoreSession Firebase recovery; loginUser blank-phone + fail-closed UID; no display-name/placeholder name fallback; UID-or-abort in evidence/training/quotes/proposals/reports)
+- `app/src/main/java/com/example/data/remote/FirebaseService.kt` (signInAnonymously reuses signed-in user)
+- `app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt` (SOS + quote-response notifications use real UID only)
+- `app/src/main/java/com/example/ui/components/AuthModal.kt` (Complete Setup requires name + phone + district)
+- `app/src/main/java/com/example/ui/screens/OnboardingScreen.kt` (completion requires name + phone; role preserved)
+- `app/src/main/java/com/example/ui/components/AccountComplianceDialog.kt` (guarantor submit aborts without real UID)
+
+Docs changed (3): CHANGELOG.md (new FIX entry), DECISIONS.md (DEC-019), TASKS.md (status note; rows unchanged). prd.json untouched. No commit. No H-items, Phase-17, or Community changes.
+
+Verification: `:app:compileDebugKotlin --offline` FAILED (foojay plugin not cached); online compile launched, still running (`c123_try4.log` shows task-graph calculation; JDK 25 toolchain download lock contention PID 8808/17716). No unit test, APK, or device run yet. Logs: `c123_compile_prev.log`, `c123_try4.log` (plus `c123_try3.log`, `c123_compile2.log` scratch logs at repo root — remove before commit).
+
+Next: confirm compile success → run `UserProfilePersistenceTest` → `assembleDebug` → device install/test (new Google user, legal name, phone, completion, logout/re-login, missing-Room recovery, role preservation).
+
+---
 
 ---
 

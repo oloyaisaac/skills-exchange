@@ -855,6 +855,10 @@ fun OnboardingScreen(
                         }
                     }
 
+                    // C3: completion is explicit — the coroutine persists the profile +
+                    // session, and only then advances. The button stays disabled until
+                    // a legal name AND a phone number are both present; the role the
+                    // user picked on ROLE_SELECTION is preserved via selectedRole.
                     Button(
                         onClick = {
                             viewModel.completeOnboarding(
@@ -865,7 +869,7 @@ fun OnboardingScreen(
                             )
                             onOnboardingComplete()
                         },
-                        enabled = fullName.isNotBlank(),
+                        enabled = fullName.isNotBlank() && phoneNumber.isNotBlank(),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),

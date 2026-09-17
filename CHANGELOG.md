@@ -2,6 +2,32 @@
 
 All meaningful development changes are recorded here in reverse chronological order.
 
+### [2026-09-17] [FIX] Audit C1/C2/C3 — Profile persistence, UID consistency, Google completion (IMPLEMENTED, verification blocked)
+
+**Scope:** Only audit items C1, C2, C3. No Phase-17 work, no Community removal, no H-items, no new PRD IDs, no prd.json change.
+
+**C1 — Existing-user profile persistence**
+- `SkillsExchangeViewModel.restoreSession()` else-branch: when no local DataStore session exists but `FirebaseService.getCurrentUser()` still returns a signed-in user (Room wiped / app-data cleared while the Firebase token survived), the profile is recovered via Room UID lookup then `users/{uid}` Firestore lookup, re-persisted to Room, and the session + role mode are rebuilt — but ONLY when the recovered profile has `isOnboardingCompleted == true`. Otherwise the user stays on onboarding. Worker KYC/activation/training gates untouched.
+- Existing authenticated-session restore path (Room → server → session rebuild) unchanged.
+
+**C2 — UID consistency (no synthetic IDs for authenticated users)**
+- `loginUser()`: removed `?: "user_${System.currentTimeMillis()}"` fallback — fails closed with an error when Firebase supplies no UID.
+- `loginWithGoogle()`: removed `?: "google_user"` fallback — fails closed on blank UID.
+- `FirebaseService.signInAnonymously()`: returns the already-signed-in user instead of minting a second anonymous identity that would fork the UID.
+- `uploadQualificationEvidence()`, `startTraining()`, `completeTrainingModule()`, `completeTraining()`, `submitQuote()`, `submitRecurringProposal()`, `reportUser()`: resolve Room profile id (excluding `user_default_me`) else Firebase UID, abort when absent — no `user_default_me` / `worker_default` / `anonymous` placeholders.
+- `SkillsExchangeRepository.triggerEmergencySos()` + `respondToQuote()`: notifications attributed to the real UID; notification step aborts when no real id exists (status updates still applied).
+- `AccountComplianceDialog.kt`: guarantor submit aborts when no authenticated UID (orphaned A7 path) instead of filing under `user_default_me`.
+- Verified by search: zero remaining `?: "user_default_me"`, `?: "worker_default"`, `?: "anonymous"`, `user_${...}`, `?: "google_user"` fallbacks in `app/src/main`; remaining `user_default_me` hits are the `DEMO_PROFILE_ID` constant definition, the DAO exclusion clause, and test fixtures only.
+
+**C3 — Google auth/onboarding completion**
+- `loginUser()`: blank phone fails closed with `phoneError` before any profile/session/server write.
+- `loginUser()` new-profile branch: `fullName` stored exactly as typed — removed `firebaseUser?.displayName ?: "Specialist"/"Neighbor"` fallback.
+- `AuthModal.kt` PROFILE_SETUP "Complete Setup" button now requires `fullName && phoneNumber && district` (was name + district only).
+- `OnboardingScreen.kt` completion button now requires `fullName && phoneNumber` (was name only); selected CLIENT/WORKER role preserved via `selectedRole`; no display-name pre-population (unchanged from prior fix).
+- `AuthModal.kt` Google launcher already dismisses explicitly via `onDismiss()` on the recognised-account path (verified, unchanged); `loginWithGoogle()` never invents a blank-phone profile for unknown accounts — returns `onComplete(true)` so the UI collects legal name + phone.
+
+**Verification status:** `:app:compileDebugKotlin` attempted with bundled JDK 11 (`jdk11/jdk-11.0.22+7`, `GRADLE_USER_HOME=.gradle`). Offline run failed (foojay plugin not cached); online run is in progress downloading the JDK 25 toolchain (PID 8808/17716, foojay lock contention observed). No test suite, APK build, or device test completed yet — device connectivity unknown. C1/C2/C3 therefore NOT marked completed/verified.
+
 ### [2026-09-17] [AUDIT] Feature Connection Audit — Documentation Only
 
 - A READ-ONLY Feature Connection Audit was performed: 48 interactive controls examined.

@@ -224,6 +224,8 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 ## Feature Connection Audit — Pending Fixes (2026-09-17, AUDITED — FIXES PENDING)
 
 > DOCUMENTATION ONLY. READ-ONLY audit of 48 interactive controls. No source code changed, no fixes implemented, no commit. Every item below is ⏳ Pending Audit Fix. Do NOT mark completed.
+>
+> 2026-09-17 UPDATE: C1/C2/C3 source changes are IMPLEMENTED but UNVERIFIED (compile pending — see CHANGELOG + DEC-019). C1–C3 rows below stay ⏳ Pending until verification lands. No other row touched.
 
 ### Critical
 | ID | Title | Status |

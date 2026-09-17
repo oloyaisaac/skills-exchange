@@ -240,6 +240,20 @@ _This document will be updated whenever significant architectural or design deci
 
 ---
 
+## 2026-09-17
+
+### [2026-09-17] DEC-019 Audit C1/C2/C3 Implementation (UNVERIFIED — build pending)
+
+**Context:** The 2026-09-17 audit register lists C1 (profile persistence), C2 (UID consistency), C3 (Google completion) as the critical fix batch. Prior code already had the Firestore `users/{uid}` mirror, but synthetic-ID fallbacks (`user_<ts>`, `google_user`, `user_default_me`, `worker_default`, `anonymous`) and blank-phone completion paths remained.
+
+**Decision:** Implement C1/C2/C3 minimally and fail-closed: recover Firebase-persisted sessions only for `isOnboardingCompleted` profiles; resolve the Firebase UID everywhere or abort instead of forking placeholder identities; require typed legal name + non-blank phone for completion; preserve role selection and worker KYC/activation/training gates; touch only `SkillsExchangeViewModel.kt`, `FirebaseService.kt`, `SkillsExchangeRepository.kt`, `AuthModal.kt`, `OnboardingScreen.kt`, `AccountComplianceDialog.kt`. No Phase-17 work, no Community removal, no new PRD IDs, no prd.json change.
+
+**Rationale:** Fail-closed identity handling prevents duplicate/forked profiles while keeping the smallest diff that satisfies the audit requirements.
+
+**Consequences:** C1/C2/C3 are implemented in source but NOT verified (compile still running — foojay JDK-25 toolchain download contention). No test/APK/device run yet. TASKS.md C1–C3 stay ⏳ Pending until verification lands.
+
+---
+
 ## 2026-09-16
 
 ### [2026-09-16] DEC-016 Future Requirements Documentation Capture

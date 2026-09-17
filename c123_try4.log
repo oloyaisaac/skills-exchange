@@ -1,0 +1,26 @@
+Calculating task graph as no cached configuration is available for tasks: :app:compileDebugKotlin
+
+1 problem was found storing the configuration cache.
+- Task `:app:processDebugNavigationResources` of type `com.android.build.gradle.internal.tasks.ProcessNavigationXmlTask`: error writing value of type 'java.util.ArrayList'
+
+See the complete report at file:///D:/skills%20exchange/build/reports/configuration-cache/24poaxct3xoda2juz3na88275/dx2o61xz3l05d0e5rwmoa2t4f/configuration-cache-report.html
+
+[Incubating] Problems report is available at: file:///D:/skills%20exchange/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Configuration cache state could not be cached: field `elements` of `org.gradle.internal.serialize.codecs.core.ResolutionBackedFileCollectionSpec` bean found in field `__runtimeDependenciesNavigationFiles__` of task `:app:processDebugNavigationResources` of type `com.android.build.gradle.internal.tasks.ProcessNavigationXmlTask`: error writing value of type 'java.util.ArrayList'
+> Could not download runtime-release.aar (androidx.compose.runtime:runtime-android:1.7.1)
+   > Could not get resource 'https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-android/1.7.1/runtime-android-1.7.1.aar'.
+      > Could not GET 'https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-android/1.7.1/runtime-android-1.7.1.aar'.
+         > No such host is known (dl.google.com)
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 9m 50s
+Configuration cache entry discarded due to serialization error.

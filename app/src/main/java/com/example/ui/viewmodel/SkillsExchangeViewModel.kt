@@ -251,6 +251,43 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 sessionManager.setOnboardingCompleted(true)
             } else {
                 isOnboardingCompleted.value = onboardingDone
+                // C1: no local session, but Firebase may still hold a signed-in user
+                // (Room wiped / app data cleared while the Firebase token survived).
+                // Recover explicitly instead of stranding the user on onboarding.
+                // NOTE: a bare `return` here is safe — the surrounding finally block
+                // still sets isSessionRestored = true, so MainActivity leaves the
+                // loading spinner.
+                val firebaseUid = firebaseService.getCurrentUser()?.uid
+                if (firebaseUid.isNullOrBlank()) return
+                var recovered = repository.getUserProfile(firebaseUid).first()
+                    ?.takeIf { it.id != DEMO_PROFILE_ID }
+                if (recovered == null) {
+                    recovered = repository.fetchUserIdentityFromServer(firebaseUid)
+                        ?.takeIf { it.id != DEMO_PROFILE_ID }
+                    if (recovered != null) {
+                        repository.saveUserProfile(recovered)
+                    }
+                }
+                val completedProfile = recovered
+                if (completedProfile?.isOnboardingCompleted == true) {
+                    val deviceId = sessionManager.getDeviceId(appContext)
+                    sessionManager.saveSession(
+                        isAuthenticated = true,
+                        phone = completedProfile.phoneNumber,
+                        userId = completedProfile.id,
+                        name = completedProfile.fullName,
+                        district = completedProfile.district,
+                        deviceId = deviceId,
+                        role = completedProfile.currentActiveMode
+                    )
+                    sessionManager.setOnboardingCompleted(true)
+                    isAuthenticated.value = true
+                    currentUserPhone.value = completedProfile.phoneNumber
+                    authState.value = AuthState.SignedIn
+                    userRoleMode.value =
+                        if (completedProfile.currentActiveMode == "WORKER") "Offer Skills" else "Hire a Neighbor"
+                    isOnboardingCompleted.value = true
+                }
             }
         } catch (e: Exception) {
             // Session restoration failed, user needs to re-authenticate
@@ -713,6 +750,13 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun loginUser(phone: String, fullName: String = "", district: String = "", initialRole: String = "CLIENT") {
+        // C3: explicit authorisation — an empty/blank phone is never a completed
+        // registration. Surface the error on the phone field and stop before any
+        // profile, session, or server write happens.
+        if (phone.isBlank()) {
+            phoneError.value = "Enter your Mobile Money phone number to continue."
+            return
+        }
         isAuthenticated.value = true
         currentUserPhone.value = phone
         val action = authPendingAction.value
@@ -723,8 +767,18 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             // Previously a synthetic "user_<timestamp>" id was used whenever FirebaseAuth had
             // no current user yet, so the profile was written under an id that a later Google
             // sign-in (real Google UID) could never match — the user then looked brand new.
+            // C2: no synthetic-ID fallback remains. When Firebase cannot supply a UID the
+            // flow fails closed (error, no profile/session persisted) instead of forking
+            // the identity under a throwaway id.
             val firebaseUser = firebaseService.getCurrentUser() ?: firebaseService.signInAnonymously()
-            val uid = firebaseUser?.uid ?: "user_${System.currentTimeMillis()}"
+            val uid = firebaseUser?.uid
+            if (uid.isNullOrBlank()) {
+                isAuthenticated.value = false
+                authState.value = AuthState.SignedOut
+                val error = "Sign-in unavailable. Check your connection and try again."
+                authError.value = error
+                return@launch
+            }
 
             // AUTH-006: Check for existing account by phone number or UID to prevent duplicates.
             // The seeded demo row (DEMO_PROFILE_ID) is never a real account, so it is never reused:
@@ -759,10 +813,13 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 )
             } else {
                 val isWorker = initialRole == "WORKER"
+                // C3: legal name is always typed by the user. Never fall back to the Google
+                // display name or a generic placeholder — a blank name stays blank so the
+                // UI keeps enforcing explicit entry.
                 UserProfileEntity(
                     id = uid,
                     phoneNumber = phone,
-                    fullName = fullName.ifBlank { firebaseUser?.displayName ?: if (isWorker) "Specialist" else "Neighbor" },
+                    fullName = fullName,
                     district = district,
                     initialRole = initialRole,
                     currentActiveMode = initialRole,
@@ -825,7 +882,17 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             val result = firebaseService.signInWithGoogle(idToken)
             if (result.isSuccess) {
                 val user = result.getOrNull()
-                val uid = user?.uid ?: "google_user"
+                // C2: the Firebase UID is the single authoritative identity. A blank UID
+                // means sign-in did not actually complete — fail closed instead of writing
+                // the profile under a "google_user" placeholder nobody can ever match.
+                // C3: no phone is captured on the Google branch — carry the Firebase UID's
+                // stored identity forward, but never invent a blank-phone profile for it.
+                val uid = user?.uid
+                if (uid.isNullOrBlank()) {
+                    authError.value = "Google sign-in failed. Please try again."
+                    onComplete(false)
+                    return@launch
+                }
 
                 // 1) Local profile row (fast path, survives while the install keeps its data).
                 val localProfile = repository.getUserProfile(uid).first()?.takeIf { it.id != DEMO_PROFILE_ID }
@@ -841,6 +908,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
                 if (!isNewUser && existing != null) {
                     // Recognised account — reuse the stored identity and go straight to the app.
+                    // C3: never overwrite a stored legal name with the Google display name —
+                    // the display name is only a last-resort filler for a blank stored name.
                     val restored = existing.copy(
                         id = uid,
                         fullName = existing.fullName.ifBlank { user?.displayName.orEmpty() },
@@ -1041,7 +1110,14 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     fun uploadQualificationEvidence(evidenceType: String, fileBytes: ByteArray? = null, videoUrl: String? = null, onResult: (String?) -> Unit) {
         viewModelScope.launch {
-            val userId = currentUser.value?.id ?: "user_default_me"
+            // C2: never upload evidence under the demo placeholder id — resolve the real
+            // authenticated UID (Room profile, else Firebase) and abort when absent.
+            val userId = currentUser.value?.id?.takeIf { it != DEMO_PROFILE_ID }
+                ?: firebaseService.getCurrentUser()?.uid
+            if (userId.isNullOrBlank()) {
+                onResult(null)
+                return@launch
+            }
             val path = firebaseService.uploadQualificationEvidence(userId, evidenceType, fileBytes, videoUrl)
             onResult(path)
         }
@@ -1083,21 +1159,25 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     fun startTraining() {
         viewModelScope.launch {
-            val userId = currentUser.value?.id ?: "user_default_me"
+            // C2: training rows belong to the real authenticated UID, never the demo placeholder.
+            val userId = currentUser.value?.id?.takeIf { it != DEMO_PROFILE_ID }
+                ?: firebaseService.getCurrentUser()?.uid ?: return@launch
             repository.startTraining(userId)
         }
     }
 
     fun completeTrainingModule(modulesCsv: String, moduleIndex: Int) {
         viewModelScope.launch {
-            val userId = currentUser.value?.id ?: "user_default_me"
+            val userId = currentUser.value?.id?.takeIf { it != DEMO_PROFILE_ID }
+                ?: firebaseService.getCurrentUser()?.uid ?: return@launch
             repository.updateTrainingModule(userId, modulesCsv, moduleIndex)
         }
     }
 
     fun completeTraining() {
         viewModelScope.launch {
-            val userId = currentUser.value?.id ?: "user_default_me"
+            val userId = currentUser.value?.id?.takeIf { it != DEMO_PROFILE_ID }
+                ?: firebaseService.getCurrentUser()?.uid ?: return@launch
             repository.completeTraining(userId)
         }
     }
@@ -1116,8 +1196,12 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun submitRecurringProposal(jobId: String, proposedRate: Double, terms: String) {
+        // C2: worker-gated action — a missing/placeholder identity must abort, never file
+        // the proposal under "worker_default".
+        if (!canAccessWorkerFeatures()) return
         viewModelScope.launch {
-            val userId = currentUser.value?.id ?: "worker_default"
+            val userId = currentUser.value?.id?.takeIf { it != DEMO_PROFILE_ID }
+                ?: firebaseService.getCurrentUser()?.uid ?: return@launch
             repository.submitRecurringProposal(jobId, userId, proposedRate, terms)
             val updatedJob = repository.jobs.first().find { it.id == jobId }
             selectedJob.value = updatedJob
@@ -1130,7 +1214,9 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             return
         }
         viewModelScope.launch {
-            val userId = currentUser.value?.id ?: "worker_default"
+            // C2: quotes are attributed to the real authenticated worker UID only.
+            val userId = currentUser.value?.id?.takeIf { it != DEMO_PROFILE_ID }
+                ?: firebaseService.getCurrentUser()?.uid ?: return@launch
             repository.submitQuote(jobId, userId, workerName, proposedRate, proposedHours, notes)
         }
     }
@@ -1429,7 +1515,10 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     fun reportUser(report: com.example.data.db.ReportEntity) {
         viewModelScope.launch {
-            val currentUserId = currentUser.value?.id ?: "anonymous"
+            // C2: reports need a real reporter id — drop unauthenticated reports instead
+            // of filing them under an "anonymous" placeholder nobody can audit.
+            val currentUserId = currentUser.value?.id?.takeIf { it != DEMO_PROFILE_ID }
+                ?: firebaseService.getCurrentUser()?.uid ?: return@launch
             val updatedReport = report.copy(reportedBy = currentUserId)
             repository.reportUser(updatedReport)
         }

@@ -464,7 +464,7 @@ class SkillsExchangeRepository(
         )
     }
 
-    suspend fun triggerSosAlert(jobId: String) {
+    suspend fun triggerEmergencySos(jobId: String, latitude: Double, longitude: Double, district: String) {
         db.jobPostDao().setSosAlert(jobId, true)
         db.chatMessageDao().insertMessage(
             ChatMessageEntity(
@@ -478,7 +478,13 @@ class SkillsExchangeRepository(
             )
         )
 
-        val currentUserId = currentUser.first()?.id ?: "worker_default"
+        // C2: the SOS notification is attributed to the real authenticated UID.
+        // Never file it under a "worker_default" placeholder nobody can audit.
+        // NOTE: DEMO_PROFILE_ID check is inline (not via ViewModel companion) to keep
+        // the data layer decoupled from the UI layer.
+        val currentUserId = currentUser.first()?.id
+            ?.takeIf { it != "user_default_me" }
+            ?: return
         createNotification(
             NotificationEntity(
                 id = "notif_${System.currentTimeMillis()}_sos",
@@ -687,7 +693,10 @@ class SkillsExchangeRepository(
         db.jobQuoteDao().updateQuoteStatus(quoteId, newStatus)
 
         val quote = db.jobQuoteDao().getQuoteById(quoteId)
-        val workerId = quote?.workerId ?: "worker_default"
+        // C2: quote-response notifications go to the real worker id from the stored
+        // quote row. Abort the notification (not the status update) when the row is
+        // missing rather than notifying a "worker_default" placeholder.
+        val workerId = quote?.workerId?.takeIf { it.isNotBlank() } ?: return
 
         db.chatMessageDao().insertMessage(
             ChatMessageEntity(
