@@ -670,6 +670,8 @@ These new requirements are additions to the existing project, not replacements.
 
 ### Open Questions Summary
 
+**2026-09-17 Feature Connection Audit:** A complete connection audit was performed. See AGENT_STATE.md and TASKS.md for the pending fix register. Findings are not yet implemented.
+
 The following questions remain unresolved and should be answered before implementation:
 
 1. **What exactly does the UGX 20,000 worker registration fee cover?**

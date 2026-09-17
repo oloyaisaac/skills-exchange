@@ -55,7 +55,9 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     private val appContext: Application = application
     private val db = AppDatabase.getDatabase(application)
-    private val repository = SkillsExchangeRepository(db)
+    // FirebaseService is given the application context so the Firestore identity mirror
+    // (AUTH-002/AUTH-006) and FirebaseApp initialization are always available.
+    private val repository = SkillsExchangeRepository(db, FirebaseService(application))
     private val sessionManager = com.example.data.local.SessionManager(application)
 
     // Remote Services for Firebase, Maps AI Grounding, Audio AI, MoMo, and SMS
@@ -109,7 +111,26 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     val isWorkerApprovedAndActivated: StateFlow<Boolean> = repository.currentUser.map { user ->
         user != null && user.isWorkerActivated && user.workerKycStatus == "APPROVED"
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false) // fail closed until the real profile is emitted
+
+    /**
+     * DISP-001: The signed-in user's own disputes (as reporter or reported party).
+     *
+     * Backs the Trust, Safety & Emergency SOS destination, which previously had no data
+     * source at all and could only open the escrow sheet of an unrelated job.
+     */
+    val myDisputes: StateFlow<List<DisputeEntity>> = currentUser
+        .flatMapLatest { user ->
+            if (user == null) flowOf(emptyList()) else repository.getDisputesForUser(user.id)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** The worker's own KYC submission, used by the identity-verification destination. */
+    val myWorkerKyc: StateFlow<com.example.data.db.WorkerKycEntity?> = currentUser
+        .flatMapLatest { user ->
+            if (user == null) flowOf(null) else repository.getWorkerKyc(user.id)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     init {
         viewModelScope.launch {
@@ -186,6 +207,14 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                     val sessionUserId = userId?.takeIf { it != DEMO_PROFILE_ID }
                         ?: firebaseService.getCurrentUser()?.uid
                     userProfile = sessionUserId?.let { repository.getUserProfile(it).first() }
+                    // AUTH-006: The Room row can be gone while the persisted session is still
+                    // valid (e.g. logout wipe followed by an in-flight restore, or a legacy
+                    // database). Prefer the durable Firestore identity record over a synthetic
+                    // profile so the real name/district are not lost.
+                    if (userProfile == null) {
+                        userProfile = sessionUserId?.let { repository.fetchUserIdentityFromServer(it) }
+                    }
+                    userProfile = userProfile
                         ?: sessionUserId?.let { restoredId ->
                             val restoredRole = sessionManager.getUserRole()
                                 ?: if (userRoleMode.value == "Offer Skills") "WORKER" else "CLIENT"
@@ -234,7 +263,18 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    /**
+     * ROLE-001 / AUTH-007: Switches the active account mode.
+     *
+     * The worker-mode gate is enforced HERE (at the ViewModel boundary), not only inside
+     * [toggleUserRoleMode]. Previously any direct caller of this public function could pass
+     * "Offer Skills" and bypass the KYC/activation check entirely.
+     */
     fun setUserRoleMode(mode: String) {
+        if (mode == "Offer Skills" && !canAccessWorkerFeatures()) {
+            authError.value = "Worker verification and activation required to switch to worker mode."
+            return
+        }
         userRoleMode.value = mode
         viewModelScope.launch {
             val user = repository.currentUser.first() ?: return@launch
@@ -244,7 +284,10 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     // AUTH-007: Permission enforcement
+    // SEC-009: Also requires an authenticated session, so a signed-out device that still
+    // holds a cached profile row cannot unlock worker mode.
     fun canAccessWorkerFeatures(): Boolean {
+        if (!isAuthenticated.value) return false
         val user = currentUser.value ?: return false
         return user.isWorkerActivated && user.workerKycStatus == "APPROVED"
     }
@@ -676,11 +719,12 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         closeAuthModal()
 
         viewModelScope.launch {
-            val firebaseUser = firebaseService.getCurrentUser()
+            // AUTH-006 / C2: Always resolve a REAL Firebase UID before persisting a profile.
+            // Previously a synthetic "user_<timestamp>" id was used whenever FirebaseAuth had
+            // no current user yet, so the profile was written under an id that a later Google
+            // sign-in (real Google UID) could never match — the user then looked brand new.
+            val firebaseUser = firebaseService.getCurrentUser() ?: firebaseService.signInAnonymously()
             val uid = firebaseUser?.uid ?: "user_${System.currentTimeMillis()}"
-            if (firebaseUser == null) {
-                firebaseService.signInAnonymously()
-            }
 
             // AUTH-006: Check for existing account by phone number or UID to prevent duplicates.
             // The seeded demo row (DEMO_PROFILE_ID) is never a real account, so it is never reused:
@@ -690,12 +734,23 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 repository.getUserProfileByPhone(phone).first()?.takeIf { it.id != DEMO_PROFILE_ID }
             } else null
             val existingByUid = repository.getUserProfile(uid).first()?.takeIf { it.id != DEMO_PROFILE_ID }
+            // AUTH-006: The Room profile row is device-local and is wiped on logout
+            // (`clearAllUserData()`). Without this server-side lookup a returning user looks
+            // brand new after logout / app-data clear / reinstall / new device and is pushed
+            // back through onboarding. `users/{uid}` is the durable identity record.
+            val existingOnServer = if (existingByPhone == null && existingByUid == null) {
+                repository.fetchUserIdentityFromServer(uid)
+                    ?: if (phone.isNotBlank()) repository.fetchUserIdentityByPhoneFromServer(phone) else null
+            } else null
             val existing = existingByPhone
                 ?: existingByUid
+                ?: existingOnServer
                 ?: repository.currentUser.first()?.takeIf { it.isOnboardingCompleted && it.id != DEMO_PROFILE_ID }
 
             val profile = if (existing != null) {
+                // Restored identity keeps the REAL Firebase UID as its primary key.
                 existing.copy(
+                    id = uid,
                     phoneNumber = if (phone.isNotBlank()) phone else existing.phoneNumber,
                     fullName = fullName.ifBlank { existing.fullName },
                     district = district.ifBlank { existing.district },
@@ -718,6 +773,9 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 )
             }
             repository.saveUserProfile(profile)
+            // AUTH-002/AUTH-006: Mirror the identity record to Firestore so this account can
+            // be recognised again after logout or on another device.
+            repository.saveUserIdentityToServer(profile)
             if (district.isNotBlank()) {
                 setDistrict(district)
             }
@@ -751,6 +809,17 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     // Google Sign-In handling
+    /**
+     * AUTH-002 / AUTH-006: Google sign-in with durable existing-user recognition.
+     *
+     * Callback contract: `onComplete(true)` = this is a NEW user and the caller must continue
+     * into onboarding/profile setup. `onComplete(false)` = the account was recognised (or the
+     * flow already completed), so no onboarding is required.
+     *
+     * Previously the recognition check also required a non-blank `fullName` and `district` on
+     * the local Room row. Those are optional profile fields, so any user who had completed
+     * onboarding without them was pushed back through onboarding on every sign-in.
+     */
     fun loginWithGoogle(idToken: String, initialRole: String = "CLIENT", onComplete: (Boolean) -> Unit = {}) {
         viewModelScope.launch {
             val result = firebaseService.signInWithGoogle(idToken)
@@ -758,47 +827,87 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 val user = result.getOrNull()
                 val uid = user?.uid ?: "google_user"
 
-                // Check if user already exists with an established profile
-                val existing = repository.getUserProfile(uid).first()
-                if (existing != null && existing.fullName.isNotBlank() && existing.district.isNotBlank() && existing.isOnboardingCompleted) {
-                    isAuthenticated.value = true
-                    currentUserPhone.value = existing.phoneNumber
-                    setDistrict(existing.district)
-                    userRoleMode.value = if (existing.currentActiveMode == "WORKER") "Offer Skills" else "Hire a Neighbor"
-                    val deviceId = sessionManager.getDeviceId(appContext)
-                    sessionManager.saveSession(
-                        isAuthenticated = true,
-                        phone = existing.phoneNumber,
-                        userId = uid,
-                        name = existing.fullName,
-                        district = existing.district,
-                        deviceId = deviceId,
-                        role = existing.currentActiveMode
+                // 1) Local profile row (fast path, survives while the install keeps its data).
+                val localProfile = repository.getUserProfile(uid).first()?.takeIf { it.id != DEMO_PROFILE_ID }
+                // 2) Durable Firestore identity record (survives logout, app-data clear,
+                //    reinstall and sign-in on a different device).
+                val serverProfile = if (localProfile == null) {
+                    repository.fetchUserIdentityFromServer(uid)?.takeIf { it.id != DEMO_PROFILE_ID }
+                } else null
+                val existing = localProfile ?: serverProfile
+
+                // Onboarding is ONLY required when we have never seen this account before.
+                val isNewUser = existing?.isOnboardingCompleted != true
+
+                if (!isNewUser && existing != null) {
+                    // Recognised account — reuse the stored identity and go straight to the app.
+                    val restored = existing.copy(
+                        id = uid,
+                        fullName = existing.fullName.ifBlank { user?.displayName.orEmpty() },
+                        updatedAtTimestamp = System.currentTimeMillis()
                     )
-                    sessionManager.setOnboardingCompleted(true)
-                    isOnboardingCompleted.value = true
-                    val action = authPendingAction.value
-                    closeAuthModal()
-                    if (action?.startsWith("hire_") == true) {
-                        val providerId = action.substringAfter("hire_")
-                        val p = providers.value.find { it.id == providerId }
-                        if (p != null) {
-                            selectedProvider.value = p
-                            isQuickRequestOpen.value = true
-                        }
-                    } else if (action == "post_job") {
-                        isQuickRequestOpen.value = true
+                    if (localProfile == null) {
+                        repository.saveUserProfile(restored)
+                        repository.saveUserIdentityToServer(restored)
                     }
-                    onComplete(false)
-                } else {
-                    // Follow agreed flow: Google Sign-In -> RegistrationScreen/onboarding
-                    onComplete(true)
+                    completeAuthForExistingUser(uid, restored, onComplete)
+                    return@launch
                 }
+
+                if (existing != null) {
+                    // Identity exists but onboarding was never finished: keep the identity,
+                    // continue to profile setup, and let the UI collect the missing fields.
+                    repository.saveUserProfile(existing.copy(id = uid))
+                    onComplete(true)
+                    return@launch
+                }
+
+                // Genuinely unknown account — the caller runs role-specific onboarding.
+                onComplete(true)
             } else {
                 authError.value = "Google sign-in failed. Please try again."
                 onComplete(false)
             }
         }
+    }
+
+    /**
+     * AUTH-002: Finalizes an already-recognised sign-in — restores session state, closes the
+     * auth modal, and replays any pending action (hire_<id> / post_job) the user triggered.
+     *
+     * Kept as a private helper so the Google, phone-OTP and restore paths cannot drift apart.
+     */
+    private suspend fun completeAuthForExistingUser(uid: String, profile: UserProfileEntity, onComplete: (Boolean) -> Unit) {
+        isAuthenticated.value = true
+        authState.value = AuthState.SignedIn
+        currentUserPhone.value = profile.phoneNumber
+        setDistrict(profile.district)
+        userRoleMode.value = if (profile.currentActiveMode == "WORKER") "Offer Skills" else "Hire a Neighbor"
+        val deviceId = sessionManager.getDeviceId(appContext)
+        sessionManager.saveSession(
+            isAuthenticated = true,
+            phone = profile.phoneNumber,
+            userId = uid,
+            name = profile.fullName,
+            district = profile.district,
+            deviceId = deviceId,
+            role = profile.currentActiveMode
+        )
+        sessionManager.setOnboardingCompleted(true)
+        isOnboardingCompleted.value = true
+        val action = authPendingAction.value
+        closeAuthModal()
+        if (action?.startsWith("hire_") == true) {
+            val providerId = action.substringAfter("hire_")
+            val p = providers.value.find { it.id == providerId }
+            if (p != null) {
+                selectedProvider.value = p
+                isQuickRequestOpen.value = true
+            }
+        } else if (action == "post_job") {
+            isQuickRequestOpen.value = true
+        }
+        onComplete(false)
     }
 
     /**
@@ -1336,6 +1445,18 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     fun logoutUser() {
         viewModelScope.launch {
+            // AUTH-002/AUTH-006: Mirror the identity record to Firestore BEFORE the
+            // device-local wipe. `clearAllUserData()` deletes the Room `user_profiles` row,
+            // which used to leave no trace of the account anywhere — that is why a returning
+            // Google/phone user looked brand new after logout. The session itself is still
+            // fully cleared; only the non-sensitive identity record (uid, phone, name,
+            // district, role, onboarding flag) is retained server-side so the account can be
+            // recognised again. Worker KYC/activation is never mirrored (admin-controlled).
+            repository.currentUser.first()?.let { profile ->
+                if (profile.id != DEMO_PROFILE_ID && isAuthenticated.value) {
+                    repository.saveUserIdentityToServer(profile)
+                }
+            }
             repository.clearAllUserData()
             firebaseService.signOut()
             sessionManager.clearSession()

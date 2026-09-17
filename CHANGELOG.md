@@ -2,6 +2,38 @@
 
 All meaningful development changes are recorded here in reverse chronological order.
 
+### [2026-09-17] [AUDIT] Feature Connection Audit — Documentation Only
+
+- A READ-ONLY Feature Connection Audit was performed: 48 interactive controls examined.
+- Found: 8 confirmed disconnected features (A1–A8); 9 partially connected features (B1–B9).
+- Also documented: 7 security/authorization findings (G1–G7), 11 placeholder/demo findings (D1–D11), 4 navigation/UX findings (N1–N4), 2 permission findings (P1–P2), 4 map findings (M1–M4), 9 authentication findings, and the Community removal reference map (DO NOT REMOVE NOW).
+- Findings preserved in AGENT_STATE.md (2026-09-17 section) and TASKS.md (Pending Fixes register); decision recorded as DEC-018 in DECISIONS.md; cross-reference added to requirement_file.md.
+- No source code was changed. No fixes were implemented. No commit was made. prd.json untouched (79 completed / 12 Phase-17 pending unchanged).
+
+### [2026-09-16] [FIX] Feature Connection Audit — Post-Audit Bug Fixes
+
+**AUTH-006 / AUTH-002 — Existing Google User Recognition**
+- Added durable server-side identity record at `users/{uid}` in Firestore (`saveUserIdentity`, `fetchUserIdentity`, `fetchUserIdentityByPhone`)
+- `loginUser()` now resolves real Firebase UID before persisting profile (eliminates synthetic `user_<timestamp>` IDs)
+- `loginUser()` now checks Firestore identity as fallback when local Room profile missing
+- `loginUser()` now persists profile to server via `saveUserIdentityToServer`
+- `isWorkerApprovedAndActivated` `stateIn` initial value changed from `true` to `false` (fail-closed)
+
+**AUTH-007 / SEC-009 — Worker Dashboard Security**
+- `setUserRoleMode()` now enforces `canAccessWorkerFeatures()` gate at the ViewModel boundary
+- `canAccessWorkerFeatures()` now also checks `isAuthenticated.value` (signed-out device cannot unlock worker mode)
+
+**Legal Name / Google Display Name**
+- `OnboardingScreen.kt`: Removed automatic `account.displayName` pre-population of the legal name field
+
+**Navigation Drawer — Real Destinations**
+- `NavigationDrawer.kt`: Removed hardcoded wallet balance (`CurrencyRegion.format(240.0)`) and hardcoded phone fallback (`"+256 700 123 456"`)
+- `NavigationDrawer.kt`: Added `onOpenVerification` callback parameter
+- `MainScreen.kt`: Drawer menu items now wire to real sheets (`EscrowWalletSheet`, `JobHistorySheet`, `VerificationStatusSheet`, `TrustAndSafetySheet`) with actual data
+
+**New Files:**
+- `app/src/main/java/com/example/ui/components/AccountCenterSheets.kt` — Real destination sheets
+
 ### [2026-09-16] [DOC] Future Requirements Documentation Capture (Phase 17)
 
 **Added 12 new future/planned requirements to PRD.json, requirement_file.md, TASKS.md, and AGENT_STATE.md:**

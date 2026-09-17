@@ -4,9 +4,11 @@ import android.content.Context
 import android.util.Log
 import com.example.data.db.JobPostEntity
 import com.example.data.db.ServiceProviderEntity
+import com.example.data.db.UserProfileEntity
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.channels.awaitClose
@@ -454,5 +456,102 @@ class FirebaseService(private val context: Context? = null) {
         } catch (e: Exception) {
             false
         }
+    }
+
+    // ==================== AUTH-002/AUTH-006: Durable user identity record ====================
+
+    /**
+     * AUTH-002 / AUTH-006: Persist the minimum identity record needed to recognise an
+     * EXISTING account on a later sign-in.
+     *
+     * Why this exists: the Room `user_profiles` row is device-local and is deliberately
+     * deleted by `clearAllUserData()` on logout. Without a server-side record, a returning
+     * Google (or phone) user looks brand new after logout, clearing app data, reinstalling,
+     * or signing in on another device, so they get pushed back through onboarding.
+     *
+     * Written to `users/{uid}` — the authenticated owner may create/update their own
+     * document (see `firestore.rules` MODULE 2). Worker KYC/activation is intentionally NOT
+     * stored here: `worker_kyc` is the authoritative, admin-controlled source.
+     */
+    suspend fun saveUserIdentity(profile: UserProfileEntity): Boolean {
+        val db = firestore ?: return false
+        return try {
+            db.collection("users").document(profile.id).set(
+                mapOf(
+                    "uid" to profile.id,
+                    "phoneNumber" to profile.phoneNumber,
+                    "fullName" to profile.fullName,
+                    "district" to profile.district,
+                    "initialRole" to profile.initialRole,
+                    "currentActiveMode" to profile.currentActiveMode,
+                    "isOnboardingCompleted" to profile.isOnboardingCompleted,
+                    "updatedAtTimestamp" to System.currentTimeMillis()
+                )
+            ).await()
+            true
+        } catch (e: Exception) {
+            Log.d("FirebaseService", "Save user identity error: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * AUTH-006: Reads the durable identity record for [userId] (the Firebase UID).
+     * Returns null when offline, unauthenticated, or when no record exists.
+     */
+    suspend fun fetchUserIdentity(userId: String): UserProfileEntity? {
+        val db = firestore ?: return null
+        return try {
+            val doc = db.collection("users").document(userId).get().await()
+            if (doc.exists()) doc.toUserProfileEntity() else null
+        } catch (e: Exception) {
+            Log.d("FirebaseService", "Fetch user identity error: ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * AUTH-006: Phone-number fallback lookup, used when a returning user signs in on a
+     * device where the Room profile is gone and the UID lookup misses.
+     */
+    suspend fun fetchUserIdentityByPhone(phoneNumber: String): UserProfileEntity? {
+        if (phoneNumber.isBlank()) return null
+        val db = firestore ?: return null
+        return try {
+            val snapshot = db.collection("users")
+                .whereEqualTo("phoneNumber", phoneNumber)
+                .limit(1)
+                .get()
+                .await()
+            snapshot.documents.firstOrNull()?.toUserProfileEntity()
+        } catch (e: Exception) {
+            Log.d("FirebaseService", "Fetch user identity by phone error: ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * Maps a `users/{uid}` document to a local profile row.
+     *
+     * Worker privileges deliberately fail closed: `workerKycStatus` is reset to
+     * "UNVERIFIED" and `isWorkerActivated`/`trainingCompleted` to false, mirroring the
+     * established `restoreSession()` rule that a restored worker must re-verify before the
+     * worker dashboard unlocks. Admin approval lives in `worker_kyc` and remains the gate.
+     */
+    private fun DocumentSnapshot.toUserProfileEntity(): UserProfileEntity? {
+        val resolvedId = getString("uid") ?: id
+        val role = getString("initialRole") ?: "CLIENT"
+        return UserProfileEntity(
+            id = resolvedId,
+            phoneNumber = getString("phoneNumber").orEmpty(),
+            fullName = getString("fullName").orEmpty(),
+            district = getString("district").orEmpty(),
+            initialRole = role,
+            currentActiveMode = getString("currentActiveMode") ?: role,
+            workerKycStatus = "UNVERIFIED",
+            isWorkerActivated = false,
+            trainingCompleted = false,
+            isOnboardingCompleted = getBoolean("isOnboardingCompleted") ?: true
+        )
     }
 }

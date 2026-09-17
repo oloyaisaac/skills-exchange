@@ -221,6 +221,58 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 ---
 
+## Feature Connection Audit — Pending Fixes (2026-09-17, AUDITED — FIXES PENDING)
+
+> DOCUMENTATION ONLY. READ-ONLY audit of 48 interactive controls. No source code changed, no fixes implemented, no commit. Every item below is ⏳ Pending Audit Fix. Do NOT mark completed.
+
+### Critical
+| ID | Title | Status |
+|---|---|---|
+| C1 | Existing-user profile persistence | ⏳ Pending Audit Fix |
+| C2 | UID consistency | ⏳ Pending Audit Fix |
+| C3 | Google AuthModal completion path | ⏳ Pending Audit Fix |
+
+### High
+| ID | Title | Status |
+|---|---|---|
+| H1 | Worker authorization fail-closed | ⏳ Pending Audit Fix |
+| H2 | AuthModal legal-name handling (OnboardingScreen fix already made pending verification; AuthModal still pending) | ⏳ Pending Audit Fix |
+| H3 | National ID & Verification drawer | ⏳ Pending Audit Fix |
+| H4 | Fake wallet balance | ⏳ Pending Audit Fix |
+| H5 | ServiceCatalogPicker | ⏳ Pending Audit Fix |
+| H6 | Rating UI | ⏳ Pending Audit Fix |
+| H7 | Trust/Safety & SOS | ⏳ Pending Audit Fix |
+| H8 | Worker dashboard security | ⏳ Pending Audit Fix |
+
+### Medium (M1–M12 from the audit — all pending)
+| ID | Title | Status |
+|---|---|---|
+| M1 | A4 Job History screen | ⏳ Pending Audit Fix |
+| M2 | A7 AccountComplianceDialog wiring | ⏳ Pending Audit Fix |
+| M3 | A8 Community Hire | ⏳ Pending Audit Fix |
+| M4 | B4 Worker Online toggle persistence | ⏳ Pending Audit Fix |
+| M5 | B6 Notification navigation | ⏳ Pending Audit Fix |
+| M6 | B8 Map empty state | ⏳ Pending Audit Fix |
+| M7 | B9 Distance filtering | ⏳ Pending Audit Fix |
+| M8 | G2 setUserRoleMode gate | ⏳ Pending Audit Fix |
+| M9 | G4 Verification entry flow | ⏳ Pending Audit Fix |
+| M10 | G5 Verified-claim accuracy | ⏳ Pending Audit Fix |
+| M11 | G6 Firestore/storage role checks | ⏳ Pending Audit Fix |
+| M12 | N2/N3/N4 + P1/P2 + M1–M4 navigation/map/permission bundle | ⏳ Pending Audit Fix |
+
+### Low (L1–L5 from the audit — all pending)
+| ID | Title | Status |
+|---|---|---|
+| L1 | B5 Theme persistence | ⏳ Pending Audit Fix |
+| L2 | B7 Report review destination | ⏳ Pending Audit Fix |
+| L3 | G7 WEB_CLIENT_ID handling | ⏳ Pending Audit Fix |
+| L4 | D-series placeholder/demo cleanup | ⏳ Pending Audit Fix |
+| L5 | Auth items 3/4/8 residual polish | ⏳ Pending Audit Fix |
+
+Full finding text (A1–A8, B1–B9, G1–G7, D1–D11, N1–N4, P1–P2, M1–M4, auth 1–9, community map) is preserved in AGENT_STATE.md 2026-09-17 section. Counts: 79 completed / 12 pending unchanged.
+
+---
+
 ## Summary
 
 | Status | Count |

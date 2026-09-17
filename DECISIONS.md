@@ -226,6 +226,20 @@ _This document will be updated whenever significant architectural or design deci
 
 ---
 
+## 2026-09-17
+
+### [2026-09-17] DEC-018 Feature Connection Audit and Deferred Fix Register
+
+**Context:** The application contains UI elements and components that are not always connected to their intended functionality. A READ-ONLY Feature Connection Audit (48 controls) found 8 disconnected (A1-A8), 9 partially connected (B1-B9), plus security/authorization (G1-G7), placeholder/demo (D1-D11), navigation/UX (N1-N4), permission (P1-P2), map (M1-M4), authentication (9 items), and Community removal references.
+
+**Decision:** Perform a full connection audit before implementing individual fixes, and maintain the resulting findings as a persistent pending-fix register (AGENT_STATE.md 2026-09-17; TASKS.md Pending Fixes). DOCUMENTATION ONLY — no source code changed, no fixes implemented, no commit, prd.json untouched.
+
+**Rationale:** Prevents fixing isolated symptoms while missing other disconnected features.
+
+**Consequences:** The findings will be addressed systematically after the audit documentation is preserved. Nothing is marked completed from this entry.
+
+---
+
 ## 2026-09-16
 
 ### [2026-09-16] DEC-016 Future Requirements Documentation Capture
@@ -245,6 +259,36 @@ _This document will be updated whenever significant architectural or design deci
 - All new stories have status "pending" (NOT completed)
 - Existing 79 completed stories unchanged
 - No code changes made
+
+---
+
+### [2026-09-16] DEC-017 Feature Connection Audit & Post-Audit Fixes
+
+**Context**: A systematic feature connection audit was performed (Phases 1-12) to identify UI features that appear functional but are not properly connected to their intended functionality. The audit discovered: 8 confirmed disconnected features (A1-A8), 9 partially connected features (B1-B9), 23 correctly connected features, 11 placeholder/demo items, plus auth/security/map/navigation issues.
+
+**Decision**: Prioritize and fix the critical/high-severity issues from the audit:
+
+1. **AUTH-002/AUTH-006 (C1/C2/C3)**: Existing Google user not recognized → Root cause: profiles live only in Room and are deleted on logout; UID lookup failed due to synthetic IDs; Google AuthModal didn't dismiss on existing-user detection
+   - Fix: Added Firestore `users/{uid}` identity record; resolve real Firebase UID; fix `onComplete(false)` handling
+
+2. **SEC-009/SEC-008 (G1/G2)**: Worker dashboard security
+   - Fix: `isWorkerApprovedAndActivated` fail-closed (`true` → `false`); `setUserRoleMode()` enforces `canAccessWorkerFeatures()` gate at ViewModel boundary; `canAccessWorkerFeatures()` requires `isAuthenticated.value`
+
+3. **Legal name (B3)**: Google display name used as legal name
+   - Fix: Removed `account.displayName` pre-population in `AuthModal.kt` (was already fixed in `OnboardingScreen.kt`)
+
+4. **Drawer features (A3, A4, A5, G4, G5)**: Hardcoded fake wallet balance, silent no-op National ID item, wrong destination for History/Wallet/SOS
+   - Fix: New `AccountCenterSheets.kt` with real destination sheets; removed hardcoded `UGX 240` and `"+256 700 123 456"` fallback phone
+
+5. **Orphaned components (A6, A7)**: `ServiceCatalogPicker` and `AccountComplianceDialog` have zero call sites
+   - Fix: `AccountComplianceDialog` import removed from MainScreen (it was never used); `ServiceCatalogPicker` remains orphaned, needs future wiring
+
+**Consequences**:
+- 7 source files modified, 1 new file added
+- Compilation: BUILD SUCCESSFUL (`gradlew assembleDebug`, 3m 46s)
+- No test suite run (per project constraint — limited RAM)
+- Device currently disconnected — physical testing pending
+- Firestore rules already have ownership checks (verified `users/{userId}` owner-only create/update in `firestore.rules` MODULE 2)
 
 ---
 

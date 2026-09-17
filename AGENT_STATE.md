@@ -1,13 +1,13 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-09-16T12:00:00+03:00
+2026-09-16T18:00:00+03:00
 
 ---
 
 ## Current Project Status
-**Phase**: 17 — Future Requirements & Post-Launch Enhancements (Documentation Only)
-**Overall Status**: All 79 implementation stories complete. 12 new future/planned requirements documented (NOT implemented).
+**Phase**: Post-Phase 17 Implementation — Feature Connection Audit & Bug Fixes
+**Overall Status**: Phase 17 documents complete (12 new requirements, FUTURE/NOT IMPLEMENTED). All 79 Phase 1-16 stories complete. Post-launch audit in progress.
 
 ---
 
@@ -126,9 +126,30 @@ All Phase 16 implementable stories are complete, including the STAB-003 automate
 ---
 
 ## Work In Progress / Next Task
-All implementable Phase 16 stories are complete.
-Only remaining item is STAB-003 (blocked): Resolve the local Gradle/JDK and disk-space environment blockers to enable build verification.
-All implementation work is done and documented.
+All Phase 16 implementable stories are complete. Phase 17 (documentation only) is complete.
+
+**Current work:** Feature Connection Audit (Phase 17 POST-LAUNCH task — post-audit fixes)
+Auditing and fixing disconnected features identified during the systematic feature connection audit.
+
+### Fixes in Progress (AUTH-002/AUTH-006 + Security)
+- **FirebaseService.kt**: Added `saveUserIdentity()`, `fetchUserIdentity()`, `fetchUserIdentityByPhone()` methods for durable Firestore identity record at `users/{uid}`
+- **SkillsExchangeRepository.kt**: Added `saveUserIdentityToServer()`, `fetchUserIdentityFromServer()`, `fetchUserIdentityByPhoneFromServer()` pass-throughs
+- **SkillsExchangeViewModel.kt**: 
+  - `FirebaseService(application)` now passed to repository constructor
+  - `isWorkerApprovedAndActivated` initial value changed from `true` to `false` (fail-closed)
+  - `loginUser()`: Always resolves real Firebase UID before persisting profile; added Firestore identity lookup as fallback
+  - `setUserRoleMode()`: Added `canAccessWorkerFeatures()` gate to prevent unauthorized worker mode switch
+  - `loginWithGoogle()`: Existing-user check now only requires `isOnboardingCompleted` (not blank name/district)
+- **OnboardingScreen.kt**: Removed automatic Google display name pre-population of legal name field
+- **AccountCenterSheets.kt**: New file with `EscrowWalletSheet`, `JobHistorySheet`, `VerificationStatusSheet`, `TrustAndSafetySheet` — real destinations replacing silent redirects
+- **NavigationDrawer.kt**: Removed hardcoded wallet balance (UGX 240), removed hardcoded phone placeholder, added `onOpenVerification` parameter
+- **MainScreen.kt**: Wired drawer menu items to new sheets with real data; removed `AccountComplianceDialog` import
+
+### Pending Fixes (from audit)
+- A6 ServiceCatalogPicker orphaned — needs wiring into worker onboarding
+- B1 Rating UI missing — ViewModel/repository complete but no composable triggers rating
+- M6 Notification click doesn't navigate to referenced job/chat
+- M11 Theme mode not persisted to DataStore
 
 ---
 
@@ -238,18 +259,121 @@ All implementation work is done and documented.
 
 ---
 
-## Account / Session Handoff
+## Feature Connection Audit — 2026-09-17 (PART 1/2)
+
+**Status: AUDITED — FIXES PENDING**
+
+> DOCUMENTATION ONLY — 2026-09-17. READ-ONLY audit. No source code changed, no fixes implemented, no commit. All findings below are NOT fixed unless a prior dated entry records a verified fix.
+
+**Scope:** 48 interactive controls examined. Record: 8 confirmed disconnected (A1-A8), 9 partially connected (B1-B9), security/authorization (G1-G7), placeholder/demo (D1-D11), navigation/UX (N1-N4), authentication (9 items), map (M1-M4), permission (P1-P2).
+
+### A. Confirmed disconnected (NOT fixed)
+- A1 — Hamburger "Sign In / Register" — Google path leaves user stranded in the modal — HIGH — Pending Audit Fix
+- A2 — Drawer "National ID & Verification" — silent no-op when authenticated — HIGH — Pending Audit Fix
+- A3 — Drawer "MoMo & Escrow Wallet" — hardcoded fake balance + wrong destination — HIGH — Pending Audit Fix
+- A4 — Drawer "Job History & Material Receipts" — no history screen — MEDIUM — Pending Audit Fix
+- A5 — Drawer "Trust, Safety & Emergency SOS" — opens unrelated escrow sheet / can silently do nothing — HIGH — Pending Audit Fix
+- A6 — ServiceCatalogPicker — implemented but zero call sites / orphaned — HIGH — Pending Audit Fix
+- A7 — AccountComplianceDialog — implemented but never invoked / orphaned — MEDIUM — Pending Audit Fix
+- A8 — Community/Board "Hire" button — silent failure — MEDIUM — Pending Audit Fix
+
+### B. Partially connected (NOT fixed)
+- B1 — Rating UI (RATE-001/002/003) — repository/ViewModel exist but no UI trigger — HIGH — Pending Audit Fix
+- B2 — Existing-user recognition on Google sign-in — HIGH — Pending Audit Fix
+- B3 — Legal name field — Onboarding fixed, AuthModal still auto-fills Google display name — HIGH — Pending Audit Fix. Distinction: OnboardingScreen.kt fix already made pending runtime verification; AuthModal.kt issue still pending.
+- B4 — Worker Online toggle — in-memory only — MEDIUM — Pending Audit Fix
+- B5 — Theme selector — not persisted — LOW — Pending Audit Fix
+- B6 — Notification click — marks all read but doesn't navigate — MEDIUM — Pending Audit Fix
+- B7 — Report User — report action exists but no review destination/list — LOW — Pending Audit Fix
+- B8 — Map tab — no useful empty state when no providers/GPS — MEDIUM — Pending Audit Fix
+- B9 — Worker distance/radius filtering — static distance data — MEDIUM — Pending Audit Fix
+
+### G. Security / authorization (NOT fixed by this task)
+- G1 — isWorkerApprovedAndActivated initialises to true / fail-open — HIGH — Pending Audit Fix
+- G2 — setUserRoleMode() has no worker authorization gate — MEDIUM — Pending Audit Fix
+- G3 — Worker dashboard authorization depends on UI state rather than sufficient lower-layer enforcement — HIGH — Pending Audit Fix
+- G4 — WorkerVerificationStatusView "Start verification" opens post-job drawer instead of verification flow — MEDIUM — Pending Audit Fix
+- G5 — Drawer claims "National ID & Phone Verified" / "Verified" for any authenticated user — MEDIUM — Pending Audit Fix
+- G6 — Firestore/storage rules currently authenticate users but do not provide role/ownership checks — MEDIUM — Pending Audit Fix
+- G7 — Google WEB_CLIENT_ID hardcoded in source — LOW — Pending Audit Fix
+
+(AUDIT PART 2 FOLLOWS)
+
+---
+
+(AUDIT PART 2 — placeholder/demo, navigation, auth, map, permissions, community map, order)
+
+### D. Placeholder / demo (NOT fixed)
+- D1 — Hardcoded wallet balance CurrencyRegion.format(240.0)
+- D2 — Hardcoded phone fallback "+256 700 123 456"
+- D3 — Demo seed data from seedInitialDataIfNeeded()
+- D4 — Full-name fallback "Specialist" / "Neighbor"
+- D5 — Fallback user ID "user_default_me"
+- D6 — Synthetic UID "user_${System.currentTimeMillis()}"
+- D7 — Phone OTP is currently simulated rather than real Firebase Phone Auth
+- D8 — refreshToken remains TODO/simulated
+- D9 — provider.distanceMiles is seeded/static
+- D10 — MoMo payment uses delay() / simulated gateway behavior
+- D11 — Camera/media picker is absent for job photos
+
+### N. Navigation / UX (NOT fixed)
+- N1 — No Navigation-Compose graph; navigation is state-driven
+- N2 — System Back does not close open drawers/sheets/modals (no BackHandler/back stack)
+- N3 — Some drawer items point to Jobs instead of their advertised destination
+- N4 — Notification click does not navigate to the referenced job/chat
+
+### P. Permissions (NOT fixed)
+- P1 — Notification permission granted callback is empty
+- P2 — Camera/media permission/picker is not wired because job photo capture is not implemented
+
+### M. Map (NOT fixed)
+- M1 — Current Maps implementation loads on List/Map tabs
+- M2 — No map tied specifically to an accepted/active job
+- M3 — Map is not centred using device GPS
+- M4 — Provider distance is not currently GPS-derived
+
+### Authentication findings, 9 items (NOT fixed by this task)
+1. Existing Google users can be forced through onboarding.
+2. Google display name can be incorrectly used as legal name in AuthModal.
+3. Google AuthModal Google branch does not capture phone number.
+4. onComplete(false) relies on incidental ViewModel modal closing.
+5. User profiles are currently Room-only.
+6. User profiles are not persisted to Firestore.
+7. logoutUser() clears the local profile.
+8. Synthetic IDs can be created instead of real Firebase UIDs.
+9. Therefore existing-user recognition can fail after logout, app-data clearing, reinstall, or on another device.
+- Legal-name distinction: OnboardingScreen.kt fix already made, pending runtime verification. AuthModal.kt legal-name issue still pending.
+
+### Community removal map (references only — DO NOT REMOVE NOW)
+- MainScreen.kt — Board tab/navigation; MainScreen.kt — Board branches
+- NeighborhoodFeedView.kt; SkillsExchangeViewModel.kt — neighborhoodPosts
+- SkillsExchangeRepository — neighborhood posts; NeighborhoodPostEntity; NeighborhoodPostDao
+- AppDatabase neighborhoodPostDao/version/migration references; MainScreen DynamicFeed import
+- Firestore rules if applicable; Existing PRD/requirement documentation references
+
+### Recommended implementation order (from audit — NOT started, NOT completed)
+- Critical: C1 — Existing-user profile persistence; C2 — UID consistency; C3 — Google AuthModal completion path
+- High: H1 — Worker authorization fail-closed; H2 — AuthModal legal-name handling; H3 — National ID & Verification drawer; H4 — Fake wallet balance; H5 — ServiceCatalogPicker; H6 — Rating UI; H7 — Trust/Safety & SOS; H8 — Worker dashboard security
+- Medium: M1 through M12 from the audit
+- Low: L1 through L5 from the audit
+
+---
+
+## Account / Session Handoff (ORIGINAL FOLLOWS)
 
 ```
-Current session:          Build verification continuation session
-Current PRD story:        None — all stories complete
-Current task:             Project verification complete
+Current session:          Feature Connection Audit & Post-Audit Bug Fix
+Current PRD story:        None — all PRD stories complete; audit fixes are post-PRD
+Current task:             Feature Connection Audit + AUTH-002/AUTH-006/SEC-008/SEC-009 fixes
 Completed stories (79):   All PRD stories, including STAB-003
-Last completed action:    Remove invalid custom debug keystore configuration
-Last verified action:     ./gradlew assembleDebug completed BUILD SUCCESSFUL; ./gradlew test remains passing
-Files modified:           app/build.gradle.kts and related project documentation
-Next action:              None; all PRD stories are complete.
-Handoff status:           Ready for immediate continuation
+Current PRD Phase 17:      Complete (12 future requirements documented, FUTURE/NOT IMPLEMENTED)
+Last completed action:    Feature Connection Audit complete; AUTH-002/AUTH-006/SEC-008/SEC-009 fixes implemented
+Last verified action:     ./gradlew assembleDebug completed BUILD SUCCESSFUL (3m 46s); APK builds successfully
+Files modified:           FirebaseService.kt, SkillsExchangeRepository.kt, SkillsExchangeViewModel.kt,
+                          OnboardingScreen.kt, NavigationDrawer.kt, MainScreen.kt, AccountCenterSheets.kt (new)
+Next action:              Install APK on device and test Google Sign-In existing-user recognition + legal name fix
+                          Then wire ServiceCatalogPicker, rating UI, and remaining audit items
+Handoff status:           Ready for continuation — device currently disconnected
 ```
 
 > **SECURITY NOTE**: This file contains NO passwords, API keys, session tokens, cookies, or credentials of any kind.

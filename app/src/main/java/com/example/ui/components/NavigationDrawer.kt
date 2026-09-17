@@ -60,11 +60,22 @@ fun AppNavigationDrawer(
     onOpenDisputes: () -> Unit = {},
     onOpenDataBackup: () -> Unit = {},
     onOpenPrivacyPolicy: () -> Unit = {},
-    onOpenDeleteAccount: () -> Unit = {}
+    onOpenDeleteAccount: () -> Unit = {},
+    /**
+     * AUDIT FIX (H4): Real escrow figure supplied by MainScreen from the job records.
+     * Previously this drawer hardcoded `CurrencyRegion.format(240.0)` and presented it to
+     * every user as "Available Escrow".
+     */
+    escrowHeldTotalLabel: String = "—",
+    /**
+     * AUDIT FIX (H3/G5): Real KYC state. Previously any authenticated account was shown a
+     * "Verified" / "National ID & Phone Verified" badge regardless of actual KYC status.
+     */
+    isKycVerified: Boolean = false,
+    kycStatusLabel: String = "Not verified",
+    onOpenIdentity: () -> Unit = {}
 ) {
     if (!isOpen) return
-
-    val formattedWalletBalance = CurrencyRegion.format(240.0)
 
     Box(
         modifier = Modifier
@@ -183,7 +194,10 @@ fun AppNavigationDrawer(
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
                                         val displayName = if (isAuthenticated) {
-                                            currentUserProfile?.fullName?.ifBlank { null } ?: currentUserPhone ?: "+256 700 123 456"
+                                            // AUDIT FIX (L2): no fabricated phone number fallback.
+                                            currentUserProfile?.fullName?.ifBlank { null }
+                                                ?: currentUserPhone
+                                                ?: "Signed-in account"
                                         } else {
                                             "Guest Neighbor"
                                         }
@@ -193,10 +207,12 @@ fun AppNavigationDrawer(
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White
                                         )
-                                        if (isAuthenticated) {
+                                        // AUDIT FIX (H3/G5): the verified tick now reflects real KYC
+                                        // status instead of being shown for every signed-in account.
+                                        if (isAuthenticated && isKycVerified) {
                                             Icon(
                                                 imageVector = Icons.Default.Verified,
-                                                contentDescription = "Verified",
+                                                contentDescription = "National ID verified",
                                                 tint = IndustrialEmerald,
                                                 modifier = Modifier.size(16.dp)
                                             )
@@ -215,14 +231,35 @@ fun AppNavigationDrawer(
                             // Row 2: Status Pill with high contrast background
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = if (isAuthenticated) IndustrialEmerald.copy(alpha = 0.2f) else AmberUrgent.copy(alpha = 0.2f),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, if (isAuthenticated) IndustrialEmerald else AmberUrgent)
+                                color = when {
+                                    isKycVerified -> IndustrialEmerald.copy(alpha = 0.2f)
+                                    isAuthenticated -> SignalBlue.copy(alpha = 0.25f)
+                                    else -> AmberUrgent.copy(alpha = 0.2f)
+                                },
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    when {
+                                        isKycVerified -> IndustrialEmerald
+                                        isAuthenticated -> SignalBlue
+                                        else -> AmberUrgent
+                                    }
+                                )
                             ) {
                                 Text(
-                                    text = if (isAuthenticated) "🛡️ Verified Resident • ID Linked" else "🔒 Guest Mode (Sign in to unlock)",
+                                    // AUDIT FIX (H3/G5): states the real verification level rather
+                                    // than claiming "Verified Resident • ID Linked" for everyone.
+                                    text = when {
+                                        isKycVerified -> "🛡️ ID Verified"
+                                        isAuthenticated -> "✅ Signed in • ID not verified"
+                                        else -> "🔒 Guest Mode (Sign in to unlock)"
+                                    },
                                     fontSize = 10.5.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = if (isAuthenticated) Color(0xFFA7F3D0) else Color(0xFFFDE68A),
+                                    color = when {
+                                        isKycVerified -> Color(0xFFA7F3D0)
+                                        isAuthenticated -> Color(0xFFBFDBFE)
+                                        else -> Color(0xFFFDE68A)
+                                    },
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                                 )
                             }
@@ -369,7 +406,8 @@ fun AppNavigationDrawer(
                         DrawerMenuItem(
                             icon = Icons.Outlined.AccountBalanceWallet,
                             title = "MoMo & Escrow Wallet",
-                            subtitle = "Available Escrow: $formattedWalletBalance",
+                            // AUDIT FIX (H4): real escrow total, not a hardcoded figure.
+                            subtitle = if (isAuthenticated) "Escrow held: $escrowHeldTotalLabel" else "Sign in to view your escrow",
                             badgeText = "Active",
                             onClick = {
                                 onDismiss()
@@ -390,19 +428,21 @@ fun AppNavigationDrawer(
                         DrawerMenuItem(
                             icon = Icons.Outlined.VerifiedUser,
                             title = "National ID & Verification",
-                            subtitle = if (isAuthenticated) "National ID & Phone Verified" else "Action required to unlock contact info",
-                            badgeText = if (isAuthenticated) "Verified" else "Pending",
-                            badgeColor = if (isAuthenticated) IndustrialEmerald else AmberUrgent,
+                            // AUDIT FIX (H3/G5): report the actual KYC state instead of
+                            // unconditionally asserting "Verified" for any signed-in account.
+                            subtitle = if (isAuthenticated) "KYC status: $kycStatusLabel" else "Action required to unlock contact info",
+                            badgeText = if (isKycVerified) "Verified" else if (isAuthenticated) "Pending" else "Guest",
+                            badgeColor = if (isKycVerified) IndustrialEmerald else AmberUrgent,
                             onClick = {
                                 onDismiss()
-                                if (!isAuthenticated) onTriggerAuth()
+                                if (!isAuthenticated) onTriggerAuth() else onOpenIdentity()
                             }
                         )
 
                         DrawerMenuItem(
                             icon = Icons.Outlined.Shield,
                             title = "Trust, Safety & Emergency SOS",
-                            subtitle = "24/7 Dispute arbitration & panic triggers",
+                            subtitle = "Dispute arbitration & job-scoped panic alerts",
                             onClick = {
                                 onDismiss()
                                 onOpenDisputes()

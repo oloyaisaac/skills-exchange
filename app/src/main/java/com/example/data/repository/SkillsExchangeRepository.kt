@@ -143,8 +143,35 @@ class SkillsExchangeRepository(
         db.userProfileDao().insertUserProfile(profile)
     }
 
+    /**
+     * AUTH-002/AUTH-006: Mirror the identity record to Firestore (`users/{uid}`) so an
+     * account can still be recognised on a later sign-in after logout, app-data clear,
+     * reinstall, or when signing in on a different device.
+     *
+     * Kept separate from [saveUserProfile] on purpose: the device-local rebuild performed by
+     * `restoreSession()` must never be pushed to the server as if it were authoritative.
+     */
+    suspend fun saveUserIdentityToServer(profile: UserProfileEntity): Boolean {
+        return firebaseService.saveUserIdentity(profile)
+    }
+
+    /** AUTH-006: Server-side identity lookup by Firebase UID. */
+    suspend fun fetchUserIdentityFromServer(userId: String): UserProfileEntity? {
+        return firebaseService.fetchUserIdentity(userId)
+    }
+
+    /** AUTH-006: Server-side identity lookup by phone number (fallback path). */
+    suspend fun fetchUserIdentityByPhoneFromServer(phoneNumber: String): UserProfileEntity? {
+        return firebaseService.fetchUserIdentityByPhone(phoneNumber)
+    }
+
     suspend fun switchActiveMode(userId: String, mode: String) {
         db.userProfileDao().updateActiveMode(userId, mode)
+    }
+
+    /** KYC-001: Streams the worker's own KYC submission for the identity-verification view. */
+    fun getWorkerKyc(userId: String): Flow<com.example.data.db.WorkerKycEntity?> {
+        return db.workerKycDao().getWorkerKyc(userId)
     }
 
     suspend fun updateWorkerKycStatus(userId: String, status: String) {

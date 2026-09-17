@@ -95,15 +95,21 @@ fun AuthModal(
             if (result.resultCode == android.app.Activity.RESULT_OK) {
                 val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(result.data)
                 task.addOnSuccessListener { account ->
-                    account.displayName?.let { name ->
-                        if (name.isNotBlank()) fullName = name
-                    }
+                    // IMPORTANT (H2): Do NOT seed the legal-name field from the Google display
+                    // name. The Google display name (e.g. "Isaac Vendetta 1") is a non-authoritative
+                    // account label, not a verified legal identity. The user types their own legal
+                    // name in PROFILE_SETUP, so the field starts empty.
                     account.idToken?.let { token ->
                         onGoogleSignIn?.invoke(token) { needsOnboarding ->
                             isGoogleSigningIn = false
                             if (needsOnboarding) {
                                 currentStep = AuthStep.PROFILE_SETUP
                             }
+                            // AUTH-006: needsOnboarding == false means the account was already
+                            // recognised; the ViewModel closes this modal via closeAuthModal().
+                            // Dismiss explicitly as well so the modal can never be left stranded
+                            // if the pending action is null.
+                            if (!needsOnboarding) onDismiss()
                         }
                     }
                 }
@@ -508,6 +514,14 @@ fun AuthModal(
                         value = fullName,
                         onValueChange = { fullName = it },
                         label = { Text("Your Full Name", fontSize = 12.sp) },
+                        placeholder = { Text("Enter your legal name", fontSize = 12.sp, color = Slate400) },
+                        supportingText = {
+                            Text(
+                                text = "Use the full name on your National ID. Your Google account name is not used.",
+                                fontSize = 10.sp,
+                                color = Slate500
+                            )
+                        },
                         leadingIcon = { Icon(imageVector = Icons.Default.Person, contentDescription = "Name", tint = SignalBlue, modifier = Modifier.size(18.dp)) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),

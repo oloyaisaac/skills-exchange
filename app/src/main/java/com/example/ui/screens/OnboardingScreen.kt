@@ -90,9 +90,10 @@ fun OnboardingScreen(
             if (result.resultCode == android.app.Activity.RESULT_OK) {
                 val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(result.data)
                 task.addOnSuccessListener { account ->
-                    account.displayName?.let { name ->
-                        if (name.isNotBlank()) fullName = name
-                    }
+                    // IMPORTANT: Do NOT automatically use the Google display name as the legal name.
+                    // The Google display name (e.g., "Isaac Vendetta 1") is NOT necessarily the user's
+                    // real/legal name. The user must enter their actual legal name themselves.
+                    // We only use the Google account for authentication (idToken), not for identity.
                     account.idToken?.let { token ->
                         viewModel.loginWithGoogle(token, initialRole = selectedRole) { needsOnboarding ->
                             isGoogleSigningIn = false
@@ -750,7 +751,7 @@ fun OnboardingScreen(
                         value = fullName,
                         onValueChange = { fullName = it },
                         label = { Text("Full Legal Name") },
-                        placeholder = { Text(if (selectedRole == "WORKER") "e.g. Isaac Kato" else "e.g. Sarah Namukasa") },
+                        placeholder = { Text(if (selectedRole == "WORKER") "Enter your legal name" else "Enter your legal name") },
                         leadingIcon = {
                             Icon(imageVector = Icons.Default.Person, contentDescription = null, tint = Slate500)
                         },

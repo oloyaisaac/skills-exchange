@@ -57,6 +57,10 @@ fun MainScreen(
     val isNavigationDrawerOpen by viewModel.isNavigationDrawerOpen.collectAsStateWithLifecycle()
     val isWorkerOnline by viewModel.isWorkerOnline.collectAsStateWithLifecycle()
 
+    // AUDIT FIX (H3/H7/M1): data backing the Account & Services drawer destinations.
+    val myDisputes by viewModel.myDisputes.collectAsStateWithLifecycle()
+    val myWorkerKyc by viewModel.myWorkerKyc.collectAsStateWithLifecycle()
+
     val isQuickRequestOpen by viewModel.isQuickRequestOpen.collectAsStateWithLifecycle()
     val isSearchModalOpen by viewModel.isSearchModalOpen.collectAsStateWithLifecycle()
     val isNotificationDrawerOpen by viewModel.isNotificationDrawerOpen.collectAsStateWithLifecycle()
@@ -168,6 +172,12 @@ fun MainScreen(
     var isPrivacyPolicyOpen by remember { mutableStateOf(false) }
     var isAccountDeletionOpen by remember { mutableStateOf(false) }
     var isPermissionRationaleOpen by remember { mutableStateOf(false) }
+
+    // AUDIT FIX (H3/H4/H7/M1): real destinations for the Account & Services drawer items.
+    var isWalletSheetOpen by remember { mutableStateOf(false) }
+    var isJobHistorySheetOpen by remember { mutableStateOf(false) }
+    var isTrustSafetySheetOpen by remember { mutableStateOf(false) }
+    var isIdentitySheetOpen by remember { mutableStateOf(false) }
 
     val notifications by viewModel.notifications.collectAsStateWithLifecycle(initialValue = emptyList())
     val unreadNotificationCount by viewModel.unreadNotificationCount.collectAsStateWithLifecycle(initialValue = 0)
@@ -642,20 +652,46 @@ fun MainScreen(
         onTriggerAuth = { viewModel.triggerAuthFlow("Unlock account & verified credentials") },
         onLogout = { viewModel.logoutUser() },
         currentUserProfile = currentUserProfile,
-        onOpenWallet = { viewModel.setMobileTab("Jobs") },
-        onOpenHistory = { viewModel.setMobileTab("Jobs") },
-        onOpenDisputes = {
-            val activeJ = jobs.firstOrNull { it.status == "DISPUTED" || it.status == "IN_PROGRESS" }
-            if (activeJ != null) {
-                escrowJobTarget = activeJ
-                isEscrowSheetOpen = true
-            } else {
-                viewModel.setMobileTab("Jobs")
-            }
-        },
+        // AUDIT FIX (H3/H4/H7/M1): each drawer item now opens its real destination sheet
+        // instead of silently switching to the Jobs tab or doing nothing.
+        onOpenWallet = { isWalletSheetOpen = true },
+        onOpenHistory = { isJobHistorySheetOpen = true },
+        onOpenDisputes = { isTrustSafetySheetOpen = true },
+        onOpenIdentity = { isIdentitySheetOpen = true },
         onOpenDataBackup = { isDataBackupOpen = true },
         onOpenPrivacyPolicy = { isPrivacyPolicyOpen = true },
         onOpenDeleteAccount = { isAccountDeletionOpen = true }
+    )
+
+    // AUDIT FIX (H4): MoMo & Escrow Wallet — real escrow figures from the job records.
+    EscrowWalletSheet(
+        isOpen = isWalletSheetOpen,
+        jobs = jobs,
+        userProfile = currentUserProfile,
+        onDismiss = { isWalletSheetOpen = false }
+    )
+
+    // AUDIT FIX (M1): Job History & Material Receipts — completed contracts and receipts.
+    JobHistorySheet(
+        isOpen = isJobHistorySheetOpen,
+        jobs = jobs,
+        onDismiss = { isJobHistorySheetOpen = false }
+    )
+
+    // AUDIT FIX (H7): Trust, Safety & Emergency SOS — real SOS flags and dispute records.
+    TrustSafetySheet(
+        isOpen = isTrustSafetySheetOpen,
+        jobs = jobs,
+        disputes = myDisputes,
+        onDismiss = { isTrustSafetySheetOpen = false }
+    )
+
+    // AUDIT FIX (H3): National ID & Verification — real KYC state, no unconditional "Verified".
+    IdentityVerificationSheet(
+        isOpen = isIdentitySheetOpen,
+        userProfile = currentUserProfile,
+        workerKyc = myWorkerKyc,
+        onDismiss = { isIdentitySheetOpen = false }
     )
 
     // Critical Production Dialogs & Sheets
