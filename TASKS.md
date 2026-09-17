@@ -226,6 +226,8 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 > DOCUMENTATION ONLY. READ-ONLY audit of 48 interactive controls. No source code changed, no fixes implemented, no commit. Every item below is ⏳ Pending Audit Fix. Do NOT mark completed.
 >
 > 2026-09-17 AUTOMATED VERIFICATION: compile PASSED (3m 12s). Targeted `UserProfilePersistenceTest` PASSED 6/6 (offline via the existing complete `D:\gradle-home` Gradle cache; earlier failures were uncached Robolectric runtime JARs in the project `GRADLE_USER_HOME`, not a code problem). `:app:assembleDebug` PASSED (2m 53s) and the APK installed on Samsung SM-A025F via adb → Success. Manual matrix A–F (Google account selection, legal-name entry, phone handling, logout/relogin, missing-Room recovery, roles/gates) still requires interactive on-device testing. C1–C3 therefore remain ⏳ Pending Audit Fix until that manual verification is recorded. No other rows changed.
+> 2026-09-17 DEVICE UI FOLLOW-UP: user confirmed legal name is not Google-prefilled. Explicit dark-on-white legal-name colors added in both auth screens; Onboarding district starts empty, is labelled required and blocks completion when blank. Compile/APK passed (combined 6m 56s); replacement installation succeeded at 22:46:09, with matching APK hash. Post-install text contrast, Google button/chooser and district behavior remain NOT TESTED: device was signed in. Missing chooser root cause is unconfirmed; no speculative Google configuration fix. C1–C3 remain PENDING; user manual retest is next.
+
 
 
 ### Critical

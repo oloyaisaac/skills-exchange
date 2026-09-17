@@ -2,6 +2,15 @@
 
 All meaningful development changes are recorded here in reverse chronological order.
 
+### [2026-09-17] [FIX] Device-reported legal-name contrast and onboarding district validation — runtime retest pending
+
+- `d:\skills exchange\app\src\main\java\com\example\ui\screens\OnboardingScreen.kt` and `d:\skills exchange\app\src\main\java\com\example\ui\components\AuthModal.kt`: explicitly set Slate900 focused/unfocused legal-name text on white, retaining blue cursor/labels. Theme-derived light text against a light surface caused the contrast defect; no Google display-name prefill introduced.
+- Onboarding district no longer defaults to Sunnyside or replaces selection on GPS errors; required label and nonblank completion gate added. AuthModal already gates nonblank district but retains initialDistrict default. Device validation remains untested.
+- Compile and assembleDebug PASSED (combined 6m 56s, exit 0); Samsung SM-A025F replacement install PASSED without clearing data. Installed version 1.0/code 1, lastUpdateTime 22:46:09; installed/local APK SHA-256 match F5497194E64BC72B1E195B287C6A0ABE3B4B62FE60420440555BAA99F7E009EB.
+- Google buttons trace through GoogleSignInHelper signInIntent, ViewModel and Firebase credential sign-in. Current device is signed in; auth button/chooser not reproduced. Recent logcat filter contains no matching sign-in failure. Earlier missing-chooser root cause is unknown; no speculative Google/Firebase changes.
+- User confirmed no display-name prefill before this patch. Post-install legal-name contrast, chooser launch and district-required behavior require manual retest. C1/C2/C3 remain PENDING. No other audit items, Phase-17, Community, PRD changes or commit.
+
+
 ### [2026-09-17] [VERIFY] C1/C2/C3 — compile, targeted tests 6/6, APK, device install PASSED; manual A–F pending
 
 - `:app:compileDebugKotlin` PASSED (3m 12s) after the earlier duplicate-signature slip was corrected to the original `triggerSosAlert(jobId)` signature.

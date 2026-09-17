@@ -256,6 +256,9 @@ _This document will be updated whenever significant architectural or design deci
 
 **Verification outcome (2026-09-17, later session):** Automated verification completed without any dependency or configuration change: targeted `UserProfilePersistenceTest` passed 6/6 running `--offline` against the pre-existing complete Gradle cache at `D:\gradle-home` (earlier failures were environmental — the project `GRADLE_USER_HOME` cache lacked nine Robolectric runtime JARs and downloads stalled; copying JARs alone was insufficient, pointing `GRADLE_USER_HOME` at the complete cache resolved it). `:app:assembleDebug` passed and `adb install -r` succeeded on the Samsung SM-A025F. Manual cases A–F still require interactive Google/phone input on the device, so C1/C2/C3 remain PENDING in TASKS.md and must not be marked completed until they are recorded. prd.json unchanged (79 completed stories, 12 Phase-17 pending); no commit made.
 
+**Device UI follow-up (2026-09-17):** Correct only the observed contrast defect using Material 3 OutlinedTextField explicit Slate900 text/white container colors and the existing blue cursor, and the inspected onboarding district omission using an empty initial district plus a required/nonblank completion gate. Keep legal-name Google prefill disabled. No auth redesign or Firebase configuration change: source wiring is present but the missing chooser is not reproduced and no precise failure is captured. Compile/APK and data-preserving Samsung installation passed (22:46:09, installed/local hash match); rendered contrast, Google button/chooser and district validation await user retest. Maintain C1/C2/C3 PENDING rather than infer behavior from compile/install. No new PRD IDs or unrelated fixes.
+
+
 
 
 ---

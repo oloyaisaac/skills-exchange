@@ -55,7 +55,7 @@ fun OnboardingScreen(
     var fullName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
     var otpCode by remember { mutableStateOf("") }
-    var selectedDistrict by remember { mutableStateOf("Sunnyside") }
+    var selectedDistrict by remember { mutableStateOf("") }
     var resendCooldown by remember { mutableStateOf(0) }
     var isGoogleSigningIn by remember { mutableStateOf(false) }
 
@@ -76,7 +76,7 @@ fun OnboardingScreen(
                     selectedDistrict = locResult.neighborhoodName
                 },
                 onError = {
-                    selectedDistrict = "Sunnyside"
+                    // Keep the current selection; a GPS failure is not a district.
                 }
             )
         }
@@ -124,7 +124,7 @@ fun OnboardingScreen(
                     selectedDistrict = locResult.neighborhoodName
                 },
                 onError = {
-                    selectedDistrict = "Sunnyside"
+                    // Keep the current selection; a GPS failure is not a district.
                 }
             )
         } else {
@@ -751,6 +751,17 @@ fun OnboardingScreen(
                         value = fullName,
                         onValueChange = { fullName = it },
                         label = { Text("Full Legal Name") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Slate900,
+                            unfocusedTextColor = Slate900,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            focusedLabelColor = SignalBlue,
+                            unfocusedLabelColor = Slate600,
+                            focusedPlaceholderColor = Slate500,
+                            unfocusedPlaceholderColor = Slate500,
+                            cursorColor = SignalBlue
+                        ),
                         placeholder = { Text(if (selectedRole == "WORKER") "Enter your legal name" else "Enter your legal name") },
                         leadingIcon = {
                             Icon(imageVector = Icons.Default.Person, contentDescription = null, tint = Slate500)
@@ -775,7 +786,7 @@ fun OnboardingScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "OPERATING DISTRICT",
+                                text = "OPERATING DISTRICT (REQUIRED)",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Slate500,
@@ -869,7 +880,7 @@ fun OnboardingScreen(
                             )
                             onOnboardingComplete()
                         },
-                        enabled = fullName.isNotBlank() && phoneNumber.isNotBlank(),
+                        enabled = fullName.isNotBlank() && phoneNumber.isNotBlank() && selectedDistrict.isNotBlank(),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),

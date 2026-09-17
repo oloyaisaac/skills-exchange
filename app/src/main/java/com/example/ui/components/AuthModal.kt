@@ -525,7 +525,17 @@ fun AuthModal(
                         leadingIcon = { Icon(imageVector = Icons.Default.Person, contentDescription = "Name", tint = SignalBlue, modifier = Modifier.size(18.dp)) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = SignalBlue, unfocusedBorderColor = Slate300),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Slate900,
+                            unfocusedTextColor = Slate900,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            focusedLabelColor = SignalBlue,
+                            unfocusedLabelColor = Slate600,
+                            cursorColor = SignalBlue,
+                            focusedBorderColor = SignalBlue,
+                            unfocusedBorderColor = Slate300
+                        ),
                         singleLine = true
                     )
 

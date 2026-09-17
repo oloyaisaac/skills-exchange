@@ -4,6 +4,19 @@
 2026-09-17T22:10:00+03:00 — C1/C2/C3 automated verification PASSED (compile, targeted tests 6/6, APK, device install). Manual device matrix A–F still requires interactive on-device input; C1–C3 remain PENDING in TASKS.md.
 
 ---
+## Device-reported UI follow-up — 2026-09-17 (PENDING)
+
+This follow-up supersedes the earlier build/install success for the current source revision. User confirmed no Google display-name prefill and reported invisible typed legal-name text and missing Google chooser. Keep C1/C2/C3 PENDING.
+
+- Source correction: legal-name Compose OutlinedTextFields in OnboardingScreen and AuthModal now explicitly use Slate900 focused/unfocused text on white, with existing blue/slate label/cursor styling. Previously theme-derived text could be white against the light surface. No name prefill added. Runtime contrast after this change NOT VERIFIED.
+- District: OnboardingScreen previously preselected Sunnyside and omitted district from button validation. Now starts empty, does not replace selection on GPS errors, labels district REQUIRED and disables completion without a nonblank district. AuthModal already checks nonblank district but still initializes from initialDistrict (default Sunnyside). District behavior on device NOT VERIFIED; do not interpret this as lower-layer validation proof.
+- Google trace: both UI buttons launch GoogleSignInHelper.getClient(context).signInIntent; helper requests an ID token/email; result passes token to ViewModel/FirebaseService, which calls GoogleAuthProvider.getCredential and signInWithCredential. Exceptions/cancelled results are not adequately surfaced by the UI. No captured Google failure establishes the missing-chooser root cause; no speculative authentication/configuration fix made.
+- Earlier device inspection identified com.aistudio.skillsexchange.nxptvq, version 1.0/code 1, last install 22:03:07, matching the then-local APK byte-for-byte; device was on MainScreen, not auth. This does NOT establish installation of the new color/district edits or rendered Google button visibility.
+- Build/install follow-up: captured command output resolved the shell-observability blocker. `:app:compileDebugKotlin` and `:app:assembleDebug` PASSED in the combined build (6m 56s, exit 0). `adb install -r` returned Success/exit 0 on Samsung SM-A025F; package com.aistudio.skillsexchange.nxptvq, version 1.0/code 1, lastUpdateTime 2026-09-17 22:46:09. Installed base.apk SHA-256 matches the new local APK: F5497194E64BC72B1E195B287C6A0ABE3B4B62FE60420440555BAA99F7E009EB. Evidence: ui-build-result.log, ui-install-result.txt, ui-installed-version.txt, ui-installed-hash-final.txt.
+- Runtime limits: captured drawer shows an authenticated MainScreen, not the auth UI. Thus Google button visibility/chooser launch, corrected typed-name contrast and district-required behavior are NOT TESTED after installation. Recent 2,000-line logcat filter found no ApiException/DEVELOPER_ERROR/SIGN_IN_FAILED/GoogleSignIn/SignInHubActivity evidence; absence is not proof of success. Missing-chooser root cause remains unconfirmed. No Google/Firebase configuration change, logout, account selection or app-data clearing performed.
+- Next: user opens the authentication flow when ready; verify rendered Google button and capture the result immediately after pressing it, typed-name contrast, and blank-district disabled completion. Previous six passing persistence tests predate these UI edits. C1/C2/C3 remain PENDING. Only OnboardingScreen.kt and AuthModal.kt changed for this follow-up; no PRD, Phase-17, Community or other audit implementation; no commit.
+
+
 ## Automated Verification Complete — 2026-09-17 (manual device matrix still open)
 
 **Status: C1/C2/C3 automated verification PASSED. Manual on-device matrix A–F NOT TESTED. C1/C2/C3 therefore remain PENDING in TASKS.md — NOT marked completed.** This section supersedes all verification notes below it.
