@@ -252,6 +252,12 @@ _This document will be updated whenever significant architectural or design deci
 
 **Consequences:** C1/C2/C3 are implemented in source but NOT verified (compile still running — foojay JDK-25 toolchain download contention). No test/APK/device run yet. TASKS.md C1–C3 stay ⏳ Pending until verification lands.
 
+**Verification follow-up (2026-09-17):** Compile passed after restoring the original one-argument `triggerSosAlert` signature, fixing only a duplicate-overload regression. The targeted persistence test could not execute because Robolectric runtime dependencies were unreachable. Keep C1/C2/C3 UNVERIFIED/PENDING; do not substitute compile or source inspection for Google/Firestore/device behavior verification. APK/install and manual A–F remain untested even though the Samsung SM-A025F is connected. Preserve dependencies, Gradle/AGP/toolchain configuration and PRD; resume the same targeted test when networking is available. JDK 17 launched Gradle, but existing daemon criteria selected JDK 25, so JDK-17-only execution is not established. This records a blocker, not successful completion or a new architecture decision.
+
+**Verification outcome (2026-09-17, later session):** Automated verification completed without any dependency or configuration change: targeted `UserProfilePersistenceTest` passed 6/6 running `--offline` against the pre-existing complete Gradle cache at `D:\gradle-home` (earlier failures were environmental — the project `GRADLE_USER_HOME` cache lacked nine Robolectric runtime JARs and downloads stalled; copying JARs alone was insufficient, pointing `GRADLE_USER_HOME` at the complete cache resolved it). `:app:assembleDebug` passed and `adb install -r` succeeded on the Samsung SM-A025F. Manual cases A–F still require interactive Google/phone input on the device, so C1/C2/C3 remain PENDING in TASKS.md and must not be marked completed until they are recorded. prd.json unchanged (79 completed stories, 12 Phase-17 pending); no commit made.
+
+
+
 ---
 
 ## 2026-09-16

@@ -464,7 +464,7 @@ class SkillsExchangeRepository(
         )
     }
 
-    suspend fun triggerEmergencySos(jobId: String, latitude: Double, longitude: Double, district: String) {
+    suspend fun triggerSosAlert(jobId: String) {
         db.jobPostDao().setSosAlert(jobId, true)
         db.chatMessageDao().insertMessage(
             ChatMessageEntity(

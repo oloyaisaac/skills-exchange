@@ -2,6 +2,25 @@
 
 All meaningful development changes are recorded here in reverse chronological order.
 
+### [2026-09-17] [VERIFY] C1/C2/C3 — compile, targeted tests 6/6, APK, device install PASSED; manual A–F pending
+
+- `:app:compileDebugKotlin` PASSED (3m 12s) after the earlier duplicate-signature slip was corrected to the original `triggerSosAlert(jobId)` signature.
+- `UserProfilePersistenceTest` PASSED **6/6, 0 failures, 0 errors, 0 skipped** (fresh 2026-09-17 XML) running `--offline` against the pre-existing complete Gradle cache at `D:\gradle-home`. Earlier failures were environmental: the project `GRADLE_USER_HOME` cache lacked nine Robolectric runtime JARs and downloads stalled; no dependency, repository, Gradle/AGP/toolchain or source configuration was changed to fix this.
+- `:app:assembleDebug` PASSED (2m 53s); `app-debug.apk` (32,135,868 bytes) built and installed on Samsung SM-A025F (serial R9HR30HWJ5J) via `adb install -r` → Success. No app data or Firebase account cleared.
+- Manual cases A–F require interactive Google/phone input on the device and remain NOT TESTED; C1–C3 therefore stay ⏳ Pending Audit Fix in TASKS.md and are not marked completed.
+- No H-items, Phase-17, Community, PRD or completion-status changes; no commit. prd.json verified unchanged (79 completed stories, 12 Phase-17 pending).
+
+
+### [2026-09-17] [VERIFICATION] C1/C2/C3 — Compile passed; runtime verification blocked
+
+- Corrected only the duplicate-signature compiler regression in `d:\skills exchange\app\src\main\java\com\example\data\repository\SkillsExchangeRepository.kt`: restored `triggerSosAlert(jobId)`; existing GPS/SMS method unchanged.
+- Compile retry passed in 3m 12s (JDK 17 launcher, existing JDK 25 daemon selected by unchanged configuration). No configuration changes.
+- Targeted `com.example.data.UserProfilePersistenceTest` build failed in 6m 52s before tests executed: Robolectric runtime dependencies unavailable, network unreachable. No dependency substitutions or full suite run. Two online retries stalled during artifact download and were cancelled. A final offline run failed in 1m 6s with nine uncached runtime JARs (including Robolectric native-runtime 1.0.18); no fresh tests executed. Stale September-16 generated results were discarded. See AGENT_STATE.md for diagnostics and retained logs.
+- Samsung SM-A025F connected. APK/install not attempted because tests did not pass; manual cases A–F all NOT TESTED. No Firebase account or local device data deleted.
+- UID audit still finds the demo entity default and development anonymous-auth paths; their safety is not established by string search alone. Detailed evidence and residual risks are in AGENT_STATE.md.
+- C1/C2/C3 remain PENDING / UNVERIFIED. No H-items, Phase-17, Community, PRD or completion-status changes; no commit. Four requested obsolete scratch logs removed; current verification evidence retained.
+
+
 ### [2026-09-17] [FIX] Audit C1/C2/C3 — Profile persistence, UID consistency, Google completion (IMPLEMENTED, verification blocked)
 
 **Scope:** Only audit items C1, C2, C3. No Phase-17 work, no Community removal, no H-items, no new PRD IDs, no prd.json change.
