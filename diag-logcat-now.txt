@@ -1,0 +1,36 @@
+--------- beginning of system
+09-18 21:44:49.268  1594  1804 E Watchdog: !@Sync: 569 heap: 70 / 70 [2026-09-18 21:44:49.266] sdogWay: softdog FD: 764
+--------- beginning of main
+09-18 21:44:50.757 15180 15385 W DGW     : W[onPingFailure:593] ConnectivityManager ping failure TransientError domain: MNSDNSResolver code: 0 detail: getaddrinfo(): No address associated with hostname
+09-18 21:44:51.853  1594  1621 W System  : A resource failed to call close. 
+09-18 21:44:51.854  1594  1621 W System  : A resource failed to call close. 
+09-18 21:44:56.561   985   985 E android.hardware.health@2.1-service-samsung: ISehThermal::getService() fail
+09-18 21:44:56.580  2352 17695 E PowerUI.Notification: no saved value, so we do nothing !!
+09-18 21:44:56.590   985   985 E android.hardware.health@2.1-service-samsung: ISehThermal::getService() fail
+09-18 21:44:56.602   985   985 E android.hardware.health@2.1-service-samsung: ISehThermal::getService() fail
+09-18 21:44:56.620  2352 16191 E PowerUI.Notification: no saved value, so we do nothing !!
+09-18 21:44:56.821  1594  1594 W NotificationHistory: Attempted to add notif for locked/gone/disabled user 0
+09-18 21:45:00.019  2713  2713 W NavigableAppWidgetHostView: setResizeScaleResult() 668/ 233 scaleToResize = 1.0(widget id = 5) 674b4f5 0,0-668,233
+09-18 21:45:00.857  1594  1859 E KernelCpuSpeedReader: Failed to read cpu-freq: /sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state: open failed: ENOENT (No such file or directory)
+09-18 21:45:00.858  1594  1859 E system_server: Cannot read thread CPU times for PID 1594
+09-18 21:45:00.867  1594  1821 E libperflog: [LIBPERFLOG] socket_local_client fail = -1
+09-18 21:45:08.737  1594  2215 W DeviceStorageMonitorService: check(/data) freeStorage = 559038464
+09-18 21:45:08.823  1205 23745 W installd: Failed to resolve inode 250508; using /data/user_de/0/com.samsung.accessibility/cache
+09-18 21:45:08.828  1205 23745 E installd: Failed to free up 3221225472 on /data; final free space 559038464: Success
+09-18 21:45:08.875  1205 23745 W installd: Failed to resolve inode 250508; using /data/user_de/0/com.samsung.accessibility/cache
+09-18 21:45:08.880  1205 23745 E installd: Failed to free up 3221225472 on /data; final free space 559038464: Success
+09-18 21:45:08.887  1594  2215 W DeviceStorageMonitorService: java.io.IOException: Failed to free 3221225472 on storage device at /data
+09-18 21:45:08.887  1594  2215 W DeviceStorageMonitorService: 	at com.android.server.pm.PackageManagerService.freeStorage(PackageManagerService.java:10448)
+09-18 21:45:08.887  1594  2215 W DeviceStorageMonitorService: 	at com.android.server.storage.DeviceStorageMonitorService.check(DeviceStorageMonitorService.java:331)
+09-18 21:45:08.887  1594  2215 W DeviceStorageMonitorService: 	at com.android.server.storage.DeviceStorageMonitorService.access$200(DeviceStorageMonitorService.java:83)
+09-18 21:45:08.887  1594  2215 W DeviceStorageMonitorService: 	at com.android.server.storage.DeviceStorageMonitorService$1.handleMessage(DeviceStorageMonitorService.java:475)
+09-18 21:45:08.887  1594  2215 W DeviceStorageMonitorService: 	at android.os.Handler.dispatchMessage(Handler.java:106)
+09-18 21:45:08.887  1594  2215 W DeviceStorageMonitorService: 	at android.os.Looper.loopOnce(Looper.java:226)
+09-18 21:45:08.887  1594  2215 W DeviceStorageMonitorService: 	at android.os.Looper.loop(Looper.java:313)
+09-18 21:45:08.887  1594  2215 W DeviceStorageMonitorService: 	at android.os.HandlerThread.run(HandlerThread.java:67)
+09-18 21:45:08.889  1594  2215 W DeviceStorageMonitorService: check(/data) oldLevel:2, newLevel:2 (usableBytes=559038464)
+09-18 21:45:08.889  1594  2215 W DeviceStorageMonitorService: updateBroadcasts(/data) oldLevel:2, newLevel:2, seq:1
+09-18 21:45:08.889  1594  2215 W DeviceStorageMonitorService: updateBroadcasts_filenode(/data) fn_oldLevel:0, fn_newLevel:0, seq:1
+09-18 21:45:11.642  1594  2530 W ContextImpl: Calling a method in the system process without a qualified user: android.app.ContextImpl.bindService:1975 com.samsung.android.location.lib.positioning.w.e:24 com.samsung.android.location.lib.positioning.x.o:105 com.samsung.android.location.geofence.sp.a.onAlarm:13 android.app.AlarmManager$ListenerWrapper.run:333 
+09-18 21:45:12.535  2713  2713 E libprocessgroup: set_timerslack_ns write failed: Operation not permitted
+09-18 21:45:12.586  2713  2713 E libprocessgroup: set_timerslack_ns write failed: Operation not permitted

@@ -1,0 +1,12 @@
+﻿[286,98][495,140] | enabled=true | text='SKILLS EXCHANGE' | desc='' | android.widget.TextView
+[87,231][633,281] | enabled=true | text='Are you a Worker or Client?' | desc='' | android.widget.TextView
+[42,295][678,359] | enabled=true | text='Choose how you would like to get started. You can toggle between client and worker modes at any time.' | desc='' | android.widget.TextView
+[172,433][322,475] | enabled=true | text='I'm a Client' | desc='' | android.widget.TextView
+[172,475][333,517] | enabled=true | text='Hire a Neighbor' | desc='' | android.widget.TextView
+[74,538][646,598] | enabled=true | text='Find and hire vetted local specialists for plumbing, electrical work, home repairs, cleaning, and more.' | desc='' | android.widget.TextView
+[110,616][646,700] | enabled=true | text='Mobile Money Escrow protected â€¢ No National ID needed to hire' | desc='' | android.widget.TextView
+[172,792][340,834] | enabled=true | text='I'm a Worker' | desc='' | android.widget.TextView
+[172,834][286,876] | enabled=true | text='Offer Skills' | desc='' | android.widget.TextView
+[74,897][646,957] | enabled=true | text='Offer your trade and craft skills to nearby neighbors, quote on job requests, and grow your local client base.' | desc='' | android.widget.TextView
+[110,975][646,1059] | enabled=true | text='National ID verification &amp; 2-guarantor safety review required' | desc='' | android.widget.TextView
+[227,1168][447,1203] | enabled=true | text='Continue as Client' | desc='' | android.widget.TextView

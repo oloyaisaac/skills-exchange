@@ -1,0 +1,20 @@
+--------- beginning of main
+09-18 21:58:52.962  1594  2265 E SemIWCMonitor: poor link count is 0
+09-18 21:58:52.963  1594  2265 E SemIWCMonitor.File: Good Link, timestamp =: 1789757930937  RSSI:-71  AP:##:##:##:##:b8:fa Direction: -1 Direction (soft): -1
+09-18 21:58:52.963  1594  2265 E SemIWCMonitor.File: Good Link, timestamp =: 1789757932963, RSSI:-71, AP:##:##:##:##:b8:fa
+09-18 21:58:55.393 15228 15228 E SemDvfsManager_JNI: SemDvfsManager: registerfunction enter
+09-18 21:58:55.393 15228 15228 E SemAffinityControl: SemAffinityControl: registerfunction enter
+09-18 21:58:56.972  1594  2265 E SemIWCMonitor: poor link count is 1
+09-18 21:58:56.972  1594  2265 E SemIWCMonitor: [POOR_LINK_DETECTED] 0 -> 1
+09-18 21:58:56.972  1594  2265 E SemIWCMonitor.File: Poor Link, timestamp =: 1789757936972  RSSI:-71  AP:##:##:##:##:b8:fa
+09-18 21:58:56.973  1594  2265 E SemIWCMonitor.File: List of Known APs: Cand: [ <61:b0;2;2256871023>  <10:50;1;2026081627>  <6a:a6;6;2462927691>  <ad:76;1;892391690>  <93:f2;1;563667743>  <53:26;8;4113947618>  <30:12;6;4113796612>  <dc:98;4;4967296864>  <06:19;1;1318974413>  <2f:e0;23;2806848950>  <f4:64;1;1997931268> ], Core: [ <0c:54;1779890820515>  <44:90;1783538762389>  <29:b8;1772875496786>  <f0:55;1772799864105>  <b8:fa;1789749581548>  <32:34;1765788513290>  <c0:0c;1762196244141> ], Prob: []
+09-18 21:58:56.975  1594  2265 E SemIWCMonitor.File: Q-Table Action Taken: Q-Table: [ 2.798635 0.000000 0.000000; 4.236080 0.000000 0.000000; 3.058661 0.000000 0.000000; ] >> Action Taken: 0, New State: 1
+09-18 21:58:58.611   972  3827 E audio_hw_extn: audio_extn_enable_hifi_filter: Could not get ctl for mixer cmd - HiFi Filter, using default control
+09-18 21:58:58.982  1594  2265 E SemIWCMonitor: poor link count is 0
+09-18 21:58:58.983  1594  2265 E SemIWCMonitor.File: Good Link, timestamp =: 1789757936972  RSSI:-71  AP:##:##:##:##:b8:fa Direction: -1 Direction (soft): -1
+09-18 21:58:58.984  1594  2265 E SemIWCMonitor.File: Good Link, timestamp =: 1789757938984, RSSI:-71, AP:##:##:##:##:b8:fa
+09-18 21:59:00.845 15255 15255 E SemDvfsManager_JNI: SemDvfsManager: registerfunction enter
+09-18 21:59:00.845 15255 15255 E SemAffinityControl: SemAffinityControl: registerfunction enter
+09-18 21:59:06.572 15275 15275 E SemDvfsManager_JNI: SemDvfsManager: registerfunction enter
+09-18 21:59:06.572 15275 15275 E SemAffinityControl: SemAffinityControl: registerfunction enter
+09-18 21:59:08.667   972  3827 E audio_hw_extn: audio_extn_enable_hifi_filter: Could not get ctl for mixer cmd - HiFi Filter, using default control

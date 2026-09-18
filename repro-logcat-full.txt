@@ -1,0 +1,1345 @@
+--------- beginning of main
+09-18 21:58:52.293 15215 15215 D ProcessState: Binder ioctl to enable oneway spam detection failed: Invalid argument
+09-18 21:58:52.302  1594  2440 D InputDispatcher: Inject motion (15215): action=0x0, time=17944437000000, f=0x0, d=0
+09-18 21:58:52.302  1594  2166 I InputDispatcher: Delivering touch to (2352): action: 0x4, f=0x0, d=0, '723382 ', t=1 
+09-18 21:58:52.302  1594  2166 I InputDispatcher: Delivering touch to (13722): action: 0x0, f=0x0, d=0, '2e46f1d', t=1 
+--------- beginning of system
+09-18 21:58:52.303  1594  2166 D PowerManagerService: UserActivityStateListenerState: 1
+09-18 21:58:52.303 13722 13722 I ViewRootImpl@509da5a[MainActivity]: ViewPostIme pointer 0
+09-18 21:58:52.304  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: -846341117 caller: com.android.server.wm.SystemGesturesPointerEventListener.onPointerEvent:179 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:58:52.304  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: -846341117 caller: com.android.server.wm.SystemPerformancePointerEventListener.onPointerEvent:89 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:58:52.335  1215 21248 V NuPlayerDriver: getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 21:58:52.350   619   619 D io_stats: !@ 179,0 r 5066698 45368151 w 475326 4436524 d 242524 2409380 f 185953 213762 iot 1896090 1621354 th 102400 102400 81508 pt 2480 inp 0 0 17944.483
+09-18 21:58:52.355  1594  2440 D InputDispatcher: Inject motion (15215): action=0x1, time=17944437000000, f=0x0, d=0
+09-18 21:58:52.355  1594  2166 I InputDispatcher: Delivering touch to (13722): action: 0x1, f=0x0, d=0, '2e46f1d', t=1 
+09-18 21:58:52.356  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 1 id: -911679562
+09-18 21:58:52.356  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 1 id: -911679562
+09-18 21:58:52.358 13722 13722 I ViewRootImpl@509da5a[MainActivity]: ViewPostIme pointer 1
+09-18 21:58:52.399  2352  2352 D NetworkController.WifiSignalController: notifyListener: visible=true, enabled=true, connected=true, inetCondition=1, isDefault=true, receivedCR=true, receivedIC=-1, shouldForceHide=false, emptyConnected=false
+09-18 21:58:52.477  1594  2271 D NetdEventListenerService: DNS Requested by : 110, 10089, 7
+09-18 21:58:52.477 15180 15385 W DGW     : W[onPingFailure:593] ConnectivityManager ping failure TransientError domain: MNSDNSResolver code: 0 detail: getaddrinfo(): No address associated with hostname
+09-18 21:58:52.578 13722 13722 D InputMethodManager: startInputInner - Id : 0
+09-18 21:58:52.579 13722 13722 I InputMethodManager: startInputInner - mService.startInputOrWindowGainedFocus
+09-18 21:58:52.583  1594  2440 V InputMethodManagerService: startInputOrWindowGainedFocusInternalLocked: reason=CHECK_FOCUS clientState=d79b1c0 attribute=android.view.inputmethod.EditorInfo@7436eec startInputFlags=VIEW_HAS_FOCUS|IS_TEXT_EDITOR|INITIAL_CONNECTION softInputMode=STATE_UNSPECIFIED|ADJUST_PAN windowFlags=#81810100 sameWindowFocused=true
+09-18 21:58:52.583  1594  2440 D InputMethodManagerService: mDesktopModeManager null!
+09-18 21:58:52.583  1594  2440 V InputMethodManagerService: getDisplayIdOfInputMethodWindowToBeAdded : 0
+09-18 21:58:52.584  1594  2440 D InputMethodManagerService: checkDisplayOfStartInputAndUpdateKeyboard display Id 0last 0
+09-18 21:58:52.584  1594  2440 D InputTransport: Input channel constructed: 'ClientS', fd=263
+09-18 21:58:52.584  1594  2440 D InputTransport: Input channel destroyed: 'ClientS', fd=263
+09-18 21:58:52.585  4076  4076 I HBD     : HoneyBoardService onFinishInput 
+09-18 21:58:52.585  4076  4076 I HBD     : a IC have been unbinding,  InputConnectionWrapper{idHash=#a19853 mMissingMethods=}
+09-18 21:58:52.585  4076  4076 I HBD     : HoneyBoardService [PF_CL][onFinishInput]  818958 ns 
+09-18 21:58:52.586  4076  4076 I HBD     : HoneyBoardService [IMI] onStartInput - caller pid : 13722 , caller uid : 10339 
+09-18 21:58:52.586  4076  4076 I HBD     : j updateConfigs 
+09-18 21:58:52.586  4076  4076 I HBD     : j isEnabledNightMode : true 
+09-18 21:58:52.587  4076  4076 I HBD     : a IC have been binding, InputConnectionWrapper{idHash=#5a8ce8e mMissingMethods=} 
+09-18 21:58:52.587  4076  4076 I HBD     : h [EditorInputType]setPrivateImeOptionsToTable privateImeOptions ( null )
+09-18 21:58:52.589  4076  4076 I HBD     : b incognitoMode : false 
+09-18 21:58:52.589 13722 13722 D InputMethodManager: startInputInner - Id : 0
+09-18 21:58:52.590 13722 13722 I InputMethodManager: startInputInner - mService.startInputOrWindowGainedFocus
+09-18 21:58:52.591  4076  4076 I HBD     : a [CPS]isPredictionOnByLanguage :false, isForceOff : false, isPredictionOn : true , isOnPref : true 
+09-18 21:58:52.591  4076  4076 I HBD     : h getDefaultInputRange : UNKNOWN 
+09-18 21:58:52.591  4076  4076 I HBD     : h getDefaultInputRange : UNKNOWN 
+09-18 21:58:52.591  4076  4076 I HBD     : h getDefaultInputRange : UNKNOWN 
+09-18 21:58:52.592  1594  2440 V InputMethodManagerService: startInputOrWindowGainedFocusInternalLocked: reason=APP_CALLED_RESTART_INPUT_API clientState=d79b1c0 attribute=android.view.inputmethod.EditorInfo@8968d4a startInputFlags=VIEW_HAS_FOCUS|IS_TEXT_EDITOR softInputMode=STATE_UNSPECIFIED|ADJUST_PAN windowFlags=#81810100 sameWindowFocused=true
+09-18 21:58:52.593  1594  2440 D InputMethodManagerService: mDesktopModeManager null!
+09-18 21:58:52.593  1594  2440 V InputMethodManagerService: getDisplayIdOfInputMethodWindowToBeAdded : 0
+09-18 21:58:52.593  1594  2440 D InputMethodManagerService: checkDisplayOfStartInputAndUpdateKeyboard display Id 0last 0
+09-18 21:58:52.593  1594  2440 D InputTransport: Input channel constructed: 'ClientS', fd=263
+09-18 21:58:52.593  1594  2440 D InputTransport: Input channel destroyed: 'ClientS', fd=263
+09-18 21:58:52.593  4076  4076 I HBD     : a update cached prediction status : true 
+09-18 21:58:52.594  4076  4076 I HBD     : h getDefaultInputRange : UNKNOWN 
+09-18 21:58:52.594  4076  4076 I HBD     : a currentState : 0 
+09-18 21:58:52.594 13722 13722 D InsetsController: show(ime(), fromIme=false)
+09-18 21:58:52.595 13722 13722 I IMM_LC  : requestImeShow
+09-18 21:58:52.603 13722 13722 I IMM_LC  : ssi() - flag : 0 view : com.aistudio.skillsexchange.nxptvq reason = SHOW_SOFT_INPUT_BY_INSETS_API
+09-18 21:58:52.603  4076  4076 I HBD     : h load selected json path : /data/user/0/com.samsung.android.honeyboard/files/selected.json 
+09-18 21:58:52.603 13722 13722 I IMM_LC  : ssi() view is not EditText
+09-18 21:58:52.604  4076  4076 I HBD     : h load selected json info : {"version":"4.1","currentLanguageOrder":0,"selected":[{"activeOptionList":["auto_replace","auto_spacing","writing_assistant"],"engName":"English","id":65538,"inputType":"qwerty","isUsed":true}]} 
+09-18 21:58:52.604  1594  1772 I GestureDetector: handleMessage TAP
+09-18 21:58:52.605  1594  1594 I GestureDetector: handleMessage TAP
+09-18 21:58:52.605  1594  2440 V InputMethodManagerService: Client requesting input be shown, flags : 0
+09-18 21:58:52.605  1594  2440 D InputMethodManagerService: ACCESS_CONTROL_ENABLED = false, ACCESS_CONTROL_KEYBOARD_BLOCK = true
+09-18 21:58:52.605  1594  2440 D InputMethodManagerService: showCurrentInputLocked: mCurToken=android.os.Binder@22958e7, showForced=false, showExplicitlyRequestedtrue
+09-18 21:58:52.605  1594  2440 I InputMethodManagerService: Calling com.android.internal.view.IInputMethod$Stub$Proxy@5e56279.showSoftInput(android.os.Binder@76e8dd8, 1, null) for reason: SHOW_SOFT_INPUT_BY_INSETS_API
+09-18 21:58:52.609  4076  4076 I HBD     : a [UpdatePolicy] [post] a: 0 cl: 65538 kit: [0/0] vt: 0 ir: 1 
+09-18 21:58:52.611  4076  4076 I HBD     : HoneyBoardService [PF_OP][onStartInput]  25140209 ns 
+09-18 21:58:52.612  4076  4076 I HBD     : HoneyBoardService [IMI] onStartInput - caller pid : 13722 , caller uid : 10339 
+09-18 21:58:52.612  4076  4076 I HBD     : j updateConfigs 
+09-18 21:58:52.614  4076  4076 I HBD     : j isEnabledNightMode : true 
+09-18 21:58:52.614  4076  4076 I HBD     : a IC have been binding, InputConnectionWrapper{idHash=#4363abc mMissingMethods=} 
+09-18 21:58:52.614  4076  4076 I HBD     : h [EditorInputType]setPrivateImeOptionsToTable privateImeOptions ( null )
+09-18 21:58:52.614  4076  4076 I HBD     : b incognitoMode : false 
+09-18 21:58:52.615  4076  4076 I HBD     : h getDefaultInputRange : UNKNOWN 
+09-18 21:58:52.615  4076  4076 I HBD     : h getDefaultInputRange : UNKNOWN 
+09-18 21:58:52.615  4076  4076 I HBD     : h getDefaultInputRange : UNKNOWN 
+09-18 21:58:52.617  1594  2440 D InputMethodManagerService: bindCurrentInputMethodServiceLocked: caller=com.android.server.inputmethod.InputMethodManagerService.showCurrentInputLocked:3729 com.android.server.inputmethod.InputMethodManagerService.showSoftInput:3624 com.android.internal.view.IInputMethodManager$Stub.onTransact:441 com.android.server.inputmethod.InputMethodManagerService.onTransact:2145 android.os.Binder.execTransactInternal:1215 android.os.Binder.execTransact:1179 <bottom of call stack> <bottom of call stack> <bottom of call stack> <bottom of call stack> 
+09-18 21:58:52.620  1594  2440 I ActivityManager: Changes in 10159 7 to 5, 0 to 15
+09-18 21:58:52.620  1594  2440 I AppOps  : updateUidProcState uid: 10159 procState: 5 capability:15
+09-18 21:58:52.620  1594  2440 I AppOps  : commitUidPendingStateLocked() :: UID - 10159, 600 > 500, 0 > 15
+09-18 21:58:52.620  1594  1772 D NetworkPolicy: onUidStateChanged() uid: 10159, isForeground(true, 5)
+09-18 21:58:52.621  1055 26117 V APM_AudioPolicyManager: setAppState(portId:610, state:1)
+09-18 21:58:52.623  4076  4076 I HBD     : a update cached prediction status : true 
+09-18 21:58:52.624  4076  4076 I HBD     : h getDefaultInputRange : UNKNOWN 
+09-18 21:58:52.624  4076  4076 I HBD     : a currentState : 0 
+09-18 21:58:52.625  4076  4076 I HBD     : h load selected json path : /data/user/0/com.samsung.android.honeyboard/files/selected.json 
+09-18 21:58:52.625  4076  4076 I HBD     : h load selected json info : {"version":"4.1","currentLanguageOrder":0,"selected":[{"activeOptionList":["auto_replace","auto_spacing","writing_assistant"],"engName":"English","id":65538,"inputType":"qwerty","isUsed":true}]} 
+09-18 21:58:52.627  4076  4076 I HBD     : a [UpdatePolicy] [post] a: 0 cl: 65538 kit: [0/0] vt: 0 ir: 1 
+09-18 21:58:52.629  4076  4076 I HBD     : HoneyBoardService [PF_OP][onStartInput]  16975261 ns 
+09-18 21:58:52.630  4076  4076 I InputMethod: showSoftInput(), flags : 1
+09-18 21:58:52.637  1594  3979 I InputMethodManagerService: isAccessoryKeyboard 0
+09-18 21:58:52.638  4076  4076 I HBD     : HoneyBoardService onEvaluateInputViewShown: true 
+09-18 21:58:52.656  4076  4076 I DecorView: notifyKeepScreenOnChanged: keepScreenOn=false
+09-18 21:58:52.681  1594  3979 I InputMethodManagerService: isAccessoryKeyboard 0
+09-18 21:58:52.682  4076  4076 I HBD     : HoneyBoardService onEvaluateInputViewShown: true 
+09-18 21:58:52.687  4076  4076 I HBD     : HoneyBoardService onStartInputView : restarting = false, client = com.aistudio.skillsexchange.nxptvq 
+09-18 21:58:52.687  4076  5066 I SemDvfsHyPerManager: acquire hyper - SKBD_RE_ENTER_SHOW/4076@1, type = -999
+09-18 21:58:52.694   996  1036 I HYPER-HAL: [RequestManager.cpp]acquire(): Acquired ID : 8313004  [4076 / 1]    HINT : KBD_APP_RE_ENTER_VIEW    list : [TIMEOUT / 400] 
+09-18 21:58:52.701  4076  4076 I HBD     : h [EditorInputType]setPrivateImeOptionsToTable privateImeOptions ( null )
+09-18 21:58:52.701  4076  4076 I HBD     : b incognitoMode : false 
+09-18 21:58:52.706  4076  4076 I HBD     : h getDefaultInputRange : UNKNOWN 
+09-18 21:58:52.706  4076  4076 I HBD     : h getDefaultInputRange : UNKNOWN 
+09-18 21:58:52.706  4076  4076 I HBD     : h getDefaultInputRange : UNKNOWN 
+09-18 21:58:52.707  4076  4076 I HBD     : HoneyBoardService onStartInputViewInternal: inputType=0xa001, imeOptions=0x2000006, initialSelStart=0, initialSelEnd=0 
+09-18 21:58:52.710  4076  4076 I HBD     : f applyThemesPolicy 
+09-18 21:58:52.718 13722 13722 I IMM_LC  : showSoftInput(View,I)
+09-18 21:58:52.718 13722 13722 I IMM_LC  : ssi() - flag : 0 view : com.aistudio.skillsexchange.nxptvq reason = SHOW_SOFT_INPUT
+09-18 21:58:52.718 13722 13722 I IMM_LC  : ssi() view is not EditText
+09-18 21:58:52.719  1594  2440 V InputMethodManagerService: Client requesting input be shown, flags : 0
+09-18 21:58:52.719  1594  2440 D InputMethodManagerService: ACCESS_CONTROL_ENABLED = false, ACCESS_CONTROL_KEYBOARD_BLOCK = true
+09-18 21:58:52.719  1594  2440 D InputMethodManagerService: showCurrentInputLocked: mCurToken=android.os.Binder@22958e7, showForced=false, showExplicitlyRequestedtrue
+09-18 21:58:52.719  1594  2440 I InputMethodManagerService: Calling com.android.internal.view.IInputMethod$Stub$Proxy@5e56279.showSoftInput(android.os.Binder@ad11197, 1, null) for reason: SHOW_SOFT_INPUT
+09-18 21:58:52.740  4076  4076 I HBD     : e mUsedOpenTheme = false IsRequiredDarkTypeTheme = true night mode : true mIsEnabledHighContrast = false mIsOpenThemeForHoneyBoardInstalled = false mIsWallpaperThemeInstalled = false mIsThemeParkTheme = false
+09-18 21:58:52.741  4076  4076 I HBD     : a theme : Dark mode and no theme park 
+09-18 21:58:52.741  4076  4076 I HBD     : f required dark type theme, isCoverDisplayTheme :  false
+09-18 21:58:52.743  4076  4076 I HBD     : f update KeyboardTheme themeIndex : 0x 12000000  theme :  Dark
+09-18 21:58:52.753  4076  4076 I HBD     : a set Theme convertedIndex : 4 
+09-18 21:58:52.754  4076  4076 I HBD     : a themeStyleSet :4 
+09-18 21:58:52.755  4076  4076 I HBD     : a updatePredictionStatus : 1, editorOpt 
+09-18 21:58:52.756  4076  4076 I HBD     : a updateForEditorClass isPredictionOn = true 
+09-18 21:58:52.889  4076 14529 I HBD     : f [SKE_PB] build lagging : 99 ms, get prediction : 76 ms
+09-18 21:58:52.890  4076 14529 I HBD     : a [PF_EN] updateSelectList() t, 107 
+09-18 21:58:52.920  4076  4080 I roid.honeyboar: Background concurrent copying GC freed 4375KB AllocSpace bytes, 7(140KB) LOS objects, 44% free, 14MB/26MB, paused 277us,153us total 324.170ms
+09-18 21:58:52.920  4076  4080 W roid.honeyboar: Reducing the number of considered missed Gc histogram windows from 248 to 100
+09-18 21:58:52.922  4076  4076 I HBD     : al EBD ssu f 1 
+09-18 21:58:52.962  1594  2265 E SemIWCMonitor: poor link count is 0
+09-18 21:58:52.963  1594  2265 E SemIWCMonitor.File: Good Link, timestamp =: 1789757930937  RSSI:-71  AP:##:##:##:##:b8:fa Direction: -1 Direction (soft): -1
+09-18 21:58:52.963  1594  2265 E SemIWCMonitor.File: Good Link, timestamp =: 1789757932963, RSSI:-71, AP:##:##:##:##:b8:fa
+09-18 21:58:52.984  1055 26117 V APM_AudioPolicyManager: setAppState(portId:610, state:1)
+09-18 21:58:53.097   996 15221 I HYPER-HAL: [RequestManager.cpp]releaseLocked(): Released ID : 8313004
+09-18 21:58:53.123  1594  2292 I ChimeraAggressivePolicyHandler: executePolicy() - triggerSource: TRIGGER_SOURCE_LMKD
+09-18 21:58:53.124  1594  2292 I ChimeraAggressivePolicyHandler: available memory: 815492, free memory target: 686080, quit chimera
+09-18 21:58:53.164  4076  4076 I HBD     : a [PF_KL][HBIC] getCursorCapsMode t, 238 
+09-18 21:58:53.186  4076  4076 I HBD     : al EBD ssu f 1 
+09-18 21:58:53.218  4076  4076 I HBD     : a [UpdatePolicy] [post] a: 1 cl: 65538 kit: [0/0] vt: 0 ir: 1 
+09-18 21:58:53.229  1594  2660 D SettingsProvider: isChangeAllowed() : name = enabled_input_methods
+09-18 21:58:53.229  1594  2660 D SettingsProvider: edmUri: content://com.sec.knox.provider/RestrictionPolicy3
+09-18 21:58:53.229  1594  2660 D SettingsProvider: projectionArgs: isSettingsChangesAllowed
+09-18 21:58:53.229  1594  2660 D SettingsProvider: selectionArgs: false
+09-18 21:58:53.230  1594  2660 D SettingsProvider: selectionArgs: 10159
+09-18 21:58:53.230  1594  2660 D SecContentProvider: query(), uri = 17 selection = isSettingsChangesAllowed
+09-18 21:58:53.230  1594  2660 D SecContentProvider: called from android.uid.honeyboard:10159
+09-18 21:58:53.237  4076  4076 I HBD     : a update cached prediction status : true 
+09-18 21:58:53.240  1594  2660 D RestrictionPolicy: isSettingsChangesAllowedAsUser, userId 0 : true
+09-18 21:58:53.240  1594  2660 D SettingsProvider: ret = 1
+09-18 21:58:53.241  1594  2440 D SettingsProvider: isChangeAllowed() : name = default_input_method
+09-18 21:58:53.241  1594  2440 D SettingsProvider: edmUri: content://com.sec.knox.provider/RestrictionPolicy3
+09-18 21:58:53.241  1594  2440 D SettingsProvider: projectionArgs: isSettingsChangesAllowed
+09-18 21:58:53.241  1594  2440 D SettingsProvider: selectionArgs: false
+09-18 21:58:53.241  1594  2440 D SettingsProvider: selectionArgs: 10159
+09-18 21:58:53.242  1594  2440 D SecContentProvider: query(), uri = 17 selection = isSettingsChangesAllowed
+09-18 21:58:53.242  1594  2440 D SecContentProvider: called from android.uid.honeyboard:10159
+09-18 21:58:53.242  1594  2440 D RestrictionPolicy: isSettingsChangesAllowedAsUser, userId 0 : true
+09-18 21:58:53.243  1594  2440 D SettingsProvider: ret = 1
+09-18 21:58:53.244  1594  2530 D SLocation: SGeofenceCellManager - requestCellInfoUpdate
+09-18 21:58:53.246  4076  4905 I HBD     : m updated Sub Types. English 
+09-18 21:58:53.250  4076 15224 I HBD     : a InputMethodSubtype is set as local:en_GB 
+09-18 21:58:53.265  1594  2530 D SLocation: SGeofenceCellManager - onCellInfo
+09-18 21:58:53.269  1594  2530 D SLocation: SGeofenceCellManager - cellList : 14
+09-18 21:58:53.269  4076  4076 I HBD     : a [SKE_TAM] Changed false
+09-18 21:58:53.270  1594  2530 W SLocation: EventGeofenceObserver - handleEvent ENTER : currentDirection 1
+09-18 21:58:53.271  1594  2530 W SLocation: EventGeofenceObserver - handleEvent ENTER : currentDirection 1
+09-18 21:58:53.272  1594  2530 W SLocation: EventGeofenceObserver - handleEvent EXIT : currentDirection 2
+09-18 21:58:53.273  1594  2530 W SLocation: EventGeofenceObserver - handleEvent ENTER : currentDirection 1
+09-18 21:58:53.273  1594  2530 W SLocation: EventGeofenceObserver - handleEvent EXIT : currentDirection 2
+09-18 21:58:53.274  1594  2530 W SLocation: EventGeofenceObserver - handleEvent ENTER : currentDirection 1
+09-18 21:58:53.275  1594  2530 W SLocation: EventGeofenceObserver - handleEvent ENTER : currentDirection 1
+09-18 21:58:53.276  1594  2530 W SLocation: EventGeofenceObserver - handleEvent ENTER : currentDirection 1
+09-18 21:58:53.276  1594  2530 W SLocation: EventGeofenceObserver - handleEvent ENTER : currentDirection 1
+09-18 21:58:53.277  1594  2530 W SLocation: EventGeofenceObserver - handleEvent ENTER : currentDirection 1
+09-18 21:58:53.278  1594  2530 W SLocation: EventGeofenceObserver - handleEvent ENTER : currentDirection 1
+09-18 21:58:53.278  1594  2530 W SLocation: EventGeofenceObserver - handleEvent EXIT : currentDirection 2
+09-18 21:58:53.278  4076  4076 I HBD     : a refresh(), mParameterMode,  0
+09-18 21:58:53.288  4076  4076 I HBD     : a update cached prediction status : true 
+09-18 21:58:53.306  4076  4076 I HBD     : ::BnR:: d HONEY_SUPPORT_DATA_MIGRATION_FROM_SKBD : true, isMigrateNotNeeded : true, isFinishMigPreferences : false, isPasswordInputType : falseisUserUnlocked : true 
+09-18 21:58:53.307  4076  4076 I HBD     : b updateMultiTapTimeValue 
+09-18 21:58:53.307  4076  4076 I HBD     : b getMultiTapTimeoutValue 
+09-18 21:58:53.307  4076  4076 I HBD     : b getSingleVowelMultiTapTimeoutValue 
+09-18 21:58:53.310  4076 15226 I HBD     : bd requestCursorUpdates returned  true ,  3
+09-18 21:58:53.334  4076  4076 I HBD     : a onBind 
+09-18 21:58:53.349  4076  4076 I HBD     : b updateConfig: [LanguageItem] English / [KeyboardViewTypeItem] 0 / [KeyboardInputTypeItem] mainType(0), subType(0) / [CurrentLanguageInputTypeItem] mainType(0), subType(0) / [KeyboardInputRangeItem] 1 / [HandwritingModeItem] false / [SelectedLanguageItem] 1 / [LocaleItem] en-GB / [TextOrNullInputClassItem] true / [DateInputTypeItem] false / [DateTimeInputTypeItem] false /  
+09-18 21:58:53.359  4076  4076 I HBD     : b updateConfig: [DecimalNumberInputTypeItem] false / [NumberOnlyInputTypeItem] false / [NumberPasswordInputTypeItem] false / [PhoneNumberInputClassItem] false / [SignedDecimalNumberInputTypeItem] false / [SignedNumberInputTypeItem] false / [EmailInputTypeItem] false / [UrlInputTypeItem] false / [UrlEmailModeItem] false / [PasswordInputTypeItem] false / [WebPasswordEditorItem] false /  
+09-18 21:58:53.360  4076  4076 I HBD     : b updateConfig: [NumberInputClassItem] false / [DateTimeInputClassItem] false / [DigitEditorItem] false / [MonthInputTypeItem] false / [YearDateTimeInputTypeItem] false / [IPAddressInputTypeItem] false / [FileNameInputTypeItem] false / [CustomSymbolsForPeriodKeyItem] false / [OptionInputTypeItem] false / [DisableHanjaInputItem] false / [DisableCmKeyInputItem] false /  
+09-18 21:58:53.362  4076  4076 I HBD     : b updateConfig: [DisableCommaKeyInputItem] false / [DisableLanguageChangeKeyItem] false / [DisableSpaceKeyItem] false / [NumberPickerInputItem] false / [TimeInputTypeItem] false / [NumberKeyFirstLineItem] true / [AlternativeCharacterItem] false / [SimpleRowStyleItem] false / [HighContrastItem] false / [TouchAndHoldSpaceBarTypeItem] cursor_control / [UseContinuousInputItem] false /  
+09-18 21:58:53.367  4076  4076 I HBD     : b updateConfig: [UseToolBarItem] true / [OrientationItem] false / [DensityItem] 1.75 / [DisplayWidthItem] 0x720 / [DisplayHeightItem] 0x1471 / [MainTextLabelItem] 1 / [LanguageSwitchingUsingSpaceBarItem] false / [LanguageSwitchingUsingKeyItem] true / [TransliterationTypingModeItem] false / [CoverDisplayModeItem] false / [TalkBackEnabledItem] false /  
+09-18 21:58:53.369  4076  4076 I HBD     : b updateConfig: [Japanese8FlickCustomisationItem] false / [VoiceEnabledItem] true / [SamsungVoiceImeItem] false / [PredictionStatusItem] true /  
+09-18 21:58:53.373  4076  4076 I HBD     : b updateKeyboardViewHolder: INVALIDATE 
+09-18 21:58:53.411  4076  4076 I HBD     : c [BoardScrapManager] sendBoardScrap 
+09-18 21:58:53.413  4076  4076 I HBD     : ci updateChangedBoard - [LC:false][TC:false][RC:false][RB:false] 
+09-18 21:58:53.413  4076  4076 I HBD     : a update cached prediction status : true 
+09-18 21:58:53.416  4076  4076 I HBD     : d updateCurrentEngine,  65538 ,  SWIFTKEY
+09-18 21:58:53.416  4076  4076 I HBD     : a [SKE_TAM] Changed false
+09-18 21:58:53.418  4076  4076 I HBD     : a [SKE_TAM] custom = false , useEngine = true
+09-18 21:58:53.418  4076  4076 I HBD     : a [SKE_TAM] Changed false
+09-18 21:58:53.431  4076  4076 I HBD     : a refresh(), mParameterMode,  0
+09-18 21:58:53.433  4076  4076 I HBD     : a [PF_EN] updateChangedBoard() 17 
+09-18 21:58:53.451  1594  3979 D SecContentProvider: query(), uri = 15 selection = isClipboardShareAllowedAsUser
+09-18 21:58:53.451  1594  3979 D SecContentProvider: called from android.uid.honeyboard:10159
+09-18 21:58:53.451  1594  3979 D RestrictionPolicy: isClipboardShareAllowed : true
+09-18 21:58:53.469  1215 21248 V NuPlayerDriver: getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 21:58:53.623  1594  3979 D SecContentProvider: query(), uri = 15 selection = isClipboardAllowedAsUser
+09-18 21:58:53.623  1594  3979 D SecContentProvider: called from android.uid.honeyboard:10159
+09-18 21:58:53.623  1594  3979 D RestrictionPolicy: isClipboardAllowed : true
+09-18 21:58:53.623  1594  3979 D SecContentProvider: SemKnoxPolicyContract.RestrictionPolicy.CLIPBOARD_ALLOWED_AS_USER return = true
+09-18 21:58:53.688  4076  4076 I HBD     : HoneyBoardService [PF_OP][onStartInputView]  1005 ms 
+09-18 21:58:53.690  1594  3979 D InputMethodManagerServicePhysicalKey: isConnectedDexOnPC false
+09-18 21:58:53.690  1594  3979 D InputMethodManagerService: isImeSwitcherDisabledPackage : false
+09-18 21:58:53.690  1594  3979 I InputMethodManagerService: setImeWindowStatus: vis=3, backDisposition=0
+09-18 21:58:53.691  4076  4076 I HBD     : HoneyBoardService onWindowShown 
+09-18 21:58:53.694  5976  5976 I CocktailBarUiController: onReceive: action=ResponseAxT9Info isVisibleWindow=1
+09-18 21:58:53.696  1594  2440 D SecContentProvider: query(), uri = 15 selection = isClipboardShareAllowedAsUser
+09-18 21:58:53.696  1594  2440 D SecContentProvider: called from android.uid.honeyboard:10159
+09-18 21:58:53.696  1594  2440 D RestrictionPolicy: isClipboardShareAllowed : true
+09-18 21:58:53.698  1594 15231 D TspStateManager: update cmd=set_sip_mode,1
+09-18 21:58:53.698  4076  4076 I HBD     : HoneyBoardService [PF_OP][onWindowShown]  6460885 ns 
+09-18 21:58:53.701  4076  4076 I Choreographer: Skipped 62 frames!  The application may be doing too much work on its main thread.
+09-18 21:58:53.701  1594  2440 D InputMethodManagerService: notifyUserActivity: canceled, displayId=0
+09-18 21:58:53.705  1594  3979 D InputMethodManagerServicePhysicalKey: isConnectedDexOnPC false
+09-18 21:58:53.706  1594  3979 D InputMethodManagerService: isImeSwitcherDisabledPackage : false
+09-18 21:58:53.706  1594  3979 I InputMethodManagerService: setImeWindowStatus: vis=3, backDisposition=0
+09-18 21:58:53.897  1594  3979 V WindowManager: Relayout Window{a4469a2 u0 InputMethod}: viewVisibility=0 req=720x1555 d0
+09-18 21:58:53.898  1065  1101 I SurfaceFlinger: id=3246 createSurf (720x1555),-3 flag=40004, InputMethod$_4076#0
+09-18 21:58:53.899  1594  3979 D WindowManager: makeSurface duration=1 name=InputMethod$_4076
+09-18 21:58:53.904  1594  3979 V WindowManager: Relayout hash=a4469a2, pid=4076: mAttrs={(0,0)(fillxfill) gr=BOTTOM CENTER_VERTICAL sim={adjust=pan} ty=INPUT_METHOD fmt=TRANSPARENT wanim=0x7f130170 preferredMinDisplayRefreshRate=60.0 receive insets ignoring z-order
+09-18 21:58:53.904  1594  3979 V WindowManager:   fl=81800108
+09-18 21:58:53.904  1594  3979 V WindowManager:   pfl=12000000
+09-18 21:58:53.904  1594  3979 V WindowManager:   bhv=DEFAULT
+09-18 21:58:53.904  1594  3979 V WindowManager:   fitTypes=STATUS_BARS NAVIGATION_BARS
+09-18 21:58:53.904  1594  3979 V WindowManager:   fitSides=LEFT TOP RIGHT
+09-18 21:58:53.904  1594  3979 V WindowManager:   fitIgnoreVis dimDuration=150 naviIconColor=0}
+09-18 21:58:53.909  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: Relayout returned: old=(0,45,720,1600) new=(0,45,720,1600) req=(720,1555)0 dur=11 res=0x7 s={true 3913535488} ch=true fn=-1
+09-18 21:58:53.934  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: [DP] dp(1) 1 android.view.ViewRootImpl.reportNextDraw:11420 android.view.ViewRootImpl.performTraversals:4193 android.view.ViewRootImpl.doTraversal:2919 
+09-18 21:58:53.984  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: [DP] pdf(0) 1 android.view.ViewRootImpl.lambda$addFrameCompleteCallbackIfNeeded$3$ViewRootImpl:4995 android.view.ViewRootImpl$$ExternalSyntheticLambda16.run:6 android.os.Handler.handleCallback:938 
+09-18 21:58:53.984  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: [DP] rdf()
+09-18 21:58:53.985  1594  3979 D WindowManager: finishDrawingWindow: Window{a4469a2 u0 InputMethod} mDrawState=DRAW_PENDING
+09-18 21:58:53.985  4076  4076 I InputMethod: showSoftInput(), flags : 1
+09-18 21:58:53.985  1594  3979 I InputMethodManagerService: isAccessoryKeyboard 0
+09-18 21:58:53.985  4076  4076 I HBD     : HoneyBoardService onEvaluateInputViewShown: true 
+09-18 21:58:53.987  1594  3979 I InputMethodManagerService: isAccessoryKeyboard 0
+09-18 21:58:53.987 13722 13722 D InsetsController: show(ime(), fromIme=true)
+09-18 21:58:53.987  4076  4076 I HBD     : HoneyBoardService onEvaluateInputViewShown: true 
+09-18 21:58:53.987  4076  4076 I InputMethodService: startViews: mShowInputRequested=true, mInputViewStarted=true, mCandidatesViewStarted= false
+09-18 21:58:53.989  1594  3979 D InputMethodManagerService: notifyUserActivity: canceled, displayId=0
+09-18 21:58:53.991  5976  5976 I CocktailBarUiController: onReceive: action=ResponseAxT9Info isVisibleWindow=1
+09-18 21:58:53.992  1594  3979 D InputMethodManagerServicePhysicalKey: isConnectedDexOnPC false
+09-18 21:58:53.993 13722 13722 D InsetsSourceConsumer: setRequestedVisible: visible=true, type=19, host=com.aistudio.skillsexchange.nxptvq/com.example.MainActivity, from=android.view.InsetsSourceConsumer.show:246 android.view.InsetsController.showDirectly:1489 android.view.InsetsController.controlAnimationUnchecked:1137 android.view.InsetsController.show:942 android.view.ViewRootImpl$ViewRootHandler.handleMessageImpl:6478 android.view.ViewRootImpl$ViewRootHandler.handleMessage:6403 android.os.Handler.dispatchMessage:106 android.os.Looper.loopOnce:226 android.os.Looper.loop:313 android.app.ActivityThread.main:8751 
+09-18 21:58:53.999  1594  3979 D InputMethodManagerService: isImeSwitcherDisabledPackage : false
+09-18 21:58:54.000  4076 28908 I OpenGLRenderer: Davey! duration=1324ms; Flags=1, FrameTimelineVsyncId=844979, IntendedVsync=17944796170539, Vsync=17945829503831, InputEventId=0, HandleInputStart=17945839646590, AnimationStart=17945839652996, PerformTraversalsStart=17945982254246, DrawStart=17946073448933, FrameDeadline=17944812837205, FrameInterval=17945839391954, FrameStartTime=16666666, SyncQueued=17946095134142, SyncStart=17946095833517, IssueDrawCommandsStart=17946099542163, SwapBuffers=17946118037423, FrameCompleted=17946121361642, DequeueBufferDuration=32604, QueueBufferDuration=1759791, GpuCompleted=17946120941850, SwapBuffersCompleted=17946121361642, DisplayPresentTime=6228633301557445504, 
+09-18 21:58:54.023  1594  2440 D InsetsSourceProvider: updateVisibility: serverVisible=true, clientVisible=true, source=InsetsSource: {mType=ITYPE_IME, mFrame=[0,939][720,1600], mVisible=true}, controlTarget=Window{2e46f1d u0 com.aistudio.skillsexchange.nxptvq/com.example.MainActivity}, from=com.android.server.wm.ImeInsetsSourceProvider.updateVisibility:89 com.android.server.wm.InsetsSourceProvider.setClientVisible:415 com.android.server.wm.InsetsSourceProvider.updateClientVisibility:400 com.android.server.wm.InsetsStateController.onInsetsModified:508 com.android.server.wm.InsetsPolicy.onInsetsModified:477 com.android.server.wm.Session.insetsModified:704 android.view.IWindowSession$Stub.onTransact:1256 com.android.server.wm.Session.onTransact:176 android.os.Binder.execTransactInternal:1220 android.os.Binder.execTransact:1179 
+09-18 21:58:54.024 13722 13790 I ViewRootImpl@509da5a[MainActivity]: mWNT: t = android.view.SurfaceControl$Transaction@cbd2e84 fN = 1715 android.view.SyncRtSurfaceTransactionApplier.applyTransaction:94 android.view.SyncRtSurfaceTransactionApplier.lambda$scheduleApply$0$SyncRtSurfaceTransactionApplier:71 android.view.SyncRtSurfaceTransactionApplier$$ExternalSyntheticLambda0.onFrameDraw:4 
+09-18 21:58:54.024 13722 13790 I ViewRootImpl@509da5a[MainActivity]: mWNT: merge t to BBQ
+09-18 21:58:54.024 13722 13722 D InsetsController: show(ime(), fromIme=true)
+09-18 21:58:54.024  1594  2440 I WindowManager: Cancelling animation restarting=false, leash=Surface(name=Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation)/@0x89d1a17
+09-18 21:58:54.025  1594  2440 I WindowManager: Reparenting to original parent: Surface(name=WindowToken{3c04ecd android.os.BinderProxy@28db5f7})/@0x4bee4c1, destroy=false, surface=Surface(name=723382 NavigationBar0)/@0x53e11a8
+09-18 21:58:54.027  1594  3979 I InputMethodManagerService: setImeWindowStatus: vis=3, backDisposition=0
+09-18 21:58:54.030  4076  4076 I HBD     : al EBD si t 0 
+09-18 21:58:54.045  1065  1065 I Layer   : id=3242 mRemovedFromDrawingState Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#1 (99)
+09-18 21:58:54.070  2352  2352 D PipMotionHelper: animateToOffset: originalBounds=Rect(356, 722 - 692, 911) offset=-84 callers=
+09-18 21:58:54.070  2352  2352 D PipMotionHelper:     com.android.wm.shell.pip.phone.PipTouchHandler.onMovementBoundsChanged:482
+09-18 21:58:54.070  2352  2352 D PipMotionHelper:     com.android.wm.shell.pip.phone.PipController.updateMovementBounds:715
+09-18 21:58:54.070  2352  2352 D PipMotionHelper:     com.android.wm.shell.pip.phone.PipController.access$600:99
+09-18 21:58:54.070  2352  2352 D PipMotionHelper:     com.android.wm.shell.pip.phone.PipController$PipControllerPinnedTaskListener.onMovementBoundsChanged:238
+09-18 21:58:54.070  2352  2352 D PipMotionHelper:     com.android.wm.shell.pip.PinnedStackListenerForwarder.onMovementBoundsChanged:65
+09-18 21:58:54.108  4076  4900 I HBD     : g  setNetworkState currentNetworkState : wifi 
+09-18 21:58:54.109  4076  5535 I HBD     : b [SKE_KPM] load kpm : /data/user/0/com.samsung.android.honeyboard/app_KeyPressModel/model_0_0_760835997.im
+09-18 21:58:54.111 13722 13789 I ViewRootImpl@509da5a[MainActivity]: mWNT: t = android.view.SurfaceControl$Transaction@2f792a2 fN = 1716 android.view.SyncRtSurfaceTransactionApplier.applyTransaction:94 android.view.SyncRtSurfaceTransactionApplier.lambda$scheduleApply$0$SyncRtSurfaceTransactionApplier:71 android.view.SyncRtSurfaceTransactionApplier$$ExternalSyntheticLambda0.onFrameDraw:4 
+09-18 21:58:54.111 13722 13789 I ViewRootImpl@509da5a[MainActivity]: mWNT: merge t to BBQ
+09-18 21:58:54.114  1594  2660 D InputMethodManagerServicePhysicalKey: isConnectedDexOnPC false
+09-18 21:58:54.115  1594  2660 D InputMethodManagerService: isImeSwitcherDisabledPackage : false
+09-18 21:58:54.115  1594  2660 D InputMethodManagerService: shouldShowImeSwitcherLocked : checking vis : 3
+09-18 21:58:54.117  1065  1101 I SurfaceFlinger: id=3242 Removed Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#1 (99)
+09-18 21:58:54.119 13722 13790 I ViewRootImpl@509da5a[MainActivity]: mWNT: t = android.view.SurfaceControl$Transaction@820aef0 fN = 1717 android.view.SyncRtSurfaceTransactionApplier.applyTransaction:94 android.view.SyncRtSurfaceTransactionApplier.lambda$scheduleApply$0$SyncRtSurfaceTransactionApplier:71 android.view.SyncRtSurfaceTransactionApplier$$ExternalSyntheticLambda0.onFrameDraw:4 
+09-18 21:58:54.119 13722 13790 I ViewRootImpl@509da5a[MainActivity]: mWNT: merge t to BBQ
+09-18 21:58:54.126  2352  2352 V Navbar.Store: handleEvent [EventType] ON_NAVBAR_ICON_HINT_CHANGED [Module] NavigationBar  KEYS_NAVBAR_ICON_HINT=3
+09-18 21:58:54.127  2352  2352 V Navbar.Store: --[Band]SETUPWIZARD_PACK_SET_NAVBAR_ICON_HINT
+09-18 21:58:54.129  1065  1065 I Layer   : id=3242 Destroyed Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#1
+09-18 21:58:54.133 13722 13789 I ViewRootImpl@509da5a[MainActivity]: mWNT: t = android.view.SurfaceControl$Transaction@8d7cc69 fN = 1718 android.view.SyncRtSurfaceTransactionApplier.applyTransaction:94 android.view.SyncRtSurfaceTransactionApplier.lambda$scheduleApply$0$SyncRtSurfaceTransactionApplier:71 android.view.SyncRtSurfaceTransactionApplier$$ExternalSyntheticLambda0.onFrameDraw:4 
+09-18 21:58:54.134 13722 13789 I ViewRootImpl@509da5a[MainActivity]: mWNT: merge t to BBQ
+09-18 21:58:54.134  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_BUTTON_FORCED_VISIBLE)=false
+09-18 21:58:54.135  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_SETUPWIZARD_STYLE)=false
+09-18 21:58:54.135  2352  2352 V Navbar.Store: --[Band]VIS_PACK_REEVAULATE_NAVBAR
+09-18 21:58:54.139  2352  2352 V Navbar.Store: ----apply(REEVALUATE_NAVBAR)
+09-18 21:58:54.150 13722 13790 I ViewRootImpl@509da5a[MainActivity]: mWNT: t = android.view.SurfaceControl$Transaction@66036ee fN = 1719 android.view.SyncRtSurfaceTransactionApplier.applyTransaction:94 android.view.SyncRtSurfaceTransactionApplier.lambda$scheduleApply$0$SyncRtSurfaceTransactionApplier:71 android.view.SyncRtSurfaceTransactionApplier$$ExternalSyntheticLambda0.onFrameDraw:4 
+09-18 21:58:54.150 13722 13790 I ViewRootImpl@509da5a[MainActivity]: mWNT: merge t to BBQ
+09-18 21:58:54.151  2352  2352 V Navbar.Store: ----handleEvent [EventType] GET_BOOL_REGION_SAMPLING_ENABLED [Module] LightBarController  KEYS_DEFAULT=false
+09-18 21:58:54.152  2352  2352 V Navbar.Store: ------[Band]COLOR_PACK_GET_REGION_SAMPLING_ENABLED
+09-18 21:58:54.152  2352  2352 V Navbar.Store: --------getValue(BOOL_REGION_SAMPLING_ENABLED)=false
+09-18 21:58:54.153  1065  1065 D SurfaceFlinger: Display 0 HWC layers:
+09-18 21:58:54.153  1065  1065 D SurfaceFlinger:      DEVICE | 0xe7cad470 | 0102 | RGBA_8888    |    0.0    0.0  720.0 1600.0 |    0    0  720 1600 | com.aistudio.skillsexchange.nxptvq/com.example.MainActivity$_13722#0
+09-18 21:58:54.153  1065  1065 D SurfaceFlinger:      DEVICE | 0xe80fef00 | 0100 | RGBA_8888    |    0.0    0.0  720.0 1390.0 |    0  210  720 1600 | InputMethod$_4076#0
+09-18 21:58:54.153  1065  1065 D SurfaceFlinger:      DEVICE | 0xe7cad320 | 0100 | RGBA_8888    |    0.0    0.0  720.0   45.0 |    0    0  720   45 | StatusBar$_2352#0
+09-18 21:58:54.153  1065  1065 D SurfaceFlinger:      CLIENT | 0xe80ffe50 | 0100 | RGBA_8888    |    0.0    0.0   67.0  228.0 |    0  239   67  467 | com.samsung.android.app.cocktailbars[...]arservice.CocktailBarService$_5976#0
+09-18 21:58:54.153  1065  1065 D SurfaceFlinger:      CLIENT | 0xe80fbfc0 | 0100 | RGBA_8888    |    0.0    0.0  720.0   84.0 |    0 1516  720 1600 | NavigationBar0$_2352#0
+09-18 21:58:54.153  1065  1065 D SurfaceFlinger:      CLIENT | 0xe6e752e0 | 0108 | RGBA_8888    |    0.0    0.0  720.0 1600.0 |    0    0  720 1600 | BlueLightFilter$_2352#0
+09-18 21:58:54.153  1065  1065 D SurfaceFlinger: 
+09-18 21:58:54.158  2352  2352 V Navbar.Store: handleEvent [EventType] GET_BOOL_SHOW_KEYBOARD_BUTTON [Module] SamsungNavigationBarView  KEYS_DEFAULT=true  KEYS_PORTRAIT=true
+09-18 21:58:54.158  2352  2352 V Navbar.Store: --[Band]GESTURE_PACK_SHOW_KEYBOARD_BUTTON
+09-18 21:58:54.159  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_GESTURAL_MODE)=false
+09-18 21:58:54.167 13722 13789 I ViewRootImpl@509da5a[MainActivity]: mWNT: t = android.view.SurfaceControl$Transaction@1c8178f fN = 1720 android.view.SyncRtSurfaceTransactionApplier.applyTransaction:94 android.view.SyncRtSurfaceTransactionApplier.lambda$scheduleApply$0$SyncRtSurfaceTransactionApplier:71 android.view.SyncRtSurfaceTransactionApplier$$ExternalSyntheticLambda0.onFrameDraw:4 
+09-18 21:58:54.167 13722 13789 I ViewRootImpl@509da5a[MainActivity]: mWNT: merge t to BBQ
+09-18 21:58:54.179  4076  4076 I HBD     : c displayAnimatedVectorDrawable bee animation started cnt=4 2131231868 
+09-18 21:58:54.182  2713  9602 I TouchInteractionService: onActiveNavBarRegionChanges, region : SkRegion((0,1516,258,1600)(259,1516,460,1600)(461,1516,640,1600))
+09-18 21:58:54.184 13722 13790 I ViewRootImpl@509da5a[MainActivity]: mWNT: t = android.view.SurfaceControl$Transaction@f9ca1c fN = 1721 android.view.SyncRtSurfaceTransactionApplier.applyTransaction:94 android.view.SyncRtSurfaceTransactionApplier.lambda$scheduleApply$0$SyncRtSurfaceTransactionApplier:71 android.view.SyncRtSurfaceTransactionApplier$$ExternalSyntheticLambda0.onFrameDraw:4 
+09-18 21:58:54.184 13722 13790 I ViewRootImpl@509da5a[MainActivity]: mWNT: merge t to BBQ
+09-18 21:58:54.186  2352  2352 V Navbar.Store: ----handleEvent [EventType] ON_UPDATE_REMOTEVIEW [Module] SamsungNavigationBarView  KEYS_NAVBAR_DARK_INTENSITY=0.0  KEYS_CONTEXTUALBUTTON_VISIBLE=true  KEYS_LEFT_REMOTEVIEW_CONTAINER=android.widget.LinearLayout{e02460 I.E...... ......I. 0,0-79,84 #7f0b0478 app:id/left_remoteview}  KEYS_RIGHT_REMOTEVIEW_CONTAINER=android.widget.LinearLayout{cc4ed19 I.E...... ......I. 641,0-720,84 #7f0b070a app:id/right_remoteview}
+09-18 21:58:54.187  2352  2352 V Navbar.Store: ------[Band]REMOTE_VIEW_PACK_SET_REMOTEVIEW_CONTAINER
+09-18 21:58:54.187  2352  2352 V Navbar.Store: --------apply(UPDATE_NAVBAR_REMOTEVIEW_CONTAINER)
+09-18 21:58:54.190  2352  2352 V Navbar.Store: --------apply(UPDATE_NAVBAR_RIGHT_REMOTEVIEW_VISIBILITY)
+09-18 21:58:54.190  2352  2352 V Navbar.Store: --------getValue(FLOAT_REMOTEVIEW_DARK_INTENSITY)=0.0
+09-18 21:58:54.195  2352  2352 V Navbar.Store: handleEvent [EventType] GET_BOOL_SHOW_KEYBOARD_BUTTON [Module] SamsungNavigationBarView  KEYS_DEFAULT=true  KEYS_PORTRAIT=true
+09-18 21:58:54.195  2352  2352 V Navbar.Store: --[Band]GESTURE_PACK_SHOW_KEYBOARD_BUTTON
+09-18 21:58:54.195  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_GESTURAL_MODE)=false
+09-18 21:58:54.195  2713  9602 I TouchInteractionService: onActiveNavBarRegionChanges, region : SkRegion((0,1516,258,1519)(259,1516,460,1519)(461,1516,640,1519)(0,1519,258,1600)(259,1519,460,1600)(461,1519,640,1600)(642,1519,720,1600))
+09-18 21:58:54.200 13722 13789 I ViewRootImpl@509da5a[MainActivity]: mWNT: t = android.view.SurfaceControl$Transaction@397c625 fN = 1722 android.view.SyncRtSurfaceTransactionApplier.applyTransaction:94 android.view.SyncRtSurfaceTransactionApplier.lambda$scheduleApply$0$SyncRtSurfaceTransactionApplier:71 android.view.SyncRtSurfaceTransactionApplier$$ExternalSyntheticLambda0.onFrameDraw:4 
+09-18 21:58:54.200 13722 13789 I ViewRootImpl@509da5a[MainActivity]: mWNT: merge t to BBQ
+09-18 21:58:54.205  2713  9602 I TouchInteractionService: onSystemUiStateChanged, stateFlags : 393216
+09-18 21:58:54.206  4076  4076 I HBD     : c bee animation started cnt=3 2131231884 
+09-18 21:58:54.208  2713  2713 I TouchInteractionService: onSystemUiFlagsChanged, userUnlocked
+09-18 21:58:54.208  4076  4076 I HBD     : al EBD ex 
+09-18 21:58:54.218 13722 13790 I ViewRootImpl@509da5a[MainActivity]: mWNT: t = android.view.SurfaceControl$Transaction@b9cd3fa fN = 1723 android.view.SyncRtSurfaceTransactionApplier.applyTransaction:94 android.view.SyncRtSurfaceTransactionApplier.lambda$scheduleApply$0$SyncRtSurfaceTransactionApplier:71 android.view.SyncRtSurfaceTransactionApplier$$ExternalSyntheticLambda0.onFrameDraw:4 
+09-18 21:58:54.219 13722 13790 I ViewRootImpl@509da5a[MainActivity]: mWNT: merge t to BBQ
+09-18 21:58:54.223  2352  2352 V Navbar.Store: handleEvent [EventType] GET_BOOL_NAVBAR_CAN_MOVE_STATE [Module] SamsungNavigationBarView  KEYS_DEFAULT=true
+09-18 21:58:54.223  2352  2352 V Navbar.Store: --[Band]CONFIG_PACK_GET_NAVBAR_CAN_MOVE
+09-18 21:58:54.224  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_CAN_MOVE)=true
+09-18 21:58:54.226  2713  9602 I TouchInteractionService: onActiveNavBarRegionChanges, region : SkRegion((0,1516,258,1519)(259,1516,460,1519)(461,1516,640,1519)(0,1519,258,1600)(259,1519,460,1600)(461,1519,640,1600)(642,1519,720,1600))
+09-18 21:58:54.230  2352  2352 V Navbar.Store: handleEvent [EventType] GET_BOOL_USE_NAVBAR_BACKGROUND_FRAME [Module] NavigationBarTransitions  KEYS_DEFAULT=false
+09-18 21:58:54.230  2352  2352 V Navbar.Store: --[Band]COLOR_PACK_GET_USE_NAVBAR_BACKGROUND_FRAME
+09-18 21:58:54.231  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_GESTURAL_MODE)=false
+09-18 21:58:54.231  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_OPAQUE)=false
+09-18 21:58:54.231  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_PINNED_EDGE_ENABELD)=false
+09-18 21:58:54.236 13722 13789 I ViewRootImpl@509da5a[MainActivity]: mWNT: t = android.view.SurfaceControl$Transaction@7b89dab fN = 1724 android.view.SyncRtSurfaceTransactionApplier.applyTransaction:94 android.view.SyncRtSurfaceTransactionApplier.lambda$scheduleApply$0$SyncRtSurfaceTransactionApplier:71 android.view.SyncRtSurfaceTransactionApplier$$ExternalSyntheticLambda0.onFrameDraw:4 
+09-18 21:58:54.236 13722 13789 I ViewRootImpl@509da5a[MainActivity]: mWNT: merge t to BBQ
+09-18 21:58:54.250 13722 13790 I ViewRootImpl@509da5a[MainActivity]: mWNT: t = android.view.SurfaceControl$Transaction@6e76c08 fN = 1725 android.view.SyncRtSurfaceTransactionApplier.applyTransaction:94 android.view.SyncRtSurfaceTransactionApplier.lambda$scheduleApply$0$SyncRtSurfaceTransactionApplier:71 android.view.SyncRtSurfaceTransactionApplier$$ExternalSyntheticLambda0.onFrameDraw:4 
+09-18 21:58:54.250 13722 13790 I ViewRootImpl@509da5a[MainActivity]: mWNT: merge t to BBQ
+09-18 21:58:54.267 13722 13789 I ViewRootImpl@509da5a[MainActivity]: mWNT: t = android.view.SurfaceControl$Transaction@9a39fa1 fN = 1726 android.view.SyncRtSurfaceTransactionApplier.applyTransaction:94 android.view.SyncRtSurfaceTransactionApplier.lambda$scheduleApply$0$SyncRtSurfaceTransactionApplier:71 android.view.SyncRtSurfaceTransactionApplier$$ExternalSyntheticLambda0.onFrameDraw:4 
+09-18 21:58:54.267 13722 13789 I ViewRootImpl@509da5a[MainActivity]: mWNT: merge t to BBQ
+09-18 21:58:54.284 13722 13790 I ViewRootImpl@509da5a[MainActivity]: mWNT: t = android.view.SurfaceControl$Transaction@cd435c6 fN = 1727 android.view.SyncRtSurfaceTransactionApplier.applyTransaction:94 android.view.SyncRtSurfaceTransactionApplier.lambda$scheduleApply$0$SyncRtSurfaceTransactionApplier:71 android.view.SyncRtSurfaceTransactionApplier$$ExternalSyntheticLambda0.onFrameDraw:4 
+09-18 21:58:54.284 13722 13790 I ViewRootImpl@509da5a[MainActivity]: mWNT: merge t to BBQ
+09-18 21:58:54.301 13722 13789 I ViewRootImpl@509da5a[MainActivity]: mWNT: t = android.view.SurfaceControl$Transaction@be16987 fN = 1728 android.view.SyncRtSurfaceTransactionApplier.applyTransaction:94 android.view.SyncRtSurfaceTransactionApplier.lambda$scheduleApply$0$SyncRtSurfaceTransactionApplier:71 android.view.SyncRtSurfaceTransactionApplier$$ExternalSyntheticLambda0.onFrameDraw:4 
+09-18 21:58:54.301 13722 13789 I ViewRootImpl@509da5a[MainActivity]: mWNT: merge t to BBQ
+09-18 21:58:54.321 13722 13790 I ViewRootImpl@509da5a[MainActivity]: mWNT: t = android.view.SurfaceControl$Transaction@23994dd fN = 1729 android.view.SyncRtSurfaceTransactionApplier.applyTransaction:94 android.view.SyncRtSurfaceTransactionApplier.lambda$scheduleApply$0$SyncRtSurfaceTransactionApplier:71 android.view.SyncRtSurfaceTransactionApplier$$ExternalSyntheticLambda0.onFrameDraw:4 
+09-18 21:58:54.321 13722 13790 I ViewRootImpl@509da5a[MainActivity]: mWNT: merge t to BBQ
+09-18 21:58:54.359   619   619 D io_stats: !@ 179,0 r 5070307 45407243 w 475326 4436524 d 242524 2409380 f 185953 213762 iot 1897190 1622048 th 102400 102400 81508 pt 2480 inp 0 0 17946.489
+09-18 21:58:54.526  1215 21248 V NuPlayerDriver: getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 21:58:54.618 15228 15228 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-18 21:58:54.682 15228 15228 I AndroidRuntime: Using default boot image
+09-18 21:58:54.682 15228 15228 I AndroidRuntime: Leaving lock profiling enabled
+09-18 21:58:54.686 15228 15228 D SecNativeFeatureCppIf: encoded
+09-18 21:58:54.686 15228 15228 D SecNativeFeatureCppIf: decoding and unzip finish
+09-18 21:58:54.686 15228 15228 D SecNativeFeatureCppIf: use unCompDataBuff. encoded
+09-18 21:58:54.687 15228 15228 D SecNativeFeatureCppIf: Free unCompDataBuff
+09-18 21:58:54.687 15228 15228 D AndroidRuntime: addProductProperty: pBrand1 is not null
+09-18 21:58:54.687 15228 15228 D AndroidRuntime: addProductProperty: not brand or 7
+09-18 21:58:54.722 15228 15228 I app_process: Using CollectorTypeCC GC.
+09-18 21:58:54.885  5976  6495 I AppsEdge.Badge: getBadgeIconType 0
+09-18 21:58:54.889  1055 26117 V APM_AudioPolicyManager: setAppState(portId:610, state:1)
+09-18 21:58:54.893 23156 11562 I BadgeProvider: query, [selection] : null
+09-18 21:58:54.897  5976  6495 I AppsEdge.Badge: key=com.sec.android.app.samsungapps:0 count=1
+09-18 21:58:54.897  5976  6495 I AppsEdge.Badge: key=com.openai.chatgpt:0 count=1
+09-18 21:58:54.897  5976  6495 I AppsEdge.Badge: key=com.samsung.android.app.smartcapture:0 count=1
+09-18 21:58:54.897  5976  6495 I AppsEdge.Badge: key=com.whatsapp/.Main:0 count=10
+09-18 21:58:55.090 15228 15228 W app_process: FaultHandler: MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED failed: 38 Function not implemented
+09-18 21:58:55.163 15228 15228 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-18 21:58:55.231 15228 15228 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-18 21:58:55.232 15228 15228 D app_process: Time zone APEX ICU file found: /apex/com.android.tzdata/etc/icu/icu_tzdata.dat
+09-18 21:58:55.232 15228 15228 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt68l.dat
+09-18 21:58:55.258 15228 15228 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-18 21:58:55.268 15228 15228 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-18 21:58:55.303  1594  1873 D PowerManagerService: UserActivityStateListenerState: 0
+09-18 21:58:55.393 15228 15228 E SemDvfsManager_JNI: SemDvfsManager: registerfunction enter
+09-18 21:58:55.393 15228 15228 E SemAffinityControl: SemAffinityControl: registerfunction enter
+09-18 21:58:55.451  2352  2352 D NetworkController.WifiSignalController: notifyListener: visible=true, enabled=true, connected=true, inetCondition=1, isDefault=true, receivedCR=true, receivedIC=-1, shouldForceHide=false, emptyConnected=false
+09-18 21:58:55.483 15228 15228 D ProcessState: Binder ioctl to enable oneway spam detection failed: Invalid argument
+09-18 21:58:55.483 15228 15228 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-18 21:58:55.516  1065  2164 I SurfaceFlinger: id=3247 createSurf (0x0),-1 flag=80004, WindowToken{a0d1d08 android.os.Binder@81272ab}#0
+09-18 21:58:55.520  1594  2660 D SettingsProvider: isChangeAllowed() : name = accessibility_enabled
+09-18 21:58:55.522  1594  2660 I GenerationRegistry: mBackingStore.isClosed() : false
+09-18 21:58:55.545  1594  1594 D BatterySaverPolicy: accessibility changed to true, updating policy.
+09-18 21:58:55.556  1594  3983 D SettingsProvider: isChangeAllowed() : name = accessibility_enabled
+09-18 21:58:55.557  1594  3983 I GenerationRegistry: mBackingStore.isClosed() : false
+09-18 21:58:55.564  1594  1594 I AccessibilityManagerService: semIsAccessibilityServiceEnabled()
+09-18 21:58:55.565  1594  1594 I AccessibilityManagerService: semIsAccessibilityServiceEnabled()
+09-18 21:58:55.574  1594  1594 D AS.AudioService: Accessibility volume enabled = false
+09-18 21:58:55.593  2713 22286 I TouchInteractionService: onActiveNavBarRegionChanges, region : SkRegion((0,1516,258,1519)(259,1516,460,1519)(461,1516,640,1519)(0,1519,258,1600)(259,1519,460,1600)(461,1519,640,1600)(642,1519,720,1600))
+09-18 21:58:55.594  2352  2352 V Navbar.Store: ----handleEvent [EventType] ON_UPDATE_REMOTEVIEW [Module] SamsungNavigationBarView  KEYS_NAVBAR_DARK_INTENSITY=0.0  KEYS_CONTEXTUALBUTTON_VISIBLE=true  KEYS_LEFT_REMOTEVIEW_CONTAINER=android.widget.LinearLayout{e02460 I.E...... ......I. 0,0-79,84 #7f0b0478 app:id/left_remoteview}  KEYS_RIGHT_REMOTEVIEW_CONTAINER=android.widget.LinearLayout{cc4ed19 I.E...... ......I. 641,0-720,84 #7f0b070a app:id/right_remoteview}
+09-18 21:58:55.594  2352  2352 V Navbar.Store: ------[Band]REMOTE_VIEW_PACK_SET_REMOTEVIEW_CONTAINER
+09-18 21:58:55.594  2352  2352 V Navbar.Store: --------apply(UPDATE_NAVBAR_REMOTEVIEW_CONTAINER)
+09-18 21:58:55.594  2352  2352 V Navbar.Store: --------apply(UPDATE_NAVBAR_RIGHT_REMOTEVIEW_VISIBILITY)
+09-18 21:58:55.594  2352  2352 V Navbar.Store: --------getValue(FLOAT_REMOTEVIEW_DARK_INTENSITY)=0.0
+09-18 21:58:55.594  2352  2352 V Navbar.Store: handleEvent [EventType] ON_NAVBAR_UPDATE_A11Y_SERVICE [Module] NavigationBar  KEYS_LONG_CLICKABLE=false  KEYS_CLICKABLE=false
+09-18 21:58:55.594  2352  2352 V Navbar.Store: --[Band]SETUPWIZARD_PACK_UPDATE_A11Y_SERVICE
+09-18 21:58:55.594  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_BUTTON_FORCED_VISIBLE)=false
+09-18 21:58:55.594  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_SETUPWIZARD_STYLE)=false
+09-18 21:58:55.599  2352  2352 V Navbar.Store: handleEvent [EventType] GET_BOOL_NAVBAR_CAN_MOVE_STATE [Module] SamsungNavigationBarView  KEYS_DEFAULT=true
+09-18 21:58:55.599  2352  2352 V Navbar.Store: --[Band]CONFIG_PACK_GET_NAVBAR_CAN_MOVE
+09-18 21:58:55.599  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_CAN_MOVE)=true
+09-18 21:58:55.600  2352  2352 V Navbar.Store: handleEvent [EventType] GET_BOOL_USE_NAVBAR_BACKGROUND_FRAME [Module] NavigationBarTransitions  KEYS_DEFAULT=false
+09-18 21:58:55.601  2352  2352 V Navbar.Store: --[Band]COLOR_PACK_GET_USE_NAVBAR_BACKGROUND_FRAME
+09-18 21:58:55.601  2713 22286 I TouchInteractionService: onActiveNavBarRegionChanges, region : SkRegion((0,1516,258,1519)(259,1516,460,1519)(461,1516,640,1519)(0,1519,258,1600)(259,1519,460,1600)(461,1519,640,1600)(642,1519,720,1600))
+09-18 21:58:55.601  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_GESTURAL_MODE)=false
+09-18 21:58:55.601  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_OPAQUE)=false
+09-18 21:58:55.601  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_PINNED_EDGE_ENABELD)=false
+09-18 21:58:55.653  1215 21248 V NuPlayerDriver: getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 21:58:56.289  5976  6495 I AppsEdge.Badge: getBadgeIconType 0
+09-18 21:58:56.292 22349 22349 I wpa_supplicant: Heartbeat 1638
+09-18 21:58:56.293 23156 11562 I BadgeProvider: query, [selection] : null
+09-18 21:58:56.298  5976  6495 I AppsEdge.Badge: key=com.sec.android.app.samsungapps:0 count=1
+09-18 21:58:56.298  5976  6495 I AppsEdge.Badge: key=com.openai.chatgpt:0 count=1
+09-18 21:58:56.298  5976  6495 I AppsEdge.Badge: key=com.samsung.android.app.smartcapture:0 count=1
+09-18 21:58:56.298  5976  6495 I AppsEdge.Badge: key=com.whatsapp/.Main:0 count=10
+09-18 21:58:56.365   619   619 D io_stats: !@ 179,0 r 5072394 45435451 w 475347 4436684 d 242524 2409380 f 185954 213763 iot 1897590 1622399 th 102400 102400 81508 pt 2480 inp 0 0 17948.498
+09-18 21:58:56.609 15228 15228 D SemCscFeature: Encoded
+09-18 21:58:56.786  1215 21248 V NuPlayerDriver: getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 21:58:56.929 15228 15228 W AccessibilityNodeInfoDumper: Fetch time: 309ms
+09-18 21:58:56.931  1594  3983 W WindowManager: removeWindowToken: Attempted to remove non-existing token: android.os.Binder@81272ab
+09-18 21:58:56.931  1594  3983 D SettingsProvider: isChangeAllowed() : name = accessibility_enabled
+09-18 21:58:56.933  1594  3983 I GenerationRegistry: mBackingStore.isClosed() : false
+09-18 21:58:56.934  1594  3983 D SettingsProvider: isChangeAllowed() : name = accelerometer_rotation
+09-18 21:58:56.934  1594  3983 D SettingsProvider: isChangeAllowed() : name = user_rotation
+09-18 21:58:56.940  1594  3983 V WindowManager: rotationForOrientation(orient=SCREEN_ORIENTATION_UNSPECIFIED (-1), last=ROTATION_0 (0)); user=ROTATION_0 (0) USER_ROTATION_LOCKED
+09-18 21:58:56.940  1594  3983 D WindowManager: rotationForOrientation, orientationSource=ActivityRecord{1599e88 u0 com.aistudio.skillsexchange.nxptvq/com.example.MainActivity t57}
+09-18 21:58:56.945  1594  3983 V WindowManager: Computed rotation=ROTATION_0 (0) for display id=0 based on lastOrientation=SCREEN_ORIENTATION_UNSPECIFIED (-1) and oldRotation=ROTATION_0 (0), caller=com.android.server.wm.DisplayContent.updateRotationUnchecked:2339 com.android.server.wm.WindowManagerService.updateRotationUnchecked:4535 com.android.server.wm.WindowManagerService.freezeDisplayRotation:4435 com.android.server.wm.WindowManagerService.freezeRotation:4394 android.view.IWindowManager$Stub.onTransact:2456 com.android.server.wm.WindowManagerService.onTransact:1621 
+09-18 21:58:56.950  1594  1594 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-18 21:58:56.952  1065  1065 I Layer   : id=3247 mRemovedFromDrawingState WindowToken{a0d1d08 android.os.Binder@81272ab}#0 (99)
+09-18 21:58:56.953  1065  1065 I SurfaceFlinger: id=3247 Removed WindowToken{a0d1d08 android.os.Binder@81272ab}#0 (99)
+09-18 21:58:56.953  1065  1065 I Layer   : id=3247 Destroyed WindowToken{a0d1d08 android.os.Binder@81272ab}#0
+09-18 21:58:56.956 15228 15228 D hw-ProcessState: Binder ioctl to enable oneway spam detection failed: Invalid argument
+09-18 21:58:56.956 15228 15228 D AndroidRuntime: Shutting down VM
+09-18 21:58:56.972  1594  2265 E SemIWCMonitor: poor link count is 1
+09-18 21:58:56.972  1594  2265 E SemIWCMonitor: [POOR_LINK_DETECTED] 0 -> 1
+09-18 21:58:56.972  1594  2265 E SemIWCMonitor.File: Poor Link, timestamp =: 1789757936972  RSSI:-71  AP:##:##:##:##:b8:fa
+09-18 21:58:56.973  1594  2265 E SemIWCMonitor.File: List of Known APs: Cand: [ <61:b0;2;2256871023>  <10:50;1;2026081627>  <6a:a6;6;2462927691>  <ad:76;1;892391690>  <93:f2;1;563667743>  <53:26;8;4113947618>  <30:12;6;4113796612>  <dc:98;4;4967296864>  <06:19;1;1318974413>  <2f:e0;23;2806848950>  <f4:64;1;1997931268> ], Core: [ <0c:54;1779890820515>  <44:90;1783538762389>  <29:b8;1772875496786>  <f0:55;1772799864105>  <b8:fa;1789749581548>  <32:34;1765788513290>  <c0:0c;1762196244141> ], Prob: []
+09-18 21:58:56.975  1594  2265 E SemIWCMonitor.File: Q-Table Action Taken: Q-Table: [ 2.798635 0.000000 0.000000; 4.236080 0.000000 0.000000; 3.058661 0.000000 0.000000; ] >> Action Taken: 0, New State: 1
+09-18 21:58:57.093  1594  2130 D SensorService: [SO] 0.019 -0.127 9.638
+09-18 21:58:57.259  5976  6495 I AppsEdge.Badge: getBadgeIconType 0
+09-18 21:58:57.262 23156 11562 I BadgeProvider: query, [selection] : null
+09-18 21:58:57.268  5976  6495 I AppsEdge.Badge: key=com.sec.android.app.samsungapps:0 count=1
+09-18 21:58:57.268  5976  6495 I AppsEdge.Badge: key=com.openai.chatgpt:0 count=1
+09-18 21:58:57.268  5976  6495 I AppsEdge.Badge: key=com.samsung.android.app.smartcapture:0 count=1
+09-18 21:58:57.268  5976  6495 I AppsEdge.Badge: key=com.whatsapp/.Main:0 count=10
+09-18 21:58:57.537  1594  2460 D SamsungAlarmManager: Cancel Alarm calling from uid:10242 pid :12960 / OP:PendingIntent{84f7650: PendingIntentRecord{d8b00f7 com.whatsapp broadcastIntent}}
+09-18 21:58:57.541  1594  2460 V SamsungAlarmManager: setLocked to kernel - W:39610265 / NW:39553332, now=39550873
+09-18 21:58:57.543 12960 13015 I WM-WorkerWrapper: Worker result SUCCESS for Work [ id=53c867c9-c5df-484f-8257-c89887f35805, tags={ com.whatsapp.infra.networking.xmpp.lifecycle.XmppLifecycleWorker } ]
+09-18 21:58:57.548 12960 12960 D WM-Processor: 1Vt 53c867c9-c5df-484f-8257-c89887f35805 executed; reschedule = false
+09-18 21:58:57.548 12960 12960 D WM-GreedyScheduler: Stopping tracking for WorkGenerationalId(workSpecId=53c867c9-c5df-484f-8257-c89887f35805, generation=0)
+09-18 21:58:57.549 12960 12960 D WM-SystemJobService: 53c867c9-c5df-484f-8257-c89887f35805 executed on JobScheduler
+09-18 21:58:57.557  1594  3979 D SamsungAlarmManager: setInexact (T:3/F:0/AC:false) 20260918T220257 now=39550887 - CU:10242/CP:12960/OP:PendingIntent{1c1f049: PendingIntentRecord{83fbd4e com.whatsapp broadcastIntent}}
+09-18 21:58:57.557  1594  3979 V SamsungAlarmManager: setLocked to kernel - W:39610265 / NW:39553332, now=39550889
+09-18 21:58:57.562  1594 12952 I ActivityManager: Changes in 10242 8 to 10, 8 to 0
+09-18 21:58:57.563  1594  1619 I system_server: Background concurrent copying GC freed 10166KB AllocSpace bytes, 105(2104KB) LOS objects, 17% free, 58MB/70MB, paused 406us,604us total 588.899ms
+09-18 21:58:57.563  1594  1772 D NetworkPolicy: onUidStateChanged() uid: 10242, isForeground(false, 10)
+09-18 21:58:57.564  3874  6000 I exvx    : (REDACTED) HDM. appOpsListener %s %s
+09-18 21:58:57.564  1055 26117 V APM_AudioPolicyManager: setAppState(portId:610, state:1)
+09-18 21:58:57.564  3874  6000 I exvx    : (REDACTED) HDM. Ignoring irrelevant audio permission changes for package %s
+09-18 21:58:57.566  1055 26117 V APM_AudioPolicyManager: setAppState(portId:610, state:1)
+09-18 21:58:57.570 12960 13015 D WM-GreedyScheduler: Cancelling work ID 53c867c9-c5df-484f-8257-c89887f35805
+09-18 21:58:57.574 12960 13015 D WM-NetworkStateTracker: Unregistering network callback
+09-18 21:58:57.575 12960 13015 D ConnectivityManager: StackLog: [android.net.ConnectivityManager.unregisterNetworkCallback(ConnectivityManager.java:5543)] [X.1Vp.A04(:25)] [X.2Et.invoke(:348)] [X.0k8.A00(:113)] [X.21H.invokeSuspend(:10)] [X.0ax.resumeWith(:8)] [X.0bJ.run(:98)] [X.1Wg.run(:2)] [java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)] [java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)] [java.lang.Thread.run(Thread.java:1012)]
+09-18 21:58:57.578  1594  2208 D ConnectivityService:  Removing from current network [110 WIFI], leaving 121 requests.
+09-18 21:58:57.870  1215 21248 V NuPlayerDriver: getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 21:58:58.013  1594 15252 D WifiConnectivityMonitor.DnsPingerHandler: setCurrentLinkProperties: lp={InterfaceName: wlan0 LinkAddresses: [ fe80::a858:ce0c:56e9:9d2a/64,192.168.1.68/24,2c0f:3d00:684:ab00:2adf:79ab:e47a:a369/64,2c0f:3d00:684:ab00:a50c:566d:6354:3862/64 ] DnsAddresses: [ /fe80::1%wlan0,/192.168.1.254 ] Domains: null MTU: 0 ServerAddress: /192.168.1.254 TcpBufferSizes: 524288,1048576,4194304,524288,1048576,4194304 Routes: [ fe80::/64 -> :: wlan0 mtu 0,::/0 -> fe80::1 wlan0 mtu 0,2c0f:3d00:684:ab00::/64 -> :: wlan0 mtu 0,192.168.1.0/24 -> 0.0.0.0 wlan0 mtu 0,0.0.0.0/0 -> 192.168.1.254 wlan0 mtu 0 ]}
+09-18 21:58:58.253  5976  6495 I AppsEdge.Badge: getBadgeIconType 0
+09-18 21:58:58.255 23156  7178 I BadgeProvider: query, [selection] : null
+09-18 21:58:58.261  4076  4076 I HBD     : c bee animation started cnt=2 2131231868 
+09-18 21:58:58.261  5976  6495 I AppsEdge.Badge: key=com.sec.android.app.samsungapps:0 count=1
+09-18 21:58:58.261  5976  6495 I AppsEdge.Badge: key=com.openai.chatgpt:0 count=1
+09-18 21:58:58.261  5976  6495 I AppsEdge.Badge: key=com.samsung.android.app.smartcapture:0 count=1
+09-18 21:58:58.261  5976  6495 I AppsEdge.Badge: key=com.whatsapp/.Main:0 count=10
+09-18 21:58:58.332  2352  2481 D MobileStatusTracker(1/5): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=Invalid,mGsm=Invalid,mWcdma=Invalid,mTdscdma=Invalid,mLte=CellSignalStrengthLte: rssi=-59 rsrp=-87 rsrq=-13 rssnr=0 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=Invalid,SignalBarInfo{ lteLevel=4 },rat=14,primary=CellSignalStrengthLte} level=4
+09-18 21:58:58.332  1594 15253 D WifiConnectivityMonitor.DnsThread:  [|218] []
+09-18 21:58:58.333  1594  2263 D WifiConnectivityMonitor.NetworkStatsAnalyzer: DNS resultType : 0, responseTime : 218
+09-18 21:58:58.333  1594  2261 D OpenNetworkQos[4.00]: updateBssidLatestDnsResultType - result: 0
+09-18 21:58:58.333  1594  2261 D OpenNetworkQos[4.00]: updateBssidNoInternet: mBssidNoInternet = false
+09-18 21:58:58.333  1594  2261 D OpenNetworkQos[4.00]: getOpenNetworkQosNoInternetStatus: false
+09-18 21:58:58.333  1594  2261 D OpenNetworkQos[4.00]: getOpenNetworkQosScores: 0 0 10 
+09-18 21:58:58.333  1594  2261 D SettingsProvider: isChangeAllowed() : name = wifi_wcm_qos_sharing_score_summary
+09-18 21:58:58.334  2352  2481 D NetworkController: SignalStrength from intent slotId=1
+09-18 21:58:58.372   619   619 D io_stats: !@ 179,0 r 5072560 45437071 w 475360 4436904 d 242524 2409380 f 185955 213764 iot 1897690 1622462 th 102400 102400 81508 pt 2480 inp 0 0 17950.505
+09-18 21:58:58.413  2352  2481 D MobileStatusTracker(0/14): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=Invalid,mGsm=Invalid,mWcdma=Invalid,mTdscdma=Invalid,mLte=CellSignalStrengthLte: rssi=-61 rsrp=-94 rsrq=-13 rssnr=0 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=Invalid,SignalBarInfo{ lteLevel=3 },rat=14,primary=CellSignalStrengthLte} level=3
+09-18 21:58:58.415  2352  2481 D NetworkController: SignalStrength from intent slotId=0
+09-18 21:58:58.422  2352  2481 D MobileStatusTracker(1/5): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=Invalid,mGsm=Invalid,mWcdma=Invalid,mTdscdma=Invalid,mLte=CellSignalStrengthLte: rssi=-59 rsrp=-88 rsrq=-12 rssnr=0 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=Invalid,SignalBarInfo{ lteLevel=4 },rat=14,primary=CellSignalStrengthLte} level=4
+09-18 21:58:58.423  2352  2481 D NetworkController: SignalStrength from intent slotId=1
+09-18 21:58:58.480  2352  2352 D NetworkController.WifiSignalController: notifyListener: visible=true, enabled=true, connected=true, inetCondition=1, isDefault=true, receivedCR=true, receivedIC=-1, shouldForceHide=false, emptyConnected=false
+09-18 21:58:58.483  1594  2167 D InputReader: Btn_touch(6): value=1 when=17950.620750
+09-18 21:58:58.483  1594  2167 I InputReader: Touch event's action is 0x0 (id=3, t=0) [pCnt=1, s=0.1916 ] when=17950.620750
+09-18 21:58:58.483  1594  2166 I InputDispatcher: Delivering touch to (2352): action: 0x4, f=0x0, d=0, '723382 ', t=1 
+09-18 21:58:58.483  1594  2166 I InputDispatcher: Delivering touch to (4076): action: 0x0, f=0x0, d=0, 'a4469a2', t=1 +(0,-45)
+09-18 21:58:58.484  1594  2166 D PowerManagerService: [api] userActivityFromNative : 20 (event: 2 flags: 4096 displayId: 0) eventTime = 17950620
+09-18 21:58:58.484  1594  2166 D PowerManagerService: UserActivityStateListenerState: 1
+09-18 21:58:58.484  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 242672562 caller: com.android.server.wm.SystemGesturesPointerEventListener.onPointerEvent:179 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:58:58.484  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: ViewPostIme pointer 0
+09-18 21:58:58.485  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 242672562 caller: com.android.server.wm.SystemPerformancePointerEventListener.onPointerEvent:89 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:58:58.497  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 890304590
+09-18 21:58:58.497  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 890304590
+09-18 21:58:58.497  4076  4076 I GestureDetector: obtain mCurrentDownEvent. id: 242672562 caller: com.samsung.android.honeyboard.textboard.keyboard.x.b.a.onTouch:85 com.samsung.android.honeyboard.textboard.keyboard.x.e.c.a:30 com.samsung.android.honeyboard.textboard.keyboard.x.e.a.a:72 
+09-18 21:58:58.535  4076  4076 I HBD     : c ATL SoundAndVibrationKeyA
+09-18 21:58:58.537  4076  4076 I HBD     : b vib is off 
+09-18 21:58:58.537  4076  5354 I AudioManager: getParameters keys = g_volume_situation_key;type=2;device=0
+09-18 21:58:58.541  1055 26117 V APM_AudioPolicyManager: getAudioPolicyConfig: g_volume_situation_key;type=2;device=0
+09-18 21:58:58.545  1055 26117 I VolumeCustomizer: getSituationVolume_legacy: deviceType 0x0
+09-18 21:58:58.550  1055 26117 I AF::Track: start() situation track : stv_keyboard
+09-18 21:58:58.551  4076  4076 I HBD     : a [PF_KL] OTE none 0 4 69 65135886
+09-18 21:58:58.553  1055 26117 I AF::Track: setMixerOutConfig return default condition, mixer key 2002, thread key 2002
+09-18 21:58:58.553  4076  4076 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 890304590
+09-18 21:58:58.557  1055 26117 V APM_AudioPolicyManager: startOutput() output 21, stream 1, session 1393, portId 250
+09-18 21:58:58.563  1055 26117 V APM_AudioPolicyManager: selectOutputForMusicEffects selected output 13
+09-18 21:58:58.565  1055 26117 V APM_AudioPolicyManager: getNewOutputDevices selected devices {type:0x2,@:}
+09-18 21:58:58.565  1055 26117 V APM_AudioPolicyManager: setOutputDevices device {type:0x2,@:} delayMs 0
+09-18 21:58:58.566  1055 26117 V APM_AudioPolicyManager: setOutputDevices() prevDevice {type:0x2,@:}
+09-18 21:58:58.566  1055 26117 V APM_AudioPolicyManager: setOutputDevices: suppressing checkDeviceMuteStrategies
+09-18 21:58:58.566  1055 26117 V APM_AudioPolicyManager: setOutputDevices setting same device {type:0x2,@:} or null device, force=0, patch handle=6
+09-18 21:58:58.566  1055 26117 V APM_AudioPolicyManager: computeVolume: stream 1, index 15, volume 1.000000, deviceTypes 0x2
+09-18 21:58:58.572  4076  5354 I HBD     : a Soundpool play()27 [Ljava.lang.Object;@9776098
+09-18 21:58:58.579  1594  2167 D InputReader: Btn_touch(6): value=0 when=17950.717203
+09-18 21:58:58.579  1594  2167 I InputReader: Touch event's action is 0x1 (id=3, t=0) [pCnt=1, s=] when=17950.717203
+09-18 21:58:58.579  1594  2166 I InputDispatcher: Delivering touch to (4076): action: 0x1, f=0x0, d=0, 'a4469a2', t=1 +(0,-45)
+09-18 21:58:58.582  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: ViewPostIme pointer 1
+09-18 21:58:58.595  4076  4076 I HBD     : c ATL CharacterKeyA
+09-18 21:58:58.597   972  3827 D audio_hw_primary: start_output_stream: enter: stream(0xeadc6800)usecase(1: low-latency-playback) devices(0x2) is_haptic_usecase(0)
+09-18 21:58:58.601   972  3827 D audio_hw_primary: select_devices for use case (low-latency-playback)
+09-18 21:58:58.607   972  3827 I msm8974_platform: platform_check_and_set_codec_backend_cfg:becf: afe: bitwidth 16, samplerate 48000 channels 2, backend_idx 0 usecase = 1 device (speaker)
+09-18 21:58:58.607   972  3827 I msm8974_platform: platform_check_and_set_codec_backend_cfg: new_snd_devices[0] is 2
+09-18 21:58:58.607   972  3827 I msm8974_platform: platform_check_codec_backend_cfg:becf: afe: bitwidth 16, samplerate 48000 channels 2, backend_idx 0 usecase = 1 device (speaker)
+09-18 21:58:58.611   972  3827 E audio_hw_extn: audio_extn_enable_hifi_filter: Could not get ctl for mixer cmd - HiFi Filter, using default control
+09-18 21:58:58.611   972  3827 D msm8974_platform: platform_check_codec_backend_cfg:becf: updated afe: bitwidth 16, samplerate 48000 channels 2,backend_idx 0 usecase = 1 device (speaker)
+09-18 21:58:58.611   972  3827 I msm8974_platform: platform_check_codec_backend_cfg:becf: afe: Codec selected backend: 0 updated bit width: 16 and sample rate: 48000
+09-18 21:58:58.611   972  3827 D audio_hw_primary: check_usecases_codec_backend:becf: force routing 0
+09-18 21:58:58.611   972  3827 D audio_hw_primary: check_usecases_codec_backend:becf: (85) check_usecases curr device: speaker, usecase device: backends match 0
+09-18 21:58:58.611   972  3827 D audio_hw_primary: check_usecases_codec_backend:becf: (85) check_usecases curr device: speaker, usecase device: backends match 0
+09-18 21:58:58.611   972  3827 D audio_hw_primary: check_usecases_codec_backend:becf: check_usecases num.of Usecases to switch 0
+09-18 21:58:58.611   972  3827 D hardware_info: hw_info_append_hw_type : device_name = speaker
+09-18 21:58:58.611   972  3827 D audio_hw_primary: enable_snd_device: snd_device(2: speaker)
+09-18 21:58:58.611   972  3827 D msm8974_platform: platform_get_island_cfg_on_device:island cfg status on snd_device = (speaker 0)
+09-18 21:58:58.612   972  3827 D audio_route: Apply path: speaker
+09-18 21:58:58.615   972  3827 D audio_hw_utils: audio_extn_utils_send_app_type_cfg: usecase->out_snd_device speaker
+09-18 21:58:58.616   972  3827 I audio_hw_utils: send_app_type_cfg_for_device PLAYBACK app_type 69936, acdb_dev_id 14, sample_rate 48000, snd_device_be_idx 43
+09-18 21:58:58.618   972  3827 D ACDB-LOADER: ACDB -> send_audio_cal, acdb_id = 14, path = 0, app id = 0x11130, sample rate = 48000, use_case = 0,buffer_idx_w_path =0, afe_sample_rate = 48000, cal_mode = 1, offset_index = 0
+09-18 21:58:58.618   972  3827 D ACDB-LOADER: ACDB -> send_asm_topology
+09-18 21:58:58.618   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_STREAM_TOPOLOGY_ID
+09-18 21:58:58.621   972  3827 D ACDB-LOADER: ACDB -> send_adm_topology
+09-18 21:58:58.621   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_COMMON_TOPOLOGY_ID
+09-18 21:58:58.621   972  3827 D ACDB-LOADER: ACDB -> send_audtable
+09-18 21:58:58.621   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_COMMON_TABLE_SIZE
+09-18 21:58:58.621   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_COMMON_TABLE
+09-18 21:58:58.621   972  3827 D ACDB-LOADER: ACDB -> AUDIO_SET_AUDPROC_CAL cal_type[11] acdb_id[14] app_type[69936]
+09-18 21:58:58.621   972  3827 D ACDB-LOADER: ACDB -> send_audvoltable
+09-18 21:58:58.621   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_GAIN_DEP_STEP_TABLE_SIZE
+09-18 21:58:58.621   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_GAIN_DEP_STEP_TABLE, vol index 0
+09-18 21:58:58.621   972  3827 D ACDB-LOADER: ACDB -> AUDIO_SET_VOL_CAL cal type = 12
+09-18 21:58:58.621   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_STREAM_TABLE_SIZE
+09-18 21:58:58.621   972  3827 D ACDB-LOADER: ACDB -> send_audstrmtable
+09-18 21:58:58.621   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_STREAM_TABLE_V2
+09-18 21:58:58.621   972  3827 D ACDB-LOADER: ACDB -> audstrm_cal->cal_type.cal_data.cal_size = 456
+09-18 21:58:58.622   972  3827 D ACDB-LOADER: ACDB -> send_afe_topology
+09-18 21:58:58.622   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AFE_TOPOLOGY_ID
+09-18 21:58:58.622   972  3827 D ACDB-LOADER: ACDB -> GET_AFE_TOPOLOGY_ID for adcd_id 14, Topology Id 1025e
+09-18 21:58:58.622   972  3827 D ACDB-LOADER: ACDB -> send_afe_cal
+09-18 21:58:58.622   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AFE_COMMON_TABLE_SIZE
+09-18 21:58:58.622   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AFE_COMMON_TABLE
+09-18 21:58:58.622   972  3827 D ACDB-LOADER: ACDB -> AUDIO_SET_AFE_CAL cal_type[16] acdb_id[14]
+09-18 21:58:58.622   972  3827 D ACDB-LOADER: ACDB -> send_hw_delay : acdb_id = 14 path = 0
+09-18 21:58:58.622   972  3827 D ACDB-LOADER: ACDB -> ACDB_AVSYNC_INFO: ACDB_CMD_GET_DEVICE_PROPERTY
+09-18 21:58:58.622   972  3827 D audio_hw_primary: enable_audio_route: apply mixer and update path: low-latency-playback
+09-18 21:58:58.622   972  3827 D audio_route: Apply path: low-latency-playback
+09-18 21:58:58.624   972  3827 D audio_hw_primary: select_devices: done
+09-18 21:58:58.624   972  3827 D msm8974_platform: platform_set_channel_map mixer_ctl_name:Playback Channel Map12
+09-18 21:58:58.625   972  3827 D msm8974_platform: platform_set_channel_map: set mapping(1 2 0 0 0 0 0 0) for channel:2
+09-18 21:58:58.629  4076  4076 I HBD     : c IIFO[r:ba3645ad7b] 
+09-18 21:58:58.635  4076  4076 I HBD     : ce [PF_IM] onCharacterKey() t, 33 
+09-18 21:58:58.637  4076  4076 I HBD     : al EBD key t 0 
+09-18 21:58:58.662   972  3827 D audio_hw_primary: start_output_stream: exit
+09-18 21:58:58.686  4076  4076 I HBD     : al EBD ssu f 1 
+09-18 21:58:58.687  1055  1689 D AudioFlinger: mixer(0xedaa3640) Spend too much time to write: delta 99(effect 2, stage 0)
+09-18 21:58:58.688  4076  4076 I HBD     : c [PF_AT] CharacterKeyA execute end t : 92 
+09-18 21:58:58.689  4076  4076 I HBD     : a [PF_KL] OTE none 1 4 109 105871927
+09-18 21:58:58.689  4076  4076 I HBD     : bd ous -  0 ,  0 ,  1 ,  1 ,  0 ,  1
+09-18 21:58:58.697  4076  4900 I HBD     : b getET , flag: 1 , start: 0 , end: 0 , length: 0 , composingLength: 1 , isKCC: false
+09-18 21:58:58.698  4076  4076 I HBD     : al EBD cm s 0 
+09-18 21:58:58.706  4076  4076 I HBD     : b [ComposingItem] updateConfig: false to true 
+09-18 21:58:58.735  1055 26117 V APM_AudioPolicyManager: setAppState(portId:610, state:1)
+09-18 21:58:58.735  1055 26117 V APM_AudioPolicyManager: setAppState(portId:610, state:1)
+09-18 21:58:58.749 13722 13728 W exchange.nxptv: Cleared Reference was only reachable from finalizer (only reported once)
+09-18 21:58:58.775  1055 26117 I AF::Track: stop() situation track : stv_keyboard
+09-18 21:58:58.777 13722 13728 I exchange.nxptv: Background concurrent copying GC freed 5459KB AllocSpace bytes, 8(288KB) LOS objects, 49% free, 7957KB/15MB, paused 348us,149us total 143.177ms
+09-18 21:58:58.781 13722 13762 D OpenGLRenderer: setSurface called with nullptr
+09-18 21:58:58.781 13722 13729 D InputTransport: Input channel destroyed: 'ClientS', fd=144
+09-18 21:58:58.782 13722 13729 D InputTransport: Input channel destroyed: 'ClientS', fd=129
+09-18 21:58:58.782 13722 13729 D InputTransport: Input channel destroyed: 'ClientS', fd=154
+09-18 21:58:58.784  1594  1772 I GestureDetector: handleMessage TAP
+09-18 21:58:58.784  1594  1594 I GestureDetector: handleMessage TAP
+09-18 21:58:58.812  1055  1263 V APM_AudioPolicyManager: stopOutput() output 21, stream 1, session 1393, portId 250
+09-18 21:58:58.812  1055  1263 V APM_AudioPolicyManager: getNewOutputDevices selected devices AUDIO_DEVICE_NONE
+09-18 21:58:58.812  1055  1263 V APM_AudioPolicyManager: setOutputDevices device AUDIO_DEVICE_NONE delayMs 96
+09-18 21:58:58.813  1055  1263 V APM_AudioPolicyManager: setOutputDevices() prevDevice {type:0x2,@:}
+09-18 21:58:58.814  1055  1263 V APM_AudioPolicyManager: setOutputDevices setting same device AUDIO_DEVICE_NONE or null device, force=0, patch handle=6
+09-18 21:58:58.814  1055  1263 V APM_AudioPolicyManager: selectOutputForMusicEffects selected output 13
+09-18 21:58:58.828  4076  4900 I HBD     : a [PF_KL][HBIC] getExtractedText, 131 
+09-18 21:58:58.870  4076  4076 I HBD     : b container vis= true
+09-18 21:58:58.924  1594  2460 V WindowManager: Relayout Window{a4469a2 u0 InputMethod}: viewVisibility=0 req=720x1555 d0
+09-18 21:58:58.928  1594  2460 V WindowManager: Relayout hash=a4469a2, pid=4076: mAttrs={(0,0)(fillxfill) gr=BOTTOM CENTER_VERTICAL sim={adjust=resize} ty=INPUT_METHOD fmt=TRANSPARENT wanim=0x7f130170 preferredMinDisplayRefreshRate=60.0 receive insets ignoring z-order
+09-18 21:58:58.928  1594  2460 V WindowManager:   fl=81800108
+09-18 21:58:58.928  1594  2460 V WindowManager:   pfl=12000000
+09-18 21:58:58.928  1594  2460 V WindowManager:   bhv=DEFAULT
+09-18 21:58:58.928  1594  2460 V WindowManager:   fitTypes=STATUS_BARS NAVIGATION_BARS
+09-18 21:58:58.928  1594  2460 V WindowManager:   fitSides=LEFT TOP RIGHT
+09-18 21:58:58.928  1594  2460 V WindowManager:   fitIgnoreVis dimDuration=150 naviIconColor=0}
+09-18 21:58:58.930  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: Relayout returned: old=(0,45,720,1600) new=(0,45,720,1600) req=(720,1555)0 dur=7 res=0x1 s={true 3913535488} ch=false fn=297
+09-18 21:58:58.982  1594  2265 E SemIWCMonitor: poor link count is 0
+09-18 21:58:58.983  1594  2265 E SemIWCMonitor.File: Good Link, timestamp =: 1789757936972  RSSI:-71  AP:##:##:##:##:b8:fa Direction: -1 Direction (soft): -1
+09-18 21:58:58.984  1594  2265 E SemIWCMonitor.File: Good Link, timestamp =: 1789757938984, RSSI:-71, AP:##:##:##:##:b8:fa
+09-18 21:58:58.990  1215 21248 V NuPlayerDriver: getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 21:58:59.640  1072  1072 I vendor.rmt_storage: rmt_storage_connect_cb: clnt_h=0x2c conn_h=0xe93df018
+09-18 21:58:59.640  1072  1072 I vendor.rmt_storage: rmt_storage_rw_iovec_cb: /boot/modem_fs2: req_h=0x2c msg_id=3: R/W request received (wr_count 35)
+09-18 21:58:59.640  1072  1072 I vendor.rmt_storage: wakelock acquired: 1, error no: 42
+09-18 21:58:59.641  1072  1550 I vendor.rmt_storage: rmt_storage_client_thread: /boot/modem_fs2: Unblock worker thread (th_id: -394944032)
+09-18 21:58:59.681  1072  1550 I vendor.rmt_storage: rmt_storage_client_thread: /boot/modem_fs2: req_h=0x2c msg_id=3: Bytes written = 1572864, wr_count 35
+09-18 21:58:59.682  1072  1550 I vendor.rmt_storage: rmt_storage_client_thread: /boot/modem_fs2: req_h=0x2c msg_id=3: Send response: res=0 err=0, wr_count 35
+09-18 21:58:59.683  1072  1550 I vendor.rmt_storage: rmt_storage_client_thread: /boot/modem_fs2: About to block rmt_storage client thread (th_id: -394944032) wakelock released: 1, error no: 0
+09-18 21:58:59.683  1072  1550 I vendor.rmt_storage: 
+09-18 21:58:59.683  1072  1072 I vendor.rmt_storage: rmt_storage_disconnect_cb: clnt_h=0x2c conn_h=0xe93df018
+09-18 21:58:59.793  5976  6495 I AppsEdge.Badge: getBadgeIconType 0
+09-18 21:58:59.797 23156  7178 I BadgeProvider: query, [selection] : null
+09-18 21:58:59.801  5976  6495 I AppsEdge.Badge: key=com.sec.android.app.samsungapps:0 count=1
+09-18 21:58:59.801  5976  6495 I AppsEdge.Badge: key=com.openai.chatgpt:0 count=1
+09-18 21:58:59.801  5976  6495 I AppsEdge.Badge: key=com.samsung.android.app.smartcapture:0 count=1
+09-18 21:58:59.801  5976  6495 I AppsEdge.Badge: key=com.whatsapp/.Main:0 count=10
+09-18 21:59:00.000  1594  2150 D SamsungAlarmManager: Expired : 8
+09-18 21:59:00.000  1594  2150 V SamsungAlarmManager: Sending to uid : 1000 L=f42f7f9:TIME_TICK alarm=Alarm{7951380 type 3 origWhen 39553332 whenElapsed 39553332 android}
+09-18 21:59:00.001  1594  2150 D SamsungAlarmManager: setExact (T:3/F:9/AC:false) 20260918T220000 now=39553333 - CU:1000/CP:1594/L:f42f7f9:TIME_TICK
+09-18 21:59:00.001  1594  2150 V SamsungAlarmManager: setLocked to kernel - W:39610265 / NW:39565157, now=39553333
+09-18 21:59:00.002  1594  2150 V SamsungAlarmManager: setLocked to kernel - W:39610265 / NW:39565157, now=39553334
+09-18 21:59:00.005  2352  2741 D QSClockBellTower: onReceive(android.intent.action.TIME_TICK) mTimeZoneString:null
+09-18 21:59:00.022  2352  2352 D KeyguardUpdateMonitor: received broadcast android.intent.action.TIME_TICK
+09-18 21:59:00.047  2352  2352 D QSClockBellTower: He is ready to ring the bell. (((QSClockBellSound - TimeText:21:59, TimeContentDescription:21:59, DateText:Fri, 18 September, ShortDateText:Fri, 18 Sept, Demofalse)))
+09-18 21:59:00.048  2352  2352 D QSClockHomeIndicatorView: Home Indicator status_bar_clock notifyTimeChanged(QSClockBellSound - TimeText:21:59, TimeContentDescription:21:59, DateText:Fri, 18 September, ShortDateText:Fri, 18 Sept, Demofalse) ClockVisibleByPolicy:true, ClockVisibleByUser:true, visible?true, parent:android.widget.LinearLayout{58a913f V.E...... ......ID 0,0-66,37 #7f0b0472 app:id/left_clock_container}
+09-18 21:59:00.048  2352  2352 D QSClockBellTower: Everyone heard the bell. run(currentTime:1789757940045,   getTime():Fri Sep 18 21:59:00 GMT+03:00 2026,   getTimeZone():libcore.util.ZoneInfo[mDstSavings=0,mUseDst=false,mDelegate=[id="Africa/Kampala",mRawOffset=10800000,mEarliestRawOffset=8836000,transitions=5]])
+09-18 21:59:00.064  2352  2352 D QS      : setQSExpansion 0.0 -106.049995
+09-18 21:59:00.068  2352  2352 D QS      : setQSExpansion 0.0 -106.049995
+09-18 21:59:00.069  2352  2352 V SecQSFragmentAnimatorBase: setQsExpansionPosition 0.0
+09-18 21:59:00.069  2352  2352 V QsExpandAnimator: setQsExpansionPosition 0.0 0
+09-18 21:59:00.070  2352  2352 D QS      : setQSExpansion 0.0 -106.049995
+09-18 21:59:00.074  2352  2352 D IndicatorGardenInputProperty: updateRotation() prv:-1 >> new:0
+09-18 21:59:00.074  2352  2352 D DeviceState: getDeviceResolutionPixelSize - currentDensity = 280 deviceDensity = 280 initialDisplaySizeFactor = 720 currentDisplaySizeFactor = 720 initialDisplayDensity = 280 proportionalDensity = 280 proportionalPixel = 0
+09-18 21:59:00.074  2352  2352 D DeviceState: getDeviceResolutionPixelSize - currentDensity = 280 deviceDensity = 280 initialDisplaySizeFactor = 720 currentDisplaySizeFactor = 720 initialDisplayDensity = 280 proportionalDensity = 280 proportionalPixel = 0
+09-18 21:59:00.074  2352  2352 D DeviceState: getDeviceResolutionPixelSize - currentDensity = 280 deviceDensity = 280 initialDisplaySizeFactor = 720 currentDisplaySizeFactor = 720 initialDisplayDensity = 280 proportionalDensity = 280 proportionalPixel = 8
+09-18 21:59:00.076  2352  2352 D KeyguardUpdateMonitor: handleTimeUpdate
+09-18 21:59:00.078  1215 21248 V NuPlayerDriver: getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 21:59:00.085  2352  2352 D FaceWidgetPagesController: onTimeChanged()
+09-18 21:59:00.086  2352  2352 V QsExpandAnimator: updateAnimators
+09-18 21:59:00.086  2352  2352 V QsExpandAnimator: clearAnimationState 
+09-18 21:59:00.088  2352  2352 V QsExpandAnimator: setQsExpansionPosition 0.0 0
+09-18 21:59:00.335  1594  2167 D InputReader: Btn_touch(6): value=1 when=17952.472678
+09-18 21:59:00.335  1594  2167 I InputReader: Touch event's action is 0x0 (id=3, t=0) [pCnt=1, s=0.1917 ] when=17952.472678
+09-18 21:59:00.336  1594  2166 I InputDispatcher: Delivering touch to (2352): action: 0x4, f=0x0, d=0, '723382 ', t=1 
+09-18 21:59:00.336  1594  2166 I InputDispatcher: Delivering touch to (4076): action: 0x0, f=0x0, d=0, 'a4469a2', t=1 +(0,-45)
+09-18 21:59:00.336  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: ViewPostIme pointer 0
+09-18 21:59:00.336  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 833143613 caller: com.android.server.wm.SystemGesturesPointerEventListener.onPointerEvent:179 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:00.337  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 833143613 caller: com.android.server.wm.SystemPerformancePointerEventListener.onPointerEvent:89 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:00.339  4076  4076 I GestureDetector: obtain mCurrentDownEvent. id: 833143613 caller: com.samsung.android.honeyboard.textboard.keyboard.x.b.a.onTouch:85 com.samsung.android.honeyboard.textboard.keyboard.x.e.c.a:30 com.samsung.android.honeyboard.textboard.keyboard.x.e.a.a:72 
+09-18 21:59:00.346  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 678934838
+09-18 21:59:00.346  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 678934838
+09-18 21:59:00.349  4076  4076 I HBD     : c ATL BackspaceKeyA
+09-18 21:59:00.356  4076  4076 I HBD     : c IIFO[r:be3f7b2fae] 
+09-18 21:59:00.359  4076  4076 I HBD     : k processBackspace Params : BackSpace Params dump -  isPhonePad: false isQwerty : true currentLanguage : 65538 hasComposing : true hasInputSequence : true isDeleteAccel : false isBeforeTraceInput : false isComposingMoreThanOne : false isCursorAnchorEnabled : true isComposingInCursorAnchor : true isUpdatingEngineContext : false isLandAndCompletions : false isMultiTapSymbol : false isJapanComposing : false isJapanConvertState : false isJapanCursorPositionFront : false isChnSoftFunctionKeyShowing : false isTransComposingMoreThanOne : false hasSpell : false spellLength : 0 isSpellViewBackSpace : false isSpellEdit : false spellEditCursorPos : 0 spellEditSelectedLength : 0 isTextRangeContained : true 
+09-18 21:59:00.365  4076  4076 I HBD     : k processBackspace -> processBackspaceAction :  BACKSPACE_STRING_ALL
+09-18 21:59:00.368  4076  4076 I HBD     : c IIFO[r:83e5c74395] 
+09-18 21:59:00.369  4076  4076 I HBD     : i processBackspace -> processBackspacePostSet :  BACKSPACE_POST_BUILD_EMPTY_TEXT
+09-18 21:59:00.373  4076  4076 I HBD     : al EBD key t 0 
+09-18 21:59:00.374  4076  4076 I HBD     : b vib is off 
+09-18 21:59:00.375  4076  5354 I AudioManager: getParameters keys = g_volume_situation_key;type=2;device=0
+09-18 21:59:00.375  4076  4076 I HBD     : a [PF_KL] OTE none 0 3 41 37524010
+09-18 21:59:00.375  1055 26117 V APM_AudioPolicyManager: getAudioPolicyConfig: g_volume_situation_key;type=2;device=0
+09-18 21:59:00.375  1055 26117 I VolumeCustomizer: getSituationVolume_legacy: deviceType 0x0
+09-18 21:59:00.376  1055 26117 I AF::Track: start() situation track : stv_keyboard
+09-18 21:59:00.376  1055 26117 I AF::Track: setMixerOutConfig return default condition, mixer key 2002, thread key 2002
+09-18 21:59:00.377  1055 26117 V APM_AudioPolicyManager: startOutput() output 21, stream 1, session 2625, portId 426
+09-18 21:59:00.377  1055 26117 V APM_AudioPolicyManager: selectOutputForMusicEffects selected output 13
+09-18 21:59:00.377  1055 26117 V APM_AudioPolicyManager: getNewOutputDevices selected devices {type:0x2,@:}
+09-18 21:59:00.377  1055 26117 V APM_AudioPolicyManager: setOutputDevices device {type:0x2,@:} delayMs 0
+09-18 21:59:00.377  1055 26117 V APM_AudioPolicyManager: setOutputDevices() prevDevice {type:0x2,@:}
+09-18 21:59:00.377  1055 26117 V APM_AudioPolicyManager: setOutputDevices: suppressing checkDeviceMuteStrategies
+09-18 21:59:00.377  1055 26117 V APM_AudioPolicyManager: setOutputDevices setting same device {type:0x2,@:} or null device, force=0, patch handle=6
+09-18 21:59:00.377  1055 26117 V APM_AudioPolicyManager: computeVolume: stream 1, index 15, volume 1.000000, deviceTypes 0x2
+09-18 21:59:00.379   619   619 D io_stats: !@ 179,0 r 5072991 45441871 w 475424 4438988 d 242524 2409380 f 185956 213765 iot 1897870 1622611 th 102400 102400 81508 pt 2480 inp 0 0 17952.511
+09-18 21:59:00.403  1594  2167 D InputReader: Btn_touch(6): value=0 when=17952.541618
+09-18 21:59:00.404  1594  2167 I InputReader: Touch event's action is 0x1 (id=3, t=0) [pCnt=1, s=] when=17952.541618
+09-18 21:59:00.404  1594  2166 I InputDispatcher: Delivering touch to (4076): action: 0x1, f=0x0, d=0, 'a4469a2', t=1 +(0,-45)
+09-18 21:59:00.464 15255 15255 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-18 21:59:00.475 15255 15255 I AndroidRuntime: Using default boot image
+09-18 21:59:00.475 15255 15255 I AndroidRuntime: Leaving lock profiling enabled
+09-18 21:59:00.476 15255 15255 D SecNativeFeatureCppIf: encoded
+09-18 21:59:00.476 15255 15255 D SecNativeFeatureCppIf: decoding and unzip finish
+09-18 21:59:00.476 15255 15255 D SecNativeFeatureCppIf: use unCompDataBuff. encoded
+09-18 21:59:00.477 15255 15255 D SecNativeFeatureCppIf: Free unCompDataBuff
+09-18 21:59:00.477 15255 15255 D AndroidRuntime: addProductProperty: pBrand1 is not null
+09-18 21:59:00.477 15255 15255 D AndroidRuntime: addProductProperty: not brand or 7
+09-18 21:59:00.478  5976  6495 I AppsEdge.Badge: getBadgeIconType 0
+09-18 21:59:00.478  1055 26117 I AF::Track: stop() situation track : stv_keyboard
+09-18 21:59:00.481 23156  7178 I BadgeProvider: query, [selection] : null
+09-18 21:59:00.486  5976  6495 I AppsEdge.Badge: key=com.sec.android.app.samsungapps:0 count=1
+09-18 21:59:00.486  5976  6495 I AppsEdge.Badge: key=com.openai.chatgpt:0 count=1
+09-18 21:59:00.487  5976  6495 I AppsEdge.Badge: key=com.samsung.android.app.smartcapture:0 count=1
+09-18 21:59:00.487  5976  6495 I AppsEdge.Badge: key=com.whatsapp/.Main:0 count=10
+09-18 21:59:00.488 15255 15255 I app_process: Using CollectorTypeCC GC.
+09-18 21:59:00.493 12960 13018 D WM-SystemJobScheduler: Scheduling work ID 9aa1c7b9-0792-4ec4-96e7-bdad10721c60Job ID 286333
+09-18 21:59:00.496  1594  2460 I ActivityManager: Changes in 10242 19 to 8, 0 to 8
+09-18 21:59:00.497  1594  1772 D NetworkPolicy: onUidStateChanged() uid: 10242, isForeground(false, 8)
+09-18 21:59:00.498  3874  6000 I exvx    : (REDACTED) HDM. appOpsListener %s %s
+09-18 21:59:00.498  3874  6000 I exvx    : (REDACTED) HDM. Ignoring irrelevant audio permission changes for package %s
+09-18 21:59:00.500  1055 26117 V APM_AudioPolicyManager: setAppState(portId:610, state:1)
+09-18 21:59:00.508 12960 12960 D WM-SystemJobService: onStartJob for WorkGenerationalId(workSpecId=9aa1c7b9-0792-4ec4-96e7-bdad10721c60, generation=0)
+09-18 21:59:00.509 12960 13018 D WM-GreedyScheduler: Starting tracking for 9aa1c7b9-0792-4ec4-96e7-bdad10721c60
+09-18 21:59:00.515 12960 13018 D WM-Processor: 1Vt: processing WorkGenerationalId(workSpecId=9aa1c7b9-0792-4ec4-96e7-bdad10721c60, generation=0)
+09-18 21:59:00.517  1594  2167 D InputReader: Btn_touch(6): value=1 when=17952.655521
+09-18 21:59:00.517  1594  2167 I InputReader: Touch event's action is 0x0 (id=3, t=0) [pCnt=1, s=0.1918 ] when=17952.655521
+09-18 21:59:00.518  1594  2166 I InputDispatcher: Delivering touch to (2352): action: 0x4, f=0x0, d=0, '723382 ', t=1 
+09-18 21:59:00.518  1594  2166 I InputDispatcher: Delivering touch to (4076): action: 0x0, f=0x0, d=0, 'a4469a2', t=1 +(0,-45)
+09-18 21:59:00.520  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 1022288588 caller: com.android.server.wm.SystemGesturesPointerEventListener.onPointerEvent:179 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:00.520  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 1022288588 caller: com.android.server.wm.SystemPerformancePointerEventListener.onPointerEvent:89 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:00.527 12960 12960 D WM-WorkerWrapper: Starting work for com.whatsapp.infra.networking.xmpp.lifecycle.XmppLifecycleWorker
+09-18 21:59:00.527  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 982533251
+09-18 21:59:00.527  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 982533251
+09-18 21:59:00.531 12960 13018 D WM-ConstraintTracker: 1Vp: initial state = NetworkState(isConnected=true, isValidated=true, isMetered=false, isNotRoaming=true)
+09-18 21:59:00.532 12960 13018 D WM-NetworkStateTracker: Registering network callback
+09-18 21:59:00.532 12960 13018 D ConnectivityManager: StackLog: [android.net.ConnectivityManager.sendRequestForNetwork(ConnectivityManager.java:4709)] [android.net.ConnectivityManager.registerDefaultNetworkCallbackForUid(ConnectivityManager.java:5433)] [android.net.ConnectivityManager.registerDefaultNetworkCallback(ConnectivityManager.java:5400)] [android.net.ConnectivityManager.registerDefaultNetworkCallback(ConnectivityManager.java:5374)] [X.1Vp.A03(:25)] [X.2Ek.invokeSuspend(:128)] [X.2Ek.invoke(:16)] [X.211.A00(:2)] [X.212.A00(:57)] [X.1am.invokeSuspend(:84)] [X.0ax.resumeWith(:8)] [X.0bJ.run(:89)] [X.1Wg.run(:2)] [java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)] [java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)] [java.lang.Thread.run(Thread.java:1012)]
+09-18 21:59:00.532  1055  1263 V APM_AudioPolicyManager: stopOutput() output 21, stream 1, session 2625, portId 426
+09-18 21:59:00.533  1055  1263 V APM_AudioPolicyManager: getNewOutputDevices selected devices AUDIO_DEVICE_NONE
+09-18 21:59:00.533  1055  1263 V APM_AudioPolicyManager: setOutputDevices device AUDIO_DEVICE_NONE delayMs 96
+09-18 21:59:00.533  1055  1263 V APM_AudioPolicyManager: setOutputDevices() prevDevice {type:0x2,@:}
+09-18 21:59:00.534  1594  3979 D ConnectivityService: requestNetwork for uid/pid:10242/12960 activeRequest: null callbackRequest: 1292 [NetworkRequest [ REQUEST id=1293, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10242 RequestorUid: 10242 RequestorPkg: com.whatsapp UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647 isUidTracked: false declaredMethods: ALL
+09-18 21:59:00.534  1055  1263 V APM_AudioPolicyManager: setOutputDevices setting same device AUDIO_DEVICE_NONE or null device, force=0, patch handle=6
+09-18 21:59:00.534  1055  1263 V APM_AudioPolicyManager: selectOutputForMusicEffects selected output 13
+09-18 21:59:00.535  1594  2208 D ConnectivityService:    accepting network in place of null for NetworkRequest [ REQUEST id=1293, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10242 RequestorUid: 10242 RequestorPkg: com.whatsapp UnderlyingNetworks: Null] ]
+09-18 21:59:00.537 12960 13024 D WM-NetworkStateTracker: Network capabilities changed: [ Transports: WIFI Capabilities: NOT_METERED&INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN&VALIDATED&NOT_ROAMING&FOREGROUND&NOT_CONGESTED&NOT_SUSPENDED&NOT_VCN_MANAGED LinkUpBandwidth>=30251Kbps LinkDnBandwidth>=16680Kbps TransportInfo: <SSID: <unknown ssid>, BSSID: 02:00:00:00:00:00, MAC: 02:00:00:00:00:00, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 4, RSSI: -74, Link speed: 28Mbps, Tx Link speed: 28Mbps, Max Supported Tx Link speed: 72Mbps, Rx Link speed: -1Mbps, Max Supported Rx Link speed: 72Mbps, Frequency: 2412MHz, Net ID: -1, Metered hint: false, score: 60, CarrierMerged: false, SubscriptionId: -1, IsPrimary: -1> SignalStrength: -74 UnderlyingNetworks: Null]
+09-18 21:59:00.538 12960 13018 D WM-GreedyScheduler: Constraints met: Scheduling work ID WorkGenerationalId(workSpecId=9aa1c7b9-0792-4ec4-96e7-bdad10721c60, generation=0)
+09-18 21:59:00.539  1594  2198 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=1293, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10242 RequestorUid: 10242 RequestorPkg: com.whatsapp UnderlyingNetworks: Null] ]
+09-18 21:59:00.539  1594  2198 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=1293, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10242 RequestorUid: 10242 RequestorPkg: com.whatsapp UnderlyingNetworks: Null] ]
+09-18 21:59:00.540  1594  2198 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=1293, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10242 RequestorUid: 10242 RequestorPkg: com.whatsapp UnderlyingNetworks: Null] ]
+09-18 21:59:00.540  1594  2208 D ConnectivityService: Rematched networks [computed 1ms] [applied 1ms] [issued 4]
+09-18 21:59:00.540  1594  2208 D ConnectivityService: NetworkReassignment :
+09-18 21:59:00.540  1594  2208 D ConnectivityService:   1293 : null → 110
+09-18 21:59:00.542 12960 13018 D WM-Processor: Work WorkGenerationalId(workSpecId=9aa1c7b9-0792-4ec4-96e7-bdad10721c60, generation=0) is already enqueued for processing
+09-18 21:59:00.550  4076  4076 I HBD     : c CACHEDIC Text might be removed by view 
+09-18 21:59:00.573  2352  2481 D MobileStatusTracker(0/14): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=Invalid,mGsm=Invalid,mWcdma=Invalid,mTdscdma=Invalid,mLte=CellSignalStrengthLte: rssi=-59 rsrp=-93 rsrq=-12 rssnr=0 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=Invalid,SignalBarInfo{ lteLevel=3 },rat=14,primary=CellSignalStrengthLte} level=3
+09-18 21:59:00.575  2352  2481 D NetworkController: SignalStrength from intent slotId=0
+09-18 21:59:00.583  4076  4076 I HBD     : bd ous -  1 ,  1 ,  0 ,  0 ,  -1 ,  -1
+09-18 21:59:00.585  2352  2481 D MobileStatusTracker(1/5): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=Invalid,mGsm=Invalid,mWcdma=Invalid,mTdscdma=Invalid,mLte=CellSignalStrengthLte: rssi=-61 rsrp=-89 rsrq=-12 rssnr=1 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=Invalid,SignalBarInfo{ lteLevel=4 },rat=14,primary=CellSignalStrengthLte} level=4
+09-18 21:59:00.588 23156 23156 I BadgeCountReceiver: badge intent : Intent { act=android.intent.action.BADGE_COUNT_UPDATE flg=0x1000010 cmp=com.sec.android.provider.badge/.BadgeCountReceiver (has extras) }
+09-18 21:59:00.588 23156 23156 I BadgeCountReceiver: packageName: com.whatsapp, className: com.whatsapp.Main, count: 10
+09-18 21:59:00.589  2352  2481 D NetworkController: SignalStrength from intent slotId=1
+09-18 21:59:00.590  2713  2713 I BadgeCountUpdaterImpl: onChange
+09-18 21:59:00.591  2713  2713 I BadgeCountUpdaterImpl: onChange
+09-18 21:59:00.592 23156 23156 I BadgeProvider: sendNotify entered. [uri] : content://com.sec.badge/apps
+09-18 21:59:00.592 23156 23156 I BadgeProvider: sendNotify, [notify] : null
+09-18 21:59:00.592 23156 23156 I BadgeProvider: update, getCallingPackage() : com.sec.android.provider.badge
+09-18 21:59:00.593 23156 23156 I BadgeProvider: update, [uri] : content://com.sec.badge/apps
+09-18 21:59:00.593 23156 23156 I BadgeProvider: update, [uri.query] : null
+09-18 21:59:00.593 23156 23156 I BadgeProvider: update, [BadgeCount] : badgecount=10
+09-18 21:59:00.593 23156 23156 I BadgeProvider: update, [UpdateCount] : 1
+09-18 21:59:00.607  4076  4076 I HBD     : al EBD cm s 0 
+09-18 21:59:00.629  4076  4076 I HBD     : al EBD ssu f 1 
+09-18 21:59:00.632  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: ViewPostIme pointer 1
+09-18 21:59:00.635  4076  4076 I HBD     : c ATL BackspaceKeyA
+09-18 21:59:00.634  1594  2167 D InputReader: Btn_touch(6): value=0 when=17952.772340
+09-18 21:59:00.636  1594  2167 I InputReader: Touch event's action is 0x1 (id=3, t=0) [pCnt=1, s=] when=17952.772340
+09-18 21:59:00.636  1594  2166 I InputDispatcher: Delivering touch to (4076): action: 0x1, f=0x0, d=0, 'a4469a2', t=1 +(0,-45)
+09-18 21:59:00.641  4076  4076 I HBD     : al EBD key t 0 
+09-18 21:59:00.642  4076  4076 I HBD     : a [PF_KL] OTE none 1 230 239 9016094
+09-18 21:59:00.643  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: ViewPostIme pointer 0
+09-18 21:59:00.644  4076  4076 I GestureDetector: obtain mCurrentMotionEventRaw. action: 0 id: 1022288588
+09-18 21:59:00.645  4076  4076 I GestureDetector: obtain mCurrentDownEvent. id: 1022288588 caller: com.samsung.android.honeyboard.textboard.keyboard.x.b.a.onTouch:85 com.samsung.android.honeyboard.textboard.keyboard.x.e.c.a:30 com.samsung.android.honeyboard.textboard.keyboard.x.e.a.a:72 
+09-18 21:59:00.649  4076  4076 I HBD     : c ATL BackspaceKeyA
+09-18 21:59:00.653  4076  4076 I HBD     : c IIFO[r:c69d854b93] 
+09-18 21:59:00.655  4076  4076 I HBD     : k processBackspace Params : BackSpace Params dump -  isPhonePad: false isQwerty : true currentLanguage : 65538 hasComposing : false hasInputSequence : false isDeleteAccel : false isBeforeTraceInput : false isComposingMoreThanOne : false isCursorAnchorEnabled : true isComposingInCursorAnchor : true isUpdatingEngineContext : false isLandAndCompletions : false isMultiTapSymbol : false isJapanComposing : false isJapanConvertState : false isJapanCursorPositionFront : false isChnSoftFunctionKeyShowing : false isTransComposingMoreThanOne : false hasSpell : false spellLength : 0 isSpellViewBackSpace : false isSpellEdit : false spellEditCursorPos : 0 spellEditSelectedLength : 0 isTextRangeContained : true 
+09-18 21:59:00.656  4076  4076 I HBD     : k processBackspace -> processBackspaceAction :  BACKSPACE_NORMAL
+09-18 21:59:00.657  4076  4076 I HBD     : i processBackspace -> processBackspacePostSet :  BACKSPACE_POST_UNDO_AND_RECAPTURE
+09-18 21:59:00.659 13722 13722 V InputMethodManager: dispatchKeyEventFromInputMethod: KeyEvent=KeyEvent { action=ACTION_DOWN, keyCode=KEYCODE_DEL, scanCode=0, metaState=0, flags=0x6, repeatCount=0, eventTime=17952794, downTime=17952794, deviceId=-1, source=0x0, displayId=0 }
+09-18 21:59:00.660 13722 13722 V InputMethodManager: dispatchKeyEventFromInputMethod: KeyEvent=KeyEvent { action=ACTION_UP, keyCode=KEYCODE_DEL, scanCode=0, metaState=0, flags=0x6, repeatCount=0, eventTime=17952795, downTime=17952794, deviceId=-1, source=0x0, displayId=0 }
+09-18 21:59:00.661 13722 13722 I ViewRootImpl@509da5a[MainActivity]: ViewPostIme key 0
+09-18 21:59:00.661  4076  4076 I HBD     : al EBD key t 0 
+09-18 21:59:00.664  4076  4076 I HBD     : b vib is off 
+09-18 21:59:00.664  4076  5354 I AudioManager: getParameters keys = g_volume_situation_key;type=2;device=0
+09-18 21:59:00.664  4076  4076 I HBD     : a [PF_KL] OTE none 0 126 147 20606094
+09-18 21:59:00.665  1055 26117 V APM_AudioPolicyManager: getAudioPolicyConfig: g_volume_situation_key;type=2;device=0
+09-18 21:59:00.665  1055 26117 I VolumeCustomizer: getSituationVolume_legacy: deviceType 0x0
+09-18 21:59:00.666  1055 19483 I AF::Track: start() situation track : stv_keyboard
+09-18 21:59:00.666  1055 19483 I AF::Track: setMixerOutConfig return default condition, mixer key 2002, thread key 2002
+09-18 21:59:00.667  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: ViewPostIme pointer 1
+09-18 21:59:00.667  1055 19483 V APM_AudioPolicyManager: startOutput() output 21, stream 1, session 2625, portId 426
+09-18 21:59:00.668  1055 19483 V APM_AudioPolicyManager: selectOutputForMusicEffects selected output 13
+09-18 21:59:00.668  1055 19483 V APM_AudioPolicyManager: getNewOutputDevices selected devices {type:0x2,@:}
+09-18 21:59:00.668  1055 19483 V APM_AudioPolicyManager: setOutputDevices device {type:0x2,@:} delayMs 0
+09-18 21:59:00.668  1055 19483 V APM_AudioPolicyManager: setOutputDevices() prevDevice {type:0x2,@:}
+09-18 21:59:00.668  1055 19483 V APM_AudioPolicyManager: setOutputDevices: suppressing checkDeviceMuteStrategies
+09-18 21:59:00.668  1055 19483 V APM_AudioPolicyManager: setOutputDevices setting same device {type:0x2,@:} or null device, force=0, patch handle=6
+09-18 21:59:00.668  1055 19483 V APM_AudioPolicyManager: computeVolume: stream 1, index 15, volume 1.000000, deviceTypes 0x2
+09-18 21:59:00.670  4076  4076 I HBD     : c ATL BackspaceKeyA
+09-18 21:59:00.672  4076  4076 I HBD     : al EBD key t 0 
+09-18 21:59:00.674  4076  4076 I HBD     : a [PF_KL] OTE none 1 34 40 5843177
+09-18 21:59:00.678 15255 15255 W app_process: FaultHandler: MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED failed: 38 Function not implemented
+09-18 21:59:00.681  4076  4076 I HBD     : b container vis= false
+09-18 21:59:00.700  4076  4076 I HBD     : b [ComposingItem] updateConfig: true to false 
+09-18 21:59:00.713 13722 13722 I ViewRootImpl@509da5a[MainActivity]: ViewPostIme key 1
+09-18 21:59:00.734 15255 15255 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-18 21:59:00.762  1055 19483 I AF::Track: stop() situation track : stv_keyboard
+09-18 21:59:00.769 15255 15255 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-18 21:59:00.770 15255 15255 D app_process: Time zone APEX ICU file found: /apex/com.android.tzdata/etc/icu/icu_tzdata.dat
+09-18 21:59:00.770 15255 15255 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt68l.dat
+09-18 21:59:00.772 15255 15255 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-18 21:59:00.775 15255 15255 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-18 21:59:00.792  2713  2792 I BadgeCountUpdaterImpl: reload badge without refresh
+09-18 21:59:00.793  1594 12952 I ActivityManager: Changes in 10072 8 to 5, 0 to 8
+09-18 21:59:00.795  1594  1772 D NetworkPolicy: onUidStateChanged() uid: 10072, isForeground(true, 5)
+09-18 21:59:00.796  1055 19483 V APM_AudioPolicyManager: setAppState(portId:610, state:1)
+09-18 21:59:00.799 23156  7178 I BadgeProvider: query, [selection] : null
+09-18 21:59:00.804  2713  2792 I BadgeCache: reloadBadge size : 0
+09-18 21:59:00.811  1055  1263 V APM_AudioPolicyManager: stopOutput() output 21, stream 1, session 2625, portId 426
+09-18 21:59:00.812  1055  1263 V APM_AudioPolicyManager: getNewOutputDevices selected devices AUDIO_DEVICE_NONE
+09-18 21:59:00.812  1055  1263 V APM_AudioPolicyManager: setOutputDevices device AUDIO_DEVICE_NONE delayMs 96
+09-18 21:59:00.812  1055  1263 V APM_AudioPolicyManager: setOutputDevices() prevDevice {type:0x2,@:}
+09-18 21:59:00.813  1055  1263 V APM_AudioPolicyManager: setOutputDevices setting same device AUDIO_DEVICE_NONE or null device, force=0, patch handle=6
+09-18 21:59:00.813  1055  1263 V APM_AudioPolicyManager: selectOutputForMusicEffects selected output 13
+09-18 21:59:00.845 15255 15255 E SemDvfsManager_JNI: SemDvfsManager: registerfunction enter
+09-18 21:59:00.845 15255 15255 E SemAffinityControl: SemAffinityControl: registerfunction enter
+09-18 21:59:00.850  1594  3979 V WindowManager: Relayout Window{a4469a2 u0 InputMethod}: viewVisibility=0 req=720x1555 d0
+09-18 21:59:00.854  1594  3979 V WindowManager: Relayout hash=a4469a2, pid=4076: mAttrs={(0,0)(fillxfill) gr=BOTTOM CENTER_VERTICAL sim={adjust=pan} ty=INPUT_METHOD fmt=TRANSPARENT wanim=0x7f130170 preferredMinDisplayRefreshRate=60.0 receive insets ignoring z-order
+09-18 21:59:00.854  1594  3979 V WindowManager:   fl=81800108
+09-18 21:59:00.854  1594  3979 V WindowManager:   pfl=12000000
+09-18 21:59:00.854  1594  3979 V WindowManager:   bhv=DEFAULT
+09-18 21:59:00.854  1594  3979 V WindowManager:   fitTypes=STATUS_BARS NAVIGATION_BARS
+09-18 21:59:00.854  1594  3979 V WindowManager:   fitSides=LEFT TOP RIGHT
+09-18 21:59:00.854  1594  3979 V WindowManager:   fitIgnoreVis dimDuration=150 naviIconColor=0}
+09-18 21:59:00.856  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: Relayout returned: old=(0,45,720,1600) new=(0,45,720,1600) req=(720,1555)0 dur=6 res=0x1 s={true 3913535488} ch=false fn=333
+09-18 21:59:00.872  4076  4076 I HBD     : d Init expand button state by global layout listener 
+09-18 21:59:00.876 15255 15255 D ProcessState: Binder ioctl to enable oneway spam detection failed: Invalid argument
+09-18 21:59:00.877 15255 15255 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-18 21:59:00.884  4076  4076 I HBD     : al EBD ex 
+09-18 21:59:00.891  1065  2164 I SurfaceFlinger: id=3248 createSurf (0x0),-1 flag=80004, WindowToken{7669a62 android.os.Binder@47c852d}#0
+09-18 21:59:00.892  1594  3979 D SettingsProvider: isChangeAllowed() : name = accessibility_enabled
+09-18 21:59:00.893  1594  3979 I GenerationRegistry: mBackingStore.isClosed() : false
+09-18 21:59:00.898  1594  3979 D SettingsProvider: isChangeAllowed() : name = accessibility_enabled
+09-18 21:59:00.899  1594  3979 I GenerationRegistry: mBackingStore.isClosed() : false
+09-18 21:59:00.908  1594  1594 D BatterySaverPolicy: accessibility changed to true, updating policy.
+09-18 21:59:00.911  1594  1594 I AccessibilityManagerService: semIsAccessibilityServiceEnabled()
+09-18 21:59:00.911  1594  1594 I AccessibilityManagerService: semIsAccessibilityServiceEnabled()
+09-18 21:59:00.912  1594  1594 D AS.AudioService: Accessibility volume enabled = false
+09-18 21:59:00.921  2713  9602 I TouchInteractionService: onActiveNavBarRegionChanges, region : SkRegion((0,1516,258,1519)(259,1516,460,1519)(461,1516,640,1519)(0,1519,258,1600)(259,1519,460,1600)(461,1519,640,1600)(642,1519,720,1600))
+09-18 21:59:00.922  2352  2352 V Navbar.Store: ----handleEvent [EventType] ON_UPDATE_REMOTEVIEW [Module] SamsungNavigationBarView  KEYS_NAVBAR_DARK_INTENSITY=0.0  KEYS_CONTEXTUALBUTTON_VISIBLE=true  KEYS_LEFT_REMOTEVIEW_CONTAINER=android.widget.LinearLayout{e02460 I.E...... ......I. 0,0-79,84 #7f0b0478 app:id/left_remoteview}  KEYS_RIGHT_REMOTEVIEW_CONTAINER=android.widget.LinearLayout{cc4ed19 I.E...... ......I. 641,0-720,84 #7f0b070a app:id/right_remoteview}
+09-18 21:59:00.922  2352  2352 V Navbar.Store: ------[Band]REMOTE_VIEW_PACK_SET_REMOTEVIEW_CONTAINER
+09-18 21:59:00.922  2352  2352 V Navbar.Store: --------apply(UPDATE_NAVBAR_REMOTEVIEW_CONTAINER)
+09-18 21:59:00.922  2352  2352 V Navbar.Store: --------apply(UPDATE_NAVBAR_RIGHT_REMOTEVIEW_VISIBILITY)
+09-18 21:59:00.922  2352  2352 V Navbar.Store: --------getValue(FLOAT_REMOTEVIEW_DARK_INTENSITY)=0.0
+09-18 21:59:00.923  2352  2352 V Navbar.Store: handleEvent [EventType] ON_NAVBAR_UPDATE_A11Y_SERVICE [Module] NavigationBar  KEYS_LONG_CLICKABLE=false  KEYS_CLICKABLE=false
+09-18 21:59:00.923  2352  2352 V Navbar.Store: --[Band]SETUPWIZARD_PACK_UPDATE_A11Y_SERVICE
+09-18 21:59:00.923  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_BUTTON_FORCED_VISIBLE)=false
+09-18 21:59:00.923  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_SETUPWIZARD_STYLE)=false
+09-18 21:59:00.929  2352  2352 V Navbar.Store: handleEvent [EventType] GET_BOOL_NAVBAR_CAN_MOVE_STATE [Module] SamsungNavigationBarView  KEYS_DEFAULT=true
+09-18 21:59:00.929  2352  2352 V Navbar.Store: --[Band]CONFIG_PACK_GET_NAVBAR_CAN_MOVE
+09-18 21:59:00.929  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_CAN_MOVE)=true
+09-18 21:59:00.931  2713  9602 I TouchInteractionService: onActiveNavBarRegionChanges, region : SkRegion((0,1516,258,1519)(259,1516,460,1519)(461,1516,640,1519)(0,1519,258,1600)(259,1519,460,1600)(461,1519,640,1600)(642,1519,720,1600))
+09-18 21:59:00.931  2352  2352 V Navbar.Store: handleEvent [EventType] GET_BOOL_USE_NAVBAR_BACKGROUND_FRAME [Module] NavigationBarTransitions  KEYS_DEFAULT=false
+09-18 21:59:00.931  2352  2352 V Navbar.Store: --[Band]COLOR_PACK_GET_USE_NAVBAR_BACKGROUND_FRAME
+09-18 21:59:00.931  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_GESTURAL_MODE)=false
+09-18 21:59:00.931  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_OPAQUE)=false
+09-18 21:59:00.931  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_PINNED_EDGE_ENABELD)=false
+09-18 21:59:01.017  4076  4076 I GestureDetector: handleMessage LONG_PRESS
+09-18 21:59:01.178  1215 21248 V NuPlayerDriver: getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 21:59:01.514  2352  2481 D MobileStatusTracker(1/5): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=Invalid,mGsm=Invalid,mWcdma=Invalid,mTdscdma=Invalid,mLte=CellSignalStrengthLte: rssi=-61 rsrp=-91 rsrq=-12 rssnr=1 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=Invalid,SignalBarInfo{ lteLevel=3 },rat=14,primary=CellSignalStrengthLte} level=3
+09-18 21:59:01.518  2352  2481 D NetworkController.MobileSignalController(1/5): notifyListener: enabled=true, connected=true, dataConnected=false, networkType=LTE (4G), emergencyOnly=false, roaming=false, isDefault=false, fiveGAvailable=false, mmWave=false, showDisabledDataIcon=false, voWifiConnected=false, dataActivity=, simState=LOADED, cardOperator=AIRTEL, simCardActivated=1
+09-18 21:59:01.524  2352  2481 D NetworkController: SignalStrength from intent slotId=1
+09-18 21:59:01.525  2352  2481 D MobileStatusTracker(0/14): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=Invalid,mGsm=Invalid,mWcdma=Invalid,mTdscdma=Invalid,mLte=CellSignalStrengthLte: rssi=-59 rsrp=-92 rsrq=-12 rssnr=1 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=Invalid,SignalBarInfo{ lteLevel=3 },rat=14,primary=CellSignalStrengthLte} level=3
+09-18 21:59:01.526  2352  2481 D NetworkController: SignalStrength from intent slotId=0
+09-18 21:59:01.922 15255 15255 D SemCscFeature: Encoded
+09-18 21:59:01.942  1594  2167 D InputReader: Btn_touch(6): value=1 when=17954.079203
+09-18 21:59:01.942  1594  2167 I InputReader: Touch event's action is 0x0 (id=3, t=0) [pCnt=1, s=0.1919 ] when=17954.079203
+09-18 21:59:01.944  1594  2166 I InputDispatcher: Delivering touch to (2352): action: 0x4, f=0x0, d=0, '723382 ', t=1 
+09-18 21:59:01.944  1594  2166 I InputDispatcher: Delivering touch to (4076): action: 0x0, f=0x0, d=0, 'a4469a2', t=1 +(0,-45)
+09-18 21:59:01.944  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: ViewPostIme pointer 0
+09-18 21:59:01.945  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 351435275 caller: com.android.server.wm.SystemGesturesPointerEventListener.onPointerEvent:179 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:01.945  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 351435275 caller: com.android.server.wm.SystemPerformancePointerEventListener.onPointerEvent:89 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:01.946  4076  4076 I GestureDetector: obtain mCurrentMotionEventRaw. action: 0 id: 351435275
+09-18 21:59:01.946  4076  4076 I GestureDetector: obtain mCurrentDownEvent. id: 351435275 caller: com.samsung.android.honeyboard.textboard.keyboard.x.b.a.onTouch:85 com.samsung.android.honeyboard.textboard.keyboard.x.e.c.a:30 com.samsung.android.honeyboard.textboard.keyboard.x.e.a.a:72 
+09-18 21:59:01.948  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 186672754
+09-18 21:59:01.948  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 186672754
+09-18 21:59:01.950  4076  4076 I HBD     : c ATL SoundAndVibrationKeyA
+09-18 21:59:01.950  4076  4076 I HBD     : b vib is off 
+09-18 21:59:01.950  4076  5354 I AudioManager: getParameters keys = g_volume_situation_key;type=2;device=0
+09-18 21:59:01.951  1055 19483 V APM_AudioPolicyManager: getAudioPolicyConfig: g_volume_situation_key;type=2;device=0
+09-18 21:59:01.951  1055 19483 I VolumeCustomizer: getSituationVolume_legacy: deviceType 0x0
+09-18 21:59:01.952  1055 26117 I AF::Track: start() situation track : stv_keyboard
+09-18 21:59:01.952  1055 26117 I AF::Track: setMixerOutConfig return default condition, mixer key 2002, thread key 2002
+09-18 21:59:01.952  1055 26117 V APM_AudioPolicyManager: startOutput() output 21, stream 1, session 1393, portId 250
+09-18 21:59:01.953  1055 26117 V APM_AudioPolicyManager: selectOutputForMusicEffects selected output 13
+09-18 21:59:01.953  1055 26117 V APM_AudioPolicyManager: getNewOutputDevices selected devices {type:0x2,@:}
+09-18 21:59:01.953  1055 26117 V APM_AudioPolicyManager: setOutputDevices device {type:0x2,@:} delayMs 0
+09-18 21:59:01.953  1055 26117 V APM_AudioPolicyManager: setOutputDevices() prevDevice {type:0x2,@:}
+09-18 21:59:01.953  1055 26117 V APM_AudioPolicyManager: setOutputDevices: suppressing checkDeviceMuteStrategies
+09-18 21:59:01.953  1055 26117 V APM_AudioPolicyManager: setOutputDevices setting same device {type:0x2,@:} or null device, force=0, patch handle=6
+09-18 21:59:01.953  1055 26117 V APM_AudioPolicyManager: computeVolume: stream 1, index 15, volume 1.000000, deviceTypes 0x2
+09-18 21:59:01.953  4076  4076 I HBD     : a [PF_KL] OTE none 0 4 12 8221250
+09-18 21:59:01.966  4076  4076 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 186672754
+09-18 21:59:02.046  1055 26117 I AF::Track: stop() situation track : stv_keyboard
+09-18 21:59:02.055  1594  2167 D InputReader: Btn_touch(6): value=0 when=17954.193563
+09-18 21:59:02.056  1594  2167 I InputReader: Touch event's action is 0x1 (id=3, t=0) [pCnt=1, s=] when=17954.193563
+09-18 21:59:02.056  1594  2166 I InputDispatcher: Delivering touch to (4076): action: 0x1, f=0x0, d=0, 'a4469a2', t=1 +(0,-45)
+09-18 21:59:02.058  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: ViewPostIme pointer 1
+09-18 21:59:02.062  4076  4076 I HBD     : c ATL CharacterKeyA
+09-18 21:59:02.070  4076  4076 I HBD     : c IIFO[r:bea2eb0680] 
+09-18 21:59:02.073  4076  4076 I HBD     : al EBD key t 0 
+09-18 21:59:02.093  1055  1263 V APM_AudioPolicyManager: stopOutput() output 21, stream 1, session 1393, portId 250
+09-18 21:59:02.093  1055  1263 V APM_AudioPolicyManager: getNewOutputDevices selected devices AUDIO_DEVICE_NONE
+09-18 21:59:02.093  1055  1263 V APM_AudioPolicyManager: setOutputDevices device AUDIO_DEVICE_NONE delayMs 96
+09-18 21:59:02.093  1055  1263 V APM_AudioPolicyManager: setOutputDevices() prevDevice {type:0x2,@:}
+09-18 21:59:02.094  1055  1263 V APM_AudioPolicyManager: setOutputDevices setting same device AUDIO_DEVICE_NONE or null device, force=0, patch handle=6
+09-18 21:59:02.094  1055  1263 V APM_AudioPolicyManager: selectOutputForMusicEffects selected output 13
+09-18 21:59:02.097  4076  4076 I HBD     : al EBD ssu f 1 
+09-18 21:59:02.098  4076  4076 I HBD     : a [PF_KL] OTE none 1 4 43 39345521
+09-18 21:59:02.099  4076  4076 I HBD     : bd ous -  0 ,  0 ,  1 ,  1 ,  0 ,  1
+09-18 21:59:02.101  4076  4076 I HBD     : al EBD cm s 0 
+09-18 21:59:02.105  4076  4076 I HBD     : b [ComposingItem] updateConfig: false to true 
+09-18 21:59:02.205  1594  2167 D InputReader: Btn_touch(6): value=1 when=17954.343488
+09-18 21:59:02.205  1594  2167 I InputReader: Touch event's action is 0x0 (id=3, t=0) [pCnt=1, s=0.1920 ] when=17954.343488
+09-18 21:59:02.206  1594  2166 I InputDispatcher: Delivering touch to (2352): action: 0x4, f=0x0, d=0, '723382 ', t=1 
+09-18 21:59:02.206  1594  2166 I InputDispatcher: Delivering touch to (4076): action: 0x0, f=0x0, d=0, 'a4469a2', t=1 +(0,-45)
+09-18 21:59:02.207  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 622171797 caller: com.android.server.wm.SystemGesturesPointerEventListener.onPointerEvent:179 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:02.208  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 622171797 caller: com.android.server.wm.SystemPerformancePointerEventListener.onPointerEvent:89 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:02.208  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: ViewPostIme pointer 0
+09-18 21:59:02.210  4076  4076 I GestureDetector: obtain mCurrentDownEvent. id: 622171797 caller: com.samsung.android.honeyboard.textboard.keyboard.x.b.a.onTouch:85 com.samsung.android.honeyboard.textboard.keyboard.x.e.c.a:30 com.samsung.android.honeyboard.textboard.keyboard.x.e.a.a:72 
+09-18 21:59:02.213  4076  4076 I HBD     : c ATL SoundAndVibrationKeyA
+09-18 21:59:02.214  4076  4076 I HBD     : b vib is off 
+09-18 21:59:02.214  4076  5354 I AudioManager: getParameters keys = g_volume_situation_key;type=2;device=0
+09-18 21:59:02.215  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 589223875
+09-18 21:59:02.215  1055 26117 V APM_AudioPolicyManager: getAudioPolicyConfig: g_volume_situation_key;type=2;device=0
+09-18 21:59:02.215  1055 26117 I VolumeCustomizer: getSituationVolume_legacy: deviceType 0x0
+09-18 21:59:02.215  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 589223875
+09-18 21:59:02.216  1055 19483 I AF::Track: start() situation track : stv_keyboard
+09-18 21:59:02.216  1055 19483 I AF::Track: setMixerOutConfig return default condition, mixer key 2002, thread key 2002
+09-18 21:59:02.216  1055 19483 V APM_AudioPolicyManager: startOutput() output 21, stream 1, session 1393, portId 250
+09-18 21:59:02.217  1055 19483 V APM_AudioPolicyManager: selectOutputForMusicEffects selected output 13
+09-18 21:59:02.217  1055 19483 V APM_AudioPolicyManager: getNewOutputDevices selected devices {type:0x2,@:}
+09-18 21:59:02.217  1055 19483 V APM_AudioPolicyManager: setOutputDevices device {type:0x2,@:} delayMs 0
+09-18 21:59:02.217  1055 19483 V APM_AudioPolicyManager: setOutputDevices() prevDevice {type:0x2,@:}
+09-18 21:59:02.217  1055 19483 V APM_AudioPolicyManager: setOutputDevices: suppressing checkDeviceMuteStrategies
+09-18 21:59:02.217  4076  4076 I HBD     : a [PF_KL] OTE none 0 4 12 7522240
+09-18 21:59:02.217  1055 19483 V APM_AudioPolicyManager: setOutputDevices setting same device {type:0x2,@:} or null device, force=0, patch handle=6
+09-18 21:59:02.217  1055 19483 V APM_AudioPolicyManager: computeVolume: stream 1, index 15, volume 1.000000, deviceTypes 0x2
+09-18 21:59:02.226  4076  4076 I HBD     : b container vis= true
+09-18 21:59:02.234  4076  4076 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 589223875
+09-18 21:59:02.257  1594 12952 V WindowManager: Relayout Window{a4469a2 u0 InputMethod}: viewVisibility=0 req=720x1555 d0
+09-18 21:59:02.261  1594 12952 V WindowManager: Relayout hash=a4469a2, pid=4076: mAttrs={(0,0)(fillxfill) gr=BOTTOM CENTER_VERTICAL sim={adjust=resize} ty=INPUT_METHOD fmt=TRANSPARENT wanim=0x7f130170 preferredMinDisplayRefreshRate=60.0 receive insets ignoring z-order
+09-18 21:59:02.261  1594 12952 V WindowManager:   fl=81800108
+09-18 21:59:02.261  1594 12952 V WindowManager:   pfl=12000000
+09-18 21:59:02.261  1594 12952 V WindowManager:   bhv=DEFAULT
+09-18 21:59:02.261  1594 12952 V WindowManager:   fitTypes=STATUS_BARS NAVIGATION_BARS
+09-18 21:59:02.261  1594 12952 V WindowManager:   fitSides=LEFT TOP RIGHT
+09-18 21:59:02.261  1594 12952 V WindowManager:   fitIgnoreVis dimDuration=150 naviIconColor=0}
+09-18 21:59:02.262  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: Relayout returned: old=(0,45,720,1600) new=(0,45,720,1600) req=(720,1555)0 dur=6 res=0x1 s={true 3913535488} ch=false fn=339
+09-18 21:59:02.310  1055 19483 I AF::Track: stop() situation track : stv_keyboard
+09-18 21:59:02.322  1215 21248 V NuPlayerDriver: getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 21:59:02.339  1594  2167 D InputReader: Btn_touch(6): value=0 when=17954.477108
+09-18 21:59:02.339  1594  2167 I InputReader: Touch event's action is 0x1 (id=3, t=0) [pCnt=1, s=] when=17954.477108
+09-18 21:59:02.339  1594  2166 I InputDispatcher: Delivering touch to (4076): action: 0x1, f=0x0, d=0, 'a4469a2', t=1 +(0,-45)
+09-18 21:59:02.341  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: ViewPostIme pointer 1
+09-18 21:59:02.345  4076  4076 I HBD     : c ATL CharacterKeyA
+09-18 21:59:02.351  1055  1263 V APM_AudioPolicyManager: stopOutput() output 21, stream 1, session 1393, portId 250
+09-18 21:59:02.351  1055  1263 V APM_AudioPolicyManager: getNewOutputDevices selected devices AUDIO_DEVICE_NONE
+09-18 21:59:02.351  1055  1263 V APM_AudioPolicyManager: setOutputDevices device AUDIO_DEVICE_NONE delayMs 96
+09-18 21:59:02.352  1055  1263 V APM_AudioPolicyManager: setOutputDevices() prevDevice {type:0x2,@:}
+09-18 21:59:02.352  4076  4076 I HBD     : c IIFO[r:0d14b3afaf] 
+09-18 21:59:02.352  1055  1263 V APM_AudioPolicyManager: setOutputDevices setting same device AUDIO_DEVICE_NONE or null device, force=0, patch handle=6
+09-18 21:59:02.353  1055  1263 V APM_AudioPolicyManager: selectOutputForMusicEffects selected output 13
+09-18 21:59:02.354  4076  4076 I HBD     : al EBD key t 0 
+09-18 21:59:02.356  4076  4076 I HBD     : a [PF_KL] OTE none 1 3 17 14178125
+09-18 21:59:02.379  4076  4076 I HBD     : bd ous -  1 ,  1 ,  2 ,  2 ,  0 ,  2
+09-18 21:59:02.381  4076  4076 I HBD     : al EBD cm s 0 
+09-18 21:59:02.386   619   619 D io_stats: !@ 179,0 r 5073240 45444011 w 475578 4439728 d 242524 2409380 f 185957 213766 iot 1898000 1622711 th 102400 102400 81508 pt 2480 inp 0 0 17954.518
+09-18 21:59:02.443  4076  4076 I HBD     : c bee animation finished cnt=-1 2131231868 
+09-18 21:59:02.505  4076  4076 I HBD     : al EBD ex 
+09-18 21:59:02.685 15255 15255 W AccessibilityNodeInfoDumper: Fetch time: 758ms
+09-18 21:59:02.687  1594  2440 W WindowManager: removeWindowToken: Attempted to remove non-existing token: android.os.Binder@47c852d
+09-18 21:59:02.687  1594  2440 D SettingsProvider: isChangeAllowed() : name = accessibility_enabled
+09-18 21:59:02.689  1594  2440 I GenerationRegistry: mBackingStore.isClosed() : false
+09-18 21:59:02.690  1594 12952 D SettingsProvider: isChangeAllowed() : name = accelerometer_rotation
+09-18 21:59:02.690  1594 12952 D SettingsProvider: isChangeAllowed() : name = user_rotation
+09-18 21:59:02.691  1594 12952 V WindowManager: rotationForOrientation(orient=SCREEN_ORIENTATION_UNSPECIFIED (-1), last=ROTATION_0 (0)); user=ROTATION_0 (0) USER_ROTATION_LOCKED
+09-18 21:59:02.691  1594 12952 D WindowManager: rotationForOrientation, orientationSource=ActivityRecord{1599e88 u0 com.aistudio.skillsexchange.nxptvq/com.example.MainActivity t57}
+09-18 21:59:02.691  1594 12952 V WindowManager: Computed rotation=ROTATION_0 (0) for display id=0 based on lastOrientation=SCREEN_ORIENTATION_UNSPECIFIED (-1) and oldRotation=ROTATION_0 (0), caller=com.android.server.wm.DisplayContent.updateRotationUnchecked:2339 com.android.server.wm.WindowManagerService.updateRotationUnchecked:4535 com.android.server.wm.WindowManagerService.freezeDisplayRotation:4435 com.android.server.wm.WindowManagerService.freezeRotation:4394 android.view.IWindowManager$Stub.onTransact:2456 com.android.server.wm.WindowManagerService.onTransact:1621 
+09-18 21:59:02.693  1594  1594 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-18 21:59:02.697 15255 15255 D hw-ProcessState: Binder ioctl to enable oneway spam detection failed: Invalid argument
+09-18 21:59:02.697 15255 15255 D AndroidRuntime: Shutting down VM
+09-18 21:59:02.700  1065  1065 I Layer   : id=3248 mRemovedFromDrawingState WindowToken{7669a62 android.os.Binder@47c852d}#0 (99)
+09-18 21:59:02.700  1065  1065 I SurfaceFlinger: id=3248 Removed WindowToken{7669a62 android.os.Binder@47c852d}#0 (99)
+09-18 21:59:02.701  1065  1065 I Layer   : id=3248 Destroyed WindowToken{7669a62 android.os.Binder@47c852d}#0
+09-18 21:59:02.805  2352  2481 D MobileStatusTracker(1/5): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=Invalid,mGsm=Invalid,mWcdma=Invalid,mTdscdma=Invalid,mLte=CellSignalStrengthLte: rssi=-63 rsrp=-93 rsrq=-12 rssnr=1 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=Invalid,SignalBarInfo{ lteLevel=3 },rat=14,primary=CellSignalStrengthLte} level=3
+09-18 21:59:02.807  2352  2481 D NetworkController: SignalStrength from intent slotId=1
+09-18 21:59:03.325  1594  2167 D InputReader: Btn_touch(6): value=1 when=17955.463351
+09-18 21:59:03.325  1594  2167 I InputReader: Touch event's action is 0x0 (id=3, t=0) [pCnt=1, s=0.1921 ] when=17955.463351
+09-18 21:59:03.326  1594  2166 I InputDispatcher: Delivering touch to (2352): action: 0x4, f=0x0, d=0, '723382 ', t=1 
+09-18 21:59:03.326  1594  2166 I InputDispatcher: Delivering touch to (4076): action: 0x0, f=0x0, d=0, 'a4469a2', t=1 +(0,-45)
+09-18 21:59:03.327  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 800511312 caller: com.android.server.wm.SystemGesturesPointerEventListener.onPointerEvent:179 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:03.328  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: ViewPostIme pointer 0
+09-18 21:59:03.328  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 800511312 caller: com.android.server.wm.SystemPerformancePointerEventListener.onPointerEvent:89 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:03.338  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 665644806
+09-18 21:59:03.338  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 665644806
+09-18 21:59:03.425  1594  2167 D InputReader: Btn_touch(6): value=0 when=17955.562941
+09-18 21:59:03.425  1594  2167 I InputReader: Touch event's action is 0x1 (id=3, t=0) [pCnt=1, s=] when=17955.562941
+09-18 21:59:03.425  1594  2166 I InputDispatcher: Delivering touch to (4076): action: 0x1, f=0x0, d=0, 'a4469a2', t=1 +(0,-45)
+09-18 21:59:03.426  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: ViewPostIme pointer 1
+09-18 21:59:03.440  4076  4076 I HBD     : c ATL PickSuggestionCandidateViewA
+09-18 21:59:03.452  4076  4076 I HBD     : PickSuggestionLogic checkWordCompletionLandscape, action : 0 
+09-18 21:59:03.453  1215 21248 V NuPlayerDriver: getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 21:59:03.453  4076  4076 I HBD     : PickSuggestionLogic prepareCommitNormalLogic(), action : 1 
+09-18 21:59:03.461  4076  4076 I HBD     : c IIFO[r:b70c374ec9] 
+09-18 21:59:03.464  4076  4076 I HBD     : c IIFO[r:493622c7c9] 
+09-18 21:59:03.465  4076  4076 I HBD     : cr [PF_IM] pickSuggestionManually() t, 22 
+09-18 21:59:03.486  4076  4076 I HBD     : al EBD pk f 1 
+09-18 21:59:03.489  4076  5354 I AudioManager: getParameters keys = g_volume_situation_key;type=2;device=0
+09-18 21:59:03.489  4076  4076 I HBD     : b vib is off 
+09-18 21:59:03.489  1055 19483 V APM_AudioPolicyManager: getAudioPolicyConfig: g_volume_situation_key;type=2;device=0
+09-18 21:59:03.489  1055 19483 I VolumeCustomizer: getSituationVolume_legacy: deviceType 0x0
+09-18 21:59:03.490  1055 26117 I AF::Track: start() situation track : stv_keyboard
+09-18 21:59:03.490  1055 26117 I AF::Track: setMixerOutConfig return default condition, mixer key 2002, thread key 2002
+09-18 21:59:03.490  4076  4076 I HBD     : bd ous -  2 ,  2 ,  6 ,  6 ,  -1 ,  -1
+09-18 21:59:03.491  1055 26117 V APM_AudioPolicyManager: startOutput() output 21, stream 1, session 1393, portId 250
+09-18 21:59:03.491  1055 26117 V APM_AudioPolicyManager: selectOutputForMusicEffects selected output 13
+09-18 21:59:03.491  1055 26117 V APM_AudioPolicyManager: getNewOutputDevices selected devices {type:0x2,@:}
+09-18 21:59:03.491  1055 26117 V APM_AudioPolicyManager: setOutputDevices device {type:0x2,@:} delayMs 0
+09-18 21:59:03.491  1055 26117 V APM_AudioPolicyManager: setOutputDevices() prevDevice {type:0x2,@:}
+09-18 21:59:03.491  1055 26117 V APM_AudioPolicyManager: setOutputDevices: suppressing checkDeviceMuteStrategies
+09-18 21:59:03.491  1055 26117 V APM_AudioPolicyManager: setOutputDevices setting same device {type:0x2,@:} or null device, force=0, patch handle=6
+09-18 21:59:03.492  1055 26117 V APM_AudioPolicyManager: computeVolume: stream 1, index 15, volume 1.000000, deviceTypes 0x2
+09-18 21:59:03.493  4076  4076 I HBD     : al EBD cm s 0 
+09-18 21:59:03.513  4076  4076 I HBD     : al EBD ssu f 1 
+09-18 21:59:03.515  4076  4076 I HBD     : b [ComposingItem] updateConfig: true to false 
+09-18 21:59:03.585  1055 26117 I AF::Track: stop() situation track : stv_keyboard
+09-18 21:59:03.628  1594  1772 I GestureDetector: handleMessage TAP
+09-18 21:59:03.629  1594  1594 I GestureDetector: handleMessage TAP
+09-18 21:59:03.632  1055  1263 V APM_AudioPolicyManager: stopOutput() output 21, stream 1, session 1393, portId 250
+09-18 21:59:03.632  1055  1263 V APM_AudioPolicyManager: getNewOutputDevices selected devices AUDIO_DEVICE_NONE
+09-18 21:59:03.632  1055  1263 V APM_AudioPolicyManager: setOutputDevices device AUDIO_DEVICE_NONE delayMs 96
+09-18 21:59:03.632  1055  1263 V APM_AudioPolicyManager: setOutputDevices() prevDevice {type:0x2,@:}
+09-18 21:59:03.633  1055  1263 V APM_AudioPolicyManager: setOutputDevices setting same device AUDIO_DEVICE_NONE or null device, force=0, patch handle=6
+09-18 21:59:03.633  1055  1263 V APM_AudioPolicyManager: selectOutputForMusicEffects selected output 13
+09-18 21:59:03.664 13722 13727 I exchange.nxptv: Compiler allocated 5501KB to compile kotlin.Unit com.example.ui.screens.OnboardingScreenKt.OnboardingScreen$lambda$108(android.content.Context, androidx.activity.compose.ManagedActivityResultLauncher, com.example.ui.viewmodel.SkillsExchangeViewModel, kotlin.jvm.functions.Function0, androidx.compose.runtime.MutableState, androidx.compose.runtime.MutableState, androidx.compose.runtime.MutableState, androidx.compose.runtime.MutableState, androidx.compose.runtime.State, androidx.compose.runtime.State, androidx.compose.runtime.MutableState, androidx.compose.runtime.State, androidx.compose.runtime.State, androidx.compose.runtime.MutableState, androidx.compose.runtime.MutableState, kotlin.jvm.functions.Function0, java.util.List, androidx.compose.runtime.MutableState, androidx.compose.runtime.Composer, int)
+09-18 21:59:03.784  4076  4080 I roid.honeyboar: Background concurrent copying GC freed 10MB AllocSpace bytes, 2(40KB) LOS objects, 40% free, 17MB/29MB, paused 271us,324us total 213.020ms
+09-18 21:59:04.394   619   619 D io_stats: !@ 179,0 r 5073355 45444575 w 475582 4439768 d 242524 2409380 f 185958 213767 iot 1898080 1622754 th 102400 102400 81508 pt 2480 inp 0 0 17956.525
+09-18 21:59:04.591  1215 21248 V NuPlayerDriver: getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 21:59:04.914  1594  2167 D InputReader: Btn_touch(6): value=1 when=17957.051667
+09-18 21:59:04.915  1594  2167 I InputReader: Touch event's action is 0x0 (id=3, t=0) [pCnt=1, s=0.1922 ] when=17957.051667
+09-18 21:59:04.915  1594  2166 I InputDispatcher: Delivering touch to (2352): action: 0x4, f=0x0, d=0, '723382 ', t=1 
+09-18 21:59:04.915  1594  2166 I InputDispatcher: Delivering touch to (4076): action: 0x0, f=0x0, d=0, 'a4469a2', t=1 +(0,-45)
+09-18 21:59:04.916  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: ViewPostIme pointer 0
+09-18 21:59:04.916  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 747144434 caller: com.android.server.wm.SystemGesturesPointerEventListener.onPointerEvent:179 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:04.917  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 747144434 caller: com.android.server.wm.SystemPerformancePointerEventListener.onPointerEvent:89 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:04.921  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 544198082
+09-18 21:59:04.921  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 544198082
+09-18 21:59:05.016  1594  2167 D InputReader: Btn_touch(6): value=0 when=17957.154724
+09-18 21:59:05.017  1594  2167 I InputReader: Touch event's action is 0x1 (id=3, t=0) [pCnt=1, s=] when=17957.154724
+09-18 21:59:05.017  1594  2166 I InputDispatcher: Delivering touch to (4076): action: 0x1, f=0x0, d=0, 'a4469a2', t=1 +(0,-45)
+09-18 21:59:05.017  1594  2166 D PowerManagerService: [api] userActivityFromNative : 30 (event: 2 flags: 4096 displayId: 0) eventTime = 17957154
+09-18 21:59:05.018  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: ViewPostIme pointer 1
+09-18 21:59:05.025  4076  4076 I HBD     : c ATL PickSuggestionCandidateViewA
+09-18 21:59:05.032  4076  4076 I HBD     : PickSuggestionLogic checkWordCompletionLandscape, action : 0 
+09-18 21:59:05.032  4076  4076 I HBD     : PickSuggestionLogic prepareCommitNormalLogic(), action : 2 
+09-18 21:59:05.035  4076  4076 I HBD     : c IIFO[r:7340adddd1] 
+09-18 21:59:05.037  4076  4076 I HBD     : c IIFO[r:db3db6c2c6] 
+09-18 21:59:05.063  4076  4076 I HBD     : al EBD pk f 1 
+09-18 21:59:05.065  4076  4076 I HBD     : b vib is off 
+09-18 21:59:05.065  4076  5354 I AudioManager: getParameters keys = g_volume_situation_key;type=2;device=0
+09-18 21:59:05.065  1055 26117 V APM_AudioPolicyManager: getAudioPolicyConfig: g_volume_situation_key;type=2;device=0
+09-18 21:59:05.065  1055 26117 I VolumeCustomizer: getSituationVolume_legacy: deviceType 0x0
+09-18 21:59:05.066  1055 19483 I AF::Track: start() situation track : stv_keyboard
+09-18 21:59:05.066  1055 19483 I AF::Track: setMixerOutConfig return default condition, mixer key 2002, thread key 2002
+09-18 21:59:05.066  4076  4076 I HBD     : bd ous -  6 ,  6 ,  12 ,  12 ,  -1 ,  -1
+09-18 21:59:05.067  1055 19483 V APM_AudioPolicyManager: startOutput() output 21, stream 1, session 1393, portId 250
+09-18 21:59:05.067  1055 19483 V APM_AudioPolicyManager: selectOutputForMusicEffects selected output 13
+09-18 21:59:05.067  1055 19483 V APM_AudioPolicyManager: getNewOutputDevices selected devices {type:0x2,@:}
+09-18 21:59:05.067  1055 19483 V APM_AudioPolicyManager: setOutputDevices device {type:0x2,@:} delayMs 0
+09-18 21:59:05.068  1055 19483 V APM_AudioPolicyManager: setOutputDevices() prevDevice {type:0x2,@:}
+09-18 21:59:05.068  1055 19483 V APM_AudioPolicyManager: setOutputDevices: suppressing checkDeviceMuteStrategies
+09-18 21:59:05.068  1055 19483 V APM_AudioPolicyManager: setOutputDevices setting same device {type:0x2,@:} or null device, force=0, patch handle=6
+09-18 21:59:05.068  1055 19483 V APM_AudioPolicyManager: computeVolume: stream 1, index 15, volume 1.000000, deviceTypes 0x2
+09-18 21:59:05.068  4076  4076 I HBD     : al EBD cm s 0 
+09-18 21:59:05.161  1055 19483 I AF::Track: stop() situation track : stv_keyboard
+09-18 21:59:05.212  1055  1263 V APM_AudioPolicyManager: stopOutput() output 21, stream 1, session 1393, portId 250
+09-18 21:59:05.212  1055  1263 V APM_AudioPolicyManager: getNewOutputDevices selected devices AUDIO_DEVICE_NONE
+09-18 21:59:05.212  1055  1263 V APM_AudioPolicyManager: setOutputDevices device AUDIO_DEVICE_NONE delayMs 96
+09-18 21:59:05.212  1055  1263 V APM_AudioPolicyManager: setOutputDevices() prevDevice {type:0x2,@:}
+09-18 21:59:05.213  1055  1263 V APM_AudioPolicyManager: setOutputDevices setting same device AUDIO_DEVICE_NONE or null device, force=0, patch handle=6
+09-18 21:59:05.213  1055  1263 V APM_AudioPolicyManager: selectOutputForMusicEffects selected output 13
+09-18 21:59:05.216  1594  1594 I GestureDetector: handleMessage TAP
+09-18 21:59:05.217  1594  1772 I GestureDetector: handleMessage TAP
+09-18 21:59:05.678  1215 21248 V NuPlayerDriver: getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 21:59:05.915  1594  2167 D InputReader: Btn_touch(6): value=1 when=17958.053464
+09-18 21:59:05.915  1594  2167 I InputReader: Touch event's action is 0x0 (id=3, t=0) [pCnt=1, s=0.1923 ] when=17958.053464
+09-18 21:59:05.916  1594  2166 I InputDispatcher: Delivering touch to (2352): action: 0x4, f=0x0, d=0, '723382 ', t=1 
+09-18 21:59:05.916  1594  2166 I InputDispatcher: Delivering touch to (13722): action: 0x0, f=0x0, d=0, '2e46f1d', t=1 
+09-18 21:59:05.917  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 967010939 caller: com.android.server.wm.SystemGesturesPointerEventListener.onPointerEvent:179 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:05.917 13722 13722 I ViewRootImpl@509da5a[MainActivity]: ViewPostIme pointer 0
+09-18 21:59:05.918  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 967010939 caller: com.android.server.wm.SystemPerformancePointerEventListener.onPointerEvent:89 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:05.924  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 480889450
+09-18 21:59:05.924  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 480889450
+09-18 21:59:05.998  1594  2167 D InputReader: Btn_touch(6): value=0 when=17958.135680
+09-18 21:59:05.998  1594  2167 I InputReader: Touch event's action is 0x1 (id=3, t=0) [pCnt=1, s=] when=17958.135680
+09-18 21:59:05.998  1594  2166 I InputDispatcher: Delivering touch to (13722): action: 0x1, f=0x0, d=0, '2e46f1d', t=1 
+09-18 21:59:06.000 13722 13722 I ViewRootImpl@509da5a[MainActivity]: ViewPostIme pointer 1
+09-18 21:59:06.218  1594  1594 I GestureDetector: handleMessage TAP
+09-18 21:59:06.218  1594  1772 I GestureDetector: handleMessage TAP
+09-18 21:59:06.231 15275 15275 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-18 21:59:06.243 15275 15275 I AndroidRuntime: Using default boot image
+09-18 21:59:06.243 15275 15275 I AndroidRuntime: Leaving lock profiling enabled
+09-18 21:59:06.244 15275 15275 D SecNativeFeatureCppIf: encoded
+09-18 21:59:06.244 15275 15275 D SecNativeFeatureCppIf: decoding and unzip finish
+09-18 21:59:06.244 15275 15275 D SecNativeFeatureCppIf: use unCompDataBuff. encoded
+09-18 21:59:06.245 15275 15275 D SecNativeFeatureCppIf: Free unCompDataBuff
+09-18 21:59:06.245 15275 15275 D AndroidRuntime: addProductProperty: pBrand1 is not null
+09-18 21:59:06.245 15275 15275 D AndroidRuntime: addProductProperty: not brand or 7
+09-18 21:59:06.255 15275 15275 I app_process: Using CollectorTypeCC GC.
+09-18 21:59:06.296 22349 22349 I wpa_supplicant: Heartbeat 1639
+09-18 21:59:06.401   619   619 D io_stats: !@ 179,0 r 5073369 45444631 w 475609 4439952 d 242524 2409380 f 185958 213767 iot 1898110 1622785 th 102400 102400 81508 pt 2480 inp 0 0 17958.533
+09-18 21:59:06.425 15275 15275 W app_process: FaultHandler: MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED failed: 38 Function not implemented
+09-18 21:59:06.478 15275 15275 D nativeloader: InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-18 21:59:06.509 15275 15275 D nativeloader: Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-18 21:59:06.510 15275 15275 D app_process: Time zone APEX ICU file found: /apex/com.android.tzdata/etc/icu/icu_tzdata.dat
+09-18 21:59:06.510 15275 15275 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt68l.dat
+09-18 21:59:06.512 15275 15275 D nativeloader: Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-18 21:59:06.516 15275 15275 D nativeloader: Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-18 21:59:06.517  1594  2167 D InputReader: Btn_touch(6): value=1 when=17958.654653
+09-18 21:59:06.517  1594  2167 I InputReader: Touch event's action is 0x0 (id=3, t=0) [pCnt=1, s=0.1924 ] when=17958.654653
+09-18 21:59:06.517  1594  2166 I InputDispatcher: Delivering touch to (2352): action: 0x4, f=0x0, d=0, '723382 ', t=1 
+09-18 21:59:06.517  1594  2166 I InputDispatcher: Delivering touch to (13722): action: 0x0, f=0x0, d=0, '2e46f1d', t=1 
+09-18 21:59:06.518 13722 13722 I ViewRootImpl@509da5a[MainActivity]: ViewPostIme pointer 0
+09-18 21:59:06.518  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 37667857 caller: com.android.server.wm.SystemGesturesPointerEventListener.onPointerEvent:179 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:06.518  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 37667857 caller: com.android.server.wm.SystemPerformancePointerEventListener.onPointerEvent:89 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:06.525  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 269067124
+09-18 21:59:06.525  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 269067124
+09-18 21:59:06.572 15275 15275 E SemDvfsManager_JNI: SemDvfsManager: registerfunction enter
+09-18 21:59:06.572 15275 15275 E SemAffinityControl: SemAffinityControl: registerfunction enter
+09-18 21:59:06.609 15275 15275 D ProcessState: Binder ioctl to enable oneway spam detection failed: Invalid argument
+09-18 21:59:06.610 15275 15275 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+09-18 21:59:06.616  1594  2167 D InputReader: Btn_touch(6): value=0 when=17958.754226
+09-18 21:59:06.616  1594  2167 I InputReader: Touch event's action is 0x1 (id=3, t=0) [pCnt=1, s=] when=17958.754226
+09-18 21:59:06.616  1594  2166 I InputDispatcher: Delivering touch to (13722): action: 0x1, f=0x0, d=0, '2e46f1d', t=1 
+09-18 21:59:06.618 13722 13722 I ViewRootImpl@509da5a[MainActivity]: ViewPostIme pointer 1
+09-18 21:59:06.623  1065  3700 I SurfaceFlinger: id=3249 createSurf (0x0),-1 flag=80004, WindowToken{56ca337 android.os.Binder@ee68836}#0
+09-18 21:59:06.625  1594  3979 D SettingsProvider: isChangeAllowed() : name = accessibility_enabled
+09-18 21:59:06.626  1594  3979 I GenerationRegistry: mBackingStore.isClosed() : false
+09-18 21:59:06.640  1594  1594 D BatterySaverPolicy: accessibility changed to true, updating policy.
+09-18 21:59:06.640  1594 12952 D SettingsProvider: isChangeAllowed() : name = accessibility_enabled
+09-18 21:59:06.641  1594 12952 I GenerationRegistry: mBackingStore.isClosed() : false
+09-18 21:59:06.644  1594  1594 I AccessibilityManagerService: semIsAccessibilityServiceEnabled()
+09-18 21:59:06.645  1594  1594 I AccessibilityManagerService: semIsAccessibilityServiceEnabled()
+09-18 21:59:06.646  1594  1594 D AS.AudioService: Accessibility volume enabled = false
+09-18 21:59:06.656  2713  9602 I TouchInteractionService: onActiveNavBarRegionChanges, region : SkRegion((0,1516,258,1519)(259,1516,460,1519)(461,1516,640,1519)(0,1519,258,1600)(259,1519,460,1600)(461,1519,640,1600)(642,1519,720,1600))
+09-18 21:59:06.656  2352  2352 V Navbar.Store: ----handleEvent [EventType] ON_UPDATE_REMOTEVIEW [Module] SamsungNavigationBarView  KEYS_NAVBAR_DARK_INTENSITY=0.0  KEYS_CONTEXTUALBUTTON_VISIBLE=true  KEYS_LEFT_REMOTEVIEW_CONTAINER=android.widget.LinearLayout{e02460 I.E...... ......I. 0,0-79,84 #7f0b0478 app:id/left_remoteview}  KEYS_RIGHT_REMOTEVIEW_CONTAINER=android.widget.LinearLayout{cc4ed19 I.E...... ......I. 641,0-720,84 #7f0b070a app:id/right_remoteview}
+09-18 21:59:06.656  2352  2352 V Navbar.Store: ------[Band]REMOTE_VIEW_PACK_SET_REMOTEVIEW_CONTAINER
+09-18 21:59:06.657  2352  2352 V Navbar.Store: --------apply(UPDATE_NAVBAR_REMOTEVIEW_CONTAINER)
+09-18 21:59:06.657  2352  2352 V Navbar.Store: --------apply(UPDATE_NAVBAR_RIGHT_REMOTEVIEW_VISIBILITY)
+09-18 21:59:06.657  2352  2352 V Navbar.Store: --------getValue(FLOAT_REMOTEVIEW_DARK_INTENSITY)=0.0
+09-18 21:59:06.657  2352  2352 V Navbar.Store: handleEvent [EventType] ON_NAVBAR_UPDATE_A11Y_SERVICE [Module] NavigationBar  KEYS_LONG_CLICKABLE=false  KEYS_CLICKABLE=false
+09-18 21:59:06.657  2352  2352 V Navbar.Store: --[Band]SETUPWIZARD_PACK_UPDATE_A11Y_SERVICE
+09-18 21:59:06.657  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_BUTTON_FORCED_VISIBLE)=false
+09-18 21:59:06.657  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_SETUPWIZARD_STYLE)=false
+09-18 21:59:06.661  2352  2352 V Navbar.Store: handleEvent [EventType] GET_BOOL_NAVBAR_CAN_MOVE_STATE [Module] SamsungNavigationBarView  KEYS_DEFAULT=true
+09-18 21:59:06.661  2352  2352 V Navbar.Store: --[Band]CONFIG_PACK_GET_NAVBAR_CAN_MOVE
+09-18 21:59:06.661  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_CAN_MOVE)=true
+09-18 21:59:06.663  2713  9602 I TouchInteractionService: onActiveNavBarRegionChanges, region : SkRegion((0,1516,258,1519)(259,1516,460,1519)(461,1516,640,1519)(0,1519,258,1600)(259,1519,460,1600)(461,1519,640,1600)(642,1519,720,1600))
+09-18 21:59:06.663  2352  2352 V Navbar.Store: handleEvent [EventType] GET_BOOL_USE_NAVBAR_BACKGROUND_FRAME [Module] NavigationBarTransitions  KEYS_DEFAULT=false
+09-18 21:59:06.663  2352  2352 V Navbar.Store: --[Band]COLOR_PACK_GET_USE_NAVBAR_BACKGROUND_FRAME
+09-18 21:59:06.663  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_GESTURAL_MODE)=false
+09-18 21:59:06.664  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_OPAQUE)=false
+09-18 21:59:06.664  2352  2352 V Navbar.Store: ----getValue(BOOL_NAVBAR_PINNED_EDGE_ENABELD)=false
+09-18 21:59:06.818  1594  1594 I GestureDetector: handleMessage TAP
+09-18 21:59:06.819  1594  1772 I GestureDetector: handleMessage TAP
+09-18 21:59:06.828  1594  1821 I ActivityManager: Changes in 10072 5 to 15, 8 to 0
+09-18 21:59:06.829  1594  1772 D NetworkPolicy: onUidStateChanged() uid: 10072, isForeground(false, 15)
+09-18 21:59:06.829  1055 19483 V APM_AudioPolicyManager: setAppState(portId:610, state:1)
+09-18 21:59:06.833  1215 21248 V NuPlayerDriver: getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 21:59:06.834  1594  2167 D InputReader: Btn_touch(6): value=1 when=17958.972069
+09-18 21:59:06.834  1594  2167 I InputReader: Touch event's action is 0x0 (id=3, t=0) [pCnt=1, s=0.1925 ] when=17958.972069
+09-18 21:59:06.835  1594  2166 I InputDispatcher: Delivering touch to (2352): action: 0x4, f=0x0, d=0, '723382 ', t=1 
+09-18 21:59:06.835  1594  2166 I InputDispatcher: Delivering touch to (13722): action: 0x0, f=0x0, d=0, '2e46f1d', t=1 
+09-18 21:59:06.836  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 963947779 caller: com.android.server.wm.SystemGesturesPointerEventListener.onPointerEvent:179 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:06.836 13722 13722 I ViewRootImpl@509da5a[MainActivity]: ViewPostIme pointer 0
+09-18 21:59:06.836  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 963947779 caller: com.android.server.wm.SystemPerformancePointerEventListener.onPointerEvent:89 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:06.843  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 956405741
+09-18 21:59:06.843  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 956405741
+09-18 21:59:06.934  1594  2167 D InputReader: Btn_touch(6): value=0 when=17959.072345
+09-18 21:59:06.934  1594  2167 I InputReader: Touch event's action is 0x1 (id=3, t=0) [pCnt=1, s=] when=17959.072345
+09-18 21:59:06.935  1594  2166 I InputDispatcher: Delivering touch to (13722): action: 0x1, f=0x0, d=0, '2e46f1d', t=1 
+09-18 21:59:06.936 13722 13722 I ViewRootImpl@509da5a[MainActivity]: ViewPostIme pointer 1
+09-18 21:59:07.136  1594  1772 I GestureDetector: handleMessage TAP
+09-18 21:59:07.136  1594  1594 I GestureDetector: handleMessage TAP
+09-18 21:59:07.342  1594  2130 D SensorService: [SO] 0.123 -0.058 9.648
+09-18 21:59:07.440  1055 19483 V APM_AudioPolicyManager: setAppState(portId:610, state:1)
+09-18 21:59:07.441 23156 23156 I BadgeCountReceiver: badge intent : Intent { act=android.intent.action.BADGE_COUNT_UPDATE flg=0x1000010 cmp=com.sec.android.provider.badge/.BadgeCountReceiver (has extras) }
+09-18 21:59:07.441 23156 23156 I BadgeCountReceiver: packageName: com.whatsapp, className: com.whatsapp.Main, count: 10
+09-18 21:59:07.443  2713  2713 I BadgeCountUpdaterImpl: onChange
+09-18 21:59:07.444  2713  2713 I BadgeCountUpdaterImpl: onChange
+09-18 21:59:07.444 23156 23156 I BadgeProvider: sendNotify entered. [uri] : content://com.sec.badge/apps
+09-18 21:59:07.444 23156 23156 I BadgeProvider: sendNotify, [notify] : null
+09-18 21:59:07.445 23156 23156 I BadgeProvider: update, getCallingPackage() : com.sec.android.provider.badge
+09-18 21:59:07.445 23156 23156 I BadgeProvider: update, [uri] : content://com.sec.badge/apps
+09-18 21:59:07.445 23156 23156 I BadgeProvider: update, [uri.query] : null
+09-18 21:59:07.445 23156 23156 I BadgeProvider: update, [BadgeCount] : badgecount=10
+09-18 21:59:07.445 23156 23156 I BadgeProvider: update, [UpdateCount] : 1
+09-18 21:59:07.448  1055 19483 V APM_AudioPolicyManager: setAppState(portId:610, state:1)
+09-18 21:59:07.645  2713  2792 I BadgeCountUpdaterImpl: reload badge without refresh
+09-18 21:59:07.646  1594  2460 I ActivityManager: Changes in 10072 15 to 5, 0 to 8
+09-18 21:59:07.647  1594  1772 D NetworkPolicy: onUidStateChanged() uid: 10072, isForeground(true, 5)
+09-18 21:59:07.650  1055 19483 V APM_AudioPolicyManager: setAppState(portId:610, state:1)
+09-18 21:59:07.655 23156 11562 I BadgeProvider: query, [selection] : null
+09-18 21:59:07.658 15275 15275 D SemCscFeature: Encoded
+09-18 21:59:07.660  2713  2792 I BadgeCache: reloadBadge size : 0
+09-18 21:59:07.927 15275 15275 W AccessibilityNodeInfoDumper: Fetch time: 265ms
+09-18 21:59:07.929  1594  2460 W WindowManager: removeWindowToken: Attempted to remove non-existing token: android.os.Binder@ee68836
+09-18 21:59:07.929  1594  2460 D SettingsProvider: isChangeAllowed() : name = accessibility_enabled
+09-18 21:59:07.931  1594  2460 I GenerationRegistry: mBackingStore.isClosed() : false
+09-18 21:59:07.932  1594  2460 D SettingsProvider: isChangeAllowed() : name = accelerometer_rotation
+09-18 21:59:07.932  1594  2460 D SettingsProvider: isChangeAllowed() : name = user_rotation
+09-18 21:59:07.933  1594  2460 V WindowManager: rotationForOrientation(orient=SCREEN_ORIENTATION_UNSPECIFIED (-1), last=ROTATION_0 (0)); user=ROTATION_0 (0) USER_ROTATION_LOCKED
+09-18 21:59:07.933  1594  2460 D WindowManager: rotationForOrientation, orientationSource=ActivityRecord{1599e88 u0 com.aistudio.skillsexchange.nxptvq/com.example.MainActivity t57}
+09-18 21:59:07.934  1594  2460 V WindowManager: Computed rotation=ROTATION_0 (0) for display id=0 based on lastOrientation=SCREEN_ORIENTATION_UNSPECIFIED (-1) and oldRotation=ROTATION_0 (0), caller=com.android.server.wm.DisplayContent.updateRotationUnchecked:2339 com.android.server.wm.WindowManagerService.updateRotationUnchecked:4535 com.android.server.wm.WindowManagerService.freezeDisplayRotation:4435 com.android.server.wm.WindowManagerService.freezeRotation:4394 android.view.IWindowManager$Stub.onTransact:2456 com.android.server.wm.WindowManagerService.onTransact:1621 
+09-18 21:59:07.935  1594  1594 D BatterySaverPolicy: accessibility changed to false, updating policy.
+09-18 21:59:07.945 15275 15275 D hw-ProcessState: Binder ioctl to enable oneway spam detection failed: Invalid argument
+09-18 21:59:07.946  1065  1065 I Layer   : id=3249 mRemovedFromDrawingState WindowToken{56ca337 android.os.Binder@ee68836}#0 (99)
+09-18 21:59:07.946  1065  1065 I SurfaceFlinger: id=3249 Removed WindowToken{56ca337 android.os.Binder@ee68836}#0 (99)
+09-18 21:59:07.947  1065  1065 I Layer   : id=3249 Destroyed WindowToken{56ca337 android.os.Binder@ee68836}#0
+09-18 21:59:07.947 15275 15275 D AndroidRuntime: Shutting down VM
+09-18 21:59:07.967  1215 21248 V NuPlayerDriver: getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 21:59:08.204   972  6220 D audio_hw_primary: out_standby: enter: stream (0xeadc6800) usecase(1: low-latency-playback)
+09-18 21:59:08.284   972  6220 D audio_hw_primary: disable_audio_route: reset and update mixer path: low-latency-playback
+09-18 21:59:08.285   972  6220 D hardware_info: hw_info_append_hw_type : device_name = speaker
+09-18 21:59:08.285   972  6220 D audio_hw_primary: disable_snd_device: snd_device(2: speaker)
+09-18 21:59:08.408   619   619 D io_stats: !@ 179,0 r 5073402 45444835 w 475625 4440064 d 242524 2409380 f 185960 213769 iot 1898160 1622818 th 102400 102400 81508 pt 2480 inp 0 0 17960.541
+09-18 21:59:08.553  2352  2481 D MobileStatusTracker(0/14): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=Invalid,mGsm=Invalid,mWcdma=Invalid,mTdscdma=Invalid,mLte=CellSignalStrengthLte: rssi=-61 rsrp=-91 rsrq=-12 rssnr=2 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=Invalid,SignalBarInfo{ lteLevel=3 },rat=14,primary=CellSignalStrengthLte} level=3
+09-18 21:59:08.555  2352  2481 D NetworkController: SignalStrength from intent slotId=0
+09-18 21:59:08.640  1594  2167 D InputReader: Btn_touch(6): value=1 when=17960.777165
+09-18 21:59:08.640  1594  2167 I InputReader: Touch event's action is 0x0 (id=3, t=0) [pCnt=1, s=0.1926 ] when=17960.777165
+09-18 21:59:08.640  1594  2166 I InputDispatcher: Delivering touch to (2352): action: 0x4, f=0x0, d=0, '723382 ', t=1 
+09-18 21:59:08.640  1594  2166 I InputDispatcher: Delivering touch to (4076): action: 0x0, f=0x0, d=0, 'a4469a2', t=1 +(0,-45)
+09-18 21:59:08.641  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: ViewPostIme pointer 0
+09-18 21:59:08.641  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 797176516 caller: com.android.server.wm.SystemGesturesPointerEventListener.onPointerEvent:179 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:08.642  1594  1772 I GestureDetector: obtain mCurrentDownEvent. id: 797176516 caller: com.android.server.wm.SystemPerformancePointerEventListener.onPointerEvent:89 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 21:59:08.643  4076  4076 I GestureDetector: obtain mCurrentDownEvent. id: 797176516 caller: com.samsung.android.honeyboard.textboard.keyboard.x.b.a.onTouch:85 com.samsung.android.honeyboard.textboard.keyboard.x.e.c.a:30 com.samsung.android.honeyboard.textboard.keyboard.x.e.a.a:72 
+09-18 21:59:08.647  4076  4076 I HBD     : c ATL BackspaceKeyA
+09-18 21:59:08.651  4076  4076 I HBD     : c IIFO[r:71f09a605d] 
+09-18 21:59:08.653  4076  4076 I HBD     : k processBackspace Params : BackSpace Params dump -  isPhonePad: false isQwerty : true currentLanguage : 65538 hasComposing : false hasInputSequence : false isDeleteAccel : false isBeforeTraceInput : false isComposingMoreThanOne : false isCursorAnchorEnabled : true isComposingInCursorAnchor : false isUpdatingEngineContext : true isLandAndCompletions : false isMultiTapSymbol : false isJapanComposing : false isJapanConvertState : false isJapanCursorPositionFront : false isChnSoftFunctionKeyShowing : false isTransComposingMoreThanOne : false hasSpell : false spellLength : 0 isSpellViewBackSpace : false isSpellEdit : false spellEditCursorPos : 0 spellEditSelectedLength : 0 isTextRangeContained : true 
+09-18 21:59:08.654  4076  4076 I HBD     : k processBackspace -> processBackspaceAction :  BACKSPACE_NORMAL_AND_UPDATE_ENGINE_CONTEXT
+09-18 21:59:08.654  4076  4076 I HBD     : i processBackspace -> processBackspacePostSet :  BACKSPACE_POST_UNDO_AND_RECAPTURE
+09-18 21:59:08.655 13722 13722 V InputMethodManager: dispatchKeyEventFromInputMethod: KeyEvent=KeyEvent { action=ACTION_DOWN, keyCode=KEYCODE_DEL, scanCode=0, metaState=0, flags=0x6, repeatCount=0, eventTime=17960792, downTime=17960792, deviceId=-1, source=0x0, displayId=0 }
+09-18 21:59:08.655 13722 13722 V InputMethodManager: dispatchKeyEventFromInputMethod: KeyEvent=KeyEvent { action=ACTION_UP, keyCode=KEYCODE_DEL, scanCode=0, metaState=0, flags=0x6, repeatCount=0, eventTime=17960792, downTime=17960792, deviceId=-1, source=0x0, displayId=0 }
+09-18 21:59:08.656 13722 13722 I ViewRootImpl@509da5a[MainActivity]: ViewPostIme key 0
+09-18 21:59:08.658  4076  4076 I HBD     : al EBD key t 0 
+09-18 21:59:08.659  4076  4076 I HBD     : b vib is off 
+09-18 21:59:08.659  4076  5354 I AudioManager: getParameters keys = g_volume_situation_key;type=2;device=0
+09-18 21:59:08.660  4076  4076 I HBD     : a [PF_KL] OTE none 0 3 20 17300365
+09-18 21:59:08.660  1055 19483 V APM_AudioPolicyManager: getAudioPolicyConfig: g_volume_situation_key;type=2;device=0
+09-18 21:59:08.660  1055 19483 I VolumeCustomizer: getSituationVolume_legacy: deviceType 0x0
+09-18 21:59:08.661  1055 26117 I AF::Track: start() situation track : stv_keyboard
+09-18 21:59:08.661  1055 26117 I AF::Track: setMixerOutConfig return default condition, mixer key 2002, thread key 2002
+09-18 21:59:08.661 13722 13722 I ViewRootImpl@509da5a[MainActivity]: ViewPostIme key 1
+09-18 21:59:08.662  1055 26117 V APM_AudioPolicyManager: startOutput() output 21, stream 1, session 2625, portId 426
+09-18 21:59:08.662  1055 26117 V APM_AudioPolicyManager: selectOutputForMusicEffects selected output 13
+09-18 21:59:08.662  1055 26117 V APM_AudioPolicyManager: getNewOutputDevices selected devices {type:0x2,@:}
+09-18 21:59:08.662  1055 26117 V APM_AudioPolicyManager: setOutputDevices device {type:0x2,@:} delayMs 0
+09-18 21:59:08.662  1055 26117 V APM_AudioPolicyManager: setOutputDevices() prevDevice {type:0x2,@:}
+09-18 21:59:08.663  1055 26117 V APM_AudioPolicyManager: setOutputDevices: suppressing checkDeviceMuteStrategies
+09-18 21:59:08.663  1055 26117 V APM_AudioPolicyManager: setOutputDevices setting same device {type:0x2,@:} or null device, force=0, patch handle=6
+09-18 21:59:08.663  1055 26117 V APM_AudioPolicyManager: computeVolume: stream 1, index 15, volume 1.000000, deviceTypes 0x2
+09-18 21:59:08.666   972  3827 D audio_hw_primary: start_output_stream: enter: stream(0xeadc6800)usecase(1: low-latency-playback) devices(0x2) is_haptic_usecase(0)
+09-18 21:59:08.667   972  3827 D audio_hw_primary: select_devices for use case (low-latency-playback)
+09-18 21:59:08.667   972  3827 I msm8974_platform: platform_check_and_set_codec_backend_cfg:becf: afe: bitwidth 16, samplerate 48000 channels 2, backend_idx 0 usecase = 1 device (speaker)
+09-18 21:59:08.667   972  3827 I msm8974_platform: platform_check_and_set_codec_backend_cfg: new_snd_devices[0] is 2
+09-18 21:59:08.667   972  3827 I msm8974_platform: platform_check_codec_backend_cfg:becf: afe: bitwidth 16, samplerate 48000 channels 2, backend_idx 0 usecase = 1 device (speaker)
+09-18 21:59:08.667   972  3827 E audio_hw_extn: audio_extn_enable_hifi_filter: Could not get ctl for mixer cmd - HiFi Filter, using default control
+09-18 21:59:08.667   972  3827 D msm8974_platform: platform_check_codec_backend_cfg:becf: updated afe: bitwidth 16, samplerate 48000 channels 2,backend_idx 0 usecase = 1 device (speaker)
+09-18 21:59:08.667   972  3827 I msm8974_platform: platform_check_codec_backend_cfg:becf: afe: Codec selected backend: 0 updated bit width: 16 and sample rate: 48000
+09-18 21:59:08.667   972  3827 D audio_hw_primary: check_usecases_codec_backend:becf: force routing 0
+09-18 21:59:08.667   972  3827 D audio_hw_primary: check_usecases_codec_backend:becf: (85) check_usecases curr device: speaker, usecase device: backends match 0
+09-18 21:59:08.667   972  3827 D audio_hw_primary: check_usecases_codec_backend:becf: (85) check_usecases curr device: speaker, usecase device: backends match 0
+09-18 21:59:08.667   972  3827 D audio_hw_primary: check_usecases_codec_backend:becf: check_usecases num.of Usecases to switch 0
+09-18 21:59:08.667   972  3827 D hardware_info: hw_info_append_hw_type : device_name = speaker
+09-18 21:59:08.667   972  3827 D audio_hw_primary: enable_snd_device: snd_device(2: speaker)
+09-18 21:59:08.667   972  3827 D msm8974_platform: platform_get_island_cfg_on_device:island cfg status on snd_device = (speaker 0)
+09-18 21:59:08.667   972  3827 D audio_route: Apply path: speaker
+09-18 21:59:08.669  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 100741424
+09-18 21:59:08.669  1594  1772 I GestureDetector: obtain mCurrentMotionEventRaw. action: 2 id: 100741424
+09-18 21:59:08.670   972  3827 D audio_hw_utils: audio_extn_utils_send_app_type_cfg: usecase->out_snd_device speaker
+09-18 21:59:08.671   972  3827 I audio_hw_utils: send_app_type_cfg_for_device PLAYBACK app_type 69936, acdb_dev_id 14, sample_rate 48000, snd_device_be_idx 43
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> send_audio_cal, acdb_id = 14, path = 0, app id = 0x11130, sample rate = 48000, use_case = 0,buffer_idx_w_path =0, afe_sample_rate = 48000, cal_mode = 1, offset_index = 0
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> send_asm_topology
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_STREAM_TOPOLOGY_ID
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> send_adm_topology
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_COMMON_TOPOLOGY_ID
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> send_audtable
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_COMMON_TABLE_SIZE
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_COMMON_TABLE
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> AUDIO_SET_AUDPROC_CAL cal_type[11] acdb_id[14] app_type[69936]
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> send_audvoltable
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_GAIN_DEP_STEP_TABLE_SIZE
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_GAIN_DEP_STEP_TABLE, vol index 0
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> AUDIO_SET_VOL_CAL cal type = 12
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_STREAM_TABLE_SIZE
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> send_audstrmtable
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_STREAM_TABLE_V2
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> audstrm_cal->cal_type.cal_data.cal_size = 456
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> send_afe_topology
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AFE_TOPOLOGY_ID
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> GET_AFE_TOPOLOGY_ID for adcd_id 14, Topology Id 1025e
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> send_afe_cal
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AFE_COMMON_TABLE_SIZE
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AFE_COMMON_TABLE
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> AUDIO_SET_AFE_CAL cal_type[16] acdb_id[14]
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> send_hw_delay : acdb_id = 14 path = 0
+09-18 21:59:08.672   972  3827 D ACDB-LOADER: ACDB -> ACDB_AVSYNC_INFO: ACDB_CMD_GET_DEVICE_PROPERTY
+09-18 21:59:08.672   972  3827 D audio_hw_primary: enable_audio_route: apply mixer and update path: low-latency-playback
+09-18 21:59:08.672   972  3827 D audio_route: Apply path: low-latency-playback
+09-18 21:59:08.674   972  3827 D audio_hw_primary: select_devices: done
+09-18 21:59:08.674   972  3827 D msm8974_platform: platform_set_channel_map mixer_ctl_name:Playback Channel Map12
+09-18 21:59:08.674   972  3827 D msm8974_platform: platform_set_channel_map: set mapping(1 2 0 0 0 0 0 0) for channel:2
+09-18 21:59:08.693  4076  4076 I HBD     : bd ous -  12 ,  12 ,  11 ,  11 ,  -1 ,  -1
+09-18 21:59:08.694  4076  4076 I HBD     : al EBD cm s 0 
+09-18 21:59:08.706   972  3827 D audio_hw_primary: start_output_stream: exit
+09-18 21:59:08.707  1055  1689 D AudioFlinger: mixer(0xedaa3640) Spend too much time to write: delta 41(effect 0, stage 0)
+09-18 21:59:08.710  4076  4076 I HBD     : al EBD ssu f 1 
+09-18 21:59:08.721  1594  2167 D InputReader: Btn_touch(6): value=0 when=17960.859048
+09-18 21:59:08.721  1594  2167 I InputReader: Touch event's action is 0x1 (id=3, t=0) [pCnt=1, s=] when=17960.859048
+09-18 21:59:08.721  1594  2166 I InputDispatcher: Delivering touch to (4076): action: 0x1, f=0x0, d=0, 'a4469a2', t=1 +(0,-45)
+09-18 21:59:08.737  4076  4076 I ViewRootImpl@81fd18d[InputMethod]: ViewPostIme pointer 1
+09-18 21:59:08.739  4076  4076 I HBD     : c ATL BackspaceKeyA
+09-18 21:59:08.758  4076  4076 I HBD     : al EBD key t 0 
+09-18 21:59:08.760  4076  4076 I HBD     : a [PF_KL] OTE none 1 16 39 22498385
+09-18 21:59:08.765  1055  1689 D AudioFlinger: mixer(0xedaa3640) Spend too much time to write: delta 35(effect 0, stage 0)
+09-18 21:59:08.812  1055 26117 I AF::Track: stop() situation track : stv_keyboard
+09-18 21:59:08.859  1055  1263 V APM_AudioPolicyManager: stopOutput() output 21, stream 1, session 2625, portId 426
+09-18 21:59:08.859  1055  1263 V APM_AudioPolicyManager: getNewOutputDevices selected devices AUDIO_DEVICE_NONE
+09-18 21:59:08.859  1055  1263 V APM_AudioPolicyManager: setOutputDevices device AUDIO_DEVICE_NONE delayMs 96
+09-18 21:59:08.859  1055  1263 V APM_AudioPolicyManager: setOutputDevices() prevDevice {type:0x2,@:}
+09-18 21:59:08.860  1055  1263 V APM_AudioPolicyManager: setOutputDevices setting same device AUDIO_DEVICE_NONE or null device, force=0, patch handle=6
+09-18 21:59:08.860  1055  1263 V APM_AudioPolicyManager: selectOutputForMusicEffects selected output 13
+09-18 21:59:08.909  4076  4076 I HBD     : al EBD ex 
+09-18 21:59:08.941  1594  1594 I GestureDetector: handleMessage TAP
+09-18 21:59:08.942  1594  1772 I GestureDetector: handleMessage TAP
+09-18 21:59:09.072  1215 21248 V NuPlayerDriver: getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 21:59:09.140  4076  4076 I GestureDetector: handleMessage LONG_PRESS

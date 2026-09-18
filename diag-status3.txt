@@ -1,29 +1,19 @@
- M app/src/main/java/com/example/ui/screens/OnboardingScreen.kt
-?? diag-adb-now2.txt
-?? diag-adb-now3.txt
-?? diag-adb-now4.txt
-?? diag-creds-deps.txt
-?? diag-device-ui-readable.txt
-?? diag-legal-ui-readable.txt
-?? diag-log20.txt
-?? diag-logcatfiles.txt
-?? diag-logging.txt
-?? diag-onb-38d6.txt
-?? diag-onb-61d5.txt
-?? diag-onb-googlehistory.txt
-?? diag-onb-history.txt
-?? diag-pnp-samsung.txt
-?? diag-porcelain.txt
-?? diag-req-google.txt
-?? diag-rootlist.txt
-?? diag-signinhub.txt
-?? diag-status3.txt
-?? diag-times.txt
-?? diag-txt-list.txt
-?? diag-usb-all.txt
-?? diag-usb-samsung.txt
-?? diag-usb.txt
-?? diag-workdiff.txt
-warning: in the working copy of 'app/src/main/java/com/example/ui/screens/OnboardingScreen.kt', LF will be replaced by CRLF the next time Git touches it
- app/src/main/java/com/example/ui/screens/OnboardingScreen.kt | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ M diag-list.txt
+ M diag-status3.txt
+?? diag-accounts.txt
+?? diag-appdata.txt
+?? diag-bg-sign.txt
+?? diag-dev-info.txt
+?? diag-firebase-authstore.txt
+?? diag-gms-signin.txt
+?? diag-installed-md5.txt
+?? diag-installed-path.txt
+?? diag-logcat-dump.txt
+?? diag-logcat-now.txt
+?? diag-logingoogle.txt
+?? diag-logs.txt
+?? diag-path-now.txt
+?? diag-pkg-dump.txt
+?? diag-pkg-now.txt
+?? diag-prefs-list.txt
+?? diag-theme.txt

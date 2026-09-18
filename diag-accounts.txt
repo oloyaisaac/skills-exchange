@@ -1,0 +1,38 @@
+    Account {name=isaacvendeta1@gmail.com, type=com.google}
+    Account {name=namutebihilda12@gmail.com, type=com.google}
+    Account {name=oloyaisaac1@gmail.com, type=com.google}
+    Account {name=2023abtm3759f@kab.ac.ug, type=com.google}
+    Account {name=Meet, type=com.google.android.apps.tachyon}
+    ServiceInfo: AuthenticatorDescription {type=com.google.android.gm.pop3}, ComponentInfo{com.google.android.gm/com.android.email.service.Pop3AuthenticatorService}, uid 10190
+    ServiceInfo: AuthenticatorDescription {type=com.google}, ComponentInfo{com.google.android.gms/com.google.android.gms.auth.account.authenticator.GoogleAccountAuthenticatorService}, uid 10173
+    ServiceInfo: AuthenticatorDescription {type=com.google.android.apps.tachyon}, ComponentInfo{com.google.android.apps.tachyon/com.google.android.apps.tachyon.contacts.sync.DuoAccountService}, uid 10183
+    ServiceInfo: AuthenticatorDescription {type=com.google.android.gm.exchange}, ComponentInfo{com.google.android.gm/com.android.email.service.EasAuthenticatorService}, uid 10190
+    ServiceInfo: AuthenticatorDescription {type=com.google.android.gm.legacyimap}, ComponentInfo{com.google.android.gm/com.android.email.service.LegacyImapAuthenticatorService}, uid 10190
+      com.google.android.apps.photos, 2
+      com.google.android.googlequicksearchbox, 2
+      com.google.android.apps.maps, 2
+      com.google.android.gm, 2
+      com.google.android.apps.restore, 2
+      com.google.android.apps.docs, 2
+      com.google.android.youtube, 2
+      com.google.android.apps.photos, 2
+      com.google.android.googlequicksearchbox, 2
+      com.google.android.apps.maps, 2
+      com.google.android.gm, 2
+      com.google.android.apps.restore, 2
+      com.google.android.apps.docs, 2
+      com.google.android.youtube, 2
+      com.google.android.apps.photos, 2
+      com.google.android.googlequicksearchbox, 2
+      com.google.android.apps.maps, 2
+      com.google.android.gm, 2
+      com.google.android.apps.restore, 2
+      com.google.android.apps.docs, 2
+      com.google.android.youtube, 2
+      com.google.android.apps.photos, 2
+      com.google.android.googlequicksearchbox, 2
+      com.google.android.apps.maps, 2
+      com.google.android.gm, 2
+      com.google.android.apps.restore, 2
+      com.google.android.apps.docs, 2
+      com.google.android.youtube, 2
