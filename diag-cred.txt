@@ -1,0 +1,3 @@
+﻿FirebaseService.kt:107: fun signOut() {
+FirebaseService.kt:109: auth?.signOut()
+SkillsExchangeViewModel.kt:1550: firebaseService.signOut()

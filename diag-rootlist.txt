@@ -1,0 +1,21 @@
+﻿
+Name                       Length LastWriteTime        
+----                       ------ -------------        
+device-ui.xml               29564 9/17/2026 10:23:45 PM
+diag-adb-now2.txt              28 9/18/2026 8:43:53 PM 
+diag-adb-now3.txt              28 9/18/2026 8:44:39 PM 
+diag-creds-deps.txt           617 9/18/2026 8:41:54 PM 
+diag-log20.txt               1773 9/18/2026 8:43:47 PM 
+diag-logging.txt             4901 9/18/2026 8:43:47 PM 
+diag-onb-38d6.txt           43727 9/18/2026 8:39:40 PM 
+diag-onb-61d5.txt           43727 9/18/2026 8:39:40 PM 
+diag-onb-googlehistory.txt   2593 9/18/2026 8:39:40 PM 
+diag-onb-history.txt          556 9/18/2026 8:39:40 PM 
+diag-req-google.txt           442 9/18/2026 8:41:55 PM 
+diag-rootlist.txt               0 9/18/2026 8:47:32 PM 
+diag-usb-all.txt              785 9/18/2026 8:46:54 PM 
+diag-usb-samsung.txt            5 9/18/2026 8:46:51 PM 
+diag-usb.txt                  659 9/18/2026 8:46:28 PM 
+legal-name-check.xml        22873 9/17/2026 10:54:07 PM
+
+

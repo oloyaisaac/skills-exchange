@@ -1,0 +1,29 @@
+﻿TXT=[] ENABLED=true CLICK=false CLASS=android.widget.FrameLayout RID=android:id/content
+TXT=[SKILLS EXCHANGE] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[Hyperlocal Resident Network] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[FG] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[fdgrfwf gfgwf] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[222] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[âœ… Signed in â€¢ ID not verified] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[Nakawa District District] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[🏡 Resident / Client Mode] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[Tap to switch to worker dashboard] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[APPEARANCE & THEME] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[Light] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[Dark] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[System] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[ACCOUNT & SERVICES] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[MoMo & Escrow Wallet] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[Active] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[Escrow held: â€”] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[Job History & Material Receipts] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[View past contracts & uploaded receipts] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[National ID & Verification] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[Pending] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[KYC status: Not verified] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[Trust, Safety & Emergency SOS] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[Dispute arbitration & job-scoped panic alerts] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[Data Portability & Backup] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[Export database in open JSON format (GDPR)] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[Privacy Policy & Terms] ENABLED=true CLICK=false CLASS=android.widget.TextView RID=
+TXT=[] ENABLED=true CLICK=false CLASS=android.view.View RID=android:id/navigationBarBackground

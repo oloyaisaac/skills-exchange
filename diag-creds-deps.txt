@@ -1,0 +1,7 @@
+﻿43: credentials = "1.5.0"
+44: googleid = "1.1.1"
+98: firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
+102: androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
+103: androidx-credentials-play-services = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentials" }
+104: googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
+113: google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }

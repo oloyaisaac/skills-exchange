@@ -1,0 +1,20 @@
+8b88e00 C1/C2/C3 DEVICE TEST — FIX ONLY THE CURRENTLY OBSERVED UI/AUTH PROBLEMS
+61d5e9d C1+C2+C3 VERIFICATION ONLY
+38d6f9d C1/C2/C3 implemented, verification pending (compile running).
+b6eca59 TASK: DOCUMENT THE COMPLETE FEATURE CONNECTION AUDIT AND THRER ARE SOME CHANGES MADE
+ee83f8e to be added dont forget
+db038b7 Fix profile persistence and session restoration
+fc0964e fix(auth): use GoogleSignInHelper.getClient for sign-in intent
+ac9a67b feat: add OnboardingScreen composable for multi-step user onboarding workflow
+5edfe45 feat: add  on screen
+d843279 feat:fix 1 and fix 2(fix1 — FIX PROFILE NAME/INITIALS DISPLAY & fix 2 — FIRST-LAUNCH ONBOARDING + ROLE SELECTION
+fe826db feat: add currentUserProfile parameter to MainScreen for user-specific functionality
+d9ef706 feat: add extractInitials function to generate user initials and update AppNavigationDrawer to display them
+84efd0f feat: enhance AuthModal with Google Sign-In flow and profile setup, improve InteractiveMapView resource management, and refine MainScreen layout for better tab handling
+be6af64 feat: implement AuthModal component with phone number OTP verification and profile setup steps
+d9bc125 feat: add MainScreen composable for unified app navigation and state management
+5569ffd feat: implement MainScreen scaffold with location services and navigation architecture
+d447ff7 feat: implement FirebaseService for authentication, Firestore data synchronization, and user management.
+785820f feat: initialize project structure with Firebase authentication and Google Sign-In support
+48ecd37 feat: implement SkillsExchangeViewModel with state management for location, filters, authentication, and service integration
+364f47b feat: add Firebase configuration and optimize Gradle cache locations

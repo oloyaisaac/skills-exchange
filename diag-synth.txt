@@ -1,0 +1,4 @@
+﻿SkillsExchangeViewModel.kt:212: // database). Prefer the durable Firestore identity record over a synthetic
+SkillsExchangeViewModel.kt:767: // Previously a synthetic "user_<timestamp>" id was used whenever FirebaseAuth had
+SkillsExchangeViewModel.kt:770: // C2: no synthetic-ID fallback remains. When Firebase cannot supply a UID the
+SkillsExchangeViewModel.kt:887: // the profile under a "google_user" placeholder nobody can ever match.

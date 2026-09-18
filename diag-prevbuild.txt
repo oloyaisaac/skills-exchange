@@ -1,0 +1,40 @@
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:processDebugGoogleServices UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:kspDebugKotlin
+> Task :app:compileDebugKotlin
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt:467:13 Conflicting overloads:
+suspend fun triggerEmergencySos(jobId: String, latitude: Double, longitude: Double, district: String): Unit
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt:1282:13 Conflicting overloads:
+suspend fun triggerEmergencySos(jobId: String, latitude: Double, longitude: Double, district: String): Unit
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt:633:24 Overload resolution ambiguity between candidates:
+suspend fun triggerEmergencySos(jobId: String, latitude: Double, longitude: Double, district: String): Unit
+suspend fun triggerEmergencySos(jobId: String, latitude: Double, longitude: Double, district: String): Unit
+
+> Task :app:compileDebugKotlin FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin' (registered by plugin 'com.android.internal.application').
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 24m 57s
+9 actionable tasks: 2 executed, 7 up-to-date
+
+@echo off
+set JAVA_HOME=D:\skills exchange\jdk11\jdk-11.0.22+7
+"D:\skills exchange\gradlew.bat" %*

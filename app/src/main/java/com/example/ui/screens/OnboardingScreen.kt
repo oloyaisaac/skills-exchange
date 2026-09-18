@@ -37,6 +37,15 @@ import com.example.ui.viewmodel.SkillsExchangeViewModel
 import com.example.util.GoogleSignInHelper
 import com.example.util.LocationHelper
 
+/**
+ * Device-debug log tag for the onboarding authentication hand-off.
+ *
+ * Documents (on-device, via `adb logcat -s OnboardingAuth`) whether the Google activity
+ * result callback fires, what Google Play services returned, and which Firebase UID —
+ * if any — exists at the moment the UI leaves AUTHENTICATION for PROFILE_SETUP.
+ */
+private const val OnboardingAuthTag = "OnboardingAuth"
+
 enum class OnboardingStep {
     ROLE_SELECTION,
     AUTHENTICATION,
