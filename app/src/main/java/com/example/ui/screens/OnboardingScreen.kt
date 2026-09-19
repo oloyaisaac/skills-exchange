@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -91,21 +92,34 @@ fun OnboardingScreen(
         }
     }
 
-    // Google Sign-In launcher
+        // Google Sign-In launcher
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        try {
-            if (result.resultCode == android.app.Activity.RESULT_OK) {
-                val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(result.data)
-                task.addOnSuccessListener { account ->
-                    // IMPORTANT: Do NOT automatically use the Google display name as the legal name.
-                    // The Google display name (e.g., "Isaac Vendetta 1") is NOT necessarily the user's
-                    // real/legal name. The user must enter their actual legal name themselves.
-                    // We only use the Google account for authentication (idToken), not for identity.
-                    account.idToken?.let { token ->
+        // AUTH-002: Diagnose the Google hand-off on-device. OnboardingAuthTag is
+        // intentionally surfaced via `adb logcat -s OnboardingAuth` so success,
+        // cancellation, and exception paths are never silent.
+        val uidBefore = viewModel.firebaseService.getCurrentUser()?.uid
+        Log.d(OnboardingAuthTag, "googleSignInLauncher callback: resultCode=${result.resultCode}, firebaseUid_before=$uidBefore")
+        when (result.resultCode) {
+            android.app.Activity.RESULT_OK -> {
+                try {
+                    val task = com.google.android.gms.auth.api.signin.GoogleSignIn
+                        .getSignedInAccountFromIntent(result.data)
+                    task.addOnSuccessListener { account ->
+                        Log.d(OnboardingAuthTag, "Google task SUCCESS: idToken present=${!account.idToken.isNullOrBlank()}, email=${account.email}")
+                        val token = account.idToken
+                        if (token.isNullOrBlank()) {
+                            // Fail closed: no idToken means we cannot exchange for a Firebase
+                            // credential. Do NOT advance to PROFILE_SETUP.
+                            isGoogleSigningIn = false
+                            viewModel.reportAuthError("Google sign-in returned no token. Please try again.")
+                            return@addOnSuccessListener
+                        }
                         viewModel.loginWithGoogle(token, initialRole = selectedRole) { needsOnboarding ->
                             isGoogleSigningIn = false
+                            val uidAfter = viewModel.firebaseService.getCurrentUser()?.uid
+                            Log.d(OnboardingAuthTag, "AUTHENTICATION->PROFILE_SETUP: needsOnboarding=$needsOnboarding, firebaseUid_before=$uidBefore, firebaseUid_after=$uidAfter")
                             if (needsOnboarding) {
                                 currentStep = OnboardingStep.PROFILE_SETUP
                             } else {
@@ -113,15 +127,23 @@ fun OnboardingScreen(
                             }
                         }
                     }
-                }
-                task.addOnFailureListener {
+                    task.addOnFailureListener { e ->
+                        isGoogleSigningIn = false
+                        Log.d(OnboardingAuthTag, "Google task FAILURE: ${e.message}")
+                        viewModel.reportAuthError("Google sign-in failed. Please try again.")
+                    }
+                } catch (e: Exception) {
                     isGoogleSigningIn = false
+                    Log.d(OnboardingAuthTag, "Google sign-in exception: ${e.message}")
+                    viewModel.reportAuthError("Google sign-in error. Please try again.")
                 }
-            } else {
-                isGoogleSigningIn = false
             }
-        } catch (e: Exception) {
-            isGoogleSigningIn = false
+            else -> {
+                isGoogleSigningIn = false
+                Log.d(OnboardingAuthTag, "Google sign-in not completed (resultCode=${result.resultCode}). The account picker did not return a usable result.")
+                // Fail closed: stay on AUTHENTICATION, never advance.
+                viewModel.reportAuthError("Google sign-in did not complete. Ensure a Google account is added to the device and try again.")
+            }
         }
     }
 
@@ -873,6 +895,51 @@ fun OnboardingScreen(
                                 }
                             }
                         }
+                                        }
+
+                    // C3: phone is required for every account. The Google sign-in path
+                    // bypasses the AUTHENTICATION phone-entry step, so collect it here
+                    // before profile completion — this is collected input, not weakened
+                    // validation, and the Complete button still requires it to be non-blank.
+                    OutlinedTextField(
+                        value = phoneNumber,
+                        onValueChange = { newValue ->
+                            if (newValue.length <= 15) phoneNumber = newValue
+                        },
+                        label = { Text("Mobile Money Phone Number") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Slate900,
+                            unfocusedTextColor = Slate900,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            focusedLabelColor = SignalBlue,
+                            unfocusedLabelColor = Slate600,
+                            focusedPlaceholderColor = Slate500,
+                            unfocusedPlaceholderColor = Slate500,
+                            cursorColor = SignalBlue
+                        ),
+                        placeholder = { Text("+256 7XX XXX XXX") },
+                        leadingIcon = {
+                            Icon(imageVector = Icons.Default.Phone, contentDescription = null, tint = Slate500)
+                        },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        isError = phoneError != null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 14.dp),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+
+                    if (phoneError != null) {
+                        Text(
+                            text = phoneError ?: "",
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 11.sp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 6.dp)
+                        )
                     }
 
                     // C3: completion is explicit — the coroutine persists the profile +

@@ -1,0 +1,1230 @@
+﻿09-18 22:04:24.454 I/Zygote  (  879): Process 16024 exited due to signal 9 (Killed)
+09-18 22:04:24.459 I/Zygote  (  879): Process 14905 exited due to signal 9 (Killed)
+09-18 22:04:24.471 I/Zygote  (  879): Process 13722 exited due to signal 9 (Killed)
+09-18 22:04:25.352 D/MobileStatusTracker(0/14)( 2352): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=Invalid,mGsm=Invalid,mWcdma=Invalid,mTdscdma=Invalid,mLte=CellSignalStrengthLte: rssi=-59 rsrp=-91 rsrq=-11 rssnr=3 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=Invalid,SignalBarInfo{ lteLevel=3 },rat=14,primary=CellSignalStrengthLte} level=3
+09-18 22:04:25.360 D/NetworkController( 2352): SignalStrength from intent slotId=0
+09-18 22:04:25.460 I/WifiConnectivityMonitor.NCC( 1594): sNetworkCallback onCapabilitiesChanged(true/false) : 110[ Transports: WIFI Capabilities: NOT_METERED&INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN&VALIDATED&NOT_ROAMING&FOREGROUND&NOT_CONGESTED&NOT_SUSPENDED&NOT_VCN_MANAGED LinkUpBandwidth>=30251Kbps LinkDnBandwidth>=16680Kbps TransportInfo: <SSID: <unknown ssid>, BSSID: 02:00:00:00:00:00, MAC: 02:00:00:00:00:00, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 4, RSSI: -74, Link speed: 28Mbps, Tx Link speed: 28Mbps, Max Supported Tx Link speed: 72Mbps, Rx Link speed: -1Mbps, Max Supported Rx Link speed: 72Mbps, Frequency: 2412MHz, Net ID: -1, Metered hint: false, score: 60, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1> SignalStrength: -74 AdminUids: [10083] SSID: "CANALBOX-B8FA-2G" UnderlyingNetworks: Null]
+09-18 22:04:25.482 D/WM-NetworkStateTracker( 2668): Network capabilities changed: [ Transports: WIFI Capabilities: NOT_METERED&INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN&VALIDATED&NOT_ROAMING&FOREGROUND&NOT_CONGESTED&NOT_SUSPENDED&NOT_VCN_MANAGED LinkUpBandwidth>=30251Kbps LinkDnBandwidth>=16680Kbps TransportInfo: <SSID: <unknown ssid>, BSSID: 02:00:00:00:00:00, MAC: 02:00:00:00:00:00, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 4, RSSI: -74, Link speed: 28Mbps, Tx Link speed: 28Mbps, Max Supported Tx Link speed: 72Mbps, Rx Link speed: -1Mbps, Max Supported Rx Link speed: 72Mbps, Frequency: 2412MHz, Net ID: -1, Metered hint: false, score: 60, CarrierMerged: false, SubscriptionId: -1, IsPrimary: -1> SignalStrength: -74 UnderlyingNetworks: Null]
+09-18 22:04:25.493 I/Logging (15504): NetworkMonitorAutoDetect: handle: 475852099597 capabilities changed: [ Transports: WIFI Capabilities: NOT_METERED&INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN&VALIDATED&NOT_ROAMING&FOREGROUND&NOT_CONGESTED&NOT_SUSPENDED&NOT_VCN_MANAGED LinkUpBandwidth>=30251Kbps LinkDnBandwidth>=16680Kbps TransportInfo: <SSID: <unknown ssid>, BSSID: 02:00:00:00:00:00, MAC: 02:00:00:00:00:00, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 4, RSSI: -74, Link speed: 28Mbps, Tx Link speed: 28Mbps, Max Supported Tx Link speed: 72Mbps, Rx Link speed: -1Mbps, Max Supported Rx Link speed: 72Mbps, Frequency: 2412MHz, Net ID: -1, Metered hint: false, score: 60, CarrierMerged: false, SubscriptionId: -1, IsPrimary: -1> SignalStrength: -74 UnderlyingNetworks: Null]
+09-18 22:04:25.499 D/WM-NetworkStateTracker(12960): Network capabilities changed: [ Transports: WIFI Capabilities: NOT_METERED&INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN&VALIDATED&NOT_ROAMING&FOREGROUND&NOT_CONGESTED&NOT_SUSPENDED&NOT_VCN_MANAGED LinkUpBandwidth>=30251Kbps LinkDnBandwidth>=16680Kbps TransportInfo: <SSID: <unknown ssid>, BSSID: 02:00:00:00:00:00, MAC: 02:00:00:00:00:00, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 4, RSSI: -74, Link speed: 28Mbps, Tx Link speed: 28Mbps, Max Supported Tx Link speed: 72Mbps, Rx Link speed: -1Mbps, Max Supported Rx Link speed: 72Mbps, Frequency: 2412MHz, Net ID: -1, Metered hint: false, score: 60, CarrierMerged: false, SubscriptionId: -1, IsPrimary: -1> SignalStrength: -74 UnderlyingNetworks: Null]
+09-18 22:04:25.506 D/ConnectivityService( 1594): NetworkReassignment : no changes
+09-18 22:04:25.513 D/NetworkController.WifiSignalController( 2352): notifyListener: visible=true, enabled=true, connected=true, inetCondition=1, isDefault=true, receivedCR=true, receivedIC=-1, shouldForceHide=false, emptyConnected=false
+09-18 22:04:27.609 D/MobileStatusTracker(1/5)( 2352): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=Invalid,mGsm=Invalid,mWcdma=Invalid,mTdscdma=Invalid,mLte=CellSignalStrengthLte: rssi=-59 rsrp=-92 rsrq=-12 rssnr=4 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=Invalid,SignalBarInfo{ lteLevel=3 },rat=14,primary=CellSignalStrengthLte} level=3
+09-18 22:04:27.610 D/NetworkController( 2352): SignalStrength from intent slotId=1
+09-18 22:04:31.149 D/ConnectivityService( 1594): NetworkReassignment : no changes
+09-18 22:04:31.519 I/WifiConnectivityMonitor.NCC( 1594): sNetworkCallback onCapabilitiesChanged(true/false) : 110[ Transports: WIFI Capabilities: NOT_METERED&INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN&VALIDATED&NOT_ROAMING&FOREGROUND&NOT_CONGESTED&NOT_SUSPENDED&NOT_VCN_MANAGED LinkUpBandwidth>=8159Kbps LinkDnBandwidth>=14522Kbps TransportInfo: <SSID: <unknown ssid>, BSSID: 02:00:00:00:00:00, MAC: 02:00:00:00:00:00, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 4, RSSI: -75, Link speed: 28Mbps, Tx Link speed: 28Mbps, Max Supported Tx Link speed: 72Mbps, Rx Link speed: -1Mbps, Max Supported Rx Link speed: 72Mbps, Frequency: 2412MHz, Net ID: -1, Metered hint: false, score: 60, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1> SignalStrength: -75 AdminUids: [10083] SSID: "CANALBOX-B8FA-2G" UnderlyingNetworks: Null]
+09-18 22:04:31.534 D/WM-NetworkStateTracker( 2668): Network capabilities changed: [ Transports: WIFI Capabilities: NOT_METERED&INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN&VALIDATED&NOT_ROAMING&FOREGROUND&NOT_CONGESTED&NOT_SUSPENDED&NOT_VCN_MANAGED LinkUpBandwidth>=8159Kbps LinkDnBandwidth>=14522Kbps TransportInfo: <SSID: <unknown ssid>, BSSID: 02:00:00:00:00:00, MAC: 02:00:00:00:00:00, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 4, RSSI: -75, Link speed: 28Mbps, Tx Link speed: 28Mbps, Max Supported Tx Link speed: 72Mbps, Rx Link speed: -1Mbps, Max Supported Rx Link speed: 72Mbps, Frequency: 2412MHz, Net ID: -1, Metered hint: false, score: 60, CarrierMerged: false, SubscriptionId: -1, IsPrimary: -1> SignalStrength: -75 UnderlyingNetworks: Null]
+09-18 22:04:31.549 I/Logging (15504): NetworkMonitorAutoDetect: handle: 475852099597 capabilities changed: [ Transports: WIFI Capabilities: NOT_METERED&INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN&VALIDATED&NOT_ROAMING&FOREGROUND&NOT_CONGESTED&NOT_SUSPENDED&NOT_VCN_MANAGED LinkUpBandwidth>=8159Kbps LinkDnBandwidth>=14522Kbps TransportInfo: <SSID: <unknown ssid>, BSSID: 02:00:00:00:00:00, MAC: 02:00:00:00:00:00, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 4, RSSI: -75, Link speed: 28Mbps, Tx Link speed: 28Mbps, Max Supported Tx Link speed: 72Mbps, Rx Link speed: -1Mbps, Max Supported Rx Link speed: 72Mbps, Frequency: 2412MHz, Net ID: -1, Metered hint: false, score: 60, CarrierMerged: false, SubscriptionId: -1, IsPrimary: -1> SignalStrength: -75 UnderlyingNetworks: Null]
+09-18 22:04:31.552 D/WM-NetworkStateTracker(12960): Network capabilities changed: [ Transports: WIFI Capabilities: NOT_METERED&INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN&VALIDATED&NOT_ROAMING&FOREGROUND&NOT_CONGESTED&NOT_SUSPENDED&NOT_VCN_MANAGED LinkUpBandwidth>=8159Kbps LinkDnBandwidth>=14522Kbps TransportInfo: <SSID: <unknown ssid>, BSSID: 02:00:00:00:00:00, MAC: 02:00:00:00:00:00, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 4, RSSI: -75, Link speed: 28Mbps, Tx Link speed: 28Mbps, Max Supported Tx Link speed: 72Mbps, Rx Link speed: -1Mbps, Max Supported Rx Link speed: 72Mbps, Frequency: 2412MHz, Net ID: -1, Metered hint: false, score: 60, CarrierMerged: false, SubscriptionId: -1, IsPrimary: -1> SignalStrength: -75 UnderlyingNetworks: Null]
+09-18 22:04:31.555 D/ConnectivityService( 1594): NetworkReassignment : no changes
+09-18 22:04:31.574 D/NetworkController.WifiSignalController( 2352): notifyListener: visible=true, enabled=true, connected=true, inetCondition=1, isDefault=true, receivedCR=true, receivedIC=-1, shouldForceHide=false, emptyConnected=false
+09-18 22:04:32.156 D/ConnectivityService( 1594): NetworkReassignment :
+09-18 22:04:32.813 D/ConnectivityService( 1594): NetworkReassignment :
+09-18 22:04:38.813 D/MobileStatusTracker(0/14)( 2352): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=Invalid,mGsm=Invalid,mWcdma=Invalid,mTdscdma=Invalid,mLte=CellSignalStrengthLte: rssi=-61 rsrp=-91 rsrq=-12 rssnr=2 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=Invalid,SignalBarInfo{ lteLevel=3 },rat=14,primary=CellSignalStrengthLte} level=3
+09-18 22:04:38.816 D/NetworkController( 2352): SignalStrength from intent slotId=0
+09-18 22:04:40.111 I/e       ( 6293): [#CMH#] CMH Id Count: 12193, MP Id Count: 12193, duplicate Size: 12192 
+09-18 22:04:40.113 I/e       ( 6293): [#CMH#] No of Uris to be deleted from CMH:  1
+09-18 22:04:40.116 I/e       ( 6293): [#CMH#] Delete Set Size after checking:  1
+09-18 22:04:40.193 I/y0      ( 6293): [#CMH#] Empty delete list for cover collage 
+09-18 22:04:40.195 I/p       ( 6293): [#CMH#] sending media deletion request to CMH Services, deletedIdSize=  1fileIdList: [2147536111]
+09-18 22:04:40.195 I/c       ( 6293): [#CMH#] Explicitly binding  StoryService
+09-18 22:04:40.198 D/CompatibilityChangeReporter( 1594): Compat change id reported: 135634846; UID 5004; state: DISABLED
+09-18 22:04:40.199 I/c       ( 6293): [#CMH#] After calling bind service for  StoryService
+09-18 22:04:40.199 I/e       ( 6293): [#CMH#] Delete ITEM :  1
+09-18 22:04:40.199 I/b       ( 6293): [#CMH#] afterExecute FutureTask
+09-18 22:04:40.200 I/f       ( 6293): [#CMH#] New Task for wait content sync job 
+09-18 22:04:40.200 I/b       ( 6293): [#CMH#] Task com.samsung.cmh.core.r.e@472d679 is submitted
+09-18 22:04:40.210 D/Zygote  (  879): Forked child process 17904
+09-18 22:04:40.211 I/ActivityManager( 1594): Start proc 17904:com.samsung.storyservice/5004 for service {com.samsung.storyservice/com.samsung.storyservice.StoryService}
+09-18 22:04:40.215 D/AndroidRuntime(17901): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-18 22:04:40.228 I/AndroidRuntime(17901): Using default boot image
+09-18 22:04:40.229 I/AndroidRuntime(17901): Leaving lock profiling enabled
+09-18 22:04:40.229 D/SecNativeFeatureCppIf(17901): encoded
+09-18 22:04:40.229 D/SecNativeFeatureCppIf(17901): decoding and unzip finish
+09-18 22:04:40.229 D/SecNativeFeatureCppIf(17901): use unCompDataBuff. encoded
+09-18 22:04:40.230 D/SecNativeFeatureCppIf(17901): Free unCompDataBuff
+09-18 22:04:40.230 D/AndroidRuntime(17901): addProductProperty: pBrand1 is not null
+09-18 22:04:40.230 D/AndroidRuntime(17901): addProductProperty: not brand or 7
+09-18 22:04:40.235 I/ng.storyservic(17904): Using CollectorTypeCC GC.
+09-18 22:04:40.241 E/ng.storyservic(17904): Not starting debugger since process cannot load the jdwp agent.
+09-18 22:04:40.242 I/app_process(17901): Using CollectorTypeCC GC.
+09-18 22:04:40.245 E/USNET   (17904): USNET: appName: com.samsung.storyservice
+09-18 22:04:40.247 D/ProcessState(17904): Binder ioctl to enable oneway spam detection failed: Invalid argument
+09-18 22:04:40.250 D/ActivityThread(17904): setConscryptValidator
+09-18 22:04:40.251 D/ActivityThread(17904): setConscryptValidator - put
+09-18 22:04:40.255 I/ActivityManager( 1594): DSS OFF for com.samsung.storyservice
+09-18 22:04:40.261 D/ActivityManager( 1594): attachApplicationLocked() app=ProcessRecord{54f9bb6 17904:com.samsung.storyservice/5004} app.isolatedEntryPoint=null instr2=null
+09-18 22:04:40.264 D/CompatibilityChangeReporter( 1594): Compat change id reported: 181136395; UID 10339; state: DISABLED
+09-18 22:04:40.265 D/CompatibilityChangeReporter( 1594): Compat change id reported: 174042936; UID 10339; state: DISABLED
+09-18 22:04:40.272 D/ActivityThread(17904): handleBindApplication()++ app=com.samsung.storyservice
+09-18 22:04:40.273 D/CompatibilityChangeReporter(17904): Compat change id reported: 171979766; UID 5004; state: DISABLED
+09-18 22:04:40.316 I/e       ( 6293): [#CMH#] No of Row (SEC MP :  12193, Max Id : 2147536112) (CMH : 12192, Max Id : 2147536110) - Time :55
+09-18 22:04:40.328 I/e       ( 6293): [#CMH#] Rebuilding contents count 1
+09-18 22:04:40.328 I/StoryServiceApplication(17904): [#CMH#] StoryService started with context  com.samsung.storyservice.StoryServiceApplication@5e2374d
+09-18 22:04:40.328 I/k       (17904): [#CMH#] StoryService: SharedPreferenceHandler initialize()  
+09-18 22:04:40.329 I/c       ( 6293): [#CMH#] Not support file type 
+09-18 22:04:40.334 I/GenerationRegistry( 1594): mBackingStore.isClosed() : false
+09-18 22:04:40.376 W/SQLiteLog( 6293): (28) walCheckpoint: eMode(0), mxFrame(262), /data/user/0/com.samsung.cmh/databases/cmh.db-wal
+09-18 22:04:40.378 I/e       ( 6293): [#CMH#] Insert ITEM :  1
+09-18 22:04:40.383 I/i       (17904): [#CMH#] After SA logging initialization completed  
+09-18 22:04:40.398 I/l       (17904): [#CMH#] mLocalCalendar timezone Offset :10800000 timezone : East Africa Time 
+09-18 22:04:40.405 I/c       (17904): [#CMH#] Ignore creation of non time/trip based story creation  2026-9-18 till 2026-9-19
+09-18 22:04:40.405 I/f       (17904): [#CMH#] initialize ContentObserver  
+09-18 22:04:40.414 I/StoryServiceApplication(17904): [#CMH#] Story Service is Ready!!  
+09-18 22:04:40.415 W/app_process(17901): FaultHandler: MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED failed: 38 Function not implemented
+09-18 22:04:40.416 I/StoryService(17904): [StoryService] onBind() 
+09-18 22:04:40.417 I/c       ( 6293): [#CMH#]  In onServiceConnected  
+09-18 22:04:40.418 I/c       ( 6293): [#CMH#] Bound to Package  com.samsung.storyservice
+09-18 22:04:40.419 I/StoryService(17904): [StoryService] onProcessNow() 
+09-18 22:04:40.419 I/f       (17904): [StoryService] Handling processNow for Media deletion 
+09-18 22:04:40.420 I/f       (17904): [StoryService] delaying start for service start 
+09-18 22:04:40.421 I/ActivityManager( 1594): Killing 16114:com.samsung.android.calendar/u0a123 (adj 999): empty #19
+09-18 22:04:40.422 I/f       (17904): [StoryService] Sending response for  31 with status 0
+09-18 22:04:40.445 I/Zygote  (  879): Process 16114 exited due to signal 9 (Killed)
+09-18 22:04:40.462 D/CompatibilityChangeReporter( 1594): Compat change id reported: 171306433; UID 10123; state: ENABLED
+09-18 22:04:40.468 I/libprocessgroup( 1594): Successfully killed process cgroup uid 10123 pid 16114 in 45ms
+09-18 22:04:40.468 D/nativeloader(17901): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-18 22:04:40.495 I/d       ( 6293): [#CMH#] Location Count MP :  6, CMH : 6
+09-18 22:04:40.495 I/b       ( 6293): [#CMH#] afterExecute FutureTask
+09-18 22:04:40.495 I/f       ( 6293): [#CMH#] Alive Privacy Ignored Policy Called:  false
+09-18 22:04:40.496 I/f       ( 6293): [#CMH#] POI Feature is False 
+09-18 22:04:40.501 D/nativeloader(17901): Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-18 22:04:40.501 D/app_process(17901): Time zone APEX ICU file found: /apex/com.android.tzdata/etc/icu/icu_tzdata.dat
+09-18 22:04:40.501 D/app_process(17901): I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt68l.dat
+09-18 22:04:40.504 D/nativeloader(17901): Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-18 22:04:40.507 D/nativeloader(17901): Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-18 22:04:40.556 E/SemDvfsManager_JNI(17901): SemDvfsManager: registerfunction enter
+09-18 22:04:40.557 E/SemAffinityControl(17901): SemAffinityControl: registerfunction enter
+09-18 22:04:40.591 D/ProcessState(17901): Binder ioctl to enable oneway spam detection failed: Invalid argument
+09-18 22:04:40.592 D/AndroidRuntime(17901): Calling main entry com.android.commands.uiautomator.Launcher
+09-18 22:04:40.605 I/SurfaceFlinger( 1065): id=3453 createSurf (0x0),-1 flag=80004, WindowToken{1c6d43e android.os.Binder@98c4cf9}#0
+09-18 22:04:40.607 D/SettingsProvider( 1594): isChangeAllowed() : name = accessibility_enabled
+09-18 22:04:40.608 I/GenerationRegistry( 1594): mBackingStore.isClosed() : false
+09-18 22:04:40.612 D/SettingsProvider( 1594): isChangeAllowed() : name = accessibility_enabled
+09-18 22:04:40.613 I/GenerationRegistry( 1594): mBackingStore.isClosed() : false
+09-18 22:04:40.617 V/NuPlayerDriver( 1215): getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 22:04:40.628 I/AccessibilityManagerService( 1594): semIsAccessibilityServiceEnabled()
+09-18 22:04:40.628 I/AccessibilityManagerService( 1594): semIsAccessibilityServiceEnabled()
+09-18 22:04:40.629 D/AS.AudioService( 1594): Accessibility volume enabled = false
+09-18 22:04:40.629 D/BatterySaverPolicy( 1594): accessibility changed to true, updating policy.
+09-18 22:04:40.664 V/Navbar.Store( 2352): ----handleEvent [EventType] ON_UPDATE_REMOTEVIEW [Module] SamsungNavigationBarView  KEYS_NAVBAR_DARK_INTENSITY=0.0  KEYS_CONTEXTUALBUTTON_VISIBLE=false  KEYS_LEFT_REMOTEVIEW_CONTAINER=android.widget.LinearLayout{e02460 I.E...... ......I. 0,0-79,84 #7f0b0478 app:id/left_remoteview}  KEYS_RIGHT_REMOTEVIEW_CONTAINER=android.widget.LinearLayout{cc4ed19 I.E...... ......I. 641,0-720,84 #7f0b070a app:id/right_remoteview}
+09-18 22:04:40.664 V/Navbar.Store( 2352): ------[Band]REMOTE_VIEW_PACK_SET_REMOTEVIEW_CONTAINER
+09-18 22:04:40.664 V/Navbar.Store( 2352): --------apply(UPDATE_NAVBAR_REMOTEVIEW_CONTAINER)
+09-18 22:04:40.665 V/Navbar.Store( 2352): --------apply(UPDATE_NAVBAR_RIGHT_REMOTEVIEW_VISIBILITY)
+09-18 22:04:40.665 V/Navbar.Store( 2352): --------getValue(FLOAT_REMOTEVIEW_DARK_INTENSITY)=0.0
+09-18 22:04:40.665 V/Navbar.Store( 2352): handleEvent [EventType] ON_NAVBAR_UPDATE_A11Y_SERVICE [Module] NavigationBar  KEYS_LONG_CLICKABLE=false  KEYS_CLICKABLE=false
+09-18 22:04:40.665 V/Navbar.Store( 2352): --[Band]SETUPWIZARD_PACK_UPDATE_A11Y_SERVICE
+09-18 22:04:40.665 V/Navbar.Store( 2352): ----getValue(BOOL_NAVBAR_BUTTON_FORCED_VISIBLE)=false
+09-18 22:04:40.665 V/Navbar.Store( 2352): ----getValue(BOOL_NAVBAR_SETUPWIZARD_STYLE)=false
+09-18 22:04:40.667 V/Navbar.Store( 2352): handleEvent [EventType] GET_BOOL_NAVBAR_CAN_MOVE_STATE [Module] SamsungNavigationBarView  KEYS_DEFAULT=true
+09-18 22:04:40.667 V/Navbar.Store( 2352): --[Band]CONFIG_PACK_GET_NAVBAR_CAN_MOVE
+09-18 22:04:40.667 V/Navbar.Store( 2352): ----getValue(BOOL_NAVBAR_CAN_MOVE)=true
+09-18 22:04:40.668 I/TouchInteractionService( 2713): onActiveNavBarRegionChanges, region : SkRegion((0,1516,258,1600)(259,1516,460,1600)(461,1516,640,1600))
+09-18 22:04:40.669 I/TouchInteractionService( 2713): onActiveNavBarRegionChanges, region : SkRegion((0,1516,258,1600)(259,1516,460,1600)(461,1516,640,1600))
+09-18 22:04:40.724 I/keystore2(  636): keystore2::watchdog: Watchdog thread idle -> terminating. Have a great day.
+09-18 22:04:40.812 D/SamsungAlarmManager( 1594): Expired : 8
+09-18 22:04:40.812 V/SamsungAlarmManager( 1594): Sending to uid : 1000 L=8dcb113:*job.delay* alarm=Alarm{c47729f type 3 origWhen 39894144 whenElapsed 39894144 android}
+09-18 22:04:40.812 D/WM-DelayedWorkTracker( 3872): Scheduling work e9bc91e9-a54c-4ac5-b048-517cee68c869
+09-18 22:04:40.813 D/WM-GreedyScheduler( 3872): Starting tracking for e9bc91e9-a54c-4ac5-b048-517cee68c869
+09-18 22:04:40.814 V/SamsungAlarmManager( 1594): setLocked to kernel - W:40035335 / NW:39913332, now=39894146
+09-18 22:04:40.815 D/SamsungAlarmManager( 1594): setInexact (T:3/F:0/AC:false) 20260918T220832 now=39894147 - CU:1000/CP:1594/L:8dcb113:*job.delay*
+09-18 22:04:40.815 V/SamsungAlarmManager( 1594): setLocked to kernel - W:40035335 / NW:39913332, now=39894147
+09-18 22:04:40.818 D/WM-ConstraintTracker( 3872): BatteryNotLowTracker: initial state = true
+09-18 22:04:40.818 D/WM-BrdcstRcvrCnstrntTrc( 3872): BatteryNotLowTracker: registering receiver
+09-18 22:04:40.825 D/WM-GreedyScheduler( 3872): Constraints met: Scheduling work ID WorkGenerationalId(workSpecId=e9bc91e9-a54c-4ac5-b048-517cee68c869, generation=0)
+09-18 22:04:40.828 D/WM-SystemJobService( 3872): onStartJob for WorkGenerationalId(workSpecId=e9bc91e9-a54c-4ac5-b048-517cee68c869, generation=0)
+09-18 22:04:40.831 D/WM-Processor( 3872): Processor: processing WorkGenerationalId(workSpecId=e9bc91e9-a54c-4ac5-b048-517cee68c869, generation=0)
+09-18 22:04:40.835 D/WM-Processor( 3872): Work WorkGenerationalId(workSpecId=e9bc91e9-a54c-4ac5-b048-517cee68c869, generation=0) is already enqueued for processing
+09-18 22:04:40.846 D/WM-WorkerWrapper( 3872): Starting work for com.android.providers.media.photopicker.sync.ProactiveSyncWorker
+09-18 22:04:40.847 I/PSyncWorker( 3872): Starting proactive picker sync from sync source: 1
+09-18 22:04:40.847 I/PickerSyncTracker( 3872): Created new sync future java.util.concurrent.CompletableFuture@25daf36[Not completed, 1 dependents]. Future map: {e9bc91e9-a54c-4ac5-b048-517cee68c869=java.util.concurrent.CompletableFuture@25daf36[Not completed, 1 dependents]}
+09-18 22:04:40.847 D/PickerSyncController( 3872): syncAllMediaFromProvider() LOCAL, auth=com.android.providers.media.photopicker, retry=true
+09-18 22:04:40.848 D/PickerSyncController( 3872): getSyncRequestParams() LOCAL, auth=com.android.providers.media.photopicker
+09-18 22:04:40.942 D/InputReader( 1594): Btn_touch(6): value=1 when=18293.080136
+09-18 22:04:40.942 I/InputReader( 1594): Touch event's action is 0x0 (id=3, t=0) [pCnt=1, s=0.1997 ] when=18293.080136
+09-18 22:04:40.943 I/InputDispatcher( 1594): Delivering touch to (2352): action: 0x4, f=0x0, d=0, '723382 ', t=1 
+09-18 22:04:40.943 I/InputDispatcher( 1594): Delivering touch to (17756): action: 0x0, f=0x0, d=0, '75baeb2', t=1 
+09-18 22:04:40.944 I/GestureDetector( 1594): obtain mCurrentDownEvent. id: 179844385 caller: com.android.server.wm.SystemGesturesPointerEventListener.onPointerEvent:179 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 22:04:40.944 I/ViewRootImpl@bd56a05[MainActivity](17756): ViewPostIme pointer 0
+09-18 22:04:40.944 I/GestureDetector( 1594): obtain mCurrentDownEvent. id: 179844385 caller: com.android.server.wm.SystemPerformancePointerEventListener.onPointerEvent:89 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 22:04:40.951 I/GestureDetector( 1594): obtain mCurrentMotionEventRaw. action: 2 id: 958078833
+09-18 22:04:40.951 I/GestureDetector( 1594): obtain mCurrentMotionEventRaw. action: 2 id: 958078833
+09-18 22:04:40.968 D/PickerSyncController( 3872):    Latest ID/Gen=1506:ba7ddb83-4361-43a6-a338-031342a18369:0000-0000:external_primary/4039832
+09-18 22:04:40.968 D/PickerSyncController( 3872):    Cached ID/Gen=1506:ba7ddb83-4361-43a6-a338-031342a18369:0000-0000:external_primary/4039810
+09-18 22:04:40.968 D/PickerSyncController( 3872):    RESULT=SyncRequestParams{type=MEDIA_INCREMENTAL, gen=4039810, latest=Bundle[{last_media_sync_generation=4039832, media_collection_id=1506:ba7ddb83-4361-43a6-a338-031342a18369:0000-0000:external_primary}], pageSize=1000}
+09-18 22:04:40.968 I/PickerSyncController( 3872): Executing SyncAdd. isLocal: true. authority: com.android.providers.media.photopicker
+09-18 22:04:40.969 D/PickerSyncLockManager( 3872): Trying to acquire lock com.android.providers.media.photopicker.sync.CloseableReentrantLock@6a4558b[Unlocked]. Lock Name = CLOUD_PROVIDER_LOCK. Threads that may be waiting to acquire this lock = [] with timeout.
+09-18 22:04:40.969 D/CloseableReentrantLock( 3872): Successfully acquired lock com.android.providers.media.photopicker.sync.CloseableReentrantLock@6a4558b[Locked by thread pool-3-thread-10]. Lock Name = CLOUD_PROVIDER_LOCK. Threads that may be waiting to acquire this lock = []
+09-18 22:04:40.969 D/CloseableReentrantLock( 3872): Successfully released lock com.android.providers.media.photopicker.sync.CloseableReentrantLock@6a4558b[Unlocked]. Lock Name = CLOUD_PROVIDER_LOCK. Threads that may be waiting to acquire this lock = []
+09-18 22:04:40.969 D/ExternalDbFacade( 3872): Token received for queryMedia = null
+09-18 22:04:41.054 D/MobileStatusTracker(1/5)( 2352): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=Invalid,mGsm=Invalid,mWcdma=Invalid,mTdscdma=Invalid,mLte=CellSignalStrengthLte: rssi=-65 rsrp=-91 rsrq=-13 rssnr=4 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=Invalid,SignalBarInfo{ lteLevel=3 },rat=14,primary=CellSignalStrengthLte} level=3
+09-18 22:04:41.057 D/NetworkController( 2352): SignalStrength from intent slotId=1
+09-18 22:04:41.070 D/PickerSyncLockManager( 3872): Trying to acquire lock com.android.providers.media.photopicker.sync.CloseableReentrantLock@6a4558b[Unlocked]. Lock Name = CLOUD_PROVIDER_LOCK. Threads that may be waiting to acquire this lock = [] with timeout.
+09-18 22:04:41.070 D/CloseableReentrantLock( 3872): Successfully acquired lock com.android.providers.media.photopicker.sync.CloseableReentrantLock@6a4558b[Locked by thread pool-3-thread-10]. Lock Name = CLOUD_PROVIDER_LOCK. Threads that may be waiting to acquire this lock = []
+09-18 22:04:41.071 D/PickerSyncController( 3872): Saving next page token: 1789758279000|1000766873 for key: local_provider:media_add:resume
+09-18 22:04:41.071 D/CloseableReentrantLock( 3872): Successfully released lock com.android.providers.media.photopicker.sync.CloseableReentrantLock@6a4558b[Unlocked]. Lock Name = CLOUD_PROVIDER_LOCK. Threads that may be waiting to acquire this lock = []
+09-18 22:04:41.072 D/SyncManager( 1594): userId - 0 auto - true
+09-18 22:04:41.074 D/PickerNotificationSender( 3872): Sending a notification for media update
+09-18 22:04:41.075 D/SyncManager( 1594): userId - 0 auto - true
+09-18 22:04:41.076 D/InputReader( 1594): Btn_touch(6): value=0 when=18293.213769
+09-18 22:04:41.076 I/InputReader( 1594): Touch event's action is 0x1 (id=3, t=0) [pCnt=1, s=] when=18293.213769
+09-18 22:04:41.076 I/InputDispatcher( 1594): Delivering touch to (17756): action: 0x1, f=0x0, d=0, '75baeb2', t=1 
+09-18 22:04:41.076 D/PickerNotificationSender( 3872): Sending a notification for merged album media update Videos
+09-18 22:04:41.076 D/PickerNotificationSender( 3872): Sending a notification for album media update Videos
+09-18 22:04:41.077 I/ViewRootImpl@bd56a05[MainActivity](17756): ViewPostIme pointer 1
+09-18 22:04:41.078 D/SyncManager( 1594): userId - 0 auto - true
+09-18 22:04:41.078 D/PickerNotificationSender( 3872): Sending a notification for merged album media update Favorites
+09-18 22:04:41.078 D/PickerNotificationSender( 3872): Sending a notification for album media update Favorites
+09-18 22:04:41.079 D/SyncManager( 1594): userId - 0 auto - true
+09-18 22:04:41.080 D/ExternalDbFacade( 3872): Token received for queryMedia = 1789758279000|1000766873
+09-18 22:04:41.178 D/PickerSyncLockManager( 3872): Trying to acquire lock com.android.providers.media.photopicker.sync.CloseableReentrantLock@6a4558b[Unlocked]. Lock Name = CLOUD_PROVIDER_LOCK. Threads that may be waiting to acquire this lock = [] with timeout.
+09-18 22:04:41.178 D/CloseableReentrantLock( 3872): Successfully acquired lock com.android.providers.media.photopicker.sync.CloseableReentrantLock@6a4558b[Locked by thread pool-3-thread-10]. Lock Name = CLOUD_PROVIDER_LOCK. Threads that may be waiting to acquire this lock = []
+09-18 22:04:41.178 D/PickerSyncController( 3872): Clearing next page token for key: local_provider:media_add:resume
+09-18 22:04:41.178 D/CloseableReentrantLock( 3872): Successfully released lock com.android.providers.media.photopicker.sync.CloseableReentrantLock@6a4558b[Unlocked]. Lock Name = CLOUD_PROVIDER_LOCK. Threads that may be waiting to acquire this lock = []
+09-18 22:04:41.178 D/PickerNotificationSender( 3872): Sending a notification for media update
+09-18 22:04:41.180 D/SyncManager( 1594): userId - 0 auto - true
+09-18 22:04:41.180 D/PickerNotificationSender( 3872): Sending a notification for merged album media update Videos
+09-18 22:04:41.180 D/PickerNotificationSender( 3872): Sending a notification for album media update Videos
+09-18 22:04:41.181 D/SyncManager( 1594): userId - 0 auto - true
+09-18 22:04:41.182 D/PickerNotificationSender( 3872): Sending a notification for merged album media update Favorites
+09-18 22:04:41.182 D/PickerNotificationSender( 3872): Sending a notification for album media update Favorites
+09-18 22:04:41.183 D/SyncManager( 1594): userId - 0 auto - true
+09-18 22:04:41.184 I/PickerSyncController( 3872): Paged sync successful. QueryArgs: Bundle[{android.provider.extra.PAGE_TOKEN=1789758279000|1000766873, android.provider.extra.SYNC_GENERATION=4039810, android.provider.extra.PAGE_SIZE=1000}] Total Rows: 1
+09-18 22:04:41.184 I/PickerSyncController( 3872): Executing SyncRemove. isLocal: true. authority: com.android.providers.media.photopicker
+09-18 22:04:41.184 D/PickerSyncLockManager( 3872): Trying to acquire lock com.android.providers.media.photopicker.sync.CloseableReentrantLock@6a4558b[Unlocked]. Lock Name = CLOUD_PROVIDER_LOCK. Threads that may be waiting to acquire this lock = [] with timeout.
+09-18 22:04:41.184 D/CloseableReentrantLock( 3872): Successfully acquired lock com.android.providers.media.photopicker.sync.CloseableReentrantLock@6a4558b[Locked by thread pool-3-thread-10]. Lock Name = CLOUD_PROVIDER_LOCK. Threads that may be waiting to acquire this lock = []
+09-18 22:04:41.184 D/CloseableReentrantLock( 3872): Successfully released lock com.android.providers.media.photopicker.sync.CloseableReentrantLock@6a4558b[Unlocked]. Lock Name = CLOUD_PROVIDER_LOCK. Threads that may be waiting to acquire this lock = []
+09-18 22:04:41.244 I/GestureDetector( 1594): handleMessage TAP
+09-18 22:04:41.245 I/GestureDetector( 1594): handleMessage TAP
+09-18 22:04:41.444 I/native  ( 3874): I0000 00:00:1789758281.444776    5944 soda_impl.cc:2003] Adding hotword timeout event
+09-18 22:04:41.449 I/eycy    ( 3874): Hotword timeout event!
+09-18 22:04:41.449 I/eycy    ( 3874): Not DEFAULT_DSP timeout event. Call the onHotwordTimeout callback.
+09-18 22:04:41.449 W/exchange.nxptv(17756): Verification of void androidx.compose.foundation.text.CoreTextFieldKt.CoreTextField(androidx.compose.ui.text.input.TextFieldValue, kotlin.jvm.functions.Function1, androidx.compose.ui.Modifier, androidx.compose.ui.text.TextStyle, androidx.compose.ui.text.input.VisualTransformation, kotlin.jvm.functions.Function1, androidx.compose.foundation.interaction.MutableInteractionSource, androidx.compose.ui.graphics.Brush, boolean, int, int, androidx.compose.ui.text.input.ImeOptions, androidx.compose.foundation.text.KeyboardActions, boolean, boolean, kotlin.jvm.functions.Function3, androidx.compose.runtime.Composer, int, int, int) took 120.410ms (31168.48 bytecodes/s) (79304B approximate peak alloc)
+09-18 22:04:41.451 I/eyff    ( 3874): (REDACTED) Hotword score : %f, Hotword model id : %s.
+09-18 22:04:41.451 I/eyff    ( 3874): (REDACTED) Timeout reason %s, Coarse channel index %d.
+09-18 22:04:41.451 I/exvt    ( 3874): HDM. Not handling the timeoutevent with the timeout reason that is not DEFAULT_DSP for now.
+09-18 22:04:41.510 W/PickerDbFacade( 3872): Unable to promote cloud media with localId: 1000766872
+09-18 22:04:41.514 D/PickerSyncLockManager( 3872): Trying to acquire lock com.android.providers.media.photopicker.sync.CloseableReentrantLock@6a4558b[Unlocked]. Lock Name = CLOUD_PROVIDER_LOCK. Threads that may be waiting to acquire this lock = [] with timeout.
+09-18 22:04:41.514 D/CloseableReentrantLock( 3872): Successfully acquired lock com.android.providers.media.photopicker.sync.CloseableReentrantLock@6a4558b[Locked by thread pool-3-thread-10]. Lock Name = CLOUD_PROVIDER_LOCK. Threads that may be waiting to acquire this lock = []
+09-18 22:04:41.515 D/PickerSyncController( 3872): Clearing next page token for key: local_provider:media_remove:resume
+09-18 22:04:41.515 D/CloseableReentrantLock( 3872): Successfully released lock com.android.providers.media.photopicker.sync.CloseableReentrantLock@6a4558b[Unlocked]. Lock Name = CLOUD_PROVIDER_LOCK. Threads that may be waiting to acquire this lock = []
+09-18 22:04:41.517 D/SyncManager( 1594): userId - 0 auto - true
+09-18 22:04:41.517 D/PickerNotificationSender( 3872): Sending a notification for media update
+09-18 22:04:41.518 D/SyncManager( 1594): userId - 0 auto - true
+09-18 22:04:41.519 D/PickerNotificationSender( 3872): Sending a notification for merged album media update Videos
+09-18 22:04:41.519 D/PickerNotificationSender( 3872): Sending a notification for album media update Videos
+09-18 22:04:41.520 D/SyncManager( 1594): userId - 0 auto - true
+09-18 22:04:41.520 D/PickerNotificationSender( 3872): Sending a notification for merged album media update Favorites
+09-18 22:04:41.521 D/PickerNotificationSender( 3872): Sending a notification for album media update Favorites
+09-18 22:04:41.522 D/SyncManager( 1594): userId - 0 auto - true
+09-18 22:04:41.522 I/PickerSyncController( 3872): Paged sync successful. QueryArgs: Bundle[{android.provider.extra.PAGE_TOKEN=1789758279000|1000766873, android.provider.extra.SYNC_GENERATION=4039810, android.provider.extra.PAGE_SIZE=1000}] Total Rows: 1
+09-18 22:04:41.523 I/PickerSyncTracker( 3872): Marked sync future complete for work id: e9bc91e9-a54c-4ac5-b048-517cee68c869. Future map: {}
+09-18 22:04:41.523 I/PSyncWorker( 3872): Completed picker proactive sync complete from local provider.
+09-18 22:04:41.527 I/WM-WorkerWrapper( 3872): Worker result SUCCESS for Work [ id=e9bc91e9-a54c-4ac5-b048-517cee68c869, tags={ com.android.providers.media.photopicker.sync.ProactiveSyncWorker } ]
+09-18 22:04:41.529 D/WM-Processor( 3872): Processor e9bc91e9-a54c-4ac5-b048-517cee68c869 executed; reschedule = false
+09-18 22:04:41.529 D/WM-GreedyScheduler( 3872): Stopping tracking for WorkGenerationalId(workSpecId=e9bc91e9-a54c-4ac5-b048-517cee68c869, generation=0)
+09-18 22:04:41.531 D/WM-SystemJobService( 3872): e9bc91e9-a54c-4ac5-b048-517cee68c869 executed on JobScheduler
+09-18 22:04:41.535 D/WM-GreedyScheduler( 3872): Cancelling work ID e9bc91e9-a54c-4ac5-b048-517cee68c869
+09-18 22:04:41.541 D/WM-BrdcstRcvrCnstrntTrc( 3872): BatteryNotLowTracker: unregistering receiver
+09-18 22:04:41.757 V/NuPlayerDriver( 1215): getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 22:04:41.811 D/io_stats(  619): !@ 179,0 r 5294316 47125723 w 492463 4621872 d 250348 2485916 f 189789 217989 iot 1967790 1681227 th 102400 102400 81508 pt 2480 inp 0 0 18293.944
+09-18 22:04:42.146 D/InputReader( 1594): Btn_touch(6): value=1 when=18294.283815
+09-18 22:04:42.146 I/InputReader( 1594): Touch event's action is 0x0 (id=3, t=0) [pCnt=1, s=0.1998 ] when=18294.283815
+09-18 22:04:42.146 I/InputDispatcher( 1594): Delivering touch to (2352): action: 0x4, f=0x0, d=0, '723382 ', t=1 
+09-18 22:04:42.146 I/InputDispatcher( 1594): Delivering touch to (17756): action: 0x0, f=0x0, d=0, '75baeb2', t=1 
+09-18 22:04:42.148 I/GestureDetector( 1594): obtain mCurrentDownEvent. id: 152641129 caller: com.android.server.wm.SystemGesturesPointerEventListener.onPointerEvent:179 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 22:04:42.149 I/GestureDetector( 1594): obtain mCurrentDownEvent. id: 152641129 caller: com.android.server.wm.SystemPerformancePointerEventListener.onPointerEvent:89 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 22:04:42.154 I/GestureDetector( 1594): obtain mCurrentMotionEventRaw. action: 2 id: 513426742
+09-18 22:04:42.154 I/GestureDetector( 1594): obtain mCurrentMotionEventRaw. action: 2 id: 513426742
+09-18 22:04:42.160 I/ViewRootImpl@bd56a05[MainActivity](17756): ViewPostIme pointer 0
+09-18 22:04:42.164 I/OpenGLRenderer(17756): Davey! duration=1059ms; Flags=0, FrameTimelineVsyncId=859753, IntendedVsync=18293223337961, Vsync=18293256671293, InputEventId=161935926, HandleInputStart=18293264808801, AnimationStart=18293264845468, PerformTraversalsStart=18294034715311, DrawStart=18294035069894, FrameDeadline=18293240004627, FrameInterval=18293264796509, FrameStartTime=16666666, SyncQueued=18294269955363, SyncStart=18294270170103, IssueDrawCommandsStart=18294270481092, SwapBuffers=18294279805519, FrameCompleted=18294283453853, DequeueBufferDuration=36303, QueueBufferDuration=1470573, GpuCompleted=18294283453853, SwapBuffersCompleted=18294282789269, DisplayPresentTime=0, 
+09-18 22:04:42.227 D/SemCscFeature(17901): Encoded
+09-18 22:04:42.263 D/InputReader( 1594): Btn_touch(6): value=0 when=18294.401592
+09-18 22:04:42.264 I/InputReader( 1594): Touch event's action is 0x1 (id=3, t=0) [pCnt=1, s=] when=18294.401592
+09-18 22:04:42.264 I/InputDispatcher( 1594): Delivering touch to (17756): action: 0x1, f=0x0, d=0, '75baeb2', t=1 
+09-18 22:04:42.299 I/ViewRootImpl@bd56a05[MainActivity](17756): ViewPostIme pointer 1
+09-18 22:04:42.418 W/AccessibilityNodeInfoDumper(17901): Fetch time: 187ms
+09-18 22:04:42.420 W/WindowManager( 1594): removeWindowToken: Attempted to remove non-existing token: android.os.Binder@98c4cf9
+09-18 22:04:42.421 D/SettingsProvider( 1594): isChangeAllowed() : name = accessibility_enabled
+09-18 22:04:42.423 I/GenerationRegistry( 1594): mBackingStore.isClosed() : false
+09-18 22:04:42.424 D/SettingsProvider( 1594): isChangeAllowed() : name = accelerometer_rotation
+09-18 22:04:42.425 D/SettingsProvider( 1594): isChangeAllowed() : name = user_rotation
+09-18 22:04:42.425 V/WindowManager( 1594): rotationForOrientation(orient=SCREEN_ORIENTATION_UNSPECIFIED (-1), last=ROTATION_0 (0)); user=ROTATION_0 (0) USER_ROTATION_LOCKED
+09-18 22:04:42.426 D/WindowManager( 1594): rotationForOrientation, orientationSource=ActivityRecord{988a643 u0 com.aistudio.skillsexchange.nxptvq/com.example.MainActivity t61}
+09-18 22:04:42.426 V/WindowManager( 1594): Computed rotation=ROTATION_0 (0) for display id=0 based on lastOrientation=SCREEN_ORIENTATION_UNSPECIFIED (-1) and oldRotation=ROTATION_0 (0), caller=com.android.server.wm.DisplayContent.updateRotationUnchecked:2339 com.android.server.wm.WindowManagerService.updateRotationUnchecked:4535 com.android.server.wm.WindowManagerService.freezeDisplayRotation:4435 com.android.server.wm.WindowManagerService.freezeRotation:4394 android.view.IWindowManager$Stub.onTransact:2456 com.android.server.wm.WindowManagerService.onTransact:1621 
+09-18 22:04:42.428 D/BatterySaverPolicy( 1594): accessibility changed to false, updating policy.
+09-18 22:04:42.431 D/hw-ProcessState(17901): Binder ioctl to enable oneway spam detection failed: Invalid argument
+09-18 22:04:42.431 D/AndroidRuntime(17901): Shutting down VM
+09-18 22:04:42.438 I/Layer   ( 1065): id=3453 mRemovedFromDrawingState WindowToken{1c6d43e android.os.Binder@98c4cf9}#0 (113)
+09-18 22:04:42.438 I/SurfaceFlinger( 1065): id=3453 Removed WindowToken{1c6d43e android.os.Binder@98c4cf9}#0 (113)
+09-18 22:04:42.439 I/Layer   ( 1065): id=3453 Destroyed WindowToken{1c6d43e android.os.Binder@98c4cf9}#0
+09-18 22:04:42.443 E/GoogleApiManager(17756): Failed to get service from broker. 
+09-18 22:04:42.443 E/GoogleApiManager(17756): java.lang.SecurityException: Unknown calling package name 'com.google.android.gms'.
+09-18 22:04:42.443 E/GoogleApiManager(17756): 	at android.os.Parcel.createExceptionOrNull(Parcel.java:2438)
+09-18 22:04:42.443 E/GoogleApiManager(17756): 	at android.os.Parcel.createException(Parcel.java:2422)
+09-18 22:04:42.443 E/GoogleApiManager(17756): 	at android.os.Parcel.readException(Parcel.java:2405)
+09-18 22:04:42.443 E/GoogleApiManager(17756): 	at android.os.Parcel.readException(Parcel.java:2347)
+09-18 22:04:42.443 E/GoogleApiManager(17756): 	at blon.a(:com.google.android.gms@263332027@26.33.32 (190300-974685114):36)
+09-18 22:04:42.443 E/GoogleApiManager(17756): 	at blmg.y(:com.google.android.gms@263332027@26.33.32 (190300-974685114):143)
+09-18 22:04:42.443 E/GoogleApiManager(17756): 	at bksb.run(:com.google.android.gms@263332027@26.33.32 (190300-974685114):42)
+09-18 22:04:42.443 E/GoogleApiManager(17756): 	at android.os.Handler.handleCallback(Handler.java:938)
+09-18 22:04:42.443 E/GoogleApiManager(17756): 	at android.os.Handler.dispatchMessage(Handler.java:99)
+09-18 22:04:42.443 E/GoogleApiManager(17756): 	at devb.mu(:com.google.android.gms@263332027@26.33.32 (190300-974685114):1)
+09-18 22:04:42.443 E/GoogleApiManager(17756): 	at devb.dispatchMessage(:com.google.android.gms@263332027@26.33.32 (190300-974685114):5)
+09-18 22:04:42.443 E/GoogleApiManager(17756): 	at android.os.Looper.loopOnce(Looper.java:226)
+09-18 22:04:42.443 E/GoogleApiManager(17756): 	at android.os.Looper.loop(Looper.java:313)
+09-18 22:04:42.443 E/GoogleApiManager(17756): 	at android.os.HandlerThread.run(HandlerThread.java:67)
+09-18 22:04:42.444 W/GoogleApiManager(17756): Not showing notification since connectionResult is not user-facing: ConnectionResult{statusCode=DEVELOPER_ERROR, resolution=null, message=null, clientMethodKey=null}
+09-18 22:04:42.449 I/GestureDetector( 1594): handleMessage TAP
+09-18 22:04:42.449 I/GestureDetector( 1594): handleMessage TAP
+09-18 22:04:42.457 I/b       (17904): [StoryService] Task com.samsung.storyservice.h.q@900bf67 is submitted
+09-18 22:04:42.459 I/q       (17904): [StoryService]  Processing Action =  file_delete 
+09-18 22:04:42.554 I/q       (17904): [StoryService] HLV disabled, Processing required for cover recommendation only 
+09-18 22:04:42.554 I/b       (17904): [StoryService] afterExecute FutureTask
+09-18 22:04:42.555 I/j       (17904): [StoryService] setSharedPrefLong : 1789758282554 
+09-18 22:04:42.555 I/f       (17904): [StoryService] Sending response for  34 with status 35
+09-18 22:04:42.872 V/NuPlayerDriver( 1215): getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 22:04:42.946 I/HYPER-HAL(  996): [RequestManager.cpp]releaseLocked(): Released ID : 1296871
+09-18 22:04:43.033 I/native  ( 3874): I0000 00:00:1789758283.033182    5944 soda_async_impl.cc:1420] Current audio timestamp: 1789758282539856
+09-18 22:04:43.073 I/eyby    ( 3874): (REDACTED) #onAudioData: %s bytes, getAudioReadSize %s
+09-18 22:04:43.432 D/InputReader( 1594): Btn_touch(6): value=1 when=18295.569012
+09-18 22:04:43.432 I/InputReader( 1594): Touch event's action is 0x0 (id=3, t=0) [pCnt=1, s=0.1999 ] when=18295.569012
+09-18 22:04:43.432 I/InputDispatcher( 1594): Delivering touch to (2352): action: 0x4, f=0x0, d=0, '723382 ', t=1 
+09-18 22:04:43.433 I/InputDispatcher( 1594): Delivering touch to (17756): action: 0x0, f=0x0, d=0, '75baeb2', t=1 
+09-18 22:04:43.434 I/GestureDetector( 1594): obtain mCurrentDownEvent. id: 522391835 caller: com.android.server.wm.SystemGesturesPointerEventListener.onPointerEvent:179 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 22:04:43.434 I/ViewRootImpl@bd56a05[MainActivity](17756): ViewPostIme pointer 0
+09-18 22:04:43.434 I/GestureDetector( 1594): obtain mCurrentDownEvent. id: 522391835 caller: com.android.server.wm.SystemPerformancePointerEventListener.onPointerEvent:89 com.android.server.wm.PointerEventDispatcher.onInputEvent:71 android.view.InputEventReceiver.dispatchInputEvent:259 
+09-18 22:04:43.441 I/GestureDetector( 1594): obtain mCurrentMotionEventRaw. action: 2 id: 599957126
+09-18 22:04:43.441 I/GestureDetector( 1594): obtain mCurrentMotionEventRaw. action: 2 id: 599957126
+09-18 22:04:43.462 I/b       (17904): [StoryService] Task com.samsung.storyservice.framework.b@5742a80 is submitted
+09-18 22:04:43.463 I/f       (17904): [StoryService] Sending response for  32 with status 0
+09-18 22:04:43.463 I/b       (17904): [StoryService] id list to delete is ::  [2147536111]
+09-18 22:04:43.463 I/b       (17904): [StoryService] Event update, Notification to Gallery  
+09-18 22:04:43.514 D/InputReader( 1594): Btn_touch(6): value=0 when=18295.651962
+09-18 22:04:43.514 I/InputReader( 1594): Touch event's action is 0x1 (id=3, t=0) [pCnt=1, s=] when=18295.651962
+09-18 22:04:43.514 I/InputDispatcher( 1594): Delivering touch to (17756): action: 0x1, f=0x0, d=0, '75baeb2', t=1 
+09-18 22:04:43.515 I/ViewRootImpl@bd56a05[MainActivity](17756): ViewPostIme pointer 1
+09-18 22:04:43.562 D/BoundBrokerSvc( 2619): onBind: Intent { act=com.google.android.gms.auth.api.signin.service.START pkg=com.google.android.gms }
+09-18 22:04:43.562 D/BoundBrokerSvc( 2619): Loading bound service for intent: Intent { act=com.google.android.gms.auth.api.signin.service.START pkg=com.google.android.gms }
+09-18 22:04:43.570 D/ActivityTaskManager( 1594): startActivityAsUser: callingPid=17756, callingUid=10339, caller=com.android.server.wm.ActivityTaskManagerService.startActivityAsUser:1763 com.android.server.wm.ActivityTaskManagerService.startActivity:1716 android.app.IActivityTaskManager$Stub.onTransact:1132 com.android.server.wm.ActivityTaskManagerService.onTransact:6252 android.os.Binder.execTransactInternal:1215 android.os.Binder.execTransact:1179 <bottom of call stack> 
+09-18 22:04:43.572 I/ActivityTaskManager( 1594): START u0 {act=com.google.android.gms.auth.GOOGLE_SIGN_IN pkg=com.aistudio.skillsexchange.nxptvq cmp=com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity (has extras)} from uid 10339
+09-18 22:04:43.574 D/ActivityTaskManager( 1594): TaskLaunchParamsModifier:task=null activity=ActivityRecord{b3694d u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity display-area-from-source=DefaultTaskDisplayArea@198388440 display-id=0 display-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@198388440
+09-18 22:04:43.574 D/ActivityTaskManager( 1594): TaskLaunchParamsModifier:task=Task{ca964c0 #61 type=standard A=10339:com.aistudio.skillsexchange.nxptvq U=0 visible=true mode=fullscreen translucent=false sz=1} activity=ActivityRecord{b3694d u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity t-1} display-area-from-source=DefaultTaskDisplayArea@198388440 display-id=0 display-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@198388440 inherit-from-source=fullscreen activity-options-fullscreen=Rect(0, 0 - 0, 0) non-freeform-display display-area=DefaultTaskDisplayArea@198388440 maximized-bounds
+09-18 22:04:43.574 I/SemDvfsHyPerManager( 1594): acquire hyper - AMS_ACT_START/1594@19, type = -999
+09-18 22:04:43.575 D/ActivityManagerPerformance( 1594): AMP_acquire() ACT_START
+09-18 22:04:43.575 I/HYPER-HAL(  996): [RequestManager.cpp]acquire(): Acquired ID : 1301710  [1594 / 19]    HINT : AMS_ACT_START    list : 
+09-18 22:04:43.576 D/CompatibilityChangeReporter( 1594): Compat change id reported: 174042980; UID 10339; state: DISABLED
+09-18 22:04:43.577 E/ANDR-PERF-OPTSHANDLER( 1016): Perflock resource /sys/module/lpm_levels/parameters/bias_hyst not supported
+09-18 22:04:43.577 D/CompatibilityChangeReporter( 1594): Compat change id reported: 184838306; UID 10339; state: DISABLED
+09-18 22:04:43.577 E/ANDR-PERF-RESOURCEQS( 1016): Failed to apply optimization [1, 2]
+09-18 22:04:43.578 D/CompatibilityChangeReporter( 1594): Compat change id reported: 185004937; UID 10339; state: DISABLED
+09-18 22:04:43.579 I/SurfaceFlinger( 1065): id=3454 createSurf (0x0),-1 flag=80004, ActivityRecord{b3694d u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity t61}#0
+09-18 22:04:43.582 W/WindowManager( 1594): Prepare app transition: mNextAppTransitionRequests=[TRANSIT_OPEN], mNextAppTransitionFlags=, displayId: 0 Callers=com.android.server.wm.DisplayContent.prepareAppTransition:6369 com.android.server.wm.DisplayContent.prepareAppTransition:6364 com.android.server.wm.Task.startActivityLocked:8775 com.android.server.wm.ActivityStarter.startActivityInner:2890 com.android.server.wm.ActivityStarter.startActivityUnchecked:2312 
+09-18 22:04:43.583 D/CompatibilityChangeReporter( 1594): Compat change id reported: 168419799; UID 10339; state: DISABLED
+09-18 22:04:43.707 D/MARsPolicyManager( 1594): onPackageResumedFG pkgName = com.aistudio.skillsexchange.nxptvq, userId = 0
+09-18 22:04:43.709 W/WindowManager( 1594): Prepare app transition: mNextAppTransitionRequests=[TRANSIT_OPEN, TRANSIT_OPEN], mNextAppTransitionFlags=, displayId: 0 Callers=com.android.server.wm.DisplayContent.prepareAppTransition:6369 com.android.server.wm.Task.resumeTopActivityInnerLocked:8457 com.android.server.wm.Task.resumeTopActivityInnerLocked:8190 com.android.server.wm.Task.resumeTopActivityUncheckedLocked:8088 com.android.server.wm.RootWindowContainer.resumeFocusedTasksTopActivities:2809 
+09-18 22:04:43.709 W/ActivityTaskManager( 1594): Tried to set launchTime (0) < mLastActivityLaunchTime (18277383)
+09-18 22:04:43.711 V/WindowManager( 1594): rotationForOrientation(orient=SCREEN_ORIENTATION_UNSPECIFIED (-1), last=ROTATION_0 (0)); user=ROTATION_0 (0) USER_ROTATION_LOCKED
+09-18 22:04:43.711 D/WindowManager( 1594): rotationForOrientation, orientationSource=ActivityRecord{988a643 u0 com.aistudio.skillsexchange.nxptvq/com.example.MainActivity t61}
+09-18 22:04:43.711 V/WindowManager( 1594): Computed rotation=ROTATION_0 (0) for display id=0 based on lastOrientation=SCREEN_ORIENTATION_UNSPECIFIED (-1) and oldRotation=ROTATION_0 (0), caller=com.android.server.wm.DisplayRotation.updateOrientation:407 com.android.server.wm.DisplayContent.updateOrientation:1939 com.android.server.wm.DisplayContent.updateOrientation:1877 com.android.server.wm.RootWindowContainer.ensureVisibilityAndConfig:2207 com.android.server.wm.ActivityTaskSupervisor.realStartActivityLocked:939 com.android.server.wm.ActivityTaskSupervisor.startSpecificActivity:1253 
+09-18 22:04:43.712 D/TspStateManager( 1594): updateCustomValue customSetting=
+09-18 22:04:43.713 D/TspStateManager( 1594): updateCustomValue customSetting=
+09-18 22:04:43.714 D/SGM:PkgDataHelper( 1594): notifyAppCreate(), pkgName: com.aistudio.skillsexchange.nxptvq, userId: 0, sendRet: true
+09-18 22:04:43.714 D/SGM:GameManager( 1594): onLooperPrepared(), msg: MSG_APP_CREATE, pkgName: com.aistudio.skillsexchange.nxptvq, userId: 0
+09-18 22:04:43.715 D/InputDispatcher( 1594): Focused application set to (0): b3694d 
+09-18 22:04:43.717 V/WindowManager( 1594): Changing focus from Window{75baeb2 u0 com.aistudio.skillsexchange.nxptvq/com.example.MainActivity} to null displayId=0 Callers=com.android.server.wm.RootWindowContainer.updateFocusedWindowLocked:583 com.android.server.wm.WindowManagerService.updateFocusedWindowLocked:6497 com.android.server.wm.ActivityTaskManagerService.setResumedActivityUncheckLocked:5527 com.android.server.wm.Task.onActivityStateChanged:2912 
+09-18 22:04:43.717 D/StatusBarManagerService( 1594): notifyRequestedSystemKey recent=false home=false
+09-18 22:04:43.719 W/WindowManager( 1594): Execute app transition: mNextAppTransitionRequests=[TRANSIT_OPEN, TRANSIT_OPEN], mNextAppTransitionFlags=, displayId: 0 Callers=com.android.server.wm.RootWindowContainer.executeAppTransitionForAllDisplay:2706 com.android.server.wm.ActivityTaskSupervisor.reportResumedActivityLocked:2255 com.android.server.wm.ActivityRecord.completeResumeLocked:6361 com.android.server.wm.Task.minimalResumeActivityLocked:7518 com.android.server.wm.ActivityTaskSupervisor.realStartActivityLocked:1162 
+09-18 22:04:43.723 I/CocktailBarManagerServiceContainer( 1594): handleMessage: entry what = 6
+09-18 22:04:43.723 D/SGM:GameManager( 1594): notePauseComponent(), received pkgName: com.aistudio.skillsexchange.nxptvq, userId: 0
+09-18 22:04:43.727 I/CocktailBarManagerServiceContainer( 1594): handleMessage: entry what = 5
+09-18 22:04:43.731 D/SGM:GameManager( 1594): noteResumeComponent(), received pkgName: com.aistudio.skillsexchange.nxptvq, userId: 0
+09-18 22:04:43.732 D/SGM:GameManager( 1594): onLooperPrepared(), msg: MSG_APP_RESUME, pkgName: com.aistudio.skillsexchange.nxptvq, userid: 0
+09-18 22:04:43.732 D/SGM:GameManager( 1594): handleResume().
+09-18 22:04:43.732 D/SGM:GameManager( 1594): sendFocusOutConditionally() - mPrevNotiPkg: (unknown), userId: 0
+09-18 22:04:43.732 I/Utils   ( 5976): HomePackage : com.sec.android.app.launcher, resumePackageName : com.aistudio.skillsexchange.nxptvq
+09-18 22:04:43.732 D/SGM:GameManager( 1594):   handleResume(). pkgName: com.aistudio.skillsexchange.nxptvq, userId: 0, isTunableApp: null
+09-18 22:04:43.732 D/SGM:GameManager( 1594): notifyFocusInOut(). of pkg: com.aistudio.skillsexchange.nxptvq, type: 4, isMinimized: false, isTunableApp: false, userId: 0
+09-18 22:04:43.732 D/SGM:GameManager( 1594):   notifyFocusInOut(). unexpected mPrevNotiType: -1
+09-18 22:04:43.733 D/SGM:NetworkLimit( 1594): callRelease
+09-18 22:04:43.733 D/SGM:SystemHelper( 1594): callReleaseBlock needReleaseBlock:false
+09-18 22:04:43.733 I/GestureDetector( 1594): handleMessage TAP
+09-18 22:04:43.734 I/GameSDK@LifeCycle( 1594): noteResumeComponent(): package name  : com.aistudio.skillsexchange.nxptvq
+09-18 22:04:43.734 I/GestureDetector( 1594): handleMessage TAP
+09-18 22:04:43.817 D/io_stats(  619): !@ 179,0 r 5294452 47126503 w 492575 4622820 d 250348 2485916 f 189790 217990 iot 1968920 1682310 th 102400 102400 81508 pt 2480 inp 18 54 18295.950
+09-18 22:04:43.819 I/RecentModel( 2713): onTaskStackChangedBackground
+09-18 22:04:43.821 D/ActivityTaskManager( 1594): startActivityAsUser: callingPid=17756, callingUid=10339, caller=com.android.server.wm.ActivityTaskManagerService.startActivityAsUser:1763 com.android.server.wm.ActivityTaskManagerService.startActivity:1716 android.app.IActivityTaskManager$Stub.onTransact:1132 com.android.server.wm.ActivityTaskManagerService.onTransact:6252 android.os.Binder.execTransactInternal:1215 android.os.Binder.execTransact:1179 <bottom of call stack> 
+09-18 22:04:43.824 I/ActivityTaskManager( 1594): START u0 {act=com.google.android.gms.auth.GOOGLE_SIGN_IN pkg=com.google.android.gms cmp=com.google.android.gms/.auth.api.signin.ui.SignInActivity (has extras)} from uid 10339
+09-18 22:04:43.872 E/SemIWCMonitor( 1594): poor link count is 1
+09-18 22:04:43.872 E/SemIWCMonitor( 1594): [POOR_LINK_DETECTED] 0 -> 1
+09-18 22:04:43.873 E/SemIWCMonitor.File( 1594): Poor Link, timestamp =: 1789758283872  RSSI:-76  AP:##:##:##:##:b8:fa
+09-18 22:04:43.874 E/SemIWCMonitor.File( 1594): List of Known APs: Cand: [ <61:b0;2;2257217924>  <10:50;1;2026428528>  <6a:a6;6;2463274592>  <ad:76;1;892738591>  <93:f2;1;564014644>  <53:26;8;4114294519>  <30:12;6;4114143513>  <dc:98;4;4967643765>  <06:19;1;1319321314>  <2f:e0;23;2807195851>  <f4:64;1;1998278169> ], Core: [ <0c:54;1779890820515>  <44:90;1783538762389>  <29:b8;1772875496786>  <f0:55;1772799864105>  <b8:fa;1789749581548>  <32:34;1765788513290>  <c0:0c;1762196244141> ], Prob: []
+09-18 22:04:43.875 E/SemIWCMonitor.File( 1594): Q-Table Action Taken: Q-Table: [ 2.798635 0.000000 0.000000; 4.236080 0.000000 0.000000; 3.058661 0.000000 0.000000; ] >> Action Taken: 0, New State: 1
+09-18 22:04:43.880 W/Auth.Api.SignIn( 2619): [Service,SignInChimeraService] **************************** WARNING ***************************
+09-18 22:04:43.880 W/Auth.Api.SignIn( 2619): You are using the deprecated legacy Google Sign-In APIs from
+09-18 22:04:43.880 W/Auth.Api.SignIn( 2619): play-services-auth SDK. Please migrate to the Credential Manager
+09-18 22:04:43.880 W/Auth.Api.SignIn( 2619): APIs, see https://goo.gle/gsi-migration.
+09-18 22:04:43.880 W/Auth.Api.SignIn( 2619): ****************************************************************
+09-18 22:04:43.896 D/ActivityTaskManager( 1594): TaskLaunchParamsModifier:task=null activity=ActivityRecord{3d4895a u0 com.google.android.gms/.auth.api.signin.ui.SignInActivity display-area-from-source=DefaultTaskDisplayArea@198388440 display-id=0 display-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@198388440
+09-18 22:04:43.896 D/ActivityTaskManager( 1594): TaskLaunchParamsModifier:task=Task{ca964c0 #61 type=standard A=10339:com.aistudio.skillsexchange.nxptvq U=0 visible=true mode=fullscreen translucent=false sz=2} activity=ActivityRecord{3d4895a u0 com.google.android.gms/.auth.api.signin.ui.SignInActivity t-1} display-area-from-source=DefaultTaskDisplayArea@198388440 display-id=0 display-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@198388440 inherit-from-source=fullscreen activity-options-fullscreen=Rect(0, 0 - 0, 0) non-freeform-display display-area=DefaultTaskDisplayArea@198388440 maximized-bounds
+09-18 22:04:43.897 I/SemDvfsHyPerManager( 1594): acquire hyper - AMS_APP_SWITCH/1594@13, type = -999
+09-18 22:04:43.897 I/HYPER-HAL(  996): [RequestManager.cpp]acquire(): Acquired ID : 1292041  [1594 / 13]    HINT : AMS_ACT_SWITCH    list : 
+09-18 22:04:43.897 D/ActivityManagerPerformance( 1594): AMP_acquire() APP_SWITCH
+09-18 22:04:43.898 D/CompatibilityChangeReporter( 1594): Compat change id reported: 174042980; UID 10173; state: DISABLED
+09-18 22:04:43.898 E/ANDR-PERF-OPTSHANDLER( 1016): Perflock resource /sys/module/lpm_levels/parameters/bias_hyst not supported
+09-18 22:04:43.898 E/ANDR-PERF-RESOURCEQS( 1016): Failed to apply optimization [1, 2]
+09-18 22:04:43.899 D/CompatibilityChangeReporter( 1594): Compat change id reported: 184838306; UID 10173; state: DISABLED
+09-18 22:04:43.900 D/CompatibilityChangeReporter( 1594): Compat change id reported: 185004937; UID 10173; state: DISABLED
+09-18 22:04:43.901 D/CompatibilityChangeReporter( 1594): Compat change id reported: 181136395; UID 10173; state: DISABLED
+09-18 22:04:43.901 D/CompatibilityChangeReporter( 1594): Compat change id reported: 174042936; UID 10173; state: DISABLED
+09-18 22:04:43.902 I/SurfaceFlinger( 1065): id=3455 createSurf (0x0),-1 flag=80004, ActivityRecord{3d4895a u0 com.google.android.gms/.auth.api.signin.ui.SignInActivity t61}#0
+09-18 22:04:43.905 W/WindowManager( 1594): Prepare app transition: mNextAppTransitionRequests=[TRANSIT_OPEN, TRANSIT_OPEN, TRANSIT_OPEN], mNextAppTransitionFlags=, displayId: 0 Callers=com.android.server.wm.DisplayContent.prepareAppTransition:6369 com.android.server.wm.DisplayContent.prepareAppTransition:6364 com.android.server.wm.Task.startActivityLocked:8775 com.android.server.wm.ActivityStarter.startActivityInner:2890 com.android.server.wm.ActivityStarter.startActivityUnchecked:2312 
+09-18 22:04:43.917 I/DecorView(17756): [INFO] isPopOver=false, config=true
+09-18 22:04:43.917 I/DecorView(17756): updateCaptionType >> DecorView@623efc0[], isFloating=false, isApplication=true, hasWindowControllerCallback=true, hasWindowDecorCaption=false
+09-18 22:04:43.917 D/DecorView(17756): setCaptionType = 0, this = DecorView@623efc0[]
+09-18 22:04:43.919 I/DecorView(17756): getCurrentDensityDpi: from real metrics. densityDpi=280 msg=resources_loaded
+09-18 22:04:43.936 D/CompatibilityChangeReporter( 1594): Compat change id reported: 135634846; UID 10173; state: DISABLED
+09-18 22:04:43.936 D/InputTransport( 1594): Input channel constructed: '2195c81', fd=639
+09-18 22:04:43.936 D/InputTransport( 1594): Input channel constructed: '2195c81', fd=641
+09-18 22:04:43.936 D/CompatibilityChangeReporter( 1594): Compat change id reported: 143937733; UID 10173; state: ENABLED
+09-18 22:04:43.937 D/InputTransport( 1594): Input channel constructed: '2195c81', fd=642
+09-18 22:04:43.937 I/SurfaceFlinger( 1065): id=3456 createSurf (0x0),-1 flag=80004, 2195c81 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity#0
+09-18 22:04:43.938 D/RestrictionPolicy( 1594): isScreenCaptureEnabled : ret=true userId=0
+09-18 22:04:43.939 D/InputTransport( 1594): Input channel destroyed: '2195c81', fd=642
+09-18 22:04:43.940 I/ViewRootImpl@e57f6d8[SignInHubActivity](17756): setView = com.android.internal.policy.DecorView@623efc0 TM=true
+09-18 22:04:43.950 D/Zygote  (  879): Forked child process 17946
+09-18 22:04:43.951 I/ActivityManager( 1594): Start proc 17946:com.google.android.gms.ui/u0a173 for pre-top-activity {com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity}
+09-18 22:04:43.958 V/WindowManager( 1594): Relayout Window{2195c81 u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity}: viewVisibility=0 req=720x1600 d0
+09-18 22:04:43.959 D/RestrictionPolicy( 1594): isScreenCaptureEnabled : ret=true userId=0
+09-18 22:04:43.960 I/SurfaceFlinger( 1065): id=3457 createSurf (1x1),-3 flag=40004, com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity$_17756#0
+09-18 22:04:43.961 D/WindowManager( 1594): makeSurface duration=2 name=com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity$_17756
+09-18 22:04:43.966 V/WindowManager( 1594): Changing focus from null to Window{2195c81 u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity} displayId=0 Callers=com.android.server.wm.RootWindowContainer.updateFocusedWindowLocked:583 com.android.server.wm.WindowManagerService.updateFocusedWindowLocked:6497 com.android.server.wm.WindowManagerService.relayoutWindow:2770 com.android.server.wm.Session.relayout:242 
+09-18 22:04:43.966 D/MARsPolicyManager( 1594): onPackageResumedFG pkgName = com.aistudio.skillsexchange.nxptvq, userId = 0
+09-18 22:04:43.967 I/WindowManager( 1594): Cancelling animation restarting=true, leash=Surface(name=Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation)/@0x1c361ba
+09-18 22:04:43.967 I/WindowManager( 1594): Reparenting to original parent: Surface(name=WindowToken{a60de4 android.os.BinderProxy@b391376})/@0x8e2f945, destroy=false, surface=Surface(name=147924d StatusBar)/@0x1b355bc
+09-18 22:04:43.967 I/WindowManager( 1594): Reparenting to leash, surface=Surface(name=147924d StatusBar)/@0x1b355bc, leashParent=Surface(name=WindowToken{a60de4 android.os.BinderProxy@b391376})/@0x8e2f945
+09-18 22:04:43.967 I/SurfaceFlinger( 1065): id=3458 createSurf (0x0),-1 flag=24000, Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#0
+09-18 22:04:43.968 D/WindowManager( 1594): makeSurface duration=1 leash=Surface(name=Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation)/@0x7fe3fbd
+09-18 22:04:43.970 I/WindowManager( 1594): Cancelling animation restarting=true, leash=Surface(name=Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation)/@0x17d0fc8
+09-18 22:04:43.970 I/WindowManager( 1594): Reparenting to original parent: Surface(name=WindowToken{3c04ecd android.os.BinderProxy@28db5f7})/@0x4bee4c1, destroy=false, surface=Surface(name=723382 NavigationBar0)/@0x53e11a8
+09-18 22:04:43.970 I/WindowManager( 1594): Reparenting to leash, surface=Surface(name=723382 NavigationBar0)/@0x53e11a8, leashParent=Surface(name=WindowToken{3c04ecd android.os.BinderProxy@28db5f7})/@0x4bee4c1
+09-18 22:04:43.970 I/.android.gms.u(17946): Using CollectorTypeCC GC.
+09-18 22:04:43.970 I/SurfaceFlinger( 1065): id=3459 createSurf (0x0),-1 flag=24000, Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#1
+09-18 22:04:43.971 D/WindowManager( 1594): makeSurface duration=1 leash=Surface(name=Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation)/@0xd15ed03
+09-18 22:04:43.971 D/StatusBarManagerService( 1594): notifyRequestedSystemKey recent=false home=false
+09-18 22:04:43.974 V/WindowManager( 1594): Relayout hash=2195c81, pid=17756: mAttrs={(0,0)(fillxfill) sim={adjust=pan forwardNavigation} ty=BASE_APPLICATION fmt=TRANSPARENT wanim=0x1030000
+09-18 22:04:43.974 V/WindowManager( 1594):   fl=1810100
+09-18 22:04:43.974 V/WindowManager( 1594):   pfl=12020040
+09-18 22:04:43.974 V/WindowManager( 1594):   bhv=DEFAULT
+09-18 22:04:43.974 V/WindowManager( 1594):   fitSides= naviIconColor=0}
+09-18 22:04:43.976 E/.android.gms.u(17946): Not starting debugger since process cannot load the jdwp agent.
+09-18 22:04:43.979 I/ViewRootImpl@e57f6d8[SignInHubActivity](17756): Relayout returned: old=(0,0,720,1600) new=(0,0,720,1600) req=(720,1600)0 dur=20 res=0x7 s={true 3914856448} ch=true fn=-1
+09-18 22:04:43.981 E/USNET   (17946): USNET: appName: com.google.android.gms.ui
+09-18 22:04:43.981 I/ViewRootImpl@e57f6d8[SignInHubActivity](17756): [DP] dp(1) 1 android.view.ViewRootImpl.reportNextDraw:11420 android.view.ViewRootImpl.performTraversals:4193 android.view.ViewRootImpl.doTraversal:2919 
+09-18 22:04:43.981 D/ViewRootImpl@e57f6d8[SignInHubActivity](17756): Creating frameDrawingCallback nextDrawUseBlastSync=false reportNextDraw=true hasBlurUpdates=false
+09-18 22:04:43.982 D/ViewRootImpl@e57f6d8[SignInHubActivity](17756): Creating frameCompleteCallback
+09-18 22:04:43.982 D/ProcessState(17946): Binder ioctl to enable oneway spam detection failed: Invalid argument
+09-18 22:04:43.984 D/OpenGLRenderer(17756): eglCreateWindowSurface
+09-18 22:04:43.985 D/ActivityThread(17946): setConscryptValidator
+09-18 22:04:43.986 D/ActivityThread(17946): setConscryptValidator - put
+09-18 22:04:43.986 D/ViewRootImpl@e57f6d8[SignInHubActivity](17756): Received frameDrawingCallback frameNum=1. Creating transactionCompleteCallback=false
+09-18 22:04:43.991 I/ActivityManager( 1594): DSS OFF for com.google.android.gms
+09-18 22:04:43.992 I/Layer   ( 1065): id=3446 mRemovedFromDrawingState Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#1 (118)
+09-18 22:04:43.992 I/Layer   ( 1065): id=3447 mRemovedFromDrawingState Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#0 (118)
+09-18 22:04:43.995 D/InputDispatcher( 1594): Focus request (0): 2195c81 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity but waiting because NOT_VISIBLE
+09-18 22:04:43.995 D/InputDispatcher( 1594): Focus left window (0): 75baeb2 com.aistudio.skillsexchange.nxptvq/com.example.MainActivity
+09-18 22:04:43.996 D/ViewRootImpl@e57f6d8[SignInHubActivity](17756): Received frameCompleteCallback  lastAcquiredFrameNum=1 lastAttemptedDrawFrameNum=1
+09-18 22:04:43.997 D/ActivityManager( 1594): attachApplicationLocked() app=ProcessRecord{8f4178b 17946:com.google.android.gms.ui/u0a173} app.isolatedEntryPoint=null instr2=null
+09-18 22:04:44.002 I/ViewRootImpl@e57f6d8[SignInHubActivity](17756): [DP] pdf(0) 1 android.view.ViewRootImpl.lambda$addFrameCompleteCallbackIfNeeded$3$ViewRootImpl:4995 android.view.ViewRootImpl$$ExternalSyntheticLambda16.run:6 android.os.Handler.handleCallback:938 
+09-18 22:04:44.002 I/ViewRootImpl@e57f6d8[SignInHubActivity](17756): [DP] rdf()
+09-18 22:04:44.002 D/ViewRootImpl@e57f6d8[SignInHubActivity](17756): reportDrawFinished (fn: -1) 
+09-18 22:04:44.003 D/WindowManager( 1594): finishDrawingWindow: Window{2195c81 u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity} mDrawState=DRAW_PENDING
+09-18 22:04:44.003 D/ActivityThread(17946): handleBindApplication()++ app=com.google.android.gms.ui
+09-18 22:04:44.004 D/CompatibilityChangeReporter(17946): Compat change id reported: 171979766; UID 10173; state: ENABLED
+09-18 22:04:44.007 D/WindowManager( 1594): performShow logReadyForDisplay  mToken.waitingToShow:true isTransitionSet:true
+09-18 22:04:44.011 D/WindowManager( 1594): performShow logReadyForDisplay  mToken.waitingToShow:true isTransitionSet:true
+09-18 22:04:44.013 D/MARsPolicyManager( 1594): onPackageResumedFG pkgName = com.google.android.gms, userId = 0
+09-18 22:04:44.013 W/WindowManager( 1594): Prepare app transition: mNextAppTransitionRequests=[TRANSIT_OPEN, TRANSIT_OPEN, TRANSIT_OPEN, TRANSIT_OPEN], mNextAppTransitionFlags=, displayId: 0 Callers=com.android.server.wm.DisplayContent.prepareAppTransition:6369 com.android.server.wm.Task.resumeTopActivityInnerLocked:8457 com.android.server.wm.Task.resumeTopActivityInnerLocked:8190 com.android.server.wm.Task.resumeTopActivityUncheckedLocked:8088 com.android.server.wm.RootWindowContainer.resumeFocusedTasksTopActivities:2809 
+09-18 22:04:44.014 V/WindowManager( 1594): rotationForOrientation(orient=SCREEN_ORIENTATION_UNSPECIFIED (-1), last=ROTATION_0 (0)); user=ROTATION_0 (0) USER_ROTATION_LOCKED
+09-18 22:04:44.015 D/WindowManager( 1594): rotationForOrientation, orientationSource=ActivityRecord{988a643 u0 com.aistudio.skillsexchange.nxptvq/com.example.MainActivity t61}
+09-18 22:04:44.015 V/WindowManager( 1594): Computed rotation=ROTATION_0 (0) for display id=0 based on lastOrientation=SCREEN_ORIENTATION_UNSPECIFIED (-1) and oldRotation=ROTATION_0 (0), caller=com.android.server.wm.DisplayRotation.updateOrientation:407 com.android.server.wm.DisplayContent.updateOrientation:1939 com.android.server.wm.DisplayContent.updateOrientation:1877 com.android.server.wm.RootWindowContainer.ensureVisibilityAndConfig:2207 com.android.server.wm.ActivityTaskSupervisor.realStartActivityLocked:939 com.android.server.wm.ActivityTaskSupervisor.startSpecificActivity:1253 
+09-18 22:04:44.015 E/ANDR-PERF-UTIL( 1016): Failed to update node /proc/17946/sched_boost with value 3
+09-18 22:04:44.015 E/ANDR-PERF-OPTSHANDLER( 1016): can't boost task 17946
+09-18 22:04:44.015 E/ANDR-PERF-RESOURCEQS( 1016): Failed to apply optimization [3, 32]
+09-18 22:04:44.016 D/TspStateManager( 1594): updateCustomValue customSetting=
+09-18 22:04:44.017 D/TspStateManager( 1594): updateCustomValue customSetting=
+09-18 22:04:44.017 D/SGM:PkgDataHelper( 1594): notifyAppCreate(), pkgName: com.google.android.gms, userId: 0, sendRet: true
+09-18 22:04:44.018 D/SGM:GameManager( 1594): onLooperPrepared(), msg: MSG_APP_CREATE, pkgName: com.google.android.gms, userId: 0
+09-18 22:04:44.019 D/InputDispatcher( 1594): Focused application set to (0): 3d4895a
+09-18 22:04:44.020 V/WindowManager( 1594): Changing focus from Window{2195c81 u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity} to null displayId=0 Callers=com.android.server.wm.RootWindowContainer.updateFocusedWindowLocked:583 com.android.server.wm.WindowManagerService.updateFocusedWindowLocked:6497 com.android.server.wm.ActivityTaskManagerService.setResumedActivityUncheckLocked:5527 com.android.server.wm.Task.onActivityStateChanged:2912 
+09-18 22:04:44.020 D/MARsPolicyManager( 1594): onPackageResumedFG pkgName = com.aistudio.skillsexchange.nxptvq, userId = 0
+09-18 22:04:44.020 I/WindowManager( 1594): Cancelling animation restarting=true, leash=Surface(name=Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation)/@0x7fe3fbd
+09-18 22:04:44.020 I/WindowManager( 1594): Reparenting to original parent: Surface(name=WindowToken{a60de4 android.os.BinderProxy@b391376})/@0x8e2f945, destroy=false, surface=Surface(name=147924d StatusBar)/@0x1b355bc
+09-18 22:04:44.020 I/WindowManager( 1594): Reparenting to leash, surface=Surface(name=147924d StatusBar)/@0x1b355bc, leashParent=Surface(name=WindowToken{a60de4 android.os.BinderProxy@b391376})/@0x8e2f945
+09-18 22:04:44.021 I/SurfaceFlinger( 1065): id=3460 createSurf (0x0),-1 flag=24000, Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#1
+09-18 22:04:44.022 D/WindowManager( 1594): makeSurface duration=2 leash=Surface(name=Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation)/@0x66fe8ac
+09-18 22:04:44.022 I/WindowManager( 1594): Cancelling animation restarting=true, leash=Surface(name=Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation)/@0xd15ed03
+09-18 22:04:44.022 I/WindowManager( 1594): Reparenting to original parent: Surface(name=WindowToken{3c04ecd android.os.BinderProxy@28db5f7})/@0x4bee4c1, destroy=false, surface=Surface(name=723382 NavigationBar0)/@0x53e11a8
+09-18 22:04:44.022 I/WindowManager( 1594): Reparenting to leash, surface=Surface(name=723382 NavigationBar0)/@0x53e11a8, leashParent=Surface(name=WindowToken{3c04ecd android.os.BinderProxy@28db5f7})/@0x4bee4c1
+09-18 22:04:44.023 I/SurfaceFlinger( 1065): id=3461 createSurf (0x0),-1 flag=24000, Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#0
+09-18 22:04:44.023 D/WindowManager( 1594): makeSurface duration=1 leash=Surface(name=Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation)/@0xe91fd0a
+09-18 22:04:44.024 D/StatusBarManagerService( 1594): notifyRequestedSystemKey recent=false home=false
+09-18 22:04:44.025 W/WindowManager( 1594): Execute app transition: mNextAppTransitionRequests=[TRANSIT_OPEN, TRANSIT_OPEN, TRANSIT_OPEN, TRANSIT_OPEN], mNextAppTransitionFlags=, displayId: 0 Callers=com.android.server.wm.RootWindowContainer.executeAppTransitionForAllDisplay:2706 com.android.server.wm.ActivityTaskSupervisor.reportResumedActivityLocked:2255 com.android.server.wm.ActivityRecord.completeResumeLocked:6361 com.android.server.wm.Task.minimalResumeActivityLocked:7518 com.android.server.wm.ActivityTaskSupervisor.realStartActivityLocked:1162 
+09-18 22:04:44.027 D/WindowManager( 1594): performShow logReadyForDisplay  mToken.waitingToShow:true isTransitionSet:true
+09-18 22:04:44.031 D/WindowManager( 1594): performShow logReadyForDisplay  mToken.waitingToShow:true isTransitionSet:true
+09-18 22:04:44.032 V/NuPlayerDriver( 1215): getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 22:04:44.033 D/SGM:GameManager( 1594): notePauseComponent(), received pkgName: com.aistudio.skillsexchange.nxptvq, userId: 0
+09-18 22:04:44.033 I/CocktailBarManagerServiceContainer( 1594): handleMessage: entry what = 6
+09-18 22:04:44.033 I/Utils   ( 5976): isCurrentUser current = 0, ownerId = 0
+09-18 22:04:44.033 D/WindowManager( 1594): performShow logReadyForDisplay  mToken.waitingToShow:true isTransitionSet:true
+09-18 22:04:44.034 I/TrayVisibilityController( 5976): getComputedTrayVisible : keyguardState = 1
+09-18 22:04:44.034 I/TrayVisibilityController( 5976): updateTrayVisible: State=1 visible=1 mCurrentVisible=1 specificMode=0
+09-18 22:04:44.034 I/TrayStateController( 5976): onNotifyUpdateTray: state=0
+09-18 22:04:44.035 V/ActivityManager( 1594): Changed top to ProcessRecord{8f4178b 17946:com.google.android.gms.ui/u0a173}
+09-18 22:04:44.035 I/AppOps  ( 1594): updateUidProcState uid: 10173 procState: 2 capability:15
+09-18 22:04:44.035 I/AppOps  ( 1594): commitUidPendingStateLocked() :: UID - 10173, 500 > 200, 15 > 15
+09-18 22:04:44.036 V/APM_AudioPolicyManager( 1055): setAppState(portId:617, state:1)
+09-18 22:04:44.036 I/CameraService( 1179): onUidStateChanged: uid=10173, procState is changed. (3 -> 2)
+09-18 22:04:44.041 I/StoryService(17904): [StoryService] onPauseService() 
+09-18 22:04:44.041 I/f       (17904): [StoryService] Sending response for  33 with status 0
+09-18 22:04:44.042 I/Layer   ( 1065): id=3458 mRemovedFromDrawingState Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#0 (120)
+09-18 22:04:44.042 I/Layer   ( 1065): id=77 mRemovedFromDrawingState 147924d StatusBar#0 (120)
+09-18 22:04:44.042 I/Layer   ( 1065): id=87 mRemovedFromDrawingState StatusBar$_2352#0 (120)
+09-18 22:04:44.042 I/Layer   ( 1065): id=77 addToCurrentState 147924d StatusBar#0 (120)
+09-18 22:04:44.042 I/Layer   ( 1065): id=87 addToCurrentState StatusBar$_2352#0 (120)
+09-18 22:04:44.042 I/Layer   ( 1065): id=3459 mRemovedFromDrawingState Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#1 (120)
+09-18 22:04:44.044 I/SurfaceFlinger( 1065): id=3447 Removed Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#0 (120)
+09-18 22:04:44.044 I/SurfaceFlinger( 1065): id=3446 Removed Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#1 (120)
+09-18 22:04:44.045 D/InsetsSourceConsumer(17756): ensureControlAlpha: for ITYPE_NAVIGATION_BAR on com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity
+09-18 22:04:44.046 D/InsetsSourceConsumer(17756): ensureControlAlpha: for ITYPE_STATUS_BAR on com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity
+09-18 22:04:44.048 I/ViewRootImpl@bd56a05[MainActivity](17756): MSG_WINDOW_FOCUS_CHANGED 0 1
+09-18 22:04:44.050 D/InsetsSourceConsumer(17756): ensureControlAlpha: for ITYPE_NAVIGATION_BAR on com.aistudio.skillsexchange.nxptvq/com.example.MainActivity
+09-18 22:04:44.051 D/InsetsSourceConsumer(17756): ensureControlAlpha: for ITYPE_STATUS_BAR on com.aistudio.skillsexchange.nxptvq/com.example.MainActivity
+09-18 22:04:44.059 I/SurfaceFlinger( 1065): id=3458 Removed Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#0 (120)
+09-18 22:04:44.059 I/SurfaceFlinger( 1065): id=3459 Removed Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#1 (120)
+09-18 22:04:44.059 I/Layer   ( 1065): id=3459 Destroyed Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#1
+09-18 22:04:44.059 I/Layer   ( 1065): id=3458 Destroyed Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#0
+09-18 22:04:44.059 I/Layer   ( 1065): id=3447 Destroyed Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#0
+09-18 22:04:44.059 I/Layer   ( 1065): id=3446 Destroyed Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#1
+09-18 22:04:44.072 I/Rubin   (16955): [114] LoggingEventHelper.notifyUpdatedWithValue(:1) : Notify AppUsageLogger's database is updated.
+09-18 22:04:44.074 D/SGM:GameManager( 1594): identifyForegroundApp. com.aistudio.skillsexchange.nxptvq, mCurrentUserId: 0, callerUserId: 0
+09-18 22:04:44.074 D/SGM:PkgDataHelper( 1594): getGamePkgData(). com.aistudio.skillsexchange.nxptvq
+09-18 22:04:44.080 D/SGM:GameManager( 1594): identifyGamePackage. com.google.android.gms, mCurrentUserId: 0, callerUserId: 0, callingMethodInfo: com.samsung.android.game.IGameManagerService$Stub.onTransact(IGameManagerService.java:242)
+09-18 22:04:44.080 D/SGM:PkgDataHelper( 1594): getGamePkgData(). com.google.android.gms
+09-18 22:04:44.082 I/Rubin   (16955): [114] ExercisingWithCmhMonitor.isSatisfiedByCmh(:6) : isSatisfiedByCmh is false
+09-18 22:04:44.097 D/nativeloader(17946): Configuring clns-4 for other apk /system/framework/org.apache.http.legacy.jar. target_sdk_version=37, uses_libraries=ALL, library_path=/data/app/~~oCCuGQ9WGGbiMVBKH62F7A==/com.google.android.gms-EmHJ0d4hmEfV94aBJJYnuA==/lib/arm:/data/app/~~oCCuGQ9WGGbiMVBKH62F7A==/com.google.android.gms-EmHJ0d4hmEfV94aBJJYnuA==/base.apk!/lib/armeabi-v7a, permitted_path=/data:/mnt/expand:/data/user/0/com.google.android.gms
+09-18 22:04:44.098 D/nativeloader(17946): Extending system_exposed_libraries: libss_jni.securestorage.samsung.so:libSFEffect.fonteffect.samsung.so:libsce_v1.crypto.samsung.so:libSDKRecognitionText.spensdk.samsung.so:lib.engmodejni.samsung.so:libSEF.quram.so:libimagecodec.quram.so:libagifencoder.quram.so:libknox_remotedesktopclient.knox.samsung.so:libexifa.camera.samsung.so:libjpega.camera.samsung.so:libOpenCv.camera.samsung.so:libImageScreener.camera.samsung.so:libFacePreProcessing.camera.samsung.so:libHpr_RecGAE_cvFeature_v1.0.camera.samsung.so:libHprFace_GAE_api.camera.samsung.so:libHprFace_GAE_jni.camera.samsung.so:libObjectAndSceneClassification_2.5_OD.camera.samsung.so:libQREngine_common.camera.samsung.so:libInteractiveSegmentation.camera.samsung.so:libsmart_cropping.camera.samsung.so:libFacePreProcessing_jni.camera.samsung.so:libsecjpeginterface.camera.samsung.so:libMyFilterPlugin.camera.samsung.so:libsecimaging_pdk.camera.samsung.so:libsecimaging.camera.samsung.so:lib_vnd_client.dk.samsung.so:lib_native_client.dk.samsung.so:lib_nativeJni.dk.s
+09-18 22:04:44.099 W/ziparchive(17946): Unable to open '/apex/com.android.extservices/javalib/android.ext.adservices.dm': No such file or directory
+09-18 22:04:44.099 W/ziparchive(17946): Unable to open '/apex/com.android.extservices/javalib/android.ext.adservices.dm': No such file or directory
+09-18 22:04:44.111 D/nativeloader(17946): Configuring clns-5 for other apk /apex/com.android.extservices/javalib/android.ext.adservices.jar. target_sdk_version=37, uses_libraries=ALL, library_path=/data/app/~~oCCuGQ9WGGbiMVBKH62F7A==/com.google.android.gms-EmHJ0d4hmEfV94aBJJYnuA==/lib/arm:/data/app/~~oCCuGQ9WGGbiMVBKH62F7A==/com.google.android.gms-EmHJ0d4hmEfV94aBJJYnuA==/base.apk!/lib/armeabi-v7a, permitted_path=/data:/mnt/expand:/data/user/0/com.google.android.gms
+09-18 22:04:44.111 D/nativeloader(17946): Extending system_exposed_libraries: libss_jni.securestorage.samsung.so:libSFEffect.fonteffect.samsung.so:libsce_v1.crypto.samsung.so:libSDKRecognitionText.spensdk.samsung.so:lib.engmodejni.samsung.so:libSEF.quram.so:libimagecodec.quram.so:libagifencoder.quram.so:libknox_remotedesktopclient.knox.samsung.so:libexifa.camera.samsung.so:libjpega.camera.samsung.so:libOpenCv.camera.samsung.so:libImageScreener.camera.samsung.so:libFacePreProcessing.camera.samsung.so:libHpr_RecGAE_cvFeature_v1.0.camera.samsung.so:libHprFace_GAE_api.camera.samsung.so:libHprFace_GAE_jni.camera.samsung.so:libObjectAndSceneClassification_2.5_OD.camera.samsung.so:libQREngine_common.camera.samsung.so:libInteractiveSegmentation.camera.samsung.so:libsmart_cropping.camera.samsung.so:libFacePreProcessing_jni.camera.samsung.so:libsecjpeginterface.camera.samsung.so:libMyFilterPlugin.camera.samsung.so:libsecimaging_pdk.camera.samsung.so:libsecimaging.camera.samsung.so:lib_vnd_client.dk.samsung.so:lib_native_client.dk.samsung.so:lib_nativeJni.dk.s
+09-18 22:04:44.114 D/nativeloader(17946): InitApexLibraries:
+09-18 22:04:44.114 D/nativeloader(17946):   com_android_appsearch: libicing.so
+09-18 22:04:44.114 D/nativeloader(17946):   com_android_art: libartservice.so
+09-18 22:04:44.114 D/nativeloader(17946):   com_android_conscrypt: libjavacrypto.so
+09-18 22:04:44.114 D/nativeloader(17946):   com_android_extservices: libtflite_support_classifiers_native.so
+09-18 22:04:44.114 D/nativeloader(17946):   com_android_mediaprovider: libpdfclient.so
+09-18 22:04:44.114 D/nativeloader(17946):   com_android_os_statsd: libstats_jni.so
+09-18 22:04:44.114 D/nativeloader(17946):   com_android_tethering: libandroid_net_connectivity_com_android_net_module_util_jni.so:libcrypto.so:libframework-connectivity-jni.so:libframework-connectivity-tiramisu-jni.so:libmainlinecronet.126.0.6423.0.so:libservice-connectivity.so:libservice-thread-jni.so:libssl.so
+09-18 22:04:44.170 D/MdnieScenarioControlService( 1594):  packageName : com.google.android.gms    className : com.google.android.gms.auth.api.signin.ui.SignInActivity
+09-18 22:04:44.170 V/MdnieScenarioControlService( 1594): setUIMode from UI function(3)
+09-18 22:04:44.245 D/nativeloader(17946): Configuring clns-6 for other apk /system/framework/com.android.location.provider.jar. target_sdk_version=37, uses_libraries=ALL, library_path=/data/app/~~oCCuGQ9WGGbiMVBKH62F7A==/com.google.android.gms-EmHJ0d4hmEfV94aBJJYnuA==/lib/arm:/data/app/~~oCCuGQ9WGGbiMVBKH62F7A==/com.google.android.gms-EmHJ0d4hmEfV94aBJJYnuA==/base.apk!/lib/armeabi-v7a, permitted_path=/data:/mnt/expand:/data/user/0/com.google.android.gms
+09-18 22:04:44.245 D/nativeloader(17946): Extending system_exposed_libraries: libss_jni.securestorage.samsung.so:libSFEffect.fonteffect.samsung.so:libsce_v1.crypto.samsung.so:libSDKRecognitionText.spensdk.samsung.so:lib.engmodejni.samsung.so:libSEF.quram.so:libimagecodec.quram.so:libagifencoder.quram.so:libknox_remotedesktopclient.knox.samsung.so:libexifa.camera.samsung.so:libjpega.camera.samsung.so:libOpenCv.camera.samsung.so:libImageScreener.camera.samsung.so:libFacePreProcessing.camera.samsung.so:libHpr_RecGAE_cvFeature_v1.0.camera.samsung.so:libHprFace_GAE_api.camera.samsung.so:libHprFace_GAE_jni.camera.samsung.so:libObjectAndSceneClassification_2.5_OD.camera.samsung.so:libQREngine_common.camera.samsung.so:libInteractiveSegmentation.camera.samsung.so:libsmart_cropping.camera.samsung.so:libFacePreProcessing_jni.camera.samsung.so:libsecjpeginterface.camera.samsung.so:libMyFilterPlugin.camera.samsung.so:libsecimaging_pdk.camera.samsung.so:libsecimaging.camera.samsung.so:lib_vnd_client.dk.samsung.so:lib_native_client.dk.samsung.so:lib_nativeJni.dk.s
+09-18 22:04:44.249 D/nativeloader(17946): Configuring clns-7 for other apk /system/framework/com.android.media.remotedisplay.jar. target_sdk_version=37, uses_libraries=ALL, library_path=/data/app/~~oCCuGQ9WGGbiMVBKH62F7A==/com.google.android.gms-EmHJ0d4hmEfV94aBJJYnuA==/lib/arm:/data/app/~~oCCuGQ9WGGbiMVBKH62F7A==/com.google.android.gms-EmHJ0d4hmEfV94aBJJYnuA==/base.apk!/lib/armeabi-v7a, permitted_path=/data:/mnt/expand:/data/user/0/com.google.android.gms
+09-18 22:04:44.249 D/nativeloader(17946): Extending system_exposed_libraries: libss_jni.securestorage.samsung.so:libSFEffect.fonteffect.samsung.so:libsce_v1.crypto.samsung.so:libSDKRecognitionText.spensdk.samsung.so:lib.engmodejni.samsung.so:libSEF.quram.so:libimagecodec.quram.so:libagifencoder.quram.so:libknox_remotedesktopclient.knox.samsung.so:libexifa.camera.samsung.so:libjpega.camera.samsung.so:libOpenCv.camera.samsung.so:libImageScreener.camera.samsung.so:libFacePreProcessing.camera.samsung.so:libHpr_RecGAE_cvFeature_v1.0.camera.samsung.so:libHprFace_GAE_api.camera.samsung.so:libHprFace_GAE_jni.camera.samsung.so:libObjectAndSceneClassification_2.5_OD.camera.samsung.so:libQREngine_common.camera.samsung.so:libInteractiveSegmentation.camera.samsung.so:libsmart_cropping.camera.samsung.so:libFacePreProcessing_jni.camera.samsung.so:libsecjpeginterface.camera.samsung.so:libMyFilterPlugin.camera.samsung.so:libsecimaging_pdk.camera.samsung.so:libsecimaging.camera.samsung.so:lib_vnd_client.dk.samsung.so:lib_native_client.dk.samsung.so:lib_nativeJni.dk.s
+09-18 22:04:44.269 D/SGM:GameManager( 1594): identifyGamePackage. com.google.android.gms, mCurrentUserId: 0, callerUserId: 0, callingMethodInfo: com.samsung.android.game.SemGameManager.isGamePackage(SemGameManager.java:104)
+09-18 22:04:44.269 D/SGM:PkgDataHelper( 1594): getGamePkgData(). com.google.android.gms
+09-18 22:04:44.269 D/SGM:SemGameManager( 1594): isGamePackage(), pkgName=com.google.android.gms, ret=false
+09-18 22:04:44.270 I/CocktailBarManagerServiceContainer( 1594): handleMessage: entry what = 5
+09-18 22:04:44.271 V/MdnieScenarioControlService( 1594): mAclOffEnabled : false mAclPreviewState : false mAclCompensationState : false
+09-18 22:04:44.275 D/SGM:GameManager( 1594): noteResumeComponent(), received pkgName: com.google.android.gms, userId: 0
+09-18 22:04:44.275 I/Utils   ( 5976): HomePackage : com.sec.android.app.launcher, resumePackageName : com.google.android.gms
+09-18 22:04:44.276 D/SGM:GameManager( 1594): identifyGamePackage. com.google.android.gms, mCurrentUserId: 0, callerUserId: 0, callingMethodInfo: com.android.server.ssrm.fgapps.GameAppUtils.isGame(GameAppUtils.java:84)
+09-18 22:04:44.276 D/SGM:PkgDataHelper( 1594): getGamePkgData(). com.google.android.gms
+09-18 22:04:44.276 I/GameSDK@LifeCycle( 1594): noteResumeComponent(): package name  : com.google.android.gms
+09-18 22:04:44.278 I/RecentModel( 2713): onTaskStackChangedBackground
+09-18 22:04:44.293 E/ANDR-PERF-OPTSHANDLER( 1016): Perflock resource /proc/sys/kernel/sched_spill_nr_run not supported
+09-18 22:04:44.293 E/ANDR-PERF-RESOURCEQS( 1016): Failed to apply optimization [3, 11]
+09-18 22:04:44.327 W/system_server( 1594): Long monitor contention with owner android.display (1774) at void com.android.server.am.ActivityManagerService$LocalService.updateActivityUsageStatsWithIntent(android.content.ComponentName, int, int, android.os.IBinder, android.content.ComponentName, android.content.Intent)(ActivityManagerService.java:18628) waiters=0 in java.lang.String com.android.server.am.ActivityManagerService.getPackageFromAppProcesses(int) for 238ms
+09-18 22:04:44.355 I/exvx    ( 3874): (REDACTED) HDM. appOpsListener %s %s
+09-18 22:04:44.355 I/exvx    ( 3874): (REDACTED) HDM. Ignoring irrelevant audio permission changes for package %s
+09-18 22:04:44.575 I/Utils   ( 5976): isCurrentUser current = 0, ownerId = 0
+09-18 22:04:44.576 I/TrayVisibilityController( 5976): getComputedTrayVisible : keyguardState = 1
+09-18 22:04:44.576 I/TrayVisibilityController( 5976): updateTrayVisible: State=1 visible=1 mCurrentVisible=1 specificMode=0
+09-18 22:04:44.576 I/TrayStateController( 5976): onNotifyUpdateTray: state=0
+09-18 22:04:44.843 D/DelayedNotifier( 4876): notify for scanItem.
+09-18 22:04:44.845 I/b       ( 6293): [#CMH#] Task com.samsung.cmh.core.r.e@472d679 is submitted
+09-18 22:04:44.845 I/StoryService(17904): [StoryService] onStopService() 
+09-18 22:04:44.846 I/f       (17904): [StoryService] Sending response for  34 with status 35
+09-18 22:04:44.893 I/ChimeraAggressivePolicyHandler( 1594): executePolicy() - triggerSource: TRIGGER_SOURCE_LMKD
+09-18 22:04:44.897 I/ChimeraAggressivePolicyHandler( 1594): available memory: 770236, free memory target: 686080, quit chimera
+09-18 22:04:44.968 I/e       ( 6293): [#CMH#] No of Row (SEC MP :  12193, Max Id : 2147536112) (CMH : 12193, Max Id : 2147536112) - Time :52
+09-18 22:04:45.035 I/e       ( 6293): [#CMH#] MP time stamp :  1789758279796, CMH time stamp : 1789758158201
+09-18 22:04:45.040 I/e       ( 6293): [#CMH#] Update Cursor Count :  1
+09-18 22:04:45.093 I/lmkd    (  570): cached 1, sandbox(not0) 0
+09-18 22:04:45.094 D/nativeloader(17946): Configuring clns-8 for other apk /data/app/~~oCCuGQ9WGGbiMVBKH62F7A==/com.google.android.gms-EmHJ0d4hmEfV94aBJJYnuA==/base.apk. target_sdk_version=37, uses_libraries=, library_path=/data/app/~~oCCuGQ9WGGbiMVBKH62F7A==/com.google.android.gms-EmHJ0d4hmEfV94aBJJYnuA==/lib/arm:/data/app/~~oCCuGQ9WGGbiMVBKH62F7A==/com.google.android.gms-EmHJ0d4hmEfV94aBJJYnuA==/base.apk!/lib/armeabi-v7a, permitted_path=/data:/mnt/expand:/data/user/0/com.google.android.gms
+09-18 22:04:45.097 I/lmkd    (  570): Reclaim 'com.android.providers.calendar' (16144), uid 10066, oom_score_adj 999, state 19 to free 30800kB rss, 28752kB swap; reason: min2x watermark is breached and swap is low (1940732kB < 1698688kB)
+09-18 22:04:45.104 V/NuPlayerDriver( 1215): getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 22:04:45.118 D/SamsungAlarmManager( 1594): Cancel Alarm calling from uid:5010 pid :16955 / OP:PendingIntent{c0e13ae: PendingIntentRecord{816347f com.samsung.android.rubin.app broadcastIntent}}
+09-18 22:04:45.118 I/Zygote  (  879): Process 16144 exited due to signal 9 (Killed)
+09-18 22:04:45.123 I/ActivityManager( 1594): Process com.android.providers.calendar (pid 16144) has died: cch+99 CEM (13,777)
+09-18 22:04:45.124 I/libprocessgroup( 1594): Successfully killed process cgroup uid 10066 pid 16144 in 0ms
+09-18 22:04:45.125 D/SamsungAlarmManager( 1594): Cancel Alarm calling from uid:5010 pid :16955 / OP:PendingIntent{291954f: PendingIntentRecord{6ea0495 com.samsung.android.rubin.app broadcastIntent}}
+09-18 22:04:45.137 I/e       ( 6293): [#CMH#] Update ITEM :  1
+09-18 22:04:45.153 D/OpenGLRenderer( 1594): trimMemory(TRIM_MEMORY_COMPLETE)::destroyRenderingContext
+09-18 22:04:45.153 D/OpenGLRenderer( 1594): RenderThread::destroyRenderingContext()
+09-18 22:04:45.153 D/OpenGLRenderer( 1594): RenderThread::setGrContext()
+09-18 22:04:45.156 D/SamsungAlarmManager( 1594): Cancel Alarm calling from uid:5010 pid :16955 / OP:PendingIntent{d94d4dc: PendingIntentRecord{e3999b com.samsung.android.rubin.app broadcastIntent}}
+09-18 22:04:45.158 D/SystemUIService( 2352): SYSUI_RAM_OPTIMIZATION onTrimMemory=5
+09-18 22:04:45.158 D/StatusBar( 2352): SYSUI_RAM_OPTIMIZATION onTrimMemory=5
+09-18 22:04:45.158 D/SystemUIService( 2352): onTrimMemory : 5
+09-18 22:04:45.172 E/libperflog( 1594): [LIBPERFLOG] socket_local_client fail = -1
+09-18 22:04:45.187 D/SystemUIService(16847): SYSUI_RAM_OPTIMIZATION onTrimMemory=80
+09-18 22:04:45.190 I/Finsky  ( 6263): [2] Memory trim requested to level 40
+09-18 22:04:45.195 E/libperflog( 1594): [LIBPERFLOG] socket_local_client fail = -1
+09-18 22:04:45.197 D/OpenGLRenderer(16847): trimMemory(TRIM_MEMORY_COMPLETE)::destroyRenderingContext
+09-18 22:04:45.197 D/OpenGLRenderer(16847): RenderThread::destroyRenderingContext()
+09-18 22:04:45.197 D/OpenGLRenderer(16847): RenderThread::setGrContext()
+09-18 22:04:45.199 V/GraphicsEnvironment(17946): ANGLE Developer option for 'com.google.android.gms' set to: 'default'
+09-18 22:04:45.200 V/GraphicsEnvironment(17946): Neither updatable production driver nor prerelease driver is supported.
+09-18 22:04:45.203 D/LoadedApk(17946): LoadedApk::makeApplication() appContext.mOpPackageName=com.google.android.gms appContext.mBasePackageName=com.google.android.gms
+09-18 22:04:45.207 D/NetworkSecurityConfig(17946): Using Network Security Config from resource network_security_config debugBuild: false
+09-18 22:04:45.222 I/lmkd    (  570): cached 1, sandbox(not0) 0
+09-18 22:04:45.224 I/Finsky  ( 6263): [2] Flushing in-memory image cache
+09-18 22:04:45.226 I/lmkd    (  570): Reclaim 'com.sec.android.app.clockpackage' (15367), uid 10142, oom_score_adj 999, state 19 to free 48520kB rss, 31092kB swap; reason: min2x watermark is breached and swap is low (1952828kB < 1698688kB)
+09-18 22:04:45.264 I/b       (17904): [StoryService] Task com.samsung.storyservice.h.l@66948b9 is submitted
+09-18 22:04:45.268 I/Zygote  (  879): Process 15367 exited due to signal 9 (Killed)
+09-18 22:04:45.269 D/NetworkSecurityConfig(17946): Using Network Security Config from resource network_security_config debugBuild: false
+09-18 22:04:45.275 D/InputMethodManagerService( 1594): removeClient
+09-18 22:04:45.276 I/AudioFlinger( 1055): removeDlbCodecCallback pid:15367 type:-1
+09-18 22:04:45.277 I/ActivityManager( 1594): Process com.sec.android.app.clockpackage (pid 15367) has died: cch+99 CEM (17,774)
+09-18 22:04:45.280 I/libprocessgroup( 1594): Successfully killed process cgroup uid 10142 pid 15367 in 0ms
+09-18 22:04:45.385 I/b       (17904): [StoryService] afterExecute FutureTask
+09-18 22:04:45.406 I/d       ( 6293): [#CMH#] Location Count MP :  6, CMH : 6
+09-18 22:04:45.406 I/b       ( 6293): [#CMH#] afterExecute FutureTask
+09-18 22:04:45.407 I/f       ( 6293): [#CMH#] Alive Privacy Ignored Policy Called:  false
+09-18 22:04:45.407 I/f       ( 6293): [#CMH#] POI Feature is False 
+09-18 22:04:45.447 D/ActivityThread(17946): handleBindApplication() --
+09-18 22:04:45.476 I/ProviderInstaller(17946): Installed default security provider AndroidOpenSSL (via CompatProvider)
+09-18 22:04:45.509 I/WebViewFactory(17946): Loading com.google.android.webview version 151.0.7922.199 (code 792219900)
+09-18 22:04:45.517 D/ApplicationLoaders(17946): Returning zygote-cached class loader: /system/framework/android.test.base.jar
+09-18 22:04:45.523 D/OpenGLRenderer(17946): RenderThread::requireGlContext()
+09-18 22:04:45.525 I/AdrenoGLES-0(17946): QUALCOMM build                   : 5441528417, Id595308a47
+09-18 22:04:45.525 I/AdrenoGLES-0(17946): Build Date                       : 03/29/22
+09-18 22:04:45.525 I/AdrenoGLES-0(17946): OpenGL ES Shader Compiler Version: EV031.32.02.17
+09-18 22:04:45.525 I/AdrenoGLES-0(17946): Local Branch                     : 
+09-18 22:04:45.525 I/AdrenoGLES-0(17946): Remote Branch                    : 
+09-18 22:04:45.525 I/AdrenoGLES-0(17946): Remote Branch                    : 
+09-18 22:04:45.525 I/AdrenoGLES-0(17946): Reconstruct Branch               : 
+09-18 22:04:45.525 I/AdrenoGLES-0(17946): Build Config                     : S L 12.1.1 AArch32
+09-18 22:04:45.525 I/AdrenoGLES-0(17946): Driver Path                      : /vendor/lib/egl/libGLESv2_adreno.so
+09-18 22:04:45.540 D/MobileStatusTracker(1/5)( 2352): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=Invalid,mGsm=Invalid,mWcdma=Invalid,mTdscdma=Invalid,mLte=CellSignalStrengthLte: rssi=-63 rsrp=-93 rsrq=-13 rssnr=2 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=Invalid,SignalBarInfo{ lteLevel=3 },rat=14,primary=CellSignalStrengthLte} level=3
+09-18 22:04:45.544 D/NetworkController( 2352): SignalStrength from intent slotId=1
+09-18 22:04:45.556 I/AdrenoGLES-0(17946): PFP: 0x005ff114, ME: 0x005ff066
+09-18 22:04:45.563 D/hw-ProcessState(17946): Binder ioctl to enable oneway spam detection failed: Invalid argument
+09-18 22:04:45.576 D/ActivityManagerPerformance( 1594): AMP_release() ACT_START
+09-18 22:04:45.578 E/ANDR-PERF-OPTSHANDLER( 1016): Perflock resource /sys/module/lpm_levels/parameters/bias_hyst not supported
+09-18 22:04:45.578 E/ANDR-PERF-RESOURCEQS( 1016): Failed to apply optimization [1, 2]
+09-18 22:04:45.579 I/HYPER-HAL(  996): [RequestManager.cpp]releaseLocked(): Released ID : 1301710
+09-18 22:04:45.588 D/OpenGLRenderer(17946): RenderThread::setGrContext()
+09-18 22:04:45.595 I/GenerationRegistry( 1594): mBackingStore.isClosed() : false
+09-18 22:04:45.638 I/.android.gms.u(17946): Failed to add image file: Dex cache count and dex file count mismatch while trying to initialize from image
+09-18 22:04:45.647 D/nativeloader(17946): Configuring clns-9 for other apk /data/app/~~hLB6t3Qvx6vLYWfKHLG7PQ==/com.google.android.webview-TyxolxWzv_zUiyoSve3Elg==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~hLB6t3Qvx6vLYWfKHLG7PQ==/com.google.android.webview-TyxolxWzv_zUiyoSve3Elg==/lib/arm:/data/app/~~hLB6t3Qvx6vLYWfKHLG7PQ==/com.google.android.webview-TyxolxWzv_zUiyoSve3Elg==/base.apk!/lib/armeabi-v7a, permitted_path=/data:/mnt/expand
+09-18 22:04:45.815 I/cr_WVCFactoryProvider(17946): version=151.0.7922.199 (792219900) minSdkVersion=29 multiprocess=true packageId=127 splits=AdsDynamite_installtime,CronetDynamite_installtime,DynamiteLoader_installtime,DynamiteModulesA_installtime,DynamiteModulesC_installtime,GoogleCertificates_installtime,MapsDynamite_installtime,MeasurementDynamite_installtime,config.en,config.xhdpi
+09-18 22:04:45.824 D/io_stats(  619): !@ 179,0 r 5305486 47219831 w 492641 4623388 d 250348 2485916 f 189790 217990 iot 1970590 1683886 th 102400 102400 81508 pt 2480 inp 0 0 18297.956
+09-18 22:04:45.824 D/io_stats(  619): !@ 179,64 r 29251 1413848 w 145 1003 d 0 0 f 0 0 iot 212390 209998 th 102400 0 0 pt 0 inp 0 0 18297.959
+09-18 22:04:45.824 D/io_stats(  619): !@ MemInfo(KB): total 2883924 free 42424 avail 706172 actv(f) 374500 inactv(f) 369036 dirty 616 wb 0 anonpg 801860 slab 285252
+09-18 22:04:45.840 D/BoundBrokerSvc( 2619): onBind: Intent { act=com.google.android.gms.signin.service.START dat=chimera-action: cmp=com.google.android.gms/.chimera.GmsApiService }
+09-18 22:04:45.840 D/BoundBrokerSvc( 2619): Loading bound service for intent: Intent { act=com.google.android.gms.signin.service.START dat=chimera-action: cmp=com.google.android.gms/.chimera.GmsApiService }
+09-18 22:04:45.841 D/nativeloader(17946): Load /data/app/~~hLB6t3Qvx6vLYWfKHLG7PQ==/com.google.android.webview-TyxolxWzv_zUiyoSve3Elg==/base.apk!/lib/armeabi-v7a/libwebviewchromium.so using ns clns-9 from class loader (caller=/data/app/~~hLB6t3Qvx6vLYWfKHLG7PQ==/com.google.android.webview-TyxolxWzv_zUiyoSve3Elg==/base.apk): ok
+09-18 22:04:45.856 D/nativeloader(17946): Load /system/lib/libwebviewchromium_plat_support.so using ns clns-9 from class loader (caller=/data/app/~~hLB6t3Qvx6vLYWfKHLG7PQ==/com.google.android.webview-TyxolxWzv_zUiyoSve3Elg==/base.apk): ok
+09-18 22:04:45.863 W/GmsActivityProxy(17946): Error binding root VE. SignInActivity is missing a @GmsCoreVeId annotation. [CONTEXT service_id=264 ]
+09-18 22:04:45.880 I/DecorView(17946): [INFO] isPopOver=false, config=true
+09-18 22:04:45.880 I/DecorView(17946): updateCaptionType >> DecorView@866d106[], isFloating=true, isApplication=true, hasWindowControllerCallback=true, hasWindowDecorCaption=false
+09-18 22:04:45.880 D/DecorView(17946): setCaptionType = 0, this = DecorView@866d106[]
+09-18 22:04:45.886 E/chromium(17946): [0918/220445.874167:ERROR:android_webview/browser/variations/variations_seed_loader.cc:39] Seed missing signature.
+09-18 22:04:45.915 I/GMS_MM_Logger(17946): (REDACTED) Start time: %s
+09-18 22:04:45.916 I/GMS_MM_Logger(17946): Started.
+09-18 22:04:45.961 D/InputTransport( 1594): Input channel constructed: 'ce528 c', fd=642
+09-18 22:04:45.961 D/InputTransport( 1594): Input channel constructed: 'ce528 c', fd=660
+09-18 22:04:45.962 D/InputTransport( 1594): Input channel constructed: 'ce528 c', fd=663
+09-18 22:04:45.964 I/SurfaceFlinger( 1065): id=3462 createSurf (0x0),-1 flag=80004, ce528 com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity#0
+09-18 22:04:45.966 D/RestrictionPolicy( 1594): isScreenCaptureEnabled : ret=true userId=0
+09-18 22:04:45.967 D/InputTransport( 1594): Input channel destroyed: 'ce528 c', fd=663
+09-18 22:04:45.969 I/ViewRootImpl@c95de9a[SignInActivity](17946): setView = com.android.internal.policy.DecorView@866d106 TM=true
+09-18 22:04:45.981 D/WindowManager( 1594): performShow logReadyForDisplay  mToken.waitingToShow:true isTransitionSet:true
+09-18 22:04:45.991 V/WindowManager( 1594): Relayout Window{ce528 u0 com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity}: viewVisibility=0 req=0x0 d0
+09-18 22:04:45.991 D/RestrictionPolicy( 1594): isScreenCaptureEnabled : ret=true userId=0
+09-18 22:04:45.992 I/SurfaceFlinger( 1065): id=3463 createSurf (1x1),-3 flag=40004, com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity$_17946#0
+09-18 22:04:45.993 D/WindowManager( 1594): makeSurface duration=2 name=com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity$_17946
+09-18 22:04:45.995 D/WindowManager( 1594): performShow logReadyForDisplay  mToken.waitingToShow:true isTransitionSet:true
+09-18 22:04:45.999 V/WindowManager( 1594): Changing focus from null to Window{ce528 u0 com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity} displayId=0 Callers=com.android.server.wm.RootWindowContainer.updateFocusedWindowLocked:583 com.android.server.wm.WindowManagerService.updateFocusedWindowLocked:6497 com.android.server.wm.WindowManagerService.relayoutWindow:2770 com.android.server.wm.Session.relayout:242 
+09-18 22:04:45.999 D/MARsPolicyManager( 1594): onPackageResumedFG pkgName = com.google.android.gms, userId = 0
+09-18 22:04:45.999 I/WindowManager( 1594): Cancelling animation restarting=true, leash=Surface(name=Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation)/@0x66fe8ac
+09-18 22:04:45.999 I/WindowManager( 1594): Reparenting to original parent: Surface(name=WindowToken{a60de4 android.os.BinderProxy@b391376})/@0x8e2f945, destroy=false, surface=Surface(name=147924d StatusBar)/@0x1b355bc
+09-18 22:04:46.000 I/WindowManager( 1594): Reparenting to leash, surface=Surface(name=147924d StatusBar)/@0x1b355bc, leashParent=Surface(name=WindowToken{a60de4 android.os.BinderProxy@b391376})/@0x8e2f945
+09-18 22:04:46.000 I/SurfaceFlinger( 1065): id=3464 createSurf (0x0),-1 flag=24000, Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#0
+09-18 22:04:46.001 D/WindowManager( 1594): makeSurface duration=1 leash=Surface(name=Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation)/@0xbdf2bd4
+09-18 22:04:46.002 I/WindowManager( 1594): Cancelling animation restarting=true, leash=Surface(name=Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation)/@0xe91fd0a
+09-18 22:04:46.002 I/WindowManager( 1594): Reparenting to original parent: Surface(name=WindowToken{3c04ecd android.os.BinderProxy@28db5f7})/@0x4bee4c1, destroy=false, surface=Surface(name=723382 NavigationBar0)/@0x53e11a8
+09-18 22:04:46.002 I/WindowManager( 1594): Reparenting to leash, surface=Surface(name=723382 NavigationBar0)/@0x53e11a8, leashParent=Surface(name=WindowToken{3c04ecd android.os.BinderProxy@28db5f7})/@0x4bee4c1
+09-18 22:04:46.003 I/SurfaceFlinger( 1065): id=3465 createSurf (0x0),-1 flag=24000, Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#1
+09-18 22:04:46.004 D/WindowManager( 1594): makeSurface duration=1 leash=Surface(name=Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation)/@0x6ea9872
+09-18 22:04:46.004 D/StatusBarManagerService( 1594): notifyRequestedSystemKey recent=false home=false
+09-18 22:04:46.006 V/WindowManager( 1594): Relayout hash=ce528, pid=17946: mAttrs={(0,0)(wrapxwrap) sim={adjust=pan forwardNavigation} ty=BASE_APPLICATION fmt=TRANSPARENT
+09-18 22:04:46.006 V/WindowManager( 1594):   fl=1800002
+09-18 22:04:46.006 V/WindowManager( 1594):   pfl=42000000
+09-18 22:04:46.006 V/WindowManager( 1594):   bhv=DEFAULT
+09-18 22:04:46.006 V/WindowManager( 1594):   fitTypes=STATUS_BARS NAVIGATION_BARS CAPTION_BAR dimAmount=0.6 naviIconColor=0}
+09-18 22:04:46.009 D/CompatibilityChangeReporter( 1594): Compat change id reported: 158002302; UID 10173; state: ENABLED
+09-18 22:04:46.010 D/WindowManager( 1594): performShow logReadyForDisplay  mToken.waitingToShow:true isTransitionSet:true
+09-18 22:04:46.010 I/ViewRootImpl@c95de9a[SignInActivity](17946): Relayout returned: old=(0,45,720,1516) new=(360,780,360,780) req=(0,0)0 dur=18 res=0x7 s={true 3974546432} ch=true fn=-1
+09-18 22:04:46.012 I/SDM     (  984): HWCDisplay::GetColorModeCount: Supported color mode count = 1
+09-18 22:04:46.012 I/SDM     (  984): HWCDisplay::GetColorModes: Supports color mode[0] = 0
+09-18 22:04:46.013 E/HWComposer( 1065): getSupportedContentTypes: getSupportedContentTypes failed for display 0: Unsupported (8)
+09-18 22:04:46.014 I/Layer   ( 1065): id=3461 mRemovedFromDrawingState Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#0 (120)
+09-18 22:04:46.014 I/Layer   ( 1065): id=69 mRemovedFromDrawingState 723382 NavigationBar0#0 (120)
+09-18 22:04:46.014 I/Layer   ( 1065): id=81 mRemovedFromDrawingState NavigationBar0$_2352#0 (120)
+09-18 22:04:46.014 I/Layer   ( 1065): id=3460 mRemovedFromDrawingState Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#1 (120)
+09-18 22:04:46.014 I/Layer   ( 1065): id=69 addToCurrentState 723382 NavigationBar0#0 (120)
+09-18 22:04:46.015 I/Layer   ( 1065): id=81 addToCurrentState NavigationBar0$_2352#0 (120)
+09-18 22:04:46.015 D/OpenGLRenderer(17946): eglCreateWindowSurface
+09-18 22:04:46.017 D/InputDispatcher( 1594): Focus request (0): ce528 com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity but waiting because NOT_VISIBLE
+09-18 22:04:46.017 I/hwservicemanager(  572): getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+09-18 22:04:46.017 I/Gralloc4(17946): mapper 4.x is not supported
+09-18 22:04:46.018 I/ViewRootImpl@c95de9a[SignInActivity](17946): [DP] dp(1) 1 android.view.ViewRootImpl.reportNextDraw:11420 android.view.ViewRootImpl.performTraversals:4193 android.view.ViewRootImpl.doTraversal:2919 
+09-18 22:04:46.018 I/hwservicemanager(  572): getTransport: Cannot find entry android.hardware.graphics.mapper@3.0::IMapper/default in either framework or device VINTF manifest.
+09-18 22:04:46.018 W/Gralloc3(17946): mapper 3.x is not supported
+09-18 22:04:46.019 D/ViewRootImpl@c95de9a[SignInActivity](17946): Creating frameDrawingCallback nextDrawUseBlastSync=false reportNextDraw=true hasBlurUpdates=false
+09-18 22:04:46.020 D/ViewRootImpl@c95de9a[SignInActivity](17946): Creating frameCompleteCallback
+09-18 22:04:46.021 I/GenerationRegistry( 1594): mBackingStore.isClosed() : false
+09-18 22:04:46.024 I/ViewRootImpl@c95de9a[SignInActivity](17946): [DP] pdf(0) 1 android.view.ViewRootImpl.performDraw:5207 android.view.ViewRootImpl.performTraversals:4212 android.view.ViewRootImpl.doTraversal:2919 
+09-18 22:04:46.024 I/ViewRootImpl@c95de9a[SignInActivity](17946): [DP] rdf()
+09-18 22:04:46.024 D/ViewRootImpl@c95de9a[SignInActivity](17946): reportDrawFinished (fn: -1) 
+09-18 22:04:46.025 D/WindowManager( 1594): finishDrawingWindow: Window{ce528 u0 com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity} mDrawState=DRAW_PENDING
+09-18 22:04:46.025 I/hwservicemanager(  572): getTransport: Cannot find entry android.hardware.graphics.allocator@4.0::IAllocator/default in either framework or device VINTF manifest.
+09-18 22:04:46.025 W/Gralloc4(17946): allocator 4.x is not supported
+09-18 22:04:46.027 I/SurfaceFlinger( 1065): id=3461 Removed Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#0 (120)
+09-18 22:04:46.027 I/SurfaceFlinger( 1065): id=3460 Removed Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#1 (120)
+09-18 22:04:46.027 D/WindowManager( 1594): performShow logReadyForDisplay  mToken.waitingToShow:true isTransitionSet:true
+09-18 22:04:46.029 D/WindowManager( 1594): Loading animation for app transition. transit=TRANSIT_OLD_TRANSLUCENT_ACTIVITY_OPEN enter=true frame=Rect(0, 0 - 720, 1600) insets=Rect(0, 45 - 0, 84) surfaceInsets=Rect(0, 0 - 0, 0)
+09-18 22:04:46.029 D/WindowManager( 1594): Loading animation for app transition. transit=TRANSIT_OLD_TRANSLUCENT_ACTIVITY_OPEN enter=true frame=Rect(0, 45 - 720, 1516) insets=Rect(0, 0 - 0, 0) surfaceInsets=Rect(0, 0 - 0, 0)
+09-18 22:04:46.029 I/hwservicemanager(  572): getTransport: Cannot find entry android.hardware.graphics.allocator@3.0::IAllocator/default in either framework or device VINTF manifest.
+09-18 22:04:46.030 W/Gralloc3(17946): allocator 3.x is not supported
+09-18 22:04:46.031 I/Layer   ( 1065): id=3461 Destroyed Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#0
+09-18 22:04:46.031 I/Layer   ( 1065): id=3460 Destroyed Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#1
+09-18 22:04:46.034 I/SemDvfsHyPerManager( 1594): acquire hyper - AMS_RESUME_TAIL/1594@15, type = -999
+09-18 22:04:46.034 I/SemDvfsHyPerManager( 1594): acquire hyper - AMS_ACT_LAZY/1594@16, type = -999
+09-18 22:04:46.034 D/ActivityManagerPerformance( 1594): AMP_acquire() TAIL
+09-18 22:04:46.034 I/HYPER-HAL(  996): [RequestManager.cpp]acquire(): Acquired ID : 1295260  [1594 / 15]    HINT : AMS_RESUME_TAIL    list : 
+09-18 22:04:46.034 D/ActivityManagerPerformance( 1594): AMP_release() APP_SWITCH
+09-18 22:04:46.035 I/ActivityTaskManager( 1594): Displayed com.google.android.gms/.auth.api.signin.ui.SignInActivity: +2s460ms
+09-18 22:04:46.035 I/Pageboost( 1594): Launch time gathered : pid 17946 com.google.android.gms 2460
+09-18 22:04:46.036 E/pageboostd( 3324): Received HALT command code 2
+09-18 22:04:46.038 I/SurfaceFlinger( 1065): id=3466 createSurf (0x0),-1 flag=20004, Dim Layer for - Task=61#0
+09-18 22:04:46.038 I/HYPER-HAL(  996): [RequestManager.cpp]acquire(): Acquired ID : 1296871  [1594 / 16]    HINT : AMS_ACT_LAZY    list : 
+09-18 22:04:46.039 I/WindowManager( 1594): Reparenting to leash, surface=Surface(name=Dim Layer for - Task=61)/@0xc45c9be, leashParent=Surface(name=Task=61)/@0xa94728f
+09-18 22:04:46.039 E/ANDR-PERF-OPTSHANDLER( 1016): Perflock resource /sys/module/lpm_levels/parameters/bias_hyst not supported
+09-18 22:04:46.039 E/ANDR-PERF-RESOURCEQS( 1016): Failed to apply optimization [1, 2]
+09-18 22:04:46.040 I/SurfaceFlinger( 1065): id=3467 createSurf (0x0),-1 flag=24000, Surface(name=Dim Layer for - Task=61)/@0xc45c9be - animation-leash of dimmer#0
+09-18 22:04:46.041 E/ANDR-PERF-OPTSHANDLER( 1016): Perflock resource /sys/module/lpm_levels/parameters/bias_hyst not supported
+09-18 22:04:46.041 E/ANDR-PERF-RESOURCEQS( 1016): Failed to apply optimization [1, 2]
+09-18 22:04:46.041 I/HYPER-HAL(  996): [RequestManager.cpp]releaseLocked(): Released ID : 1292041
+09-18 22:04:46.041 D/WindowManager( 1594): makeSurface duration=2 leash=Surface(name=Surface(name=Dim Layer for - Task=61)/@0xc45c9be - animation-leash of dimmer)/@0x422fa1f
+09-18 22:04:46.049 D/InputDispatcher( 1594): Focus entered window (0): ce528 com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity
+09-18 22:04:46.056 D/SurfaceFlinger( 1065): Display 0 HWC layers:
+09-18 22:04:46.056 D/SurfaceFlinger( 1065):      DEVICE | 0xe699ffb0 | 0102 | RGBA_8888    |    0.0    0.0  720.0 1600.0 |    0    0  720 1600 | com.aistudio.skillsexchange.nxptvq/com.example.MainActivity$_17756#0
+09-18 22:04:46.056 D/SurfaceFlinger( 1065):      DEVICE | 0xe699f4c0 | 0100 | RGBA_8888    |    0.0    0.0  720.0 1600.0 |    0    0  720 1600 | com.aistudio.skillsexchange.nxptvq/c[...].internal.SignInHubActivity$_17756#0
+09-18 22:04:46.056 D/SurfaceFlinger( 1065):      DEVICE | 0xe80fbc40 | 0100 | RGBA_8888    |    0.0    0.0  720.0   45.0 |    0    0  720   45 | StatusBar$_2352#0
+09-18 22:04:46.056 D/SurfaceFlinger( 1065):      CLIENT | 0xe787ab00 | 0100 | RGBA_8888    |    0.0    0.0   67.0  228.0 |    0  239   67  467 | com.samsung.android.app.cocktailbars[...]arservice.CocktailBarService$_5976#0
+09-18 22:04:46.056 D/SurfaceFlinger( 1065):      CLIENT | 0xe7cad5c0 | 0100 | RGBA_8888    |    0.0    0.0  720.0   84.0 |    0 1516  720 1600 | NavigationBar0$_2352#0
+09-18 22:04:46.056 D/SurfaceFlinger( 1065):      CLIENT | 0xe7cad010 | 0108 | RGBA_8888    |    0.0    0.0  720.0 1600.0 |    0    0  720 1600 | BlueLightFilter$_2352#0
+09-18 22:04:46.056 D/SurfaceFlinger( 1065): 
+09-18 22:04:46.058 D/InsetsSourceConsumer(17946): ensureControlAlpha: for ITYPE_NAVIGATION_BAR on com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity
+09-18 22:04:46.060 D/InsetsSourceConsumer(17946): ensureControlAlpha: for ITYPE_STATUS_BAR on com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity
+09-18 22:04:46.065 I/ViewRootImpl@c95de9a[SignInActivity](17946): MSG_WINDOW_FOCUS_CHANGED 1 1
+09-18 22:04:46.067 D/InputMethodManager(17946): startInputInner - Id : 0
+09-18 22:04:46.067 I/InputMethodManager(17946): startInputInner - mService.startInputOrWindowGainedFocus
+09-18 22:04:46.068 V/InputMethodManagerService( 1594): Unspecified window will hide input
+09-18 22:04:46.068 V/InputMethodManagerService( 1594): hideCurrentInputLocked : shouldHideSoftInput is false
+09-18 22:04:46.068 D/InputMethodManagerService( 1594): mDesktopModeManager null!
+09-18 22:04:46.068 V/InputMethodManagerService( 1594): getDisplayIdOfInputMethodWindowToBeAdded : 0
+09-18 22:04:46.069 V/InputMethodManagerService( 1594): Creating new session for client ClientState{6495335 uid=10173 pid=17946 displayId=0}
+09-18 22:04:46.070 D/InputTransport( 1594): Input channel constructed: 'ClientS', fd=663
+09-18 22:04:46.070 D/InputTransport( 1594): Input channel constructed: 'ClientS', fd=667
+09-18 22:04:46.071 D/InputTransport( 1594): Input channel destroyed: 'ClientS', fd=667
+09-18 22:04:46.075 W/InputMethodManagerService( 1594): onSessionCreated
+09-18 22:04:46.076 D/InputMethodManagerService( 1594): checkDisplayOfStartInputAndUpdateKeyboard display Id 0last 0
+09-18 22:04:46.076 D/InputTransport( 1594): Input channel constructed: 'ClientS', fd=667
+09-18 22:04:46.076 D/InputTransport( 1594): Input channel destroyed: 'ClientS', fd=667
+09-18 22:04:46.077 I/GoogleSignatureVerifier( 2619): package info is not set correctly
+09-18 22:04:46.077 D/InputMethodManager(17946): startInputInner - Id : 0
+09-18 22:04:46.077 D/InputTransport(17756): Input channel destroyed: 'ClientS', fd=117
+09-18 22:04:46.078 D/RestrictionPolicy( 1594): isScreenCaptureEnabled : ret=true userId=0
+09-18 22:04:46.079 I/WindowManager( 1594): Cancelling animation restarting=true, leash=Surface(name=Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation)/@0x4cf240d
+09-18 22:04:46.079 I/WindowManager( 1594): Reparenting to original parent: Surface(name=WindowToken{e5b6c94 android.os.Binder@22958e7})/@0xe254b5, destroy=false, surface=Surface(name=a4469a2 InputMethod)/@0xb237dee
+09-18 22:04:46.079 I/WindowManager( 1594): Reparenting to leash, surface=Surface(name=a4469a2 InputMethod)/@0xb237dee, leashParent=Surface(name=WindowToken{e5b6c94 android.os.Binder@22958e7})/@0xe254b5
+09-18 22:04:46.080 I/SurfaceFlinger( 1065): id=3468 createSurf (0x0),-1 flag=24004, Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation#1
+09-18 22:04:46.081 D/WindowManager( 1594): makeSurface duration=2 leash=Surface(name=Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation)/@0xac8edb1
+09-18 22:04:46.086 D/SurfaceFlinger( 1065): Display 0 HWC layers:
+09-18 22:04:46.086 D/SurfaceFlinger( 1065):      DEVICE | 0xe80fcab0 | 0102 | RGBA_8888    |    0.0    0.0  720.0 1600.0 |    0    0  720 1600 | com.aistudio.skillsexchange.nxptvq/com.example.MainActivity$_17756#0
+09-18 22:04:46.086 D/SurfaceFlinger( 1065):      DEVICE | 0xe699f4c0 | 0100 | RGBA_8888    |    0.0    0.0  720.0 1600.0 |    0    0  720 1600 | com.aistudio.skillsexchange.nxptvq/c[...].internal.SignInHubActivity$_17756#0
+09-18 22:04:46.086 D/SurfaceFlinger( 1065):  SOLID_COLOR |              | 0000 |  Unknown  |    0.0    0.0    0.0    0.0 |    0    0  720 1600 | Dim Layer for - Task=61#0
+09-18 22:04:46.086 D/SurfaceFlinger( 1065):      CLIENT | 0xe80fbc40 | 0100 | RGBA_8888    |    0.0    0.0  720.0   45.0 |    0    0  720   45 | StatusBar$_2352#0
+09-18 22:04:46.086 D/SurfaceFlinger( 1065):      CLIENT | 0xe787ab00 | 0100 | RGBA_8888    |    0.0    0.0   67.0  228.0 |    0  239   67  467 | com.samsung.android.app.cocktailbars[...]arservice.CocktailBarService$_5976#0
+09-18 22:04:46.086 D/SurfaceFlinger( 1065):      CLIENT | 0xe7cad5c0 | 0100 | RGBA_8888    |    0.0    0.0  720.0   84.0 |    0 1516  720 1600 | NavigationBar0$_2352#0
+09-18 22:04:46.086 D/SurfaceFlinger( 1065):      CLIENT | 0xe7cad010 | 0108 | RGBA_8888    |    0.0    0.0  720.0 1600.0 |    0    0  720 1600 | Bl
+09-18 22:04:46.087 D/SurfaceFlinger( 1065): ueLightFilter$_2352#0
+09-18 22:04:46.087 D/SurfaceFlinger( 1065): 
+09-18 22:04:46.089 I/HBD     ( 4076): HoneyBoardService onFinishInput 
+09-18 22:04:46.090 I/HBD     ( 4076): a IC have been unbinding,  InputConnectionWrapper{idHash=#9475bac mMissingMethods=}
+09-18 22:04:46.090 I/HBD     ( 4076): HoneyBoardService [PF_CL][onFinishInput]  974375 ns 
+09-18 22:04:46.090 I/HBD     ( 4076): HoneyBoardService [IMI] onStartInput - caller pid : 17946 , caller uid : 10173 
+09-18 22:04:46.090 I/HBD     ( 4076): j updateConfigs 
+09-18 22:04:46.091 I/HBD     ( 4076): j isEnabledNightMode : true 
+09-18 22:04:46.091 I/HBD     ( 4076): a IC have been binding, InputConnectionWrapper{idHash=#a1e280a mMissingMethods=} 
+09-18 22:04:46.091 I/HBD     ( 4076): h [EditorInputType]setPrivateImeOptionsToTable privateImeOptions ( null )
+09-18 22:04:46.091 I/HBD     ( 4076): b incognitoMode : false 
+09-18 22:04:46.092 I/HBD     ( 4076): a needOff = true , isForceOff = false, isNullInputClass : true 
+09-18 22:04:46.092 I/HBD     ( 4076): h getDefaultInputRange : UNKNOWN 
+09-18 22:04:46.092 I/HBD     ( 4076): h getDefaultInputRange : UNKNOWN 
+09-18 22:04:46.092 I/HBD     ( 4076): h getDefaultInputRange : UNKNOWN 
+09-18 22:04:46.094 D/InputMethodManagerServicePhysicalKey( 1594): isConnectedDexOnPC false
+09-18 22:04:46.094 D/InputMethodManagerService( 1594): isImeSwitcherDisabledPackage : false
+09-18 22:04:46.095 I/HBD     ( 4076): a needOff = true , isForceOff = false, isNullInputClass : true 
+09-18 22:04:46.095 I/HBD     ( 4076): a update cached prediction status : false 
+09-18 22:04:46.095 I/HBD     ( 4076): h getDefaultInputRange : UNKNOWN 
+09-18 22:04:46.096 I/HBD     ( 4076): a currentState : 0 
+09-18 22:04:46.098 I/Layer   ( 1065): id=3450 mRemovedFromDrawingState Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation#0 (121)
+09-18 22:04:46.098 I/SurfaceFlinger( 1065): id=3450 Removed Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation#0 (121)
+09-18 22:04:46.098 I/Layer   ( 1065): id=3450 Destroyed Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation#0
+09-18 22:04:46.101 I/HBD     ( 4076): h load selected json path : /data/user/0/com.samsung.android.honeyboard/files/selected.json 
+09-18 22:04:46.101 I/HBD     ( 4076): h load selected json info : {"version":"4.1","currentLanguageOrder":0,"selected":[{"activeOptionList":["auto_replace","auto_spacing","writing_assistant"],"engName":"English","id":65538,"inputType":"qwerty","isUsed":true}]} 
+09-18 22:04:46.105 I/HBD     ( 4076): a [UpdatePolicy] [post] a: 0 cl: 65538 kit: [0/0] vt: 0 ir: 1 
+09-18 22:04:46.107 I/HBD     ( 4076): HoneyBoardService [PF_OP][onStartInput]  17326615 ns 
+09-18 22:04:46.177 W/WindowManager( 1594): Prepare app transition: mNextAppTransitionRequests=[TRANSIT_CLOSE], mNextAppTransitionFlags=, displayId: 0 Callers=com.android.server.wm.DisplayContent.prepareAppTransition:6369 com.android.server.wm.DisplayContent.prepareAppTransition:6364 com.android.server.wm.ActivityRecord.finishIfPossible:3644 com.android.server.wm.ActivityClientController.finishActivity:540 android.app.IActivityClientController$Stub.onTransact:706 
+09-18 22:04:46.193 D/MARsPolicyManager( 1594): onPackageResumedFG pkgName = com.aistudio.skillsexchange.nxptvq, userId = 0
+09-18 22:04:46.193 I/SemDvfsHyPerManager( 1594): acquire hyper - AMS_ACT_RESUME/1594@17, type = -999
+09-18 22:04:46.193 D/ActivityManagerPerformance( 1594): AMP_acquire() ACT_RESUME
+09-18 22:04:46.194 I/HYPER-HAL(  996): [RequestManager.cpp]acquire(): Acquired ID : 1298483  [1594 / 17]    HINT : AMS_ACT_RESUME    list : 
+09-18 22:04:46.199 W/WindowManager( 1594): Prepare app transition: mNextAppTransitionRequests=[TRANSIT_CLOSE, TRANSIT_OPEN], mNextAppTransitionFlags=, displayId: 0 Callers=com.android.server.wm.DisplayContent.prepareAppTransition:6369 com.android.server.wm.DisplayContent.prepareAppTransition:6364 com.android.server.wm.Task.resumeTopActivityInnerLocked:8467 com.android.server.wm.Task.resumeTopActivityInnerLocked:8190 com.android.server.wm.Task.resumeTopActivityUncheckedLocked:8088 
+09-18 22:04:46.199 D/InputDispatcher( 1594): Focused application set to (0): b3694d 
+09-18 22:04:46.201 V/WindowManager( 1594): Changing focus from Window{ce528 u0 com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity} to Window{2195c81 u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity} displayId=0 Callers=com.android.server.wm.RootWindowContainer.updateFocusedWindowLocked:583 com.android.server.wm.WindowManagerService.updateFocusedWindowLocked:6497 com.android.server.wm.ActivityTaskManagerService.setResumedActivityUncheckLocked:5527 com.android.server.wm.Task.onActivityStateChanged:2912 
+09-18 22:04:46.202 I/WindowManager( 1594): Cancelling animation restarting=true, leash=Surface(name=Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation)/@0xbdf2bd4
+09-18 22:04:46.202 I/WindowManager( 1594): Reparenting to original parent: Surface(name=WindowToken{a60de4 android.os.BinderProxy@b391376})/@0x8e2f945, destroy=false, surface=Surface(name=147924d StatusBar)/@0x1b355bc
+09-18 22:04:46.202 I/WindowManager( 1594): Reparenting to leash, surface=Surface(name=147924d StatusBar)/@0x1b355bc, leashParent=Surface(name=WindowToken{a60de4 android.os.BinderProxy@b391376})/@0x8e2f945
+09-18 22:04:46.203 I/SurfaceFlinger( 1065): id=3469 createSurf (0x0),-1 flag=24000, Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#1
+09-18 22:04:46.204 D/WindowManager( 1594): makeSurface duration=2 leash=Surface(name=Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation)/@0x8dea1e9
+09-18 22:04:46.204 I/WindowManager( 1594): Cancelling animation restarting=true, leash=Surface(name=Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation)/@0x6ea9872
+09-18 22:04:46.204 I/WindowManager( 1594): Reparenting to original parent: Surface(name=WindowToken{3c04ecd android.os.BinderProxy@28db5f7})/@0x4bee4c1, destroy=false, surface=Surface(name=723382 NavigationBar0)/@0x53e11a8
+09-18 22:04:46.204 I/WindowManager( 1594): Reparenting to leash, surface=Surface(name=723382 NavigationBar0)/@0x53e11a8, leashParent=Surface(name=WindowToken{3c04ecd android.os.BinderProxy@28db5f7})/@0x4bee4c1
+09-18 22:04:46.205 I/SurfaceFlinger( 1065): id=3470 createSurf (0x0),-1 flag=24000, Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#0
+09-18 22:04:46.206 D/WindowManager( 1594): makeSurface duration=2 leash=Surface(name=Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation)/@0xc04a90f
+09-18 22:04:46.206 D/StatusBarManagerService( 1594): notifyRequestedSystemKey recent=false home=false
+09-18 22:04:46.208 V/WindowManager( 1594): rotationForOrientation(orient=SCREEN_ORIENTATION_UNSPECIFIED (-1), last=ROTATION_0 (0)); user=ROTATION_0 (0) USER_ROTATION_LOCKED
+09-18 22:04:46.208 D/WindowManager( 1594): rotationForOrientation, orientationSource=ActivityRecord{988a643 u0 com.aistudio.skillsexchange.nxptvq/com.example.MainActivity t61}
+09-18 22:04:46.209 V/WindowManager( 1594): Computed rotation=ROTATION_0 (0) for display id=0 based on lastOrientation=SCREEN_ORIENTATION_UNSPECIFIED (-1) and oldRotation=ROTATION_0 (0), caller=com.android.server.wm.DisplayRotation.updateOrientation:407 com.android.server.wm.DisplayContent.updateOrientation:1939 com.android.server.wm.DisplayContent.updateOrientation:1877 com.android.server.wm.RootWindowContainer.ensureVisibilityAndConfig:2207 com.android.server.wm.Task.resumeTopActivityInnerLocked:8535 com.android.server.wm.Task.resumeTopActivityInnerLocked:8190 
+09-18 22:04:46.210 D/TspStateManager( 1594): updateCustomValue customSetting=
+09-18 22:04:46.211 D/TspStateManager( 1594): updateCustomValue customSetting=
+09-18 22:04:46.214 W/WindowManager( 1594): Execute app transition: mNextAppTransitionRequests=[TRANSIT_CLOSE, TRANSIT_OPEN], mNextAppTransitionFlags=, displayId: 0 Callers=com.android.server.wm.RootWindowContainer.executeAppTransitionForAllDisplay:2706 com.android.server.wm.ActivityTaskSupervisor.reportResumedActivityLocked:2255 com.android.server.wm.ActivityRecord.completeResumeLocked:6361 com.android.server.wm.Task.resumeTopActivityInnerLocked:8625 com.android.server.wm.Task.resumeTopActivityInnerLocked:8190 
+09-18 22:04:46.215 W/WindowManager( 1594): Execute app transition: mNextAppTransitionRequests=[TRANSIT_CLOSE, TRANSIT_OPEN], mNextAppTransitionFlags=, displayId: 0 Callers=com.android.server.wm.Task.executeAppTransition:10085 com.android.server.wm.Task.resumeTopActivityInnerLocked:8233 com.android.server.wm.Task.resumeTopActivityInnerLocked:8190 com.android.server.wm.Task.resumeTopActivityUncheckedLocked:8088 com.android.server.wm.RootWindowContainer.resumeFocusedTasksTopActivities:2809 
+09-18 22:04:46.216 W/WindowManager( 1594): Execute app transition: mNextAppTransitionRequests=[TRANSIT_CLOSE, TRANSIT_OPEN], mNextAppTransitionFlags=, displayId: 0 Callers=com.android.server.wm.Task.executeAppTransition:10085 com.android.server.wm.Task.resumeTopActivityInnerLocked:8233 com.android.server.wm.Task.resumeTopActivityInnerLocked:8190 com.android.server.wm.Task.resumeTopActivityUncheckedLocked:8088 com.android.server.wm.Task.resumeTopActivityUncheckedLocked:8173 
+09-18 22:04:46.222 V/NuPlayerDriver( 1215): getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 22:04:46.224 D/WindowManager( 1594): Loading animation for app transition. transit=TRANSIT_OLD_TRANSLUCENT_ACTIVITY_CLOSE enter=false frame=Rect(0, 45 - 720, 1516) insets=Rect(0, 0 - 0, 0) surfaceInsets=Rect(0, 0 - 0, 0)
+09-18 22:04:46.226 V/WindowManager( 1594): Setting visibility of Window{ce528 u0 com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity}: false, caller=com.android.server.wm.WindowContainer.sendAppVisibilityToClients:1110 com.android.server.wm.WindowToken.setClientVisible:448 com.android.server.wm.ActivityRecord.setClientVisible:7034 com.android.server.wm.ActivityRecord.onAnimationFinished:7921 com.android.server.wm.ActivityRecord.postApplyAnimation:5598 
+09-18 22:04:46.230 I/WindowManager( 1594): Cancelling animation restarting=true, leash=Surface(name=Surface(name=Dim Layer for - Task=61)/@0xc45c9be - animation-leash of dimmer)/@0x422fa1f
+09-18 22:04:46.230 I/WindowManager( 1594): Reparenting to original parent: Surface(name=Task=61)/@0xa94728f, destroy=false, surface=Surface(name=Dim Layer for - Task=61)/@0xc45c9be
+09-18 22:04:46.231 I/WindowManager( 1594): Reparenting to leash, surface=Surface(name=Dim Layer for - Task=61)/@0xc45c9be, leashParent=Surface(name=Task=61)/@0xa94728f
+09-18 22:04:46.231 I/Layer   ( 1065): id=3465 mRemovedFromDrawingState Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#1 (122)
+09-18 22:04:46.231 I/Layer   ( 1065): id=69 mRemovedFromDrawingState 723382 NavigationBar0#0 (122)
+09-18 22:04:46.231 I/Layer   ( 1065): id=81 mRemovedFromDrawingState NavigationBar0$_2352#0 (122)
+09-18 22:04:46.232 I/Layer   ( 1065): id=3464 mRemovedFromDrawingState Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#0 (122)
+09-18 22:04:46.232 I/Layer   ( 1065): id=69 addToCurrentState 723382 NavigationBar0#0 (122)
+09-18 22:04:46.232 I/Layer   ( 1065): id=81 addToCurrentState NavigationBar0$_2352#0 (122)
+09-18 22:04:46.232 I/SurfaceFlinger( 1065): id=3471 createSurf (0x0),-1 flag=24000, Surface(name=Dim Layer for - Task=61)/@0xc45c9be - animation-leash of dimmer#1
+09-18 22:04:46.233 D/WindowManager( 1594): makeSurface duration=2 leash=Surface(name=Surface(name=Dim Layer for - Task=61)/@0xc45c9be - animation-leash of dimmer)/@0x8f673a5
+09-18 22:04:46.234 D/InputDispatcher( 1594): Focus left window (0): ce528 com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity
+09-18 22:04:46.236 I/SurfaceFlinger( 1065): id=3465 Removed Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#1 (123)
+09-18 22:04:46.236 I/SurfaceFlinger( 1065): id=3464 Removed Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#0 (123)
+09-18 22:04:46.236 D/SGM:GameManager( 1594): notePauseComponent(), received pkgName: com.google.android.gms, userId: 0
+09-18 22:04:46.236 I/ViewRootImpl@c95de9a[SignInActivity](17946): handleAppVisibility mAppVisible=true visible=false
+09-18 22:04:46.237 I/CocktailBarManagerServiceContainer( 1594): handleMessage: entry what = 6
+09-18 22:04:46.237 I/ViewRootImpl@c95de9a[SignInActivity](17946): MSG_WINDOW_FOCUS_CHANGED 0 1
+09-18 22:04:46.240 V/ActivityManager( 1594): Changed top to ProcessRecord{3200cec 17756:com.aistudio.skillsexchange.nxptvq/u0a339}
+09-18 22:04:46.244 D/SGM:GameManager( 1594): identifyGamePackage. com.aistudio.skillsexchange.nxptvq, mCurrentUserId: 0, callerUserId: 0, callingMethodInfo: com.samsung.android.game.SemGameManager.isGamePackage(SemGameManager.java:104)
+09-18 22:04:46.244 D/SGM:PkgDataHelper( 1594): getGamePkgData(). com.aistudio.skillsexchange.nxptvq
+09-18 22:04:46.244 D/SGM:SemGameManager( 1594): isGamePackage(), pkgName=com.aistudio.skillsexchange.nxptvq, ret=false
+09-18 22:04:46.245 I/CocktailBarManagerServiceContainer( 1594): handleMessage: entry what = 5
+09-18 22:04:46.248 I/Layer   ( 1065): id=3467 mRemovedFromDrawingState Surface(name=Dim Layer for - Task=61)/@0xc45c9be - animation-leash of dimmer#0 (123)
+09-18 22:04:46.248 I/SurfaceFlinger( 1065): id=3467 Removed Surface(name=Dim Layer for - Task=61)/@0xc45c9be - animation-leash of dimmer#0 (123)
+09-18 22:04:46.248 I/Layer   ( 1065): id=3465 Destroyed Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#1
+09-18 22:04:46.248 I/Layer   ( 1065): id=3464 Destroyed Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#0
+09-18 22:04:46.248 I/Layer   ( 1065): id=3467 Destroyed Surface(name=Dim Layer for - Task=61)/@0xc45c9be - animation-leash of dimmer#0
+09-18 22:04:46.249 D/OpenGLRenderer(17946): setSurface called with nullptr
+09-18 22:04:46.249 D/OpenGLRenderer(17946): setSurface() destroyed EGLSurface
+09-18 22:04:46.249 D/OpenGLRenderer(17946): destroyEglSurface
+09-18 22:04:46.250 D/InputDispatcher( 1594): Focus entered window (0): 2195c81 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity
+09-18 22:04:46.251 I/Utils   ( 5976): HomePackage : com.sec.android.app.launcher, resumePackageName : com.aistudio.skillsexchange.nxptvq
+09-18 22:04:46.253 V/WindowManager( 1594): Relayout Window{ce528 u0 com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity}: viewVisibility=8 req=0x0 d0
+09-18 22:04:46.254 D/SGM:GameManager( 1594): noteResumeComponent(), received pkgName: com.aistudio.skillsexchange.nxptvq, userId: 0
+09-18 22:04:46.256 D/SurfaceFlinger( 1065): Display 0 HWC layers:
+09-18 22:04:46.256 D/SurfaceFlinger( 1065):      DEVICE | 0xe80fcab0 | 0102 | RGBA_8888    |    0.0    0.0  720.0 1600.0 |    0    0  720 1600 | com.aistudio.skillsexchange.nxptvq/com.example.MainActivity$_17756#0
+09-18 22:04:46.256 D/SurfaceFlinger( 1065):      DEVICE | 0xe699f4c0 | 0100 | RGBA_8888    |    0.0    0.0  720.0 1600.0 |    0    0  720 1600 | com.aistudio.skillsexchange.nxptvq/c[...].internal.SignInHubActivity$_17756#0
+09-18 22:04:46.256 D/SurfaceFlinger( 1065):      DEVICE | 0xe80fbc40 | 0100 | RGBA_8888    |    0.0    0.0  720.0   45.0 |    0    0  720   45 | StatusBar$_2352#0
+09-18 22:04:46.256 D/SurfaceFlinger( 1065):      CLIENT | 0xe787ab00 | 0100 | RGBA_8888    |    0.0    0.0   67.0  228.0 |    0  239   67  467 | com.samsung.android.app.cocktailbars[...]arservice.CocktailBarService$_5976#0
+09-18 22:04:46.256 D/SurfaceFlinger( 1065):      CLIENT | 0xe7cad5c0 | 0100 | RGBA_8888    |    0.0    0.0  720.0   84.0 |    0 1516  720 1600 | NavigationBar0$_2352#0
+09-18 22:04:46.256 D/SurfaceFlinger( 1065):      CLIENT | 0xe7cad010 | 0108 | RGBA_8888    |    0.0    0.0  720.0 1600.0 |    0    0  720 1600 | BlueLightFilter$_2352#0
+09-18 22:04:46.256 D/SurfaceFlinger( 1065): 
+09-18 22:04:46.256 D/SGM:GameManager( 1594): onLooperPrepared(), msg: MSG_APP_RESUME, pkgName: com.aistudio.skillsexchange.nxptvq, userid: 0
+09-18 22:04:46.256 D/SGM:GameManager( 1594): handleResume().
+09-18 22:04:46.256 D/SGM:GameManager( 1594): sendFocusOutConditionally() - mPrevNotiPkg: (unknown), userId: 0
+09-18 22:04:46.256 D/SGM:GameManager( 1594):   handleResume(). pkgName: com.aistudio.skillsexchange.nxptvq, userId: 0, isTunableApp: null
+09-18 22:04:46.256 D/SGM:GameManager( 1594): notifyFocusInOut(). of pkg: com.aistudio.skillsexchange.nxptvq, type: 4, isMinimized: false, isTunableApp: false, userId: 0
+09-18 22:04:46.256 D/SGM:GameManager( 1594):   notifyFocusInOut(). unexpected mPrevNotiType: -1
+09-18 22:04:46.256 D/SGM:NetworkLimit( 1594): callRelease
+09-18 22:04:46.256 D/SGM:SystemHelper( 1594): callReleaseBlock needReleaseBlock:false
+09-18 22:04:46.258 V/WindowManager( 1594): Relayout hash=ce528, pid=17946: mAttrs={(0,0)(wrapxwrap) sim={adjust=pan forwardNavigation} ty=BASE_APPLICATION fmt=TRANSPARENT
+09-18 22:04:46.258 V/WindowManager( 1594):   fl=1800002
+09-18 22:04:46.258 V/WindowManager( 1594):   pfl=42000000
+09-18 22:04:46.258 V/WindowManager( 1594):   bhv=DEFAULT
+09-18 22:04:46.258 V/WindowManager( 1594):   fitTypes=STATUS_BARS NAVIGATION_BARS CAPTION_BAR dimAmount=0.6 naviIconColor=0}
+09-18 22:04:46.259 D/SGM:GameManager( 1594): identifyGamePackage. com.aistudio.skillsexchange.nxptvq, mCurrentUserId: 0, callerUserId: 0, callingMethodInfo: com.android.server.ssrm.fgapps.GameAppUtils.isGame(GameAppUtils.java:84)
+09-18 22:04:46.259 D/SGM:PkgDataHelper( 1594): getGamePkgData(). com.aistudio.skillsexchange.nxptvq
+09-18 22:04:46.259 I/GameSDK@LifeCycle( 1594): noteResumeComponent(): package name  : com.aistudio.skillsexchange.nxptvq
+09-18 22:04:46.260 I/ViewRootImpl@c95de9a[SignInActivity](17946): Relayout returned: old=(360,780,360,780) new=(360,780,360,780) req=(0,0)8 dur=8 res=0x5 s={false 0} ch=true fn=1
+09-18 22:04:46.263 I/AppOps  ( 1594): updateUidProcState uid: 10173 procState: 3 capability:15
+09-18 22:04:46.270 I/ViewRootImpl@c95de9a[SignInActivity](17946): stopped(true) old=false
+09-18 22:04:46.273 I/ViewRootImpl@e57f6d8[SignInHubActivity](17756): stopped(false) old=false
+09-18 22:04:46.275 I/CameraService( 1179): onUidStateChanged: uid=10173, procState is changed. (2 -> 3)
+09-18 22:04:46.277 V/APM_AudioPolicyManager( 1055): setAppState(portId:617, state:1)
+09-18 22:04:46.288 D/InsetsSourceConsumer(17756): ensureControlAlpha: for ITYPE_NAVIGATION_BAR on com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity
+09-18 22:04:46.289 D/InsetsSourceConsumer(17756): ensureControlAlpha: for ITYPE_STATUS_BAR on com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity
+09-18 22:04:46.294 D/OpenGLRenderer(17946): setSurface called with nullptr
+09-18 22:04:46.294 I/ViewRootImpl@c95de9a[SignInActivity](17946): dispatchDetachedFromWindow
+09-18 22:04:46.294 W/WindowManager( 1594): Prepare app transition: mNextAppTransitionRequests=[TRANSIT_CLOSE], mNextAppTransitionFlags=, displayId: 0 Callers=com.android.server.wm.DisplayContent.prepareAppTransition:6369 com.android.server.wm.DisplayContent.prepareAppTransition:6364 com.android.server.wm.ActivityRecord.finishIfPossible:3644 com.android.server.wm.ActivityClientController.finishActivity:540 android.app.IActivityClientController$Stub.onTransact:706 
+09-18 22:04:46.299 I/ViewRootImpl@e57f6d8[SignInHubActivity](17756): MSG_WINDOW_FOCUS_CHANGED 1 1
+09-18 22:04:46.299 D/InputTransport( 1594): Input channel destroyed: 'ce528 c', fd=642
+09-18 22:04:46.299 W/InputManager-JNI( 1594): Input channel object 'ce528 com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity (client)' was disposed without first being removed with the input manager!
+09-18 22:04:46.299 D/InputTransport( 1594): Input channel destroyed: 'ce528 c', fd=660
+09-18 22:04:46.299 D/RestrictionPolicy( 1594): isScreenCaptureEnabled : ret=true userId=0
+09-18 22:04:46.300 D/InputMethodManager(17756): startInputInner - Id : 0
+09-18 22:04:46.300 I/InputMethodManager(17756): startInputInner - mService.startInputOrWindowGainedFocus
+09-18 22:04:46.300 I/WindowManager( 1594): Cancelling animation restarting=true, leash=Surface(name=Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation)/@0xac8edb1
+09-18 22:04:46.300 I/WindowManager( 1594): Reparenting to original parent: Surface(name=WindowToken{e5b6c94 android.os.Binder@22958e7})/@0xe254b5, destroy=false, surface=Surface(name=a4469a2 InputMethod)/@0xb237dee
+09-18 22:04:46.300 I/WindowManager( 1594): Reparenting to leash, surface=Surface(name=a4469a2 InputMethod)/@0xb237dee, leashParent=Surface(name=WindowToken{e5b6c94 android.os.Binder@22958e7})/@0xe254b5
+09-18 22:04:46.301 I/SurfaceFlinger( 1065): id=3472 createSurf (0x0),-1 flag=24004, Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation#0
+09-18 22:04:46.302 D/WindowManager( 1594): makeSurface duration=2 leash=Surface(name=Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation)/@0xbeeab07
+09-18 22:04:46.305 I/WindowManager( 1594): Destroying surface Surface(name=com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity$_17946)/@0xb252434 called by com.android.server.wm.WindowStateAnimator.destroySurface:987 com.android.server.wm.WindowStateAnimator.destroySurfaceLocked:518 com.android.server.wm.WindowState.removeImmediately:2960 com.android.server.wm.WindowState.removeIfPossible:3151 com.android.server.wm.WindowState.removeIfPossible:2984 com.android.server.wm.WindowManagerService.removeWindow:2266 com.android.server.wm.Session.remove:225 android.view.IWindowSession$Stub.onTransact:746 
+09-18 22:04:46.309 V/WindowManager( 1594): Changing focus from Window{2195c81 u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity} to null displayId=0 Callers=com.android.server.wm.RootWindowContainer.updateFocusedWindowLocked:583 com.android.server.wm.WindowManagerService.updateFocusedWindowLocked:6497 com.android.server.wm.WindowState.removeIfPossible:3160 com.android.server.wm.WindowState.removeIfPossible:2984 
+09-18 22:04:46.310 D/MARsPolicyManager( 1594): onPackageResumedFG pkgName = com.aistudio.skillsexchange.nxptvq, userId = 0
+09-18 22:04:46.310 D/StatusBarManagerService( 1594): notifyRequestedSystemKey recent=false home=false
+09-18 22:04:46.310 D/InputTransport(17946): Input channel destroyed: 'ce528 c', fd=106
+09-18 22:04:46.313 V/InputMethodManagerService( 1594): Unspecified window will hide input
+09-18 22:04:46.313 V/InputMethodManagerService( 1594): hideCurrentInputLocked : shouldHideSoftInput is false
+09-18 22:04:46.314 D/InputMethodManagerService( 1594): mDesktopModeManager null!
+09-18 22:04:46.314 V/InputMethodManagerService( 1594): getDisplayIdOfInputMethodWindowToBeAdded : 0
+09-18 22:04:46.315 I/Layer   ( 1065): id=3463 mRemovedFromDrawingState com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity$_17946#0 (121)
+09-18 22:04:46.315 D/InputMethodManagerService( 1594): checkDisplayOfStartInputAndUpdateKeyboard display Id 0last 0
+09-18 22:04:46.315 D/InputTransport( 1594): Input channel constructed: 'ClientS', fd=642
+09-18 22:04:46.315 I/Layer   ( 1065): id=3462 mRemovedFromDrawingState ce528 com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity#0 (121)
+09-18 22:04:46.315 I/ActivityTaskManager( 1594): Removing activity ActivityRecord{3d4895a u0 com.google.android.gms/.auth.api.signin.ui.SignInActivity t61 f}}(activityDestroyed)  from stack callers=com.android.server.wm.ActivityRecord.destroyed:4106 com.android.server.wm.ActivityClientController.activityDestroyed:299 android.app.IActivityClientController$Stub.onTransact:604 com.android.server.wm.ActivityClientController.onTransact:141 android.os.Binder.execTransactInternal:1220 
+09-18 22:04:46.315 D/InputTransport(17946): Input channel destroyed: 'ClientS', fd=109
+09-18 22:04:46.315 I/Layer   ( 1065): id=3468 mRemovedFromDrawingState Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation#1 (121)
+09-18 22:04:46.315 I/SurfaceFlinger( 1065): id=3462 Removed ce528 com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity#0 (121)
+09-18 22:04:46.315 I/SurfaceFlinger( 1065): id=3468 Removed Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation#1 (121)
+09-18 22:04:46.315 I/SurfaceFlinger( 1065): id=3463 Removed com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity$_17946#0 (121)
+09-18 22:04:46.316 I/Layer   ( 1065): id=3462 Destroyed ce528 com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity#0
+09-18 22:04:46.316 D/InputTransport( 1594): Input channel destroyed: 'ClientS', fd=642
+09-18 22:04:46.316 I/Layer   ( 1065): id=3463 Destroyed com.google.android.gms/com.google.android.gms.auth.api.signin.ui.SignInActivity$_17946#0
+09-18 22:04:46.316 I/Layer   ( 1065): id=3468 Destroyed Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation#1
+09-18 22:04:46.317 I/HBD     ( 4076): HoneyBoardService onFinishInput 
+09-18 22:04:46.317 D/InputDispatcher( 1594): Focus left window (0): 2195c81 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity
+09-18 22:04:46.318 I/HBD     ( 4076): a IC have been unbinding,  InputConnectionWrapper{idHash=#a1e280a mMissingMethods=}
+09-18 22:04:46.318 I/HBD     ( 4076): HoneyBoardService [PF_CL][onFinishInput]  692552 ns 
+09-18 22:04:46.318 I/HBD     ( 4076): HoneyBoardService [IMI] onStartInput - caller pid : 17756 , caller uid : 10339 
+09-18 22:04:46.318 I/HBD     ( 4076): j updateConfigs 
+09-18 22:04:46.319 I/HBD     ( 4076): j isEnabledNightMode : true 
+09-18 22:04:46.319 I/HBD     ( 4076): a IC have been binding, InputConnectionWrapper{idHash=#8a48698 mMissingMethods=} 
+09-18 22:04:46.319 I/HBD     ( 4076): h [EditorInputType]setPrivateImeOptionsToTable privateImeOptions ( null )
+09-18 22:04:46.319 I/HBD     ( 4076): b incognitoMode : false 
+09-18 22:04:46.319 I/HBD     ( 4076): a needOff = true , isForceOff = false, isNullInputClass : true 
+09-18 22:04:46.319 D/RestrictionPolicy( 1594): isScreenCaptureEnabled : ret=true userId=0
+09-18 22:04:46.320 I/HBD     ( 4076): h getDefaultInputRange : UNKNOWN 
+09-18 22:04:46.320 I/HBD     ( 4076): h getDefaultInputRange : UNKNOWN 
+09-18 22:04:46.320 I/HBD     ( 4076): h getDefaultInputRange : UNKNOWN 
+09-18 22:04:46.320 I/WindowManager( 1594): Cancelling animation restarting=true, leash=Surface(name=Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation)/@0xbeeab07
+09-18 22:04:46.320 I/WindowManager( 1594): Reparenting to original parent: Surface(name=WindowToken{e5b6c94 android.os.Binder@22958e7})/@0xe254b5, destroy=false, surface=Surface(name=a4469a2 InputMethod)/@0xb237dee
+09-18 22:04:46.320 I/WindowManager( 1594): Reparenting to leash, surface=Surface(name=a4469a2 InputMethod)/@0xb237dee, leashParent=Surface(name=WindowToken{e5b6c94 android.os.Binder@22958e7})/@0xe254b5
+09-18 22:04:46.321 I/SurfaceFlinger( 1065): id=3473 createSurf (0x0),-1 flag=24004, Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation#1
+09-18 22:04:46.321 I/HBD     ( 4076): a needOff = true , isForceOff = false, isNullInputClass : true 
+09-18 22:04:46.322 D/WindowManager( 1594): makeSurface duration=1 leash=Surface(name=Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation)/@0x20a4fa0
+09-18 22:04:46.322 I/HBD     ( 4076): a update cached prediction status : false 
+09-18 22:04:46.322 I/HBD     ( 4076): h getDefaultInputRange : UNKNOWN 
+09-18 22:04:46.322 I/HBD     ( 4076): a currentState : 0 
+09-18 22:04:46.324 I/HBD     ( 4076): h load selected json path : /data/user/0/com.samsung.android.honeyboard/files/selected.json 
+09-18 22:04:46.324 I/HBD     ( 4076): h load selected json info : {"version":"4.1","currentLanguageOrder":0,"selected":[{"activeOptionList":["auto_replace","auto_spacing","writing_assistant"],"engName":"English","id":65538,"inputType":"qwerty","isUsed":true}]} 
+09-18 22:04:46.325 I/HBD     ( 4076): a [UpdatePolicy] [post] a: 0 cl: 65538 kit: [0/0] vt: 0 ir: 1 
+09-18 22:04:46.326 I/RecentModel( 2713): onTaskStackChangedBackground
+09-18 22:04:46.327 I/HBD     ( 4076): HoneyBoardService [PF_OP][onStartInput]  8390833 ns 
+09-18 22:04:46.328 E/ANDR-PERF-OPTSHANDLER( 1016): Perflock resource /proc/sys/kernel/sched_spill_nr_run not supported
+09-18 22:04:46.328 E/ANDR-PERF-RESOURCEQS( 1016): Failed to apply optimization [3, 11]
+09-18 22:04:46.329 E/HYPER-HAL(  996): [SysfsControlManager.cpp]writeSysfs(): Couldn't Open Sysfs - /sys/devices/system/cpu/cpufreq/interactive/io_is_busy
+09-18 22:04:46.330 D/DisplayImeController( 2352): insetsControlChanged(), ime control is null, anim=null
+09-18 22:04:46.331 I/Layer   ( 1065): id=3455 mRemovedFromDrawingState ActivityRecord{3d4895a u0 com.google.android.gms/.auth.api.signin.ui.SignInActivity t61}#0 (119)
+09-18 22:04:46.332 I/Layer   ( 1065): id=3472 mRemovedFromDrawingState Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation#0 (119)
+09-18 22:04:46.332 I/SurfaceFlinger( 1065): id=3455 Removed ActivityRecord{3d4895a u0 com.google.android.gms/.auth.api.signin.ui.SignInActivity t61}#0 (119)
+09-18 22:04:46.332 I/Layer   ( 1065): id=3455 Destroyed ActivityRecord{3d4895a u0 com.google.android.gms/.auth.api.signin.ui.SignInActivity t61}#0
+09-18 22:04:46.337 W/WindowManager( 1594): Prepare app transition: mNextAppTransitionRequests=[TRANSIT_CLOSE, TRANSIT_OPEN], mNextAppTransitionFlags=, displayId: 0 Callers=com.android.server.wm.DisplayContent.prepareAppTransition:6369 com.android.server.wm.DisplayContent.prepareAppTransition:6364 com.android.server.wm.Task.resumeTopActivityInnerLocked:8467 com.android.server.wm.Task.resumeTopActivityInnerLocked:8190 com.android.server.wm.Task.resumeTopActivityUncheckedLocked:8088 
+09-18 22:04:46.338 D/InputDispatcher( 1594): Focused application set to (0): 988a643
+09-18 22:04:46.339 V/WindowManager( 1594): Changing focus from null to Window{75baeb2 u0 com.aistudio.skillsexchange.nxptvq/com.example.MainActivity} displayId=0 Callers=com.android.server.wm.RootWindowContainer.updateFocusedWindowLocked:583 com.android.server.wm.WindowManagerService.updateFocusedWindowLocked:6497 com.android.server.wm.ActivityTaskManagerService.setResumedActivityUncheckLocked:5527 com.android.server.wm.Task.onActivityStateChanged:2912 
+09-18 22:04:46.340 I/WindowManager( 1594): Cancelling animation restarting=true, leash=Surface(name=Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation)/@0x8dea1e9
+09-18 22:04:46.340 I/WindowManager( 1594): Reparenting to original parent: Surface(name=WindowToken{a60de4 android.os.BinderProxy@b391376})/@0x8e2f945, destroy=false, surface=Surface(name=147924d StatusBar)/@0x1b355bc
+09-18 22:04:46.340 I/WindowManager( 1594): Reparenting to leash, surface=Surface(name=147924d StatusBar)/@0x1b355bc, leashParent=Surface(name=WindowToken{a60de4 android.os.BinderProxy@b391376})/@0x8e2f945
+09-18 22:04:46.341 I/SurfaceFlinger( 1065): id=3474 createSurf (0x0),-1 flag=24000, Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#0
+09-18 22:04:46.342 D/WindowManager( 1594): makeSurface duration=2 leash=Surface(name=Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation)/@0x13cff1e
+09-18 22:04:46.342 I/WindowManager( 1594): Cancelling animation restarting=true, leash=Surface(name=Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation)/@0xc04a90f
+09-18 22:04:46.342 I/WindowManager( 1594): Reparenting to original parent: Surface(name=WindowToken{3c04ecd android.os.BinderProxy@28db5f7})/@0x4bee4c1, destroy=false, surface=Surface(name=723382 NavigationBar0)/@0x53e11a8
+09-18 22:04:46.342 I/WindowManager( 1594): Reparenting to leash, surface=Surface(name=723382 NavigationBar0)/@0x53e11a8, leashParent=Surface(name=WindowToken{3c04ecd android.os.BinderProxy@28db5f7})/@0x4bee4c1
+09-18 22:04:46.343 I/SurfaceFlinger( 1065): id=3475 createSurf (0x0),-1 flag=24000, Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#1
+09-18 22:04:46.344 D/WindowManager( 1594): makeSurface duration=2 leash=Surface(name=Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation)/@0x454c5cc
+09-18 22:04:46.344 D/StatusBarManagerService( 1594): notifyRequestedSystemKey recent=false home=false
+09-18 22:04:46.346 V/WindowManager( 1594): rotationForOrientation(orient=SCREEN_ORIENTATION_UNSPECIFIED (-1), last=ROTATION_0 (0)); user=ROTATION_0 (0) USER_ROTATION_LOCKED
+09-18 22:04:46.346 D/WindowManager( 1594): rotationForOrientation, orientationSource=ActivityRecord{988a643 u0 com.aistudio.skillsexchange.nxptvq/com.example.MainActivity t61}
+09-18 22:04:46.346 V/WindowManager( 1594): Computed rotation=ROTATION_0 (0) for display id=0 based on lastOrientation=SCREEN_ORIENTATION_UNSPECIFIED (-1) and oldRotation=ROTATION_0 (0), caller=com.android.server.wm.DisplayRotation.updateOrientation:407 com.android.server.wm.DisplayContent.updateOrientation:1939 com.android.server.wm.DisplayContent.updateOrientation:1877 com.android.server.wm.RootWindowContainer.ensureVisibilityAndConfig:2207 com.android.server.wm.Task.resumeTopActivityInnerLocked:8535 com.android.server.wm.Task.resumeTopActivityInnerLocked:8190 
+09-18 22:04:46.347 D/TspStateManager( 1594): updateCustomValue customSetting=
+09-18 22:04:46.348 D/TspStateManager( 1594): updateCustomValue customSetting=
+09-18 22:04:46.350 W/WindowManager( 1594): Execute app transition: mNextAppTransitionRequests=[TRANSIT_CLOSE, TRANSIT_OPEN], mNextAppTransitionFlags=, displayId: 0 Callers=com.android.server.wm.RootWindowContainer.executeAppTransitionForAllDisplay:2706 com.android.server.wm.ActivityTaskSupervisor.reportResumedActivityLocked:2255 com.android.server.wm.ActivityRecord.completeResumeLocked:6361 com.android.server.wm.Task.resumeTopActivityInnerLocked:8625 com.android.server.wm.Task.resumeTopActivityInnerLocked:8190 
+09-18 22:04:46.351 W/WindowManager( 1594): Execute app transition: mNextAppTransitionRequests=[TRANSIT_CLOSE, TRANSIT_OPEN], mNextAppTransitionFlags=, displayId: 0 Callers=com.android.server.wm.Task.executeAppTransition:10085 com.android.server.wm.Task.resumeTopActivityInnerLocked:8233 com.android.server.wm.Task.resumeTopActivityInnerLocked:8190 com.android.server.wm.Task.resumeTopActivityUncheckedLocked:8088 com.android.server.wm.RootWindowContainer.resumeFocusedTasksTopActivities:2809 
+09-18 22:04:46.352 W/WindowManager( 1594): Execute app transition: mNextAppTransitionRequests=[TRANSIT_CLOSE, TRANSIT_OPEN], mNextAppTransitionFlags=, displayId: 0 Callers=com.android.server.wm.Task.executeAppTransition:10085 com.android.server.wm.Task.resumeTopActivityInnerLocked:8233 com.android.server.wm.Task.resumeTopActivityInnerLocked:8190 com.android.server.wm.Task.resumeTopActivityUncheckedLocked:8088 com.android.server.wm.Task.resumeTopActivityUncheckedLocked:8173 
+09-18 22:04:46.357 D/WindowManager( 1594): Loading animation for app transition. transit=TRANSIT_OLD_TRANSLUCENT_ACTIVITY_CLOSE enter=false frame=Rect(0, 0 - 720, 1600) insets=Rect(0, 45 - 0, 84) surfaceInsets=Rect(0, 0 - 0, 0)
+09-18 22:04:46.360 I/WindowManager( 1594): Reparenting to leash, surface=Surface(name=ActivityRecord{b3694d u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity t61})/@0x8ee72b8, leashParent=Surface(name=Task=61)/@0xa94728f
+09-18 22:04:46.360 I/SurfaceFlinger( 1065): id=3476 createSurf (0x0),-1 flag=24000, Surface(name=ActivityRecord{b3694d u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity t61})/@0x8ee72b8 - animation-leash of app_transition#0
+09-18 22:04:46.361 D/WindowManager( 1594): makeSurface duration=1 leash=Surface(name=Surface(name=ActivityRecord{b3694d u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity t61})/@0x8ee72b8 - animation-leash of app_transition)/@0x6cb1891
+09-18 22:04:46.361 D/AndroidRuntime(17997): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-18 22:04:46.362 I/SurfaceFlinger( 1065): id=3477 createSurf (0x0),-1 flag=80004, Surface(name=ActivityRecord{b3694d u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity t61})/@0x8ee72b8 - animation-bounds#0
+09-18 22:04:46.365 I/Layer   ( 1065): id=3469 mRemovedFromDrawingState Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#1 (122)
+09-18 22:04:46.365 I/Layer   ( 1065): id=3470 mRemovedFromDrawingState Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#0 (122)
+09-18 22:04:46.368 I/ViewRootImpl@e57f6d8[SignInHubActivity](17756): MSG_WINDOW_FOCUS_CHANGED 0 1
+09-18 22:04:46.368 D/SGM:GameManager( 1594): notePauseComponent(), received pkgName: com.aistudio.skillsexchange.nxptvq, userId: 0
+09-18 22:04:46.368 I/CocktailBarManagerServiceContainer( 1594): handleMessage: entry what = 6
+09-18 22:04:46.375 I/CocktailBarManagerServiceContainer( 1594): handleMessage: entry what = 5
+09-18 22:04:46.376 I/AndroidRuntime(17997): Using default boot image
+09-18 22:04:46.376 I/AndroidRuntime(17997): Leaving lock profiling enabled
+09-18 22:04:46.377 D/SecNativeFeatureCppIf(17997): encoded
+09-18 22:04:46.377 D/SecNativeFeatureCppIf(17997): decoding and unzip finish
+09-18 22:04:46.377 D/SecNativeFeatureCppIf(17997): use unCompDataBuff. encoded
+09-18 22:04:46.377 D/SecNativeFeatureCppIf(17997): Free unCompDataBuff
+09-18 22:04:46.377 D/AndroidRuntime(17997): addProductProperty: pBrand1 is not null
+09-18 22:04:46.377 D/AndroidRuntime(17997): addProductProperty: not brand or 7
+09-18 22:04:46.378 D/SGM:GameManager( 1594): noteResumeComponent(), received pkgName: com.aistudio.skillsexchange.nxptvq, userId: 0
+09-18 22:04:46.378 D/SGM:GameManager( 1594): onLooperPrepared(), msg: MSG_APP_RESUME, pkgName: com.aistudio.skillsexchange.nxptvq, userid: 0
+09-18 22:04:46.378 D/SGM:GameManager( 1594): handleResume().
+09-18 22:04:46.378 I/GameSDK@LifeCycle( 1594): noteResumeComponent(): package name  : com.aistudio.skillsexchange.nxptvq
+09-18 22:04:46.378 D/SGM:GameManager( 1594): sendFocusOutConditionally() - mPrevNotiPkg: (unknown), userId: 0
+09-18 22:04:46.378 D/SGM:GameManager( 1594):   handleResume(). pkgName: com.aistudio.skillsexchange.nxptvq, userId: 0, isTunableApp: null
+09-18 22:04:46.378 D/SGM:GameManager( 1594): notifyFocusInOut(). of pkg: com.aistudio.skillsexchange.nxptvq, type: 4, isMinimized: false, isTunableApp: false, userId: 0
+09-18 22:04:46.378 D/SGM:GameManager( 1594):   notifyFocusInOut(). unexpected mPrevNotiType: -1
+09-18 22:04:46.378 D/SGM:NetworkLimit( 1594): callRelease
+09-18 22:04:46.378 D/SGM:SystemHelper( 1594): callReleaseBlock needReleaseBlock:false
+09-18 22:04:46.378 I/Utils   ( 5976): HomePackage : com.sec.android.app.launcher, resumePackageName : com.aistudio.skillsexchange.nxptvq
+09-18 22:04:46.382 D/InputMethodManagerServicePhysicalKey( 1594): isConnectedDexOnPC false
+09-18 22:04:46.382 D/InputMethodManagerService( 1594): isImeSwitcherDisabledPackage : false
+09-18 22:04:46.384 D/InputDispatcher( 1594): Focus entered window (0): 75baeb2 com.aistudio.skillsexchange.nxptvq/com.example.MainActivity
+09-18 22:04:46.386 I/ViewRootImpl@bd56a05[MainActivity](17756): stopped(false) old=false
+09-18 22:04:46.387 W/app_process(17997): Could not reserve sentinel fault page
+09-18 22:04:46.388 I/DecorView(17756): notifyKeepScreenOnChanged: keepScreenOn=false
+09-18 22:04:46.389 I/app_process(17997): Using CollectorTypeCC GC.
+09-18 22:04:46.390 I/SurfaceFlinger( 1065): id=3470 Removed Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#0 (122)
+09-18 22:04:46.390 I/SurfaceFlinger( 1065): id=3469 Removed Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#1 (122)
+09-18 22:04:46.390 D/InsetsSourceConsumer(17756): ensureControlAlpha: for ITYPE_NAVIGATION_BAR on com.aistudio.skillsexchange.nxptvq/com.example.MainActivity
+09-18 22:04:46.392 D/InsetsSourceConsumer(17756): ensureControlAlpha: for ITYPE_STATUS_BAR on com.aistudio.skillsexchange.nxptvq/com.example.MainActivity
+09-18 22:04:46.398 I/Layer   ( 1065): id=3470 Destroyed Surface(name=723382 NavigationBar0)/@0x53e11a8 - animation-leash of insets_animation#0
+09-18 22:04:46.398 I/Layer   ( 1065): id=3469 Destroyed Surface(name=147924d StatusBar)/@0x1b355bc - animation-leash of insets_animation#1
+09-18 22:04:46.402 V/WindowManager( 1594): Relayout Window{75baeb2 u0 com.aistudio.skillsexchange.nxptvq/com.example.MainActivity}: viewVisibility=0 req=720x1600 d0
+09-18 22:04:46.406 D/MdnieScenarioControlService( 1594):  packageName : com.aistudio.skillsexchange.nxptvq    className : com.example.MainActivity
+09-18 22:04:46.407 V/WindowManager( 1594): Relayout hash=75baeb2, pid=17756: mAttrs={(0,0)(fillxfill) sim={adjust=pan forwardNavigation} layoutInDisplayCutoutMode=always ty=BASE_APPLICATION wanim=0x10302f2
+09-18 22:04:46.407 V/WindowManager( 1594):   fl=81810100
+09-18 22:04:46.407 V/WindowManager( 1594):   pfl=12020040
+09-18 22:04:46.407 V/WindowManager( 1594):   vsysui=100
+09-18 22:04:46.407 V/WindowManager( 1594):   bhv=DEFAULT
+09-18 22:04:46.407 V/WindowManager( 1594):   fitSides= naviIconColor=0}
+09-18 22:04:46.407 V/MdnieScenarioControlService( 1594): setUIMode from UI function(3)
+09-18 22:04:46.410 I/ViewRootImpl@bd56a05[MainActivity](17756): Relayout returned: old=(0,0,720,1600) new=(0,0,720,1600) req=(720,1600)0 dur=8 res=0x1 s={true 3937134592} ch=false fn=326
+09-18 22:04:46.429 I/ViewRootImpl@bd56a05[MainActivity](17756): MSG_WINDOW_FOCUS_CHANGED 1 1
+09-18 22:04:46.431 D/InputMethodManager(17756): startInputInner - Id : 0
+09-18 22:04:46.431 I/InputMethodManager(17756): startInputInner - mService.startInputOrWindowGainedFocus
+09-18 22:04:46.432 V/InputMethodManagerService( 1594): Unspecified window will hide input
+09-18 22:04:46.432 V/InputMethodManagerService( 1594): hideCurrentInputLocked : shouldHideSoftInput is false
+09-18 22:04:46.432 D/InputMethodManagerService( 1594): mDesktopModeManager null!
+09-18 22:04:46.432 V/InputMethodManagerService( 1594): getDisplayIdOfInputMethodWindowToBeAdded : 0
+09-18 22:04:46.433 D/InputMethodManagerService( 1594): checkDisplayOfStartInputAndUpdateKeyboard display Id 0last 0
+09-18 22:04:46.433 D/InputTransport( 1594): Input channel constructed: 'ClientS', fd=642
+09-18 22:04:46.433 D/InputTransport( 1594): Input channel destroyed: 'ClientS', fd=642
+09-18 22:04:46.434 I/HBD     ( 4076): HoneyBoardService onFinishInput 
+09-18 22:04:46.434 D/RestrictionPolicy( 1594): isScreenCaptureEnabled : ret=true userId=0
+09-18 22:04:46.434 I/WindowManager( 1594): Cancelling animation restarting=true, leash=Surface(name=Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation)/@0x20a4fa0
+09-18 22:04:46.434 I/HBD     ( 4076): a IC have been unbinding,  InputConnectionWrapper{idHash=#8a48698 mMissingMethods=}
+09-18 22:04:46.434 D/PowerManagerService( 1594): UserActivityStateListenerState: 0
+09-18 22:04:46.434 I/WindowManager( 1594): Reparenting to original parent: Surface(name=WindowToken{e5b6c94 android.os.Binder@22958e7})/@0xe254b5, destroy=false, surface=Surface(name=a4469a2 InputMethod)/@0xb237dee
+09-18 22:04:46.434 I/HBD     ( 4076): HoneyBoardService [PF_CL][onFinishInput]  569271 ns 
+09-18 22:04:46.434 I/WindowManager( 1594): Reparenting to leash, surface=Surface(name=a4469a2 InputMethod)/@0xb237dee, leashParent=Surface(name=WindowToken{e5b6c94 android.os.Binder@22958e7})/@0xe254b5
+09-18 22:04:46.435 I/HBD     ( 4076): HoneyBoardService [IMI] onStartInput - caller pid : 17756 , caller uid : 10339 
+09-18 22:04:46.435 I/HBD     ( 4076): j updateConfigs 
+09-18 22:04:46.435 I/HBD     ( 4076): j isEnabledNightMode : true 
+09-18 22:04:46.435 I/HBD     ( 4076): a IC have been binding, InputConnectionWrapper{idHash=#8a48698 mMissingMethods=} 
+09-18 22:04:46.435 I/HBD     ( 4076): h [EditorInputType]setPrivateImeOptionsToTable privateImeOptions ( null )
+09-18 22:04:46.435 I/HBD     ( 4076): b incognitoMode : false 
+09-18 22:04:46.435 I/SurfaceFlinger( 1065): id=3478 createSurf (0x0),-1 flag=24004, Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation#0
+09-18 22:04:46.435 I/HBD     ( 4076): a needOff = true , isForceOff = false, isNullInputClass : true 
+09-18 22:04:46.436 I/HBD     ( 4076): h getDefaultInputRange : UNKNOWN 
+09-18 22:04:46.436 I/HBD     ( 4076): h getDefaultInputRange : UNKNOWN 
+09-18 22:04:46.436 I/HBD     ( 4076): h getDefaultInputRange : UNKNOWN 
+09-18 22:04:46.436 D/WindowManager( 1594): makeSurface duration=2 leash=Surface(name=Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation)/@0x9293982
+09-18 22:04:46.438 I/HBD     ( 4076): a needOff = true , isForceOff = false, isNullInputClass : true 
+09-18 22:04:46.438 I/HBD     ( 4076): a update cached prediction status : false 
+09-18 22:04:46.439 I/HBD     ( 4076): h getDefaultInputRange : UNKNOWN 
+09-18 22:04:46.439 I/HBD     ( 4076): a currentState : 0 
+09-18 22:04:46.441 I/HBD     ( 4076): h load selected json path : /data/user/0/com.samsung.android.honeyboard/files/selected.json 
+09-18 22:04:46.441 I/HBD     ( 4076): h load selected json info : {"version":"4.1","currentLanguageOrder":0,"selected":[{"activeOptionList":["auto_replace","auto_spacing","writing_assistant"],"engName":"English","id":65538,"inputType":"qwerty","isUsed":true}]} 
+09-18 22:04:46.442 I/HBD     ( 4076): a [UpdatePolicy] [post] a: 0 cl: 65538 kit: [0/0] vt: 0 ir: 1 
+09-18 22:04:46.444 I/HBD     ( 4076): HoneyBoardService [PF_OP][onStartInput]  9374114 ns 
+09-18 22:04:46.448 I/Layer   ( 1065): id=3473 mRemovedFromDrawingState Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation#1 (121)
+09-18 22:04:46.450 I/WindowManager( 1594): Reparenting to original parent: Surface(name=Task=61)/@0xa94728f, destroy=true, surface=Surface(name=Dim Layer for - Task=61)/@0xc45c9be
+09-18 22:04:46.450 I/WindowManager( 1594): Reparenting to original parent: Surface(name=Task=61)/@0xa94728f, destroy=true, surface=Surface(name=ActivityRecord{b3694d u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity t61})/@0x8ee72b8
+09-18 22:04:46.451 V/WindowManager( 1594): Setting visibility of Window{2195c81 u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity}: false, caller=com.android.server.wm.WindowContainer.sendAppVisibilityToClients:1110 com.android.server.wm.WindowToken.setClientVisible:448 com.android.server.wm.ActivityRecord.setClientVisible:7034 com.android.server.wm.ActivityRecord.onAnimationFinished:7921 com.android.server.wm.WindowContainer$$ExternalSyntheticLambda0.onAnimationFinished:2 
+09-18 22:04:46.454 I/RecentModel( 2713): onTaskStackChangedBackground
+09-18 22:04:46.469 W/System  (17756): Ignoring header X-Firebase-Locale because its value was null.
+09-18 22:04:46.472 D/SurfaceFlinger( 1065): Display 0 HWC layers:
+09-18 22:04:46.472 D/SurfaceFlinger( 1065):      DEVICE | 0xe699ffb0 | 0102 | RGBA_8888    |    0.0    0.0  720.0 1600.0 |    0    0  720 1600 | com.aistudio.skillsexchange.nxptvq/com.example.MainActivity$_17756#0
+09-18 22:04:46.472 D/SurfaceFlinger( 1065):      DEVICE | 0xe80fbc40 | 0100 | RGBA_8888    |    0.0    0.0  720.0   45.0 |    0    0  720   45 | StatusBar$_2352#0
+09-18 22:04:46.472 D/SurfaceFlinger( 1065):      DEVICE | 0xe787ab00 | 0100 | RGBA_8888    |    0.0    0.0   67.0  228.0 |    0  239   67  467 | com.samsung.android.app.cocktailbars[...]arservice.CocktailBarService$_5976#0
+09-18 22:04:46.472 D/SurfaceFlinger( 1065):      CLIENT | 0xe7cad5c0 | 0100 | RGBA_8888    |    0.0    0.0  720.0   84.0 |    0 1516  720 1600 | NavigationBar0$_2352#0
+09-18 22:04:46.472 D/SurfaceFlinger( 1065):      CLIENT | 0xe7cad010 | 0108 | RGBA_8888    |    0.0    0.0  720.0 1600.0 |    0    0  720 1600 | BlueLightFilter$_2352#0
+09-18 22:04:46.472 D/SurfaceFlinger( 1065): 
+09-18 22:04:46.482 I/Layer   ( 1065): id=3466 mRemovedFromDrawingState Dim Layer for - Task=61#0 (121)
+09-18 22:04:46.482 I/Layer   ( 1065): id=3471 mRemovedFromDrawingState Surface(name=Dim Layer for - Task=61)/@0xc45c9be - animation-leash of dimmer#1 (121)
+09-18 22:04:46.482 I/Layer   ( 1065): id=3476 mRemovedFromDrawingState Surface(name=ActivityRecord{b3694d u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity t61})/@0x8ee72b8 - animation-leash of app_transition#0 (121)
+09-18 22:04:46.482 I/Layer   ( 1065): id=3477 mRemovedFromDrawingState Surface(name=ActivityRecord{b3694d u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity t61})/@0x8ee72b8 - animation-bounds#0 (121)
+09-18 22:04:46.482 I/SurfaceFlinger( 1065): id=3466 Removed Dim Layer for - Task=61#0 (121)
+09-18 22:04:46.482 I/SurfaceFlinger( 1065): id=3471 Removed Surface(name=Dim Layer for - Task=61)/@0xc45c9be - animation-leash of dimmer#1 (121)
+09-18 22:04:46.482 I/SurfaceFlinger( 1065): id=3476 Removed Surface(name=ActivityRecord{b3694d u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity t61})/@0x8ee72b8 - animation-leash of app_transition#0 (121)
+09-18 22:04:46.482 I/SurfaceFlinger( 1065): id=3477 Removed Surface(name=ActivityRecord{b3694d u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity t61})/@0x8ee72b8 - animation-bounds#0 (121)
+09-18 22:04:46.483 I/Layer   ( 1065): id=3471 Destroyed Surface(name=Dim Layer for - Task=61)/@0xc45c9be - animation-leash of dimmer#1
+09-18 22:04:46.483 I/Layer   ( 1065): id=3466 Destroyed Dim Layer for - Task=61#0
+09-18 22:04:46.483 I/Layer   ( 1065): id=3477 Destroyed Surface(name=ActivityRecord{b3694d u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity t61})/@0x8ee72b8 - animation-bounds#0
+09-18 22:04:46.483 I/Layer   ( 1065): id=3476 Destroyed Surface(name=ActivityRecord{b3694d u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity t61})/@0x8ee72b8 - animation-leash of app_transition#0
+09-18 22:04:46.507 V/MdnieScenarioControlService( 1594): mAclOffEnabled : false mAclPreviewState : false mAclCompensationState : false
+09-18 22:04:46.515 I/SurfaceFlinger( 1065): id=3473 Removed Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation#1 (117)
+09-18 22:04:46.521 D/InputMethodManagerServicePhysicalKey( 1594): isConnectedDexOnPC false
+09-18 22:04:46.521 D/InputMethodManagerService( 1594): isImeSwitcherDisabledPackage : false
+09-18 22:04:46.530 I/ViewRootImpl@e57f6d8[SignInHubActivity](17756): handleAppVisibility mAppVisible=true visible=false
+09-18 22:04:46.531 I/ViewRootImpl@e57f6d8[SignInHubActivity](17756): stopped(true) old=false
+09-18 22:04:46.532 I/Layer   ( 1065): id=3473 Destroyed Surface(name=a4469a2 InputMethod)/@0xb237dee - animation-leash of insets_animation#1
+09-18 22:04:46.543 D/OpenGLRenderer(17756): setSurface called with nullptr
+09-18 22:04:46.543 D/OpenGLRenderer(17756): setSurface() destroyed EGLSurface
+09-18 22:04:46.543 D/OpenGLRenderer(17756): destroyEglSurface
+09-18 22:04:46.546 I/ViewRootImpl@e57f6d8[SignInHubActivity](17756): dispatchDetachedFromWindow
+09-18 22:04:46.547 D/InputTransport( 1594): Input channel destroyed: '2195c81', fd=639
+09-18 22:04:46.548 W/InputManager-JNI( 1594): Input channel object '2195c81 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity (client)' was disposed without first being removed with the input manager!
+09-18 22:04:46.548 D/InputTransport( 1594): Input channel destroyed: '2195c81', fd=641
+09-18 22:04:46.548 D/RestrictionPolicy( 1594): isScreenCaptureEnabled : ret=true userId=0
+09-18 22:04:46.549 I/WindowManager( 1594): Destroying surface Surface(name=com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity$_17756)/@0xf7b39fc called by com.android.server.wm.WindowStateAnimator.destroySurface:987 com.android.server.wm.WindowStateAnimator.destroySurfaceLocked:518 com.android.server.wm.WindowState.removeImmediately:2960 com.android.server.wm.WindowState.removeIfPossible:3151 com.android.server.wm.WindowState.removeIfPossible:2984 com.android.server.wm.WindowManagerService.removeWindow:2266 com.android.server.wm.Session.remove:225 android.view.IWindowSession$Stub.onTransact:746 
+09-18 22:04:46.559 D/InputTransport(17756): Input channel destroyed: '2195c81', fd=128
+09-18 22:04:46.560 I/ActivityTaskManager( 1594): Removing activity ActivityRecord{b3694d u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity t61 f}}(activityDestroyed)  from stack callers=com.android.server.wm.ActivityRecord.destroyed:4106 com.android.server.wm.ActivityClientController.activityDestroyed:299 android.app.IActivityClientController$Stub.onTransact:604 com.android.server.wm.ActivityClientController.onTransact:141 android.os.Binder.execTransactInternal:1220 
+09-18 22:04:46.565 I/Layer   ( 1065): id=3457 mRemovedFromDrawingState com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity$_17756#0 (116)
+09-18 22:04:46.565 I/Layer   ( 1065): id=3456 mRemovedFromDrawingState 2195c81 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity#0 (116)
+09-18 22:04:46.565 I/SurfaceFlinger( 1065): id=3456 Removed 2195c81 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity#0 (116)
+09-18 22:04:46.565 I/SurfaceFlinger( 1065): id=3457 Removed com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity$_17756#0 (116)
+09-18 22:04:46.566 I/Layer   ( 1065): id=3456 Destroyed 2195c81 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity#0
+09-18 22:04:46.566 I/Layer   ( 1065): id=3457 Destroyed com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity$_17756#0
+09-18 22:04:46.577 W/LocalRequestInterceptor(17756): Error getting App Check token; using placeholder token instead. Error: com.google.firebase.FirebaseException: No AppCheckProvider installed.
+09-18 22:04:46.578 W/app_process(17997): FaultHandler: MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED failed: 38 Function not implemented
+09-18 22:04:46.582 I/Layer   ( 1065): id=3454 mRemovedFromDrawingState ActivityRecord{b3694d u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity t61}#0 (114)
+09-18 22:04:46.582 I/wpa_supplicant(22349): Heartbeat 1673
+09-18 22:04:46.582 I/SurfaceFlinger( 1065): id=3454 Removed ActivityRecord{b3694d u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity t61}#0 (114)
+09-18 22:04:46.582 I/Layer   ( 1065): id=3454 Destroyed ActivityRecord{b3694d u0 com.aistudio.skillsexchange.nxptvq/com.google.android.gms.auth.api.signin.internal.SignInHubActivity t61}#0
+09-18 22:04:46.594 E/Netd    (  878): To use pid in case SEC_PRODUCT_FEATURE_KNOX_SUPPORT_NPA is false, to remove build error (unused variable)
+09-18 22:04:46.597 E/Netd    (  878): To use pid in case SEC_PRODUCT_FEATURE_KNOX_SUPPORT_NPA is false, to remove build error (unused variable)
+09-18 22:04:46.633 D/nativeloader(17997): InitDefaultPublicLibraries for_preload=1: libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:libvulkan.so:libwebviewchromium_plat_support.so:libz.so
+09-18 22:04:46.667 D/nativeloader(17997): Load libicu_jni.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-18 22:04:46.667 D/app_process(17997): Time zone APEX ICU file found: /apex/com.android.tzdata/etc/icu/icu_tzdata.dat
+09-18 22:04:46.667 D/app_process(17997): I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt68l.dat
+09-18 22:04:46.670 D/nativeloader(17997): Load libjavacore.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-18 22:04:46.674 D/nativeloader(17997): Load libopenjdk.so using APEX ns com_android_art for caller /apex/com.android.art/javalib/core-oj.jar: ok
+09-18 22:04:46.678 I/Utils   ( 5976): isCurrentUser current = 0, ownerId = 0
+09-18 22:04:46.679 I/TrayVisibilityController( 5976): getComputedTrayVisible : keyguardState = 1
+09-18 22:04:46.679 I/TrayVisibilityController( 5976): updateTrayVisible: State=1 visible=1 mCurrentVisible=1 specificMode=0
+09-18 22:04:46.679 I/TrayStateController( 5976): onNotifyUpdateTray: state=0
+09-18 22:04:46.726 E/SemDvfsManager_JNI(17997): SemDvfsManager: registerfunction enter
+09-18 22:04:46.726 E/SemAffinityControl(17997): SemAffinityControl: registerfunction enter
+09-18 22:04:46.759 D/ProcessState(17997): Binder ioctl to enable oneway spam detection failed: Invalid argument
+09-18 22:04:46.760 D/AndroidRuntime(17997): Calling main entry com.android.commands.uiautomator.Launcher
+09-18 22:04:46.774 I/SurfaceFlinger( 1065): id=3479 createSurf (0x0),-1 flag=80004, WindowToken{7c076da android.os.Binder@80aa885}#0
+09-18 22:04:46.775 D/SettingsProvider( 1594): isChangeAllowed() : name = accessibility_enabled
+09-18 22:04:46.777 I/GenerationRegistry( 1594): mBackingStore.isClosed() : false
+09-18 22:04:46.780 D/SettingsProvider( 1594): isChangeAllowed() : name = accessibility_enabled
+09-18 22:04:46.781 I/GenerationRegistry( 1594): mBackingStore.isClosed() : false
+09-18 22:04:46.792 I/AccessibilityManagerService( 1594): semIsAccessibilityServiceEnabled()
+09-18 22:04:46.792 I/AccessibilityManagerService( 1594): semIsAccessibilityServiceEnabled()
+09-18 22:04:46.793 D/AS.AudioService( 1594): Accessibility volume enabled = false
+09-18 22:04:46.793 D/BatterySaverPolicy( 1594): accessibility changed to true, updating policy.
+09-18 22:04:46.810 I/TouchInteractionService( 2713): onActiveNavBarRegionChanges, region : SkRegion((0,1516,258,1600)(259,1516,460,1600)(461,1516,640,1600))
+09-18 22:04:46.810 V/Navbar.Store( 2352): ----handleEvent [EventType] ON_UPDATE_REMOTEVIEW [Module] SamsungNavigationBarView  KEYS_NAVBAR_DARK_INTENSITY=0.0  KEYS_CONTEXTUALBUTTON_VISIBLE=false  KEYS_LEFT_REMOTEVIEW_CONTAINER=android.widget.LinearLayout{e02460 I.E...... ......I. 0,0-79,84 #7f0b0478 app:id/left_remoteview}  KEYS_RIGHT_REMOTEVIEW_CONTAINER=android.widget.LinearLayout{cc4ed19 I.E...... ......I. 641,0-720,84 #7f0b070a app:id/right_remoteview}
+09-18 22:04:46.810 V/Navbar.Store( 2352): ------[Band]REMOTE_VIEW_PACK_SET_REMOTEVIEW_CONTAINER
+09-18 22:04:46.810 V/Navbar.Store( 2352): --------apply(UPDATE_NAVBAR_REMOTEVIEW_CONTAINER)
+09-18 22:04:46.811 V/Navbar.Store( 2352): --------apply(UPDATE_NAVBAR_RIGHT_REMOTEVIEW_VISIBILITY)
+09-18 22:04:46.811 V/Navbar.Store( 2352): --------getValue(FLOAT_REMOTEVIEW_DARK_INTENSITY)=0.0
+09-18 22:04:46.811 V/Navbar.Store( 2352): handleEvent [EventType] ON_NAVBAR_UPDATE_A11Y_SERVICE [Module] NavigationBar  KEYS_LONG_CLICKABLE=false  KEYS_CLICKABLE=false
+09-18 22:04:46.811 V/Navbar.Store( 2352): --[Band]SETUPWIZARD_PACK_UPDATE_A11Y_SERVICE
+09-18 22:04:46.811 V/Navbar.Store( 2352): ----getValue(BOOL_NAVBAR_BUTTON_FORCED_VISIBLE)=false
+09-18 22:04:46.811 V/Navbar.Store( 2352): ----getValue(BOOL_NAVBAR_SETUPWIZARD_STYLE)=false
+09-18 22:04:46.816 V/Navbar.Store( 2352): handleEvent [EventType] GET_BOOL_NAVBAR_CAN_MOVE_STATE [Module] SamsungNavigationBarView  KEYS_DEFAULT=true
+09-18 22:04:46.816 V/Navbar.Store( 2352): --[Band]CONFIG_PACK_GET_NAVBAR_CAN_MOVE
+09-18 22:04:46.816 V/Navbar.Store( 2352): ----getValue(BOOL_NAVBAR_CAN_MOVE)=true
+09-18 22:04:46.817 I/TouchInteractionService( 2713): onActiveNavBarRegionChanges, region : SkRegion((0,1516,258,1600)(259,1516,460,1600)(461,1516,640,1600))
+09-18 22:04:46.888 E/SemIWCMonitor( 1594): poor link count is 0
+09-18 22:04:46.889 E/SemIWCMonitor.File( 1594): Good Link, timestamp =: 1789758283872  RSSI:-76  AP:##:##:##:##:b8:fa Direction: -1 Direction (soft): -1
+09-18 22:04:46.890 E/SemIWCMonitor.File( 1594): Good Link, timestamp =: 1789758286889, RSSI:-77, AP:##:##:##:##:b8:fa
+09-18 22:04:47.040 I/HYPER-HAL(  996): [RequestManager.cpp]releaseLocked(): Released ID : 1295260
+09-18 22:04:47.194 D/ActivityManagerPerformance( 1594): AMP_release() ACT_RESUME
+09-18 22:04:47.198 I/HYPER-HAL(  996): [RequestManager.cpp]releaseLocked(): Released ID : 1298483
+09-18 22:04:47.218 D/SensorService( 1594): [SO] 0.117 -0.128 9.577
+09-18 22:04:47.332 V/NuPlayerDriver( 1215): getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 22:04:47.752 D/MobileStatusTracker(0/14)( 2352): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=Invalid,mGsm=Invalid,mWcdma=Invalid,mTdscdma=Invalid,mLte=CellSignalStrengthLte: rssi=-59 rsrp=-92 rsrq=-12 rssnr=1 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=Invalid,SignalBarInfo{ lteLevel=3 },rat=14,primary=CellSignalStrengthLte} level=3
+09-18 22:04:47.754 D/NetworkController( 2352): SignalStrength from intent slotId=0
+09-18 22:04:47.808 D/SemCscFeature(17997): Encoded
+09-18 22:04:47.831 D/io_stats(  619): !@ 179,0 r 5306119 47224191 w 492649 4623448 d 250348 2485916 f 189791 217991 iot 1970720 1684009 th 102400 102400 81508 pt 2480 inp 0 0 18299.964
+09-18 22:04:48.088 W/AccessibilityNodeInfoDumper(17997): Fetch time: 276ms
+09-18 22:04:48.089 W/WindowManager( 1594): removeWindowToken: Attempted to remove non-existing token: android.os.Binder@80aa885
+09-18 22:04:48.090 D/SettingsProvider( 1594): isChangeAllowed() : name = accessibility_enabled
+09-18 22:04:48.091 I/GenerationRegistry( 1594): mBackingStore.isClosed() : false
+09-18 22:04:48.093 D/SettingsProvider( 1594): isChangeAllowed() : name = accelerometer_rotation
+09-18 22:04:48.093 D/SettingsProvider( 1594): isChangeAllowed() : name = user_rotation
+09-18 22:04:48.094 V/WindowManager( 1594): rotationForOrientation(orient=SCREEN_ORIENTATION_UNSPECIFIED (-1), last=ROTATION_0 (0)); user=ROTATION_0 (0) USER_ROTATION_LOCKED
+09-18 22:04:48.094 D/WindowManager( 1594): rotationForOrientation, orientationSource=ActivityRecord{988a643 u0 com.aistudio.skillsexchange.nxptvq/com.example.MainActivity t61}
+09-18 22:04:48.094 V/WindowManager( 1594): Computed rotation=ROTATION_0 (0) for display id=0 based on lastOrientation=SCREEN_ORIENTATION_UNSPECIFIED (-1) and oldRotation=ROTATION_0 (0), caller=com.android.server.wm.DisplayContent.updateRotationUnchecked:2339 com.android.server.wm.WindowManagerService.updateRotationUnchecked:4535 com.android.server.wm.WindowManagerService.freezeDisplayRotation:4435 com.android.server.wm.WindowManagerService.freezeRotation:4394 android.view.IWindowManager$Stub.onTransact:2456 com.android.server.wm.WindowManagerService.onTransact:1621 
+09-18 22:04:48.100 D/hw-ProcessState(17997): Binder ioctl to enable oneway spam detection failed: Invalid argument
+09-18 22:04:48.101 D/AndroidRuntime(17997): Shutting down VM
+09-18 22:04:48.102 D/BatterySaverPolicy( 1594): accessibility changed to false, updating policy.
+09-18 22:04:48.103 I/Layer   ( 1065): id=3479 mRemovedFromDrawingState WindowToken{7c076da android.os.Binder@80aa885}#0 (114)
+09-18 22:04:48.103 I/SurfaceFlinger( 1065): id=3479 Removed WindowToken{7c076da android.os.Binder@80aa885}#0 (114)
+09-18 22:04:48.103 I/Layer   ( 1065): id=3479 Destroyed WindowToken{7c076da android.os.Binder@80aa885}#0
+09-18 22:04:48.448 D/SGM:GameManager( 1594): identifyForegroundApp. com.aistudio.skillsexchange.nxptvq, mCurrentUserId: 0, callerUserId: 0
+09-18 22:04:48.448 D/SGM:PkgDataHelper( 1594): getGamePkgData(). com.aistudio.skillsexchange.nxptvq
+09-18 22:04:48.449 I/a       ( 6293): [#CMH#] Is foreground game app: false
+09-18 22:04:48.462 V/NuPlayerDriver( 1215): getCurrentPosition(0xebb77840) 146463 (msec), at state 6
+09-18 22:04:48.510 I/c       ( 6293): [#CMH#] call unbind service  StoryService
+09-18 22:04:48.515 I/c       ( 6293): [#CMH#] unbind service START !:  StoryService  /  Servicesstate : Stopped
+09-18 22:04:48.519 I/StoryService(17904): [StoryService] On destroy() 
+09-18 22:04:48.519 I/f       (17904): [StoryService] shutdown() 
+09-18 22:04:48.520 I/c       ( 6293): [#CMH#] unbind service END !!:  StoryService
+09-18 22:04:48.520 I/b       (17904): [StoryService] afterExecute FutureTask
+09-18 22:04:48.537 E/libperflog( 1594): [LIBPERFLOG] socket_local_client fail = -1
+09-18 22:04:49.072 I/Pageboost( 1594): Launcher App Execution
+09-18 22:04:49.232 V/APM_AudioPolicyManager( 1055): setAppState(portId:617, state:1)
+09-18 22:04:49.232 V/APM_AudioPolicyManager( 1055): setAppState(portId:617, state:1)
+09-18 22:04:49.232 V/APM_AudioPolicyManager( 1055): setAppState(portId:617, state:1)
+09-18 22:04:49.232 V/APM_AudioPolicyManager( 1055): setAppState(portId:617, state:1)
+09-18 22:04:49.232 V/APM_AudioPolicyManager( 1055): setAppState(portId:617, state:1)
+09-18 22:04:49.232 V/APM_AudioPolicyManager( 1055): setAppState(portId:617, state:1)
+09-18 22:04:49.557 V/NuPlayerDriver( 1215): getCurrentPosition(0xebb77840) 146463 (msec), at state 6

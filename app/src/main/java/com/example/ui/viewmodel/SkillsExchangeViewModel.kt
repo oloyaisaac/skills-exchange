@@ -1563,13 +1563,19 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
-    fun clearAuthError() {
+                fun clearAuthError() {
         authError.value = null
         phoneError.value = null
         otpError.value = null
         if (authState.value is AuthState.Error) {
             authState.value = AuthState.SignedOut
         }
+    }
+
+    /** AUTH-002: Allows the UI (e.g. the Google sign-in activity-result callback) to
+     * surface a failure message so it is never silently swallowed by a stuck spinner. */
+    fun reportAuthError(message: String) {
+        authError.value = message
     }
 
     // ==================== NOTIF-002: FCM Methods ====================

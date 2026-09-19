@@ -1,0 +1,16 @@
+﻿package com.example.ui.viewmodel
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.data.db.AppDatabase
+import com.example.data.db.ChatMessageEntity
+import com.example.data.db.DisputeEntity
+import com.example.data.db.DisputeReason
+import com.example.data.db.DisputeStatus
+import com.example.data.db.JobPostEntity
+import com.example.data.db.NeighborhoodPostEntity
+import com.example.data.db.ServiceProviderEntity
+import com.example.data.db.SkillEndorsementEntity
+import com.example.data.db.UserProfileEntity
+import com.example.data.remote.FirebaseService
