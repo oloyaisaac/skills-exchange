@@ -53,6 +53,7 @@ fun AppNavigationDrawer(
     currentUserPhone: String?,
     currentDistrict: String,
     onTriggerAuth: () -> Unit,
+    onNavigateToOnboarding: () -> Unit = {},
     onLogout: () -> Unit,
     currentUserProfile: UserProfileEntity? = null,
     onOpenWallet: () -> Unit = {},
@@ -509,7 +510,7 @@ fun AppNavigationDrawer(
                         Button(
                             onClick = {
                                 onDismiss()
-                                onTriggerAuth()
+                                onNavigateToOnboarding()
                             },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp),

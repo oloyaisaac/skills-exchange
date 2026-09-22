@@ -650,6 +650,7 @@ fun MainScreen(
         currentUserPhone = currentUserPhone,
         currentDistrict = filterState.district,
         onTriggerAuth = { viewModel.triggerAuthFlow("Unlock account & verified credentials") },
+        onNavigateToOnboarding = { viewModel.navigateToOnboarding() },
         onLogout = { viewModel.logoutUser() },
         currentUserProfile = currentUserProfile,
         // AUDIT FIX (H3/H4/H7/M1): each drawer item now opens its real destination sheet

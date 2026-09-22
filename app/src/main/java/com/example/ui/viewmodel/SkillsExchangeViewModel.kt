@@ -730,6 +730,16 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         isAuthModalOpen.value = true
     }
 
+    /** Navigate back to the unified onboarding screen from MainScreen. */
+    fun navigateToOnboarding() {
+        isOnboardingCompleted.value = false
+    }
+
+    /** Called by OnboardingScreen to mark onboarding as completed after successful auth. */
+    fun setIsOnboardingCompleted(completed: Boolean) {
+        isOnboardingCompleted.value = completed
+    }
+
     fun closeAuthModal() {
         isAuthModalOpen.value = false
         authPendingAction.value = null

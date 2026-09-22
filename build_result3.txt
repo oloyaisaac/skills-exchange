@@ -1,0 +1,136 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Calculating task graph as no cached configuration is available for tasks: clean compileDebugKotlin
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:clean
+> Task :app:generateDebugBuildConfig FROM-CACHE
+> Task :app:processDebugGoogleServices FROM-CACHE
+> Task :app:generateDebugResources FROM-CACHE
+> Task :app:packageDebugResources FROM-CACHE
+> Task :app:processDebugNavigationResources FROM-CACHE
+> Task :app:parseDebugLocalResources FROM-CACHE
+> Task :app:generateDebugRFile FROM-CACHE
+> Task :app:kspDebugKotlin FROM-CACHE
+> Task :app:compileDebugKotlin
+gradlew.bat : e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/
+OnboardingScreen.kt:125:71 Argument type mismatch: actual type is 'String?', but 
+'String' was expected.
+At line:1 char:87
++ ... 1.0.22+7' ; & 'D:\skills exchange\gradlew.bat' clean compileDebugKotl ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (e: file:///D:/s...' was expected.:String) 
+    [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:292:12 'when' expression must be exhaustive. Add the 'PROFILE_SETUP' branch or 
+an 'else' branch.
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:436:17 Syntax error: Expecting a when-condition.
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:868:24 No value passed for parameter 'content'.
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:874:58 Suspend function 'suspend fun setIsOnboardingCompleted(completed: 
+Boolean): Unit' can only be called from a coroutine or another suspend function.
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:882:28 Unresolved reference 'enabled'.
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:882:76 Syntax error: Unexpected tokens (use ';' to separate expressions on the 
+same line).
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:883:28 Unresolved reference 'modifier'.
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:885:46 Syntax error: Unexpected tokens (use ';' to separate expressions on the 
+same line).
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:886:28 Unresolved reference 'shape'.
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:886:61 Syntax error: Unexpected tokens (use ';' to separate expressions on the 
+same line).
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:887:28 Unresolved reference 'colors'.
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:887:52 @Composable invocations can only happen from the context of a @Composable 
+function
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:888:24 Syntax error: Expecting an element.
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:890:32 @Composable invocations can only happen from the context of a @Composable 
+function
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:892:32 @Composable invocations can only happen from the context of a @Composable 
+function
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:895:21 Syntax error: Expecting ')'.
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:901:45 Syntax error: Unexpected tokens (use ';' to separate expressions on the 
+same line).
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:902:20 @Composable invocations can only happen from the context of a @Composable 
+function
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:917:20 @Composable invocations can only happen from the context of a @Composable 
+function
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:926:20 @Composable invocations can only happen from the context of a @Composable 
+function
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:934:20 @Composable invocations can only happen from the context of a @Composable 
+function
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:938:59 @Composable invocations can only happen from the context of a @Composable 
+function
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:962:20 @Composable invocations can only happen from the context of a @Composable 
+function
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:1017:24 @Composable invocations can only happen from the context of a 
+@Composable function
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:1021:50 @Composable invocations can only happen from the context of a 
+@Composable function
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:1057:20 @Composable invocations can only happen from the context of a 
+@Composable function
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:1063:59 @Composable invocations can only happen from the context of a 
+@Composable function
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:1088:24 @Composable invocations can only happen from the context of a 
+@Composable function
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:1090:50 @Composable invocations can only happen from the context of a 
+@Composable function
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:1102:20 @Composable invocations can only happen from the context of a 
+@Composable function
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:1108:47 Argument type mismatch: actual type is 'String?', but 'String' was 
+expected.
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:1116:48 @Composable invocations can only happen from the context of a 
+@Composable function
+e: file:///D:/skills%20exchange/app/src/main/java/com/example/ui/screens/OnboardingScre
+en.kt:1137:1 Syntax error: Expecting '}'.
+
+> Task :app:compileDebugKotlin FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin' (registered by plugin 
+'com.android.internal.application').
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompiler
+RunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 2m 52s
+10 actionable tasks: 2 executed, 8 from cache
+Configuration cache entry stored.
