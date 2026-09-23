@@ -49,6 +49,7 @@ private const val OnboardingAuthTag = "OnboardingAuth"
 
 enum class OnboardingStep {
     ROLE_SELECTION,
+    NEW_USER_ROLE_SELECTION,
     AUTHENTICATION,
     PROFILE_SETUP
 }
@@ -61,6 +62,7 @@ fun OnboardingScreen(
     val context = LocalContext.current
     var currentStep by remember { mutableStateOf(OnboardingStep.ROLE_SELECTION) }
     var selectedRole by remember { mutableStateOf("CLIENT") } // "CLIENT" or "WORKER"
+    var newUserRole by remember { mutableStateOf("") } // "CLIENT" or "WORKER" for NEW_HERE users
 
     var fullName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
@@ -285,11 +287,15 @@ fun OnboardingScreen(
 
             when (currentStep) {
                 // ==========================================
-                // STEP 1: ROLE SELECTION
+                // STEP 1: WELCOME + EXISTING/NEW SELECTION
                 // ==========================================
                 OnboardingStep.ROLE_SELECTION -> {
-                    Text(
-                        text = "Are you a Worker or Client?",
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Welcome to Skills Exchange",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Black,
                         color = Slate900,
@@ -297,22 +303,31 @@ fun OnboardingScreen(
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
-                    Text(
-                        text = "Choose how you would like to get started. You can toggle between client and worker modes at any time.",
-                        fontSize = 13.sp,
-                        color = Slate600,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 18.sp,
-                        modifier = Modifier.padding(bottom = 24.dp)
-                    )
+                        Text(
+                            text = "Connect with skilled workers or find opportunities to offer your skills.",
+                            fontSize = 13.sp,
+                            color = Slate600,
+                            textAlign = TextAlign.Center,
+                            lineHeight = 18.sp,
+                            modifier = Modifier.padding(bottom = 24.dp)
+                        )
 
-                    // Client Option Card
-                    val isClientSelected = selectedRole == "CLIENT"
+                        Text(
+                            text = "What describes you?",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Slate800,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
+                        // Existing Client Card
+                    val isClientSelected = selectedRole == "CLIENT" || selectedRole == "EXISTING_CLIENT"
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 16.dp)
-                            .clickable { selectedRole = "CLIENT" }
+                            .padding(bottom = 12.dp)
+                            .clickable { selectedRole = "EXISTING_CLIENT" }
                             .border(
                                 width = if (isClientSelected) 2.dp else 1.dp,
                                 color = if (isClientSelected) SignalBlue else Slate200,
@@ -352,16 +367,16 @@ fun OnboardingScreen(
                                     }
                                     Column {
                                         Text(
-                                            text = "I'm a Client",
-                                            fontSize = 16.sp,
+                                            text = "Existing Client",
+                                            fontSize = 14.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Slate900
                                         )
                                         Text(
-                                            text = "Hire a Neighbor",
-                                            fontSize = 12.sp,
-                                            color = SignalBlue,
-                                            fontWeight = FontWeight.SemiBold
+                                            text = "I already have an account and want to hire workers",
+                                            fontSize = 11.sp,
+                                            color = Slate500,
+                                            lineHeight = 14.sp
                                         )
                                     }
                                 }
@@ -377,31 +392,11 @@ fun OnboardingScreen(
                             Spacer(modifier = Modifier.height(12.dp))
 
                             Text(
-                                text = "Find and hire vetted local specialists for plumbing, electrical work, home repairs, cleaning, and more.",
+                                text = "Sign in to access your existing account, saved jobs, and payment history.",
                                 fontSize = 12.5.sp,
                                 color = Slate600,
                                 lineHeight = 17.sp
                             )
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Shield,
-                                    contentDescription = null,
-                                    tint = IndustrialEmerald,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Text(
-                                    text = "Mobile Money Escrow protected • No National ID needed to hire",
-                                    fontSize = 11.sp,
-                                    color = Slate500,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
                         }
                     }
 
@@ -451,16 +446,16 @@ fun OnboardingScreen(
                                     }
                                     Column {
                                         Text(
-                                            text = "I'm a Worker",
-                                            fontSize = 16.sp,
+                                            text = "Existing Worker",
+                                            fontSize = 14.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Slate900
                                         )
                                         Text(
-                                            text = "Offer Skills",
-                                            fontSize = 12.sp,
-                                            color = IndustrialEmerald,
-                                            fontWeight = FontWeight.SemiBold
+                                            text = "I already have a worker account and want to continue",
+                                            fontSize = 11.sp,
+                                            color = Slate500,
+                                            lineHeight = 14.sp
                                         )
                                     }
                                 }
@@ -476,47 +471,103 @@ fun OnboardingScreen(
                             Spacer(modifier = Modifier.height(12.dp))
 
                             Text(
-                                text = "Offer your trade and craft skills to nearby neighbors, quote on job requests, and grow your local client base.",
+                                text = "Sign in to access your worker profile, active jobs, and verification status.",
                                 fontSize = 12.5.sp,
                                 color = Slate600,
                                 lineHeight = 17.sp
                             )
+                        }
+                    }
 
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    // New Here Card
+                    val isNewHereSelected = selectedRole == "NEW_HERE"
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 24.dp)
+                            .clickable { selectedRole = "NEW_HERE" }
+                            .border(
+                                width = if (isNewHereSelected) 2.dp else 1.dp,
+                                color = if (isNewHereSelected) SignalBlue else Slate200,
+                                shape = RoundedCornerShape(16.dp)
+                            ),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isNewHereSelected) SignalBlue.copy(alpha = 0.04f) else Color.White
+                        ),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = if (isNewHereSelected) 2.dp else 0.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(
+                                        if (isNewHereSelected) SignalBlue else Slate100,
+                                        RoundedCornerShape(10.dp)
+                                    ),
+                                contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.VerifiedUser,
+                                    imageVector = Icons.Default.PersonAdd,
                                     contentDescription = null,
-                                    tint = IndustrialEmerald,
-                                    modifier = Modifier.size(14.dp)
+                                    tint = if (isNewHereSelected) Color.White else Slate700,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "New Here",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Slate900
                                 )
                                 Text(
-                                    text = "National ID verification & 2-guarantor safety review required",
+                                    text = "I want to create a brand new account",
                                     fontSize = 11.sp,
                                     color = Slate500,
-                                    fontWeight = FontWeight.Medium
+                                    lineHeight = 14.sp
+                                )
+                            }
+                            if (isNewHereSelected) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = "Selected",
+                                    tint = SignalBlue,
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
                         }
                     }
 
                     Button(
-                        onClick = { currentStep = OnboardingStep.AUTHENTICATION },
+                        onClick = {
+                            if (selectedRole == "NEW_HERE") {
+                                currentStep = OnboardingStep.NEW_USER_ROLE_SELECTION
+                            } else {
+                                currentStep = OnboardingStep.AUTHENTICATION
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp),
+                            .height(48.dp),
+                        enabled = selectedRole.isNotEmpty(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (selectedRole == "WORKER") IndustrialEmerald else SignalBlue
+                            containerColor = when (selectedRole) {
+                                "EXISTING_WORKER" -> IndustrialEmerald
+                                else -> SignalBlue
+                            }
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = if (selectedRole == "WORKER") "Continue as Worker" else "Continue as Client",
-                            fontSize = 15.sp,
+                            text = "Continue",
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -527,19 +578,219 @@ fun OnboardingScreen(
                         )
                     }
                 }
+            }
+
+            // ==========================================
+            // STEP 1b: NEW USER ROLE SELECTION (Client or Worker)
+            // ==========================================
+            OnboardingStep.NEW_USER_ROLE_SELECTION -> {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "What do you want to do?",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Slate900,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        Text(
+                            text = "Choose whether you want to hire skilled workers or offer your own skills.",
+                            fontSize = 13.sp,
+                            color = Slate600,
+                            textAlign = TextAlign.Center,
+                            lineHeight = 18.sp,
+                            modifier = Modifier.padding(bottom = 24.dp)
+                        )
+
+                        // Client option
+                        val isNewClient = newUserRole == "CLIENT"
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp)
+                                .clickable { newUserRole = "CLIENT" }
+                                .border(
+                                    width = if (isNewClient) 2.dp else 1.dp,
+                                    color = if (isNewClient) SignalBlue else Slate200,
+                                    shape = RoundedCornerShape(16.dp)
+                                ),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isNewClient) SignalBlue.copy(alpha = 0.04f) else Color.White
+                            ),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = if (isNewClient) 2.dp else 0.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(
+                                            if (isNewClient) SignalBlue else Slate100,
+                                            RoundedCornerShape(10.dp)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Person,
+                                        contentDescription = null,
+                                        tint = if (isNewClient) Color.White else Slate700,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "I want to hire workers",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Slate900
+                                    )
+                                    Text(
+                                        text = "Post jobs and connect with verified skilled workers",
+                                        fontSize = 11.sp,
+                                        color = Slate500,
+                                        lineHeight = 14.sp
+                                    )
+                                }
+                                if (isNewClient) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = "Selected",
+                                        tint = SignalBlue,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        // Worker option
+                        val isNewWorker = newUserRole == "WORKER"
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 24.dp)
+                                .clickable { newUserRole = "WORKER" }
+                                .border(
+                                    width = if (isNewWorker) 2.dp else 1.dp,
+                                    color = if (isNewWorker) IndustrialEmerald else Slate200,
+                                    shape = RoundedCornerShape(16.dp)
+                                ),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isNewWorker) IndustrialEmerald.copy(alpha = 0.04f) else Color.White
+                            ),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = if (isNewWorker) 2.dp else 0.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(
+                                            if (isNewWorker) IndustrialEmerald else Slate100,
+                                            RoundedCornerShape(10.dp)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Handyman,
+                                        contentDescription = null,
+                                        tint = if (isNewWorker) Color.White else Slate700,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "I want to offer my skills",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Slate900
+                                    )
+                                    Text(
+                                        text = "Register as a worker and get hired for jobs in your area",
+                                        fontSize = 11.sp,
+                                        color = Slate500,
+                                        lineHeight = 14.sp
+                                    )
+                                }
+                                if (isNewWorker) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = "Selected",
+                                        tint = IndustrialEmerald,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Button(
+                            onClick = {
+                                // Apply the chosen role and navigate to authentication
+                                selectedRole = newUserRole
+                                currentStep = OnboardingStep.AUTHENTICATION
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            enabled = newUserRole.isNotEmpty(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (newUserRole == "WORKER") IndustrialEmerald else SignalBlue
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = "Continue",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.Default.ArrowForward,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
 
                 // ==========================================
                 // STEP 2: AUTHENTICATION
                 // ==========================================
                 OnboardingStep.AUTHENTICATION -> {
+                    // Normalize role for UI: EXISTING_CLIENT and NEW_HERE (client) → CLIENT styling
+                    // EXISTING_WORKER and NEW_HERE (worker) → WORKER styling
+                    val isWorkerRole = selectedRole == "WORKER" || selectedRole == "EXISTING_WORKER"
+                    val roleBadgeText = when (selectedRole) {
+                        "EXISTING_CLIENT" -> "EXISTING CLIENT"
+                        "EXISTING_WORKER" -> "EXISTING WORKER"
+                        "NEW_HERE" -> if (newUserRole == "WORKER") "NEW WORKER" else "NEW CLIENT"
+                        "WORKER" -> "WORKER"
+                        else -> "CLIENT"
+                    }
+                    val badgeColor = if (isWorkerRole) IndustrialEmerald else SignalBlue
+
                     Surface(
-                        color = if (selectedRole == "WORKER") IndustrialEmerald.copy(alpha = 0.1f) else SignalBlue.copy(alpha = 0.1f),
+                        color = if (isWorkerRole) IndustrialEmerald.copy(alpha = 0.1f) else SignalBlue.copy(alpha = 0.1f),
                         shape = RoundedCornerShape(20.dp),
                         modifier = Modifier.padding(bottom = 12.dp)
                     ) {
                         Text(
-                            text = if (selectedRole == "WORKER") "SELECTED ROLE: WORKER" else "SELECTED ROLE: CLIENT",
-                            color = if (selectedRole == "WORKER") IndustrialEmerald else SignalBlue,
+                            text = "ACCOUNT TYPE: $roleBadgeText",
+                            color = badgeColor,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = 1.sp,
@@ -557,7 +808,7 @@ fun OnboardingScreen(
                     )
 
                     Text(
-                        text = "Use Google or your phone number to secure your ${if (selectedRole == "WORKER") "Worker" else "Client"} account.",
+                        text = "Use Google or your phone number to secure your ${if (isWorkerRole) "Worker" else "Client"} account.",
                         fontSize = 13.sp,
                         color = Slate600,
                         textAlign = TextAlign.Center,
@@ -707,7 +958,7 @@ fun OnboardingScreen(
                                 .fillMaxWidth()
                                 .height(50.dp),
                             shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = if (selectedRole == "WORKER") IndustrialEmerald else SignalBlue)
+                            colors = ButtonDefaults.buttonColors(containerColor = if (isWorkerRole) IndustrialEmerald else SignalBlue)
                         ) {
                             if (isSendingOtp) {
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)

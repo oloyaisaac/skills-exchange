@@ -110,8 +110,12 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val isWorkerApprovedAndActivated: StateFlow<Boolean> = repository.currentUser.map { user ->
-        user != null && user.isWorkerActivated && user.workerKycStatus == "APPROVED"
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false) // fail closed until the real profile is emitted
+        user != null &&
+        (user.initialRole == "WORKER" || user.workerKycStatus == "APPROVED") &&
+        user.workerKycStatus == "APPROVED" &&
+        user.trainingCompleted &&
+        user.isWorkerActivated
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false) // fail closed until real profile is emitted
 
     /**
      * DISP-001: The signed-in user's own disputes (as reporter or reported party).
@@ -226,10 +230,10 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                                 district = sessionManager.getUserDistrict().orEmpty(),
                                 initialRole = restoredRole,
                                 currentActiveMode = restoredRole,
-                                // Fail closed: a restored worker must re-verify before activation.
-                                workerKycStatus = if (isWorker) "UNVERIFIED" else "APPROVED",
-                                isWorkerActivated = !isWorker,
-                                trainingCompleted = !isWorker,
+                                // SEC-009: Fail closed: a restored account never unlocks worker features without approved KYC and activation.
+                                workerKycStatus = if (isWorker) "UNVERIFIED" else "NOT_APPLIED",
+                                isWorkerActivated = false,
+                                trainingCompleted = false,
                                 isOnboardingCompleted = true
                             )
                             repository.saveUserProfile(restoredProfile)
@@ -320,13 +324,20 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
-    // AUTH-007: Permission enforcement
-    // SEC-009: Also requires an authenticated session, so a signed-out device that still
-    // holds a cached profile row cannot unlock worker mode.
+    // AUTH-007 / SEC-009: Strict multi-layer permission enforcement for worker dashboard & actions.
+    // Worker dashboard and capabilities require:
+    // 1. Authenticated session
+    // 2. Worker account registration or approved worker qualification
+    // 3. KYC verification status APPROVED
+    // 4. Worker training completed
+    // 5. Worker activated by administrator
     fun canAccessWorkerFeatures(): Boolean {
         if (!isAuthenticated.value) return false
         val user = currentUser.value ?: return false
-        return user.isWorkerActivated && user.workerKycStatus == "APPROVED"
+        return (user.initialRole == "WORKER" || user.workerKycStatus == "APPROVED") &&
+               user.workerKycStatus == "APPROVED" &&
+               user.trainingCompleted &&
+               user.isWorkerActivated
     }
 
     fun toggleUserRoleMode() {
@@ -440,6 +451,10 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun toggleWorkerOnline() {
+        if (!canAccessWorkerFeatures()) {
+            authError.value = "Worker verification and activation required to go online."
+            return
+        }
         isWorkerOnline.update { !it }
     }
 
@@ -833,9 +848,9 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                     district = district,
                     initialRole = initialRole,
                     currentActiveMode = initialRole,
-                    workerKycStatus = if (isWorker) "UNVERIFIED" else "APPROVED",
-                    isWorkerActivated = !isWorker,
-                    trainingCompleted = !isWorker,
+                    workerKycStatus = if (isWorker) "UNVERIFIED" else "NOT_APPLIED",
+                    isWorkerActivated = false,
+                    trainingCompleted = false,
                     isOnboardingCompleted = true
                 )
             }

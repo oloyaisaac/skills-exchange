@@ -308,7 +308,7 @@ fun EscrowAndProofSheet(
                     }
                 }
 
-                // Platform & Trust Fee
+                // Platform & Trust Fee (PAY-005: 5% platform fee + 5% worker commission)
                 HorizontalDivider(color = Slate200)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -316,15 +316,15 @@ fun EscrowAndProofSheet(
                 ) {
                     Column {
                         Text(
-                            text = "Platform Trust & Insurance Fee",
+                            text = "Platform Fee (5%) & Commission (5%)",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Slate800
                         )
-                        Text(text = "~10% fee applied strictly on labor", fontSize = 10.sp, color = Slate500)
+                        Text(text = "10% total deductions (5% platform fee + 5% worker commission)", fontSize = 10.sp, color = Slate500)
                     }
                     Text(
-                        text = "$${"%.2f".format(job.platformFee)}",
+                        text = CurrencyRegion.format(job.platformFee, activeRegion),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = Slate900
@@ -752,20 +752,32 @@ fun EscrowAndProofSheet(
                         Text(text = "Itemized Financial Audit Ledger & Tax Reserve", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Slate900)
                     }
 
+                    // PAY-005: Itemized 5% worker commission, 5% app fee, 10% total deductions, and net payout
+                    val workerCommission = job.laborTotal * 0.05
+                    val appPlatformFee = job.laborTotal * 0.05
+                    val totalPlatformDeductions = workerCommission + appPlatformFee
+                    val netWorkerPayout = (job.laborTotal + job.materialsSubtotal - workerCommission).coerceAtLeast(0.0)
                     val taxReserve = job.grandTotal * 0.02
-                    val netWorkerPayout = (job.laborTotal + job.materialsSubtotal).coerceAtLeast(0.0)
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(text = "Gross Escrow Charge", fontSize = 10.sp, color = Slate600)
+                        Text(text = "Job Gross Escrow Amount", fontSize = 10.sp, color = Slate600)
                         Text(text = CurrencyRegion.format(job.grandTotal, activeRegion), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Slate900)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(text = "Worker-Side Commission (5%)", fontSize = 10.sp, color = Slate600)
+                        Text(text = "-${CurrencyRegion.format(workerCommission, activeRegion)}", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Slate800)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(text = "App / Platform Fee (5%)", fontSize = 10.sp, color = Slate600)
+                        Text(text = CurrencyRegion.format(appPlatformFee, activeRegion), fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Slate800)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(text = "Total Platform Deductions (10%)", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Slate700)
+                        Text(text = CurrencyRegion.format(totalPlatformDeductions, activeRegion), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Slate900)
                     }
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(text = "Worker Net Direct Payout", fontSize = 10.sp, color = Slate600)
                         Text(text = CurrencyRegion.format(netWorkerPayout, activeRegion), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = IndustrialEmeraldDark)
-                    }
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(text = "Platform Service Cut (~10%)", fontSize = 10.sp, color = Slate600)
-                        Text(text = CurrencyRegion.format(job.platformFee, activeRegion), fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Slate800)
                     }
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(text = "Local Tax Reserve (2% URA/KRA Withholding)", fontSize = 10.sp, color = Slate600)

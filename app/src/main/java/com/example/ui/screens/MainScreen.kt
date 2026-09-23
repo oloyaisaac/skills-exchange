@@ -354,7 +354,7 @@ fun MainScreen(
                         } else {
                             WorkerVerificationStatusView(
                                 userProfile = currentUserProfile,
-                                onStartVerification = { viewModel.setQuickRequestOpen(true) },
+                                onStartVerification = { isIdentitySheetOpen = true },
                                 onStartTraining = { viewModel.startTraining() },
                                 onSwitchToClientMode = { viewModel.setUserRoleMode("Hire a Neighbor") },
                                 modifier = Modifier.fillMaxSize()

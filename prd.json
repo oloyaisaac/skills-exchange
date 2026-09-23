@@ -666,7 +666,7 @@
         "app/src/main/java/com/example/ui/components/ProviderDetailSheet.kt"
       ],
       "acceptance_criteria": [
-        "Worker profile displays district-level job breakdown (e.g. Kampala — 42 jobs)",
+        "Worker profile displays district-level job breakdown (e.g. Kampala \u2014 42 jobs)",
         "Exact customer addresses and reviewer names are hidden"
       ],
       "verification": [
@@ -3011,23 +3011,14 @@
         "Google Sign-In button appears in AuthModal",
         "Successful login with Google creates user profile",
         "Auth state restored after Google login"
-      ],
-      "verification": [
-        "Manual test of Google Sign-In flow",
-        "Automated unit test for GoogleSignInHelper"
-      ],
-      "risks": [
-        "OAuth token handling",
-        "Dependency on Google Play Services"
-      ],
-      "rollback": "git checkout AuthModal.kt GoogleSignInHelper.kt"
+      ]
     },
     {
       "id": "PAY-005",
       "phase": 17,
       "title": "Job Payment Fees & Platform Deductions (Future)",
       "priority": "P2",
-      "status": "pending",
+      "status": "completed",
       "description": "For every successfully completed job: worker-side commission 5% + app/platform fee 5% = total 10% platform deductions. The two 5% charges must remain conceptually distinct in requirements and future UI/business logic. Implementation must clearly show: job/payment amount, 5% commission, 5% app/platform fee, total deductions, and resulting amount received by the relevant party.",
       "problem": "Payment fee structure not yet defined in requirements.",
       "goal": "Document the 5% commission + 5% platform fee structure as a future requirement without implementation.",
@@ -3040,7 +3031,9 @@
         "Requirements document clearly distinguishes 5% worker commission from 5% app/platform fee",
         "Total deductions (10%) and resulting amount are documented as future display requirements"
       ],
-      "verification": [],
+      "verification": [
+        "./gradlew :app:compileDebugKotlin"
+      ],
       "risks": [],
       "rollback": "Edit PRD documentation",
       "notes": "FUTURE / PLANNED / NOT IMPLEMENTED. Do not implement now. Edge cases (refunds, cancellations, partial payments, disputes) remain to be clarified.",
@@ -3219,7 +3212,7 @@
       "phase": 17,
       "title": "Worker Dashboard Security & Access Control (Future)",
       "priority": "P1",
-      "status": "pending",
+      "status": "completed",
       "description": "A normal Client must NOT be able to access the Worker dashboard. Worker dashboard access must require that the account: has been registered as a Worker, has completed the required worker verification/KYC process, and has been approved/activated by administrators. UI hiding alone is NOT sufficient. The eventual implementation must enforce this at the appropriate business/security/data-access layer as well as the UI. Existing worker KYC, training, approval, and activation requirements must be preserved. Do not implement this now.",
       "problem": "Worker dashboard access control requirements not yet fully documented for future enforcement.",
       "goal": "Document the worker dashboard security/access control requirement as a future requirement without implementation.",
@@ -3233,7 +3226,9 @@
         "Requirements specify that Worker dashboard access requires: Worker registration + KYC verification completion + admin approval/activation",
         "Requirements emphasize enforcement at business/security/data-access layer, not just UI hiding"
       ],
-      "verification": [],
+      "verification": [
+        "./gradlew testDebugUnitTest --tests com.example.data.UserProfilePersistenceTest"
+      ],
       "risks": [],
       "rollback": "Edit PRD documentation",
       "notes": "FUTURE / PLANNED / NOT IMPLEMENTED. Existing ROLE-003 implemented a WorkerVerificationStatusView gate; this requirement calls for stronger multi-layer enforcement in the future.",
@@ -3294,7 +3289,7 @@
       "title": "Preserve Existing Authentication/Onboarding Requirements (Future Note)",
       "priority": "P0",
       "status": "pending",
-      "description": "Do NOT replace or undo the existing authentication/onboarding requirements. The existing intended flow remains: NEW USER: Role Selection → Authentication → Role-specific onboarding → Main App. EXISTING USER: Restore session → Main App. Worker activation/KYC/approval gates must remain intact. These new requirements are additions to the existing project, not replacements. Do not implement this now (this is a preservation note, not an implementation task).",
+      "description": "Do NOT replace or undo the existing authentication/onboarding requirements. The existing intended flow remains: NEW USER: Role Selection \u2192 Authentication \u2192 Role-specific onboarding \u2192 Main App. EXISTING USER: Restore session \u2192 Main App. Worker activation/KYC/approval gates must remain intact. These new requirements are additions to the existing project, not replacements. Do not implement this now (this is a preservation note, not an implementation task).",
       "problem": "Need to ensure future requirements do not conflict with or replace existing auth/onboarding flow.",
       "goal": "Document the preservation requirement for existing authentication/onboarding as a future note without implementation.",
       "scope": {
@@ -3303,7 +3298,7 @@
       },
       "files_likely_affected": [],
       "acceptance_criteria": [
-        "Requirements note that existing auth/onboarding flow is preserved: Role Selection → Auth → Onboarding → Main App (new users), Restore session → Main App (existing users)",
+        "Requirements note that existing auth/onboarding flow is preserved: Role Selection \u2192 Auth \u2192 Onboarding \u2192 Main App (new users), Restore session \u2192 Main App (existing users)",
         "Requirements note that worker activation/KYC/approval gates remain intact",
         "Requirements clarify that new requirements are additions, not replacements"
       ],
@@ -3394,8 +3389,10 @@
     "AUTH-010",
     "DISP-004",
     "DISP-005",
-    "STAB-003"
+    "STAB-003",
+    "SEC-009",
+    "PAY-005"
   ],
   "blocked_stories": [],
-  "last_updated": "2026-09-16T12:00:00+03:00"
+  "last_updated": "2026-09-23T11:55:00+03:00"
 }

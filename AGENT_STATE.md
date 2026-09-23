@@ -1,7 +1,22 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-09-17T22:10:00+03:00 — C1/C2/C3 automated verification PASSED (compile, targeted tests 6/6, APK, device install). Manual device matrix A–F still requires interactive on-device input; C1–C3 remain PENDING in TASKS.md.
+2026-09-23T12:05:00+03:00 — SEC-009 and PAY-005 confirmed implemented. Unit tests re-verified this session: UserProfilePersistenceTest 7/7 PASSED (BUILD SUCCESSFUL in 1m 54s, GRADLE_USER_HOME=D:\gradle-home, JAVA_HOME=JDK17, timestamp 2026-09-23T09:01:22Z). TASKS.md synced: PAY-005 updated to Completed, count corrected to 81 completed / 10 pending. Session audit produced.
+
+---
+## SEC-009: Worker Dashboard Security & Access Control (COMPLETED & VERIFIED)
+
+**Status: COMPLETED & VERIFIED (2026-09-23)**
+- **Problem**: Default values in `UserProfileEntity` and `completeOnboarding()` / `restoreSession()` previously set non-worker (client) accounts to `workerKycStatus = "APPROVED"` and `isWorkerActivated = true`, allowing clients to bypass the worker gate and access worker features.
+- **Implementation**:
+  - `UserProfileEntity` defaults set to fail-closed: `workerKycStatus = "NOT_APPLIED"`, `isWorkerActivated = false`, `trainingCompleted = false`.
+  - `completeOnboarding()` and `restoreSession()` now initialize clients with `workerKycStatus = "NOT_APPLIED"`, `isWorkerActivated = false`, and `trainingCompleted = false`.
+  - `canAccessWorkerFeatures()` strictly enforces: authenticated session + worker registered/qualified + worker KYC `APPROVED` + `trainingCompleted` + `isWorkerActivated`.
+  - `isWorkerApprovedAndActivated` StateFlow enforces the exact same multi-layer requirement.
+  - `toggleWorkerOnline()` is gated behind `canAccessWorkerFeatures()`.
+  - `WorkerVerificationStatusView.onStartVerification` wired to open `IdentityVerificationSheet` rather than opening the job post drawer.
+- **Verification**: `:app:testDebugUnitTest --tests com.example.data.UserProfilePersistenceTest` PASSED 7/7 (0 failures, 0 errors, XML verified at `app/build/test-results/testDebugUnitTest/TEST-com.example.data.UserProfilePersistenceTest.xml`).
+- **PRD Status**: `SEC-009` marked `completed` in `prd.json`. Total completed stories: 80.
 
 ---
 ## Device-reported UI follow-up — 2026-09-17 (PENDING)

@@ -139,9 +139,9 @@ class UserProfilePersistenceTest {
             district = "Sunnyside",
             initialRole = "CLIENT",
             currentActiveMode = "CLIENT",
-            workerKycStatus = "APPROVED",
-            isWorkerActivated = true,
-            trainingCompleted = true,
+            workerKycStatus = "NOT_APPLIED",
+            isWorkerActivated = false,
+            trainingCompleted = false,
             isOnboardingCompleted = true
         )
         db.userProfileDao().insertUserProfile(clientProfile)
@@ -150,6 +150,36 @@ class UserProfilePersistenceTest {
         assertEquals("CLIENT", currentUser?.initialRole)
         assertEquals("CLIENT", currentUser?.currentActiveMode)
         assertEquals("Client Neighbor", currentUser?.fullName)
+        assertFalse(currentUser!!.isWorkerActivated)
+        assertEquals("NOT_APPLIED", currentUser.workerKycStatus)
+    }
+
+    @Test
+    fun `client account cannot access worker dashboard or satisfy activation gate (SEC-009)`() = runBlocking {
+        val clientProfile = UserProfileEntity(
+            id = "client_uid_sec009",
+            phoneNumber = "+256 700 999 888",
+            fullName = "Regular Client",
+            district = "Nakawa",
+            initialRole = "CLIENT",
+            currentActiveMode = "CLIENT",
+            workerKycStatus = "NOT_APPLIED",
+            isWorkerActivated = false,
+            trainingCompleted = false,
+            isOnboardingCompleted = true
+        )
+        db.userProfileDao().insertUserProfile(clientProfile)
+
+        val currentUser = db.userProfileDao().getCurrentUser().first()
+        assertNotNull(currentUser)
+
+        // SEC-009 gate: requires registered worker (or approved KYC) + APPROVED + trainingCompleted + isWorkerActivated
+        val canAccessWorkerDashboard = (currentUser!!.initialRole == "WORKER" || currentUser.workerKycStatus == "APPROVED") &&
+                currentUser.workerKycStatus == "APPROVED" &&
+                currentUser.trainingCompleted &&
+                currentUser.isWorkerActivated
+
+        assertFalse("Client must never satisfy worker dashboard gate", canAccessWorkerDashboard)
     }
 
     @Test

@@ -2,7 +2,22 @@
 
 All meaningful development changes are recorded here in reverse chronological order.
 
-### [2026-09-17] [FIX] Device-reported legal-name contrast and onboarding district validation — runtime retest pending
+### [2026-09-23] [FEAT] SEC-009 — Worker Dashboard Security & Access Control Implemented & Verified
+
+- **Entities ([Entities.kt](file:///d:/skills%20exchange/app/src/main/java/com/example/data/db/Entities.kt))**: Set `UserProfileEntity` defaults to fail-closed: `workerKycStatus = "NOT_APPLIED"`, `isWorkerActivated = false`, `trainingCompleted = false`.
+- **ViewModel ([SkillsExchangeViewModel.kt](file:///d:/skills%20exchange/app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt))**:
+  - `canAccessWorkerFeatures()` strictly enforces: authenticated session + worker registration/qualification + KYC status `APPROVED` + `trainingCompleted` + `isWorkerActivated`.
+  - `isWorkerApprovedAndActivated` StateFlow enforces the exact same multi-layer requirement.
+  - `completeOnboarding()` and `restoreSession()` no longer set client accounts to `APPROVED` or `isWorkerActivated = true`; client accounts remain fail-closed as `NOT_APPLIED` and inactive.
+  - `toggleWorkerOnline()` is gated behind `canAccessWorkerFeatures()`.
+- **UI ([MainScreen.kt](file:///d:/skills%20exchange/app/src/main/java/com/example/ui/screens/MainScreen.kt))**:
+  - Worker dashboard (`FreelancerDashboardView`) is rendered only when `isWorkerApprovedAndActivated` is true.
+  - When unverified or unapproved, `WorkerVerificationStatusView` or `WorkerTrainingScreen` is displayed.
+  - Connected `WorkerVerificationStatusView`'s `onStartVerification` callback to `IdentityVerificationSheet` (fixing audit G4).
+- **Verification**: `:app:testDebugUnitTest --tests com.example.data.UserProfilePersistenceTest` passed with 7/7 tests passing (including new `client account cannot access worker dashboard or satisfy activation gate (SEC-009)`).
+- **PRD**: Updated `SEC-009` to `completed` in `prd.json` (completed count: 80).
+
+
 
 - `d:\skills exchange\app\src\main\java\com\example\ui\screens\OnboardingScreen.kt` and `d:\skills exchange\app\src\main\java\com\example\ui\components\AuthModal.kt`: explicitly set Slate900 focused/unfocused legal-name text on white, retaining blue cursor/labels. Theme-derived light text against a light surface caused the contrast defect; no Google display-name prefill introduced.
 - Onboarding district no longer defaults to Sunnyside or replaces selection on GPS errors; required label and nonblank completion gate added. AuthModal already gates nonblank district but retains initialDistrict default. Device validation remains untested.

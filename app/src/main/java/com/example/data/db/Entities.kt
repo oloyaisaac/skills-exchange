@@ -327,9 +327,9 @@ data class UserProfileEntity(
     val district: String = "Sunnyside",
     val initialRole: String = "CLIENT", // "CLIENT" or "WORKER"
     val currentActiveMode: String = "CLIENT", // "CLIENT" or "WORKER"
-    val workerKycStatus: String = "APPROVED", // "UNVERIFIED", "PENDING_REVIEW", "CHANGES_REQUIRED", "APPROVED", "REJECTED", "SUSPENDED"
-    val isWorkerActivated: Boolean = true,
-    val trainingCompleted: Boolean = true,
+    val workerKycStatus: String = "NOT_APPLIED", // "NOT_APPLIED", "UNVERIFIED", "PENDING_REVIEW", "CHANGES_REQUIRED", "APPROVED", "REJECTED", "SUSPENDED"
+    val isWorkerActivated: Boolean = false,
+    val trainingCompleted: Boolean = false,
     val nationalIdNumber: String = "UG-8829104-B",
     val primarySkill: String? = "Electrical",
     val additionalSkillsCsv: String = "Plumbing,Home Repair",

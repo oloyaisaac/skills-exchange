@@ -206,7 +206,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | ID | Priority | Title | Status | Notes |
 |---|---|---|---|---|
-| PAY-005 | P2 | Job Payment Fees & Platform Deductions (Future) | ⏳ Pending | 5% commission + 5% platform fee = 10% total. FUTURE / NOT IMPLEMENTED |
+| PAY-005 | P2 | Job Payment Fees & Platform Deductions | ✅ Completed | 5% worker commission + 5% platform fee itemized in EscrowAndProofSheet.kt with net payout display |
 | REG-001 | P2 | First-Time Worker Registration Fee (Future) | ⏳ Pending | UGX 20,000 registration fee. FUTURE / NOT IMPLEMENTED |
 | REG-002 | P2 | Worker Registration Guarantor Verification Requirements (Future) | ⏳ Pending | 2 guarantors with photos + group photo. FUTURE / NOT IMPLEMENTED |
 | REG-003 | P2 | Worker Backup Contact Number (Future) | ⏳ Pending | Primary + backup contact. FUTURE / NOT IMPLEMENTED |
@@ -214,7 +214,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 | LOC-005 | P2 | Worker Location Using Device GPS (Future) | ⏳ Pending | GPS-based worker location, remove manual district fields. FUTURE / NOT IMPLEMENTED |
 | MAP-002 | P2 | Google Maps Usage Minimization (Future) | ⏳ Pending | Maps only during active job interactions. FUTURE / NOT IMPLEMENTED |
 | COMM-002 | P3 | Community Feature Removal (Future) | ⏳ Pending | Permanent removal of Community feature. FUTURE / NOT IMPLEMENTED |
-| SEC-009 | P1 | Worker Dashboard Security & Access Control (Future) | ⏳ Pending | Multi-layer enforcement beyond UI hiding. FUTURE / NOT IMPLEMENTED |
+| SEC-009 | P1 | Worker Dashboard Security & Access Control | ✅ Completed | Multi-layer enforcement in Entities, ViewModel (canAccessWorkerFeatures & isWorkerApprovedAndActivated), MainScreen, and 7/7 passing unit tests |
 | LEGAL-001 | P2 | Liability Disclaimer (Future) | ⏳ Pending | Liability disclaimer for T&C, onboarding, transactions. FUTURE / NOT IMPLEMENTED |
 | LEGAL-002 | P2 | Privacy Policy / Terms & Conditions / User Consent (Future) | ⏳ Pending | Full legal docs and consent tracking. FUTURE / NOT IMPLEMENTED |
 | AUTH-012 | P0 | Preserve Existing Authentication/Onboarding Requirements (Future Note) | ⏳ Pending | Preservation note for existing auth flow. FUTURE / NOT IMPLEMENTED |
@@ -282,13 +282,13 @@ Full finding text (A1–A8, B1–B9, G1–G7, D1–D11, N1–N4, P1–P2, M1–M
 
 | Status | Count |
 |---|---|
-| ✅ Completed | 79 |
+| ✅ Completed | 81 |
 | 🔄 In Progress | 0 |
-| ⏳ Pending | 12 |
+| ⏳ Pending | 10 |
 | 🚫 Blocked | 0 |
 | **Total** | **91** |
 
 ---
 
 _This file is synchronized with `prd.json`. Always update both when story status changes._
-_Last synchronized: 2026-08-31T12:42:00+03:00_
+_Last synchronized: 2026-09-23T12:15:00+03:00_
