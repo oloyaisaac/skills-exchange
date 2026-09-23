@@ -1,6 +1,7 @@
 package com.example.data.remote
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import com.example.data.db.JobPostEntity
 import com.example.data.db.ServiceProviderEntity
@@ -362,6 +363,29 @@ class FirebaseService(private val context: Context? = null) {
         }
     }
 
+    /**
+     * REG-004: Uploads the signed-in user's profile photo to the public avatars bucket
+     * scoped to their own UID (`avatars/{userId}/`, owner-only write per storage.rules)
+     * and returns the download URL to persist on the profile.
+     *
+     * Returns null (fail closed) when [userId] is blank, Firebase Storage is unavailable,
+     * or the upload/URL fetch fails. Only the resulting URL string is stored — image bytes
+     * never touch Room or Firestore.
+     */
+    suspend fun uploadProfilePhoto(userId: String, photoUri: Uri): String? {
+        if (userId.isBlank()) return null
+        val storageInstance = storage ?: return null
+        return try {
+            val fileName = "profile_${System.currentTimeMillis()}.jpg"
+            val storageRef = storageInstance.reference.child("avatars/$userId/$fileName")
+            storageRef.putFile(photoUri).await()
+            storageRef.downloadUrl.await().toString()
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "Profile photo upload failed: ${e.message}")
+            null
+        }
+    }
+
     fun streamChatMessages(jobId: String): Flow<List<Map<String, Any>>> = callbackFlow {
         val db = firestore
         if (db == null) {
@@ -492,6 +516,10 @@ class FirebaseService(private val context: Context? = null) {
                     "initialRole" to profile.initialRole,
                     "currentActiveMode" to profile.currentActiveMode,
                     "isOnboardingCompleted" to profile.isOnboardingCompleted,
+                    // REG-003 / REG-004: profile photo URL + optional backup contact fields.
+                    "avatarUrl" to profile.avatarUrl,
+                    "backupContactName" to profile.backupContactName,
+                    "backupContactPhone" to profile.backupContactPhone,
                     "updatedAtTimestamp" to System.currentTimeMillis()
                 )
             ).await()
@@ -558,7 +586,11 @@ class FirebaseService(private val context: Context? = null) {
             workerKycStatus = "UNVERIFIED",
             isWorkerActivated = false,
             trainingCompleted = false,
-            isOnboardingCompleted = getBoolean("isOnboardingCompleted") ?: true
+            isOnboardingCompleted = getBoolean("isOnboardingCompleted") ?: true,
+            // REG-003 / REG-004: optional fields — older documents simply restore as unset.
+            avatarUrl = getString("avatarUrl") ?: "",
+            backupContactName = getString("backupContactName") ?: "",
+            backupContactPhone = getString("backupContactPhone") ?: ""
         )
     }
 }

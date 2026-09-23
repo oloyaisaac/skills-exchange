@@ -1,6 +1,7 @@
 package com.example.ui.viewmodel
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.db.AppDatabase
@@ -23,6 +24,7 @@ import com.example.data.remote.TranscribedVoiceJob
 import com.example.data.repository.SkillsExchangeRepository
 import com.example.util.AudioRecorderHelper
 import com.example.util.CurrencyRegion
+import com.example.util.ProfileValidators
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -77,6 +79,13 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     val audioTranscribedJob = MutableStateFlow<TranscribedVoiceJob?>(null)
     val isAudioRecording = MutableStateFlow(false)
     val isAudioTranscribing = MutableStateFlow(false)
+
+    // --- REG-003 / REG-004: worker backup contact & profile photo state ---
+    val pendingProfilePhotoUri = MutableStateFlow<Uri?>(null)
+    val isUploadingProfilePhoto = MutableStateFlow(false)
+    val profilePhotoError = MutableStateFlow<String?>(null)
+    val backupContactError = MutableStateFlow<String?>(null)
+    val profileSettingsSuccess = MutableStateFlow<String?>(null)
 
     val filterState = MutableStateFlow(FilterState())
     val gpsLocationState = MutableStateFlow(GpsLocationState())
@@ -1045,6 +1054,108 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             if (!firestoreDeleted || !authDeleted) {
                 authError.value = "Account deletion partially failed. Please contact support."
             }
+        }
+    }
+
+    // --- REG-003: WORKER BACKUP CONTACT ---
+    /**
+     * Saves the signed-in user's backup contact (name + phone).
+     *
+     * DECISION: updates are IMMEDIATE — contact metadata follows the same path as other
+     * profile edits (district, mode); the existing KYC review queue applies only to
+     * identity documents. Writes always target [currentUser]'s own Room row and Firestore
+     * `users/{uid}` (owner-only write rule), so one user can never modify another user's
+     * backup contact. Never touches the guarantors tables: a backup contact is NOT a
+     * guarantor.
+     */
+    fun saveBackupContact(name: String, phone: String) {
+        viewModelScope.launch {
+            val user = currentUser.value
+            val blocker = ProfileValidators.backupContactSaveBlocker(
+                isAuthenticated = isAuthenticated.value,
+                hasOwnProfile = user != null && user.id != DEMO_PROFILE_ID,
+                primaryPhone = user?.phoneNumber.orEmpty(),
+                backupName = name,
+                backupPhone = phone
+            )
+            if (blocker != null) {
+                backupContactError.value = blocker
+                return@launch
+            }
+            backupContactError.value = null
+            profileSettingsSuccess.value = null
+            val updated = user!!.copy(
+                backupContactName = name.trim(),
+                backupContactPhone = phone.trim(),
+                updatedAtTimestamp = System.currentTimeMillis()
+            )
+            repository.saveUserProfile(updated)
+            repository.saveUserIdentityToServer(updated)
+            profileSettingsSuccess.value = "Backup contact saved."
+        }
+    }
+
+    // --- REG-004: WORKER PROFILE PHOTO ---
+    fun selectPendingProfilePhoto(uri: Uri?) {
+        if (uri == null) {
+            clearPendingProfilePhoto()
+            return
+        }
+        pendingProfilePhotoUri.value = uri
+        profilePhotoError.value = null
+        profileSettingsSuccess.value = null
+    }
+
+    fun clearPendingProfilePhoto() {
+        pendingProfilePhotoUri.value = null
+        profilePhotoError.value = null
+    }
+
+    fun clearProfileSettingsMessages() {
+        profilePhotoError.value = null
+        backupContactError.value = null
+        profileSettingsSuccess.value = null
+    }
+
+    /**
+     * Uploads the pending gallery selection to Firebase Storage `avatars/{uid}/`
+     * (owner-only write, public read) and stores the returned download URL on the user's
+     * own profile in Room + Firestore. Replaces any previous photo by overwriting the
+     * stored URL. Fails closed when signed out, when the profile is the demo placeholder,
+     * when no image is selected, or when Storage is unavailable/offline.
+     */
+    fun uploadPendingProfilePhoto() {
+        viewModelScope.launch {
+            val user = currentUser.value
+            val uri = pendingProfilePhotoUri.value
+            val blocker = ProfileValidators.photoUploadBlocker(
+                isAuthenticated = isAuthenticated.value,
+                hasOwnProfile = user != null && user.id != DEMO_PROFILE_ID,
+                hasPendingImage = uri != null
+            )
+            if (blocker != null) {
+                profilePhotoError.value = blocker
+                return@launch
+            }
+            profilePhotoError.value = null
+            profileSettingsSuccess.value = null
+            isUploadingProfilePhoto.value = true
+            val downloadUrl = firebaseService.uploadProfilePhoto(user!!.id, uri!!)
+            if (downloadUrl == null) {
+                isUploadingProfilePhoto.value = false
+                profilePhotoError.value =
+                    "Photo upload failed. Check your connection and try again."
+                return@launch
+            }
+            val updated = user.copy(
+                avatarUrl = downloadUrl,
+                updatedAtTimestamp = System.currentTimeMillis()
+            )
+            repository.saveUserProfile(updated)
+            repository.saveUserIdentityToServer(updated)
+            pendingProfilePhotoUri.value = null
+            isUploadingProfilePhoto.value = false
+            profileSettingsSuccess.value = "Profile photo updated."
         }
     }
 

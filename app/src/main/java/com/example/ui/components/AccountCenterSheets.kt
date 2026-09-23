@@ -1,28 +1,43 @@
 package com.example.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.WarningAmber
+import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.ManageAccounts
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.rememberAsyncImagePainter
 import com.example.data.db.DisputeEntity
 import com.example.data.db.JobPostEntity
 import com.example.data.db.UserProfileEntity
 import com.example.data.db.WorkerKycEntity
 import com.example.ui.theme.*
+import com.example.ui.viewmodel.SkillsExchangeViewModel
 import com.example.util.CurrencyRegion
 
 /**
@@ -493,4 +508,233 @@ private fun SheetSectionLabel(text: String) {
         color = Slate500,
         letterSpacing = 0.8.sp
     )
+}
+
+/**
+ * REG-003 / REG-004: Profile photo + backup contact management.
+ *
+ * The worker reviews current saved values, corrects them, and submits explicitly.
+ * Photo upload goes to Firebase Storage `avatars/{uid}/` (owner-only write) and only
+ * the returned URL is stored — no image bytes in Room or Firestore. A missing or
+ * failed-to-load image falls back to the initials rendered underneath the photo layer.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProfileSettingsSheet(
+    isOpen: Boolean,
+    userProfile: UserProfileEntity?,
+    viewModel: SkillsExchangeViewModel,
+    onDismiss: () -> Unit
+) {
+    if (!isOpen) return
+
+    val pendingPhotoUri by viewModel.pendingProfilePhotoUri.collectAsStateWithLifecycle()
+    val isUploadingPhoto by viewModel.isUploadingProfilePhoto.collectAsStateWithLifecycle()
+    val photoError by viewModel.profilePhotoError.collectAsStateWithLifecycle()
+    val backupError by viewModel.backupContactError.collectAsStateWithLifecycle()
+    val successMessage by viewModel.profileSettingsSuccess.collectAsStateWithLifecycle()
+
+    // Prefilled so the worker can review and correct details before submitting.
+    var backupName by remember(userProfile?.id, isOpen) {
+        mutableStateOf(userProfile?.backupContactName ?: "")
+    }
+    var backupPhone by remember(userProfile?.id, isOpen) {
+        mutableStateOf(userProfile?.backupContactPhone ?: "")
+    }
+
+    LaunchedEffect(isOpen) { if (isOpen) viewModel.clearProfileSettingsMessages() }
+
+    val photoPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        viewModel.selectPendingProfilePhoto(uri)
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = {
+            viewModel.clearProfileSettingsMessages()
+            onDismiss()
+        },
+        containerColor = Color.White,
+        scrimColor = Slate900.copy(alpha = 0.6f)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            SheetHeader(Icons.Outlined.ManageAccounts, "PROFILE PHOTO & BACKUP CONTACT")
+
+            // --- REG-004: Profile photo ---
+            SheetSectionLabel("PROFILE PHOTO")
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(84.dp)
+                        .clip(CircleShape)
+                        .background(Slate100),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Safe fallback for a missing/invalid image: the worker's initials.
+                    Text(
+                        text = extractInitials(userProfile?.fullName),
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Slate600
+                    )
+                    // Pending selection previews over the saved URL; a failed load renders
+                    // nothing so the initials underneath always remain visible.
+                    val imageModel: Any? =
+                        pendingPhotoUri ?: userProfile?.avatarUrl?.takeIf { it.isNotBlank() }
+                    if (imageModel != null) {
+                        Image(
+                            painter = rememberAsyncImagePainter(model = imageModel),
+                            contentDescription = "Profile photo",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clip(CircleShape)
+                        )
+                    }
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    OutlinedButton(
+                        onClick = { photoPicker.launch("image/*") },
+                        enabled = !isUploadingPhoto,
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.CameraAlt,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (userProfile?.avatarUrl.isNullOrBlank()) {
+                                "Choose photo"
+                            } else {
+                                "Replace photo"
+                            },
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    if (pendingPhotoUri != null) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Button(
+                                onClick = { viewModel.uploadPendingProfilePhoto() },
+                                enabled = !isUploadingPhoto,
+                                shape = RoundedCornerShape(8.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = SignalBlue),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Text("Upload", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                            }
+                            OutlinedButton(
+                                onClick = { viewModel.clearPendingProfilePhoto() },
+                                enabled = !isUploadingPhoto,
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Text("Cancel", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    if (isUploadingPhoto) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(14.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Text("Uploading photo…", fontSize = 11.sp, color = Slate600)
+                        }
+                    }
+                }
+            }
+
+            photoError?.let {
+                Text(it, fontSize = 11.5.sp, color = RedDanger)
+            }
+
+            SheetInfoBox(
+                "Clients see this photo when viewing your profile. National ID images, " +
+                    "guarantor photos, and other verification documents are never shown here."
+            )
+
+            // --- REG-003: Backup contact ---
+            SheetSectionLabel("BACKUP CONTACT")
+            SheetInfoBox(
+                "An alternative contact number in case your primary number is unreachable. " +
+                    "Leave both fields empty to keep it unset."
+            )
+
+            OutlinedTextField(
+                value = backupName,
+                onValueChange = {
+                    backupName = it
+                    viewModel.clearProfileSettingsMessages()
+                },
+                label = { Text("Backup contact name") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = backupPhone,
+                onValueChange = {
+                    if (it.length <= 15) {
+                        backupPhone = it
+                        viewModel.clearProfileSettingsMessages()
+                    }
+                },
+                label = { Text("Backup contact phone number") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                isError = backupError != null,
+                supportingText = {
+                    backupError?.let { message ->
+                        Text(message, fontSize = 11.sp, color = RedDanger)
+                    }
+                },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Button(
+                onClick = { viewModel.saveBackupContact(backupName, backupPhone) },
+                enabled = !isUploadingPhoto,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Slate900)
+            ) {
+                Text("Save backup contact", fontWeight = FontWeight.Bold)
+            }
+
+            successMessage?.let {
+                Text(
+                    text = it,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = IndustrialEmeraldDark
+                )
+            }
+
+            SheetFooterButton(onDismiss = {
+                viewModel.clearProfileSettingsMessages()
+                onDismiss()
+            })
+        }
+    }
 }

@@ -3092,7 +3092,8 @@
       "phase": 17,
       "title": "Worker Backup Contact Number (Future)",
       "priority": "P2",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-09-23T21:20:00+03:00",
       "description": "Worker registration/profile must contain primary contact number and backup contact number. The backup number is intended to provide an alternative way to reach the worker when the primary contact is unavailable. IMPORTANT: Do not invent whether the backup number must belong to the worker or another person. That detail remains to be clarified later. Do not implement this now.",
       "problem": "Worker backup contact requirement not yet documented.",
       "goal": "Document the backup contact number requirement as a future requirement without implementation.",
@@ -3104,10 +3105,20 @@
       "acceptance_criteria": [
         "Worker profile requirements include primary + backup contact numbers"
       ],
-      "verification": [],
-      "risks": [],
-      "rollback": "Edit PRD documentation",
-      "notes": "FUTURE / PLANNED / NOT IMPLEMENTED. Open question: Should the backup number belong to the worker or an alternate/emergency contact person?",
+      "verification": [
+        "gradlew :app:compileDebugKotlin PASSED (offline, JDK 17)",
+        "gradlew :app:testDebugUnitTest PASSED - 39/39 tests, 0 failures (ProfileValidatorsTest 15, ProfileContactPhotoPersistenceTest 5, UserProfilePersistenceTest 7, AuthViewModelTest 9)",
+        "gradlew :app:assembleDebug PASSED - BUILD SUCCESSFUL in 5m",
+        "ProfileValidatorsTest covers valid/invalid backup phone, optional-empty fields, duplicate primary/backup rejection",
+        "ProfileContactPhotoPersistenceTest covers save/reload round-trip and per-UID ownership of the backup contact"
+      ],
+      "risks": [
+        "Backup contact is optional: unset values persist as empty strings and existing users migrate to empty defaults",
+        "Explicitly NOT a guarantor - the guarantors table and KYC-003 two-guarantor flow are untouched",
+        "Firestore additions are additive; older documents without the fields restore as empty (backwards compatible)"
+      ],
+      "rollback": "git checkout app/src/main/java/com/example/data/db/Entities.kt app/src/main/java/com/example/data/db/AppDatabase.kt app/src/main/java/com/example/util/ProfileValidators.kt",
+      "notes": "COMPLETED 2026-09-23. Worker backup contact (name + phone) implemented on UserProfileEntity (backupContactName, backupContactPhone), editable by the signed-in user in the new ProfileSettingsSheet (NavigationDrawer -> Profile Photo & Backup Contact) and persisted to Room plus Firestore users/{uid}. Validation lives in ProfileValidators.validateBackupContact: both fields optional when empty, digit-count rules (9-15) reused from the project's existing phone convention, and the backup number is rejected when it matches the primary number. DECISION: updates are IMMEDIATE - same path as other profile metadata edits (district/mode); KYC review applies only to identity documents. Writes always target the signed-in user's own Room row and own users/{uid} document (owner-only rule). Requirement open question resolved by implementation: name + phone of the worker's own alternate contact (not a guarantor).",
       "depends_on": []
     },
     {
@@ -3115,7 +3126,8 @@
       "phase": 17,
       "title": "Worker Profile Photo (Future)",
       "priority": "P2",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-09-23T21:20:00+03:00",
       "description": "During worker registration/profile setup: the worker selects a profile picture. This is the picture that clients will see when viewing the worker.",
       "problem": "Worker profile photo selection not yet specified as a requirement.",
       "goal": "Document the worker profile photo requirement as a future requirement without implementation.",
@@ -3128,10 +3140,21 @@
         "Worker selects profile picture during registration/profile setup",
         "Profile picture is the image clients see when viewing the worker"
       ],
-      "verification": [],
-      "risks": [],
-      "rollback": "Edit PRD documentation",
-      "notes": "FUTURE / PLANNED / NOT IMPLEMENTED.",
+      "verification": [
+        "gradlew :app:compileDebugKotlin PASSED (offline, JDK 17)",
+        "gradlew :app:testDebugUnitTest PASSED - 39/39 tests, 0 failures",
+        "gradlew :app:assembleDebug PASSED - BUILD SUCCESSFUL in 5m",
+        "ProfileContactPhotoPersistenceTest covers image URL persistence/reload, missing-avatar default, and that photo fields never satisfy the SEC-009 worker gate",
+        "storage.rules avatars/{userId}/{allPaths=**} already grants public read and owner-only write - no rule change required"
+      ],
+      "risks": [
+        "Gallery selection uses ActivityResultContracts.GetContent; camera capture is NOT implemented (no camera architecture existed to reuse)",
+        "Photo upload requires Firebase Storage enabled in the Firebase Console; uploads fail closed with a user-visible error when Storage is unavailable/offline",
+        "Client-facing discovery lists (ProviderCard/ProviderDetailSheet) still render name + initials: linking service_providers rows to account photos needs a data-model change and is not part of this story",
+        "New dependency: coil-compose (image loading)"
+      ],
+      "rollback": "git checkout app/build.gradle.kts app/src/main/java/com/example/ui/components/AccountCenterSheets.kt app/src/main/java/com/example/ui/components/NavigationDrawer.kt",
+      "notes": "COMPLETED 2026-09-23. Worker profile photo implemented: gallery picker (ActivityResultContracts.GetContent -> ViewModel.selectPendingProfilePhoto), preview, cancel, upload loading state, upload-error handling and replace-photo flow in ProfileSettingsSheet; FirebaseService.uploadProfilePhoto(userId, uri) uploads to Firebase Storage avatars/{uid}/profile_<timestamp>.jpg (owner-only write, public read) and only the returned download URL is persisted on UserProfileEntity.avatarUrl (Room plus Firestore users/{uid}) - no image bytes in Room or Firestore. UserProfileEntity.avatarUrl default changed from a seeded stock photo URL to empty so new profiles render initials. VISIBILITY (documented decision): the worker sees the photo in the navigation drawer header and the Profile Photo sheet; a missing/invalid/blank URL safely falls back to initials. National ID images, guarantor photos, certificates and other verification documents are never exposed through this field (those live in the private users/{uid}/kyc|guarantors|certificates prefixes and separate KYC tables). The photo is NOT gated on KYC approval/activation - it follows the same rules as other profile metadata; the five-layer worker dashboard gate is unchanged and signed-out users are routed to auth before reaching the sheet.",
       "depends_on": []
     },
     {
@@ -3402,8 +3425,10 @@
     "SEC-009",
     "PAY-005",
     "COMM-002",
-    "AUTH-011"
+    "AUTH-011",
+    "REG-003",
+    "REG-004"
   ],
   "blocked_stories": [],
-  "last_updated": "2026-09-23T14:40:00+03:00"
+  "last_updated": "2026-09-23T21:20:00+03:00"
 }

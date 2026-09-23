@@ -1,7 +1,7 @@
 # TASKS.md — Skills Exchange Human-Readable Task Status
 
 Synchronized with `prd.json`. This is the human-readable view of the development backlog.
-Last synchronized: 2026-09-05T08:15:00+03:00
+Last synchronized: 2026-09-23T21:20:00+03:00
 
 Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Failed
 
@@ -210,8 +210,8 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 | PAY-005 | P2 | Job Payment Fees & Platform Deductions | ✅ Completed | 5% worker commission + 5% platform fee itemized in EscrowAndProofSheet.kt with net payout display |
 | REG-001 | P2 | First-Time Worker Registration Fee (Future) | ⏳ Pending | UGX 20,000 registration fee. FUTURE / NOT IMPLEMENTED |
 | REG-002 | P2 | Worker Registration Guarantor Verification Requirements (Future) | ⏳ Pending | 2 guarantors with photos + group photo. FUTURE / NOT IMPLEMENTED |
-| REG-003 | P2 | Worker Backup Contact Number (Future) | ⏳ Pending | Primary + backup contact. FUTURE / NOT IMPLEMENTED |
-| REG-004 | P2 | Worker Profile Photo (Future) | ⏳ Pending | Worker selects profile picture for clients. FUTURE / NOT IMPLEMENTED |
+| REG-003 | P2 | Worker Backup Contact Number | ✅ Completed | Implemented 2026-09-23: `backupContactName` + `backupContactPhone` on `UserProfileEntity` (Room + Firestore `users/{uid}`), editable in `ProfileSettingsSheet` (drawer → Profile Photo & Backup Contact) with review-before-save, clear validation errors and save/reload persistence. `ProfileValidators.validateBackupContact` allows empty optional fields, reuses the project's 9–15 digit phone rule and rejects a backup number equal to the primary. DECISION: immediate update (same path as other profile metadata), owner-only write, NOT a guarantor (KYC-003 untouched). Unit tests: ProfileValidatorsTest 15, ProfileContactPhotoPersistenceTest 5 |
+| REG-004 | P2 | Worker Profile Photo | ✅ Completed | Implemented 2026-09-23: gallery picker (GetContent) → preview → cancel → upload with loading state and error handling → replace photo, in `ProfileSettingsSheet`. `FirebaseService.uploadProfilePhoto` writes to Firebase Storage `avatars/{uid}/profile_<ts>.jpg` (existing storage.rules: public read, owner-only write) and only the download URL is stored on `UserProfileEntity.avatarUrl` (no image bytes in Room/Firestore). Photo shows in the navigation drawer header + sheet; a blank/invalid URL falls back to initials. Camera capture NOT implemented (no camera architecture existed). `avatarUrl` default changed from a seeded stock photo to empty. Coil (`libs.coil.compose`) enabled for image loading |
 | LOC-005 | P2 | Worker Location Using Device GPS (Future) | ⏳ Pending | GPS-based worker location, remove manual district fields. FUTURE / NOT IMPLEMENTED |
 | MAP-002 | P2 | Google Maps Usage Minimization (Future) | ⏳ Pending | Maps only during active job interactions. FUTURE / NOT IMPLEMENTED |
 | COMM-002 | P3 | Community Feature Removal (Future) | ✅ Completed | Community/Board feed removed: NeighborhoodFeedView deleted, Board tab/branch, neighborhoodPosts, NeighborhoodPostEntity/Dao removed; AppDatabase v17 + MIGRATION_16_17 drops neighborhood_posts; compile + full unit suite 19/19 PASSED |
@@ -283,13 +283,13 @@ Full finding text (A1–A8, B1–B9, G1–G7, D1–D11, N1–N4, P1–P2, M1–M
 
 | Status | Count |
 |---|---|
-| ✅ Completed | 83 |
+| ✅ Completed | 85 |
 | 🔄 In Progress | 0 |
-| ⏳ Pending | 9 |
+| ⏳ Pending | 7 |
 | 🚫 Blocked | 0 |
 | **Total** | **92** |
 
 ---
 
 _This file is synchronized with `prd.json`. Always update both when story status changes._
-_Last synchronized: 2026-09-23T14:40:00+03:00_
+_Last synchronized: 2026-09-23T21:20:00+03:00_

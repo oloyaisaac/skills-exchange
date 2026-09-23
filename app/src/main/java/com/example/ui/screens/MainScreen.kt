@@ -176,6 +176,8 @@ fun MainScreen(
     var isJobHistorySheetOpen by remember { mutableStateOf(false) }
     var isTrustSafetySheetOpen by remember { mutableStateOf(false) }
     var isIdentitySheetOpen by remember { mutableStateOf(false) }
+    // REG-003 / REG-004: worker profile photo + backup contact sheet.
+    var isProfileSettingsSheetOpen by remember { mutableStateOf(false) }
 
     val notifications by viewModel.notifications.collectAsStateWithLifecycle(initialValue = emptyList())
     val unreadNotificationCount by viewModel.unreadNotificationCount.collectAsStateWithLifecycle(initialValue = 0)
@@ -634,6 +636,7 @@ fun MainScreen(
         // AUDIT FIX (H3/H4/H7/M1): each drawer item now opens its real destination sheet
         // instead of silently switching to the Jobs tab or doing nothing.
         onOpenWallet = { isWalletSheetOpen = true },
+        onOpenProfileSettings = { isProfileSettingsSheetOpen = true },
         onOpenHistory = { isJobHistorySheetOpen = true },
         onOpenDisputes = { isTrustSafetySheetOpen = true },
         onOpenIdentity = { isIdentitySheetOpen = true },
@@ -648,6 +651,14 @@ fun MainScreen(
         jobs = jobs,
         userProfile = currentUserProfile,
         onDismiss = { isWalletSheetOpen = false }
+    )
+
+    // REG-003 / REG-004: profile photo upload & backup contact management.
+    ProfileSettingsSheet(
+        isOpen = isProfileSettingsSheetOpen,
+        userProfile = currentUserProfile,
+        viewModel = viewModel,
+        onDismiss = { isProfileSettingsSheetOpen = false }
     )
 
     // AUDIT FIX (M1): Job History & Material Receipts — completed contracts and receipts.

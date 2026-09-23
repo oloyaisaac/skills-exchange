@@ -319,7 +319,11 @@ data class UserProfileEntity(
     val nationalIdNumber: String = "UG-8829104-B",
     val primarySkill: String? = "Electrical",
     val additionalSkillsCsv: String = "Plumbing,Home Repair",
-    val avatarUrl: String = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+    // REG-004: empty = no photo uploaded yet (UI falls back to initials).
+    val avatarUrl: String = "",
+    // REG-003: optional worker backup contact; empty strings = not set.
+    val backupContactName: String = "",
+    val backupContactPhone: String = "",
     val momoNumber: String = "+256 772 198 420",
     val momoProvider: String = "MTN_MOMO",
     val walletBalance: Double = 185.0,

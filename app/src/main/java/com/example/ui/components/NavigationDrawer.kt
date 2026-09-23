@@ -2,6 +2,7 @@ package com.example.ui.components
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.rememberAsyncImagePainter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,6 +60,10 @@ fun AppNavigationDrawer(
     onLogout: () -> Unit,
     currentUserProfile: UserProfileEntity? = null,
     onOpenWallet: () -> Unit = {},
+    /**
+     * REG-003 / REG-004: opens the worker's profile photo + backup contact sheet.
+     */
+    onOpenProfileSettings: () -> Unit = {},
     onOpenHistory: () -> Unit = {},
     onOpenDisputes: () -> Unit = {},
     onOpenDataBackup: () -> Unit = {},
@@ -187,6 +194,19 @@ fun AppNavigationDrawer(
                                         fontWeight = FontWeight.Bold,
                                         color = Color.White
                                     )
+                                    // REG-004: show the uploaded profile photo; a missing or
+                                    // failed-to-load image falls back to the initials underneath.
+                                    val avatarUrl = currentUserProfile?.avatarUrl.orEmpty()
+                                    if (isAuthenticated && avatarUrl.isNotBlank()) {
+                                        Image(
+                                            painter = rememberAsyncImagePainter(model = avatarUrl),
+                                            contentDescription = "Profile photo",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier
+                                                .matchParentSize()
+                                                .clip(CircleShape)
+                                        )
+                                    }
                                 }
 
                                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -413,6 +433,17 @@ fun AppNavigationDrawer(
                             onClick = {
                                 onDismiss()
                                 onOpenWallet()
+                            }
+                        )
+
+                        // REG-003 / REG-004: worker backup contact & profile photo entry point.
+                        DrawerMenuItem(
+                            icon = Icons.Outlined.ManageAccounts,
+                            title = "Profile Photo & Backup Contact",
+                            subtitle = if (isAuthenticated) "Update photo, backup number & profile" else "Sign in to edit your profile",
+                            onClick = {
+                                onDismiss()
+                                if (!isAuthenticated) onTriggerAuth() else onOpenProfileSettings()
                             }
                         )
 
