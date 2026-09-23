@@ -14,7 +14,6 @@ class SkillsExchangeRepository(
 ) {
     val providers: Flow<List<ServiceProviderEntity>> = db.serviceProviderDao().getAllProviders()
     val jobs: Flow<List<JobPostEntity>> = db.jobPostDao().getAllJobs()
-    val neighborhoodPosts: Flow<List<NeighborhoodPostEntity>> = db.neighborhoodPostDao().getAllPosts()
     val currentUser: Flow<UserProfileEntity?> = db.userProfileDao().getCurrentUser()
     val currentTraining: Flow<WorkerTrainingEntity?> = db.workerTrainingDao().getCurrentUserTraining()
     val serviceTaxonomyCatalog: List<ServiceTaxonomyItem> = ServiceTaxonomyCatalog.services
@@ -192,7 +191,6 @@ class SkillsExchangeRepository(
             db.serviceProviderDao().insertProviders(initialProviders)
             db.jobPostDao().insertJobs(initialJobs)
             db.chatMessageDao().insertMessages(initialChatMessages)
-            db.neighborhoodPostDao().insertPosts(initialNeighborhoodPosts)
             initialEndorsements.forEach {
                 db.skillEndorsementDao().insertEndorsement(it)
             }
@@ -1232,45 +1230,6 @@ class SkillsExchangeRepository(
                 neighborDistrict = "Oakridge Heights"
             )
         )
-
-        val initialNeighborhoodPosts = listOf(
-            NeighborhoodPostEntity(
-                id = "post_1",
-                providerName = "Elena Rostova",
-                residentName = "Grace Taylor",
-                jobTitle = "Water Heater Pressure Valve Replacement",
-                category = "Plumbing",
-                ratingGiven = 5,
-                testimonial = "Elena arrived within 20 minutes of posting on the Skills Exchange! Replaced the leaking TPR valve quickly and clean.",
-                completedAgoText = "2 hrs ago",
-                cost = 140.0,
-                neighborhood = "Sunnyside District"
-            ),
-            NeighborhoodPostEntity(
-                id = "post_2",
-                providerName = "Marcus Vance",
-                residentName = "Liam O'Connor",
-                jobTitle = "Smart Breaker Panel Inspection",
-                category = "Electrical",
-                ratingGiven = 5,
-                testimonial = "Super thorough electrical check. Pointed out a dangerous neutral load imbalance that saved us from a panel burn.",
-                completedAgoText = "Yesterday",
-                cost = 210.0,
-                neighborhood = "Maplewood East"
-            ),
-            NeighborhoodPostEntity(
-                id = "post_3",
-                providerName = "Sarah Jenkins",
-                residentName = "Mei Ling",
-                jobTitle = "AP Calculus AB Exam Prep",
-                category = "Tutoring",
-                ratingGiven = 5,
-                testimonial = "My daughter score jumped from B- to A on her derivative midterms! Sarah is an incredible teacher.",
-                completedAgoText = "3 days ago",
-                cost = 100.0,
-                neighborhood = "Oakridge Heights"
-            )
-        )
     }
 
     suspend fun approveMaterialAdvance(jobId: String, materialsSubtotal: Double): Double {
@@ -1418,7 +1377,6 @@ class SkillsExchangeRepository(
         db.ratingDao().clearAll()
         db.notificationDao().clearAll()
         db.skillEndorsementDao().clearAll()
-        db.neighborhoodPostDao().clearAll()
         db.pendingActionDao().clearAll()
         db.jobStatusAuditDao().clearAll()
         db.reportDao().clearAll()

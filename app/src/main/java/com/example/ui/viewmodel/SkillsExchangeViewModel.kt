@@ -9,7 +9,6 @@ import com.example.data.db.DisputeEntity
 import com.example.data.db.DisputeReason
 import com.example.data.db.DisputeStatus
 import com.example.data.db.JobPostEntity
-import com.example.data.db.NeighborhoodPostEntity
 import com.example.data.db.ServiceProviderEntity
 import com.example.data.db.SkillEndorsementEntity
 import com.example.data.db.UserProfileEntity
@@ -83,7 +82,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     val gpsLocationState = MutableStateFlow(GpsLocationState())
 
     val userRoleMode = MutableStateFlow("Hire a Neighbor") // "Hire a Neighbor" vs "Offer Skills"
-    val activeMobileTab = MutableStateFlow("List") // "List", "Map", "Jobs", "Board"
+    val activeMobileTab = MutableStateFlow("List") // "List", "Map", "Jobs"
     val themeMode = MutableStateFlow("LIGHT") // "LIGHT", "DARK", "SYSTEM"
     val isNavigationDrawerOpen = MutableStateFlow(false)
     val isWorkerOnline = MutableStateFlow(true)
@@ -381,9 +380,6 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             matchCategory && matchQuery
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    val neighborhoodPosts: StateFlow<List<NeighborhoodPostEntity>> = repository.neighborhoodPosts
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun getChatMessagesForJob(jobId: String): Flow<List<ChatMessageEntity>> {
         return repository.getRealtimeChatMessages(jobId)

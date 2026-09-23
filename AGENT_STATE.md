@@ -1,7 +1,22 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-09-23T12:05:00+03:00 — SEC-009 and PAY-005 confirmed implemented. Unit tests re-verified this session: UserProfilePersistenceTest 7/7 PASSED (BUILD SUCCESSFUL in 1m 54s, GRADLE_USER_HOME=D:\gradle-home, JAVA_HOME=JDK17, timestamp 2026-09-23T09:01:22Z). TASKS.md synced: PAY-005 updated to Completed, count corrected to 81 completed / 10 pending. Session audit produced.
+2026-09-23T14:40:00+03:00 — COMM-002 Community Feature Removal IMPLEMENTED & VERIFIED. Audited and completed a prior session's uncommitted removal work (NeighborhoodFeedView.kt deleted; Board tab/branch, neighborhoodPosts, NeighborhoodPostEntity/Dao removed; AppDatabase v16→v17 with MIGRATION_16_17 dropping neighborhood_posts). Verification: :app:compileDebugKotlin PASSED; :app:testDebugUnitTest PASSED 19/19 after repairing 2 pre-existing AuthViewModelTest assertions that still expected pre-SEC-009 defaults (unrelated to COMM-002; app/src/test was untouched by the removal). TASKS.md synced: COMM-002 Completed, counts now 83 completed / 9 pending / 92 total (includes repair of a pre-existing gap: AUTH-011 was status=completed but missing from completed_stories[] and from TASKS.md).
+Previous update 2026-09-23T12:05:00+03:00 — SEC-009 and PAY-005 confirmed implemented. Unit tests re-verified this session: UserProfilePersistenceTest 7/7 PASSED (BUILD SUCCESSFUL in 1m 54s, GRADLE_USER_HOME=D:\gradle-home, JAVA_HOME=JDK17, timestamp 2026-09-23T09:01:22Z). TASKS.md synced: PAY-005 updated to Completed, count corrected to 81 completed / 10 pending. Session audit produced.
+
+## COMM-002: Community Feature Removal (COMPLETED & VERIFIED)
+
+**Status: COMPLETED & VERIFIED (2026-09-23)**
+- **Context**: A prior session had already applied the Community removal as *uncommitted working-tree changes* (7 modified/deleted source files) but never verified them or updated any records. This session produced the dependency audit, verified the removal end-to-end, repaired a pre-existing test failure, and synchronized all records.
+- **Audit**: The feature existed as the "Board" tab / `NeighborhoodFeedView` / `neighborhoodPosts` (no literal `Community*` classes existed). Reference locations: MainScreen tab+branch, ViewModel flow, Repository seed data, `NeighborhoodPostEntity`/`NeighborhoodPostDao`, `neighborhood_posts` table, `DynamicFeed` icon import, plus PRD/requirement/audit documentation references.
+- **Removed**: `NeighborhoodFeedView.kt` (deleted); MainScreen Board tab/branch/import/comment; `neighborhoodPosts` flow; Repository neighborhood-post seed data; `NeighborhoodPostEntity`; `NeighborhoodPostDao`; AppDatabase entity/DAO registrations; DB version 16→17 with `MIGRATION_16_17` = `DROP TABLE IF EXISTS neighborhood_posts` (registered in `addMigrations`).
+- **Deliberately kept (dependency / false positive)**: `ServiceProviderEntity.neighborhood` and provider `neighborhood` Firestore field (location data used by marketplace filtering and Cloud Functions district queries); "COMMUNITY SKILL ENDORSEMENTS" label (endorsements feature, ProviderDetailSheet); "community guidelines" training copy (worker training). Firestore/storage rules and `firestore.rules` contained no community collections.
+- **Pre-existing test failure found & repaired (NOT caused by COMM-002)**: `AuthViewModelTest` 2/19 asserted pre-SEC-009 `UserProfileEntity` defaults. `git diff app/src/test` was empty before repair — the removal never touched tests; the mismatch came from commit c3ba767 (SEC-009) which flipped defaults to fail-closed but was only verified with `UserProfilePersistenceTest`. Assertions corrected to `NOT_APPLIED` / `false` / `false` with SEC-009 comments; no production code changed.
+- **Verification**: `:app:compileDebugKotlin` PASSED (offline); `:app:testDebugUnitTest` PASSED **19/19, 0 failures** (UserProfilePersistenceTest 7, AuthViewModelTest 9, ExampleRobolectricTest 1, ExampleUnitTest 1, GreetingScreenshotTest 1); `:app:assembleDebug` PASSED (BUILD SUCCESSFUL in 8m 12s). Environment: JAVA_HOME=D:\kilo_downloads\jdk17\jdk17.0.20_10, GRADLE_USER_HOME=D:\gradle-home, `--offline`, `--max-workers=1`, `--no-parallel`, `--no-configuration-cache`; no memory/Gradle/JDK project settings changed.
+- **PRD Status**: `COMM-002` marked `completed` in `prd.json`. Total completed stories: 83 (also repaired pre-existing gap: `AUTH-011` was `status: completed` but absent from `completed_stories[]` and from TASKS.md — added to both during this session).
+- **Manual test still required**: install on a device holding a v16 database to observe `MIGRATION_16_17` succeed; confirm bottom navigation shows only List / Map / Jobs.
+
+
 
 ---
 ## SEC-009: Worker Dashboard Security & Access Control (COMPLETED & VERIFIED)
@@ -353,7 +368,7 @@ Auditing and fixing disconnected features identified during the systematic featu
 - A5 — Drawer "Trust, Safety & Emergency SOS" — opens unrelated escrow sheet / can silently do nothing — HIGH — Pending Audit Fix
 - A6 — ServiceCatalogPicker — implemented but zero call sites / orphaned — HIGH — Pending Audit Fix
 - A7 — AccountComplianceDialog — implemented but never invoked / orphaned — MEDIUM — Pending Audit Fix
-- A8 — Community/Board "Hire" button — silent failure — MEDIUM — Pending Audit Fix
+- A8 — Community/Board "Hire" button — silent failure — MEDIUM — OBSOLETE: Community/Board feature removed under COMM-002 (2026-09-23); finding no longer applicable
 
 ### B. Partially connected (NOT fixed)
 - B1 — Rating UI (RATE-001/002/003) — repository/ViewModel exist but no UI trigger — HIGH — Pending Audit Fix
@@ -422,7 +437,7 @@ Auditing and fixing disconnected features identified during the systematic featu
 9. Therefore existing-user recognition can fail after logout, app-data clearing, reinstall, or on another device.
 - Legal-name distinction: OnboardingScreen.kt fix already made, pending runtime verification. AuthModal.kt legal-name issue still pending.
 
-### Community removal map (references only — DO NOT REMOVE NOW)
+### Community removal map (references only — SUPERSEDED: feature removed under COMM-002 on 2026-09-23; list kept for history)
 - MainScreen.kt — Board tab/navigation; MainScreen.kt — Board branches
 - NeighborhoodFeedView.kt; SkillsExchangeViewModel.kt — neighborhoodPosts
 - SkillsExchangeRepository — neighborhood posts; NeighborhoodPostEntity; NeighborhoodPostDao

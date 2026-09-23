@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.DynamicFeed
 import androidx.compose.material.icons.outlined.ListAlt
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.WorkOutline
@@ -43,7 +42,6 @@ fun MainScreen(
     val filterState by viewModel.filterState.collectAsStateWithLifecycle()
     val providers by viewModel.providers.collectAsStateWithLifecycle()
     val jobs by viewModel.jobs.collectAsStateWithLifecycle()
-    val neighborhoodPosts by viewModel.neighborhoodPosts.collectAsStateWithLifecycle()
 
     val selectedProvider by viewModel.selectedProvider.collectAsStateWithLifecycle()
     val selectedJob by viewModel.selectedJob.collectAsStateWithLifecycle()
@@ -254,8 +252,7 @@ fun MainScreen(
                     val mobileTabs = listOf(
                         Triple("List", Icons.Outlined.ListAlt, "Providers"),
                         Triple("Map", Icons.Outlined.Map, "Map View"),
-                        Triple("Jobs", Icons.Outlined.WorkOutline, "Job Status"),
-                        Triple("Board", Icons.Outlined.DynamicFeed, "Community")
+                        Triple("Jobs", Icons.Outlined.WorkOutline, "Job Status")
                     )
 
                     mobileTabs.forEach { (tabId, icon, label) ->
@@ -390,15 +387,6 @@ fun MainScreen(
                                 }
                             )
                                 }
-                                "Board" -> {
-                                    NeighborhoodFeedView(
-                                        posts = neighborhoodPosts,
-                                        onHireProvider = { provName ->
-                                            val p = providers.find { it.name.equals(provName, ignoreCase = true) }
-                                            if (p != null) viewModel.selectProvider(p)
-                                        }
-                                    )
-                                }
                                 else -> {
                                     ProviderListContent(
                                         providers = providers,
@@ -414,7 +402,7 @@ fun MainScreen(
                         VerticalDivider(thickness = 1.dp, color = Slate300)
 
                         // MAP-001: Lazy Load Google Maps — Only load map for provider discovery ("List" or "Map" tab)
-                        // Do not load map for "Jobs" (job pipeline) or "Board" (community feed) views
+                        // Do not load map for "Jobs" (job pipeline) views
                         if (activeMobileTab == "List" || activeMobileTab == "Map") {
                             InteractiveMapView(
                                 providers = providers,
@@ -459,16 +447,6 @@ fun MainScreen(
                                 onOpenEscrowSheet = {
                                     escrowJobTarget = it
                                     isEscrowSheetOpen = true
-                                },
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                        "Board" -> {
-                            NeighborhoodFeedView(
-                                posts = neighborhoodPosts,
-                                onHireProvider = { provName ->
-                                    val p = providers.find { it.name.equals(provName, ignoreCase = true) }
-                                    if (p != null) viewModel.selectProvider(p)
                                 },
                                 modifier = Modifier.fillMaxSize()
                             )

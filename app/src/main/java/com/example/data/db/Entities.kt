@@ -240,20 +240,6 @@ data class ChatMessageEntity(
     val isSystemNotification: Boolean
 )
 
-@Entity(tableName = "neighborhood_posts")
-data class NeighborhoodPostEntity(
-    @PrimaryKey val id: String,
-    val providerName: String,
-    val residentName: String,
-    val jobTitle: String,
-    val category: String,
-    val ratingGiven: Int,
-    val testimonial: String,
-    val completedAgoText: String,
-    val cost: Double,
-    val neighborhood: String
-)
-
 /**
  * KYC-001: Worker Identity & National ID data schema
  * Isolated table storing worker KYC metadata separate from public profile data.

@@ -153,18 +153,6 @@ interface ChatMessageDao {
     suspend fun clearAll()
 }
 
-@Dao
-interface NeighborhoodPostDao {
-    @Query("SELECT * FROM neighborhood_posts")
-    fun getAllPosts(): Flow<List<NeighborhoodPostEntity>>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPosts(posts: List<NeighborhoodPostEntity>)
-
-    @Query("DELETE FROM neighborhood_posts")
-    suspend fun clearAll()
-}
-
 /**
  * KYC-003: Two-Guarantor Data Access Object
  */

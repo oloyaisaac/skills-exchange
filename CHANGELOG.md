@@ -2,6 +2,20 @@
 
 All meaningful development changes are recorded here in reverse chronological order.
 
+### [2026-09-23] [COMM-002] [IMPL] Community Feature Removal Implemented & Verified
+
+- **Audit**: The Community feature ships under the "Board" tab / neighborhood-feed names (no literal `Community*` classes). Full dependency report produced before removal: UI, navigation, ViewModel, repository, Room entity/DAO, migrations, Firestore rules (none), tests (none), docs.
+- **UI / Navigation ([MainScreen.kt](file:///d:/skills%20exchange/app/src/main/java/com/example/ui/screens/MainScreen.kt))**: Removed the "Board" bottom-nav tab (now List / Map / Jobs only), the `"Board" ->` content branch, the `androidx.compose.material.icons.outlined.DynamicFeed` import, and the Board mention in the map lazy-load comment. NavigationDrawer/MainActivity had no Community entries.
+- **ViewModel ([SkillsExchangeViewModel.kt](file:///d:/skills%20exchange/app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt))**: Removed `neighborhoodPosts` flow and the "Board" comment from `activeMobileTab`.
+- **Repository ([SkillsExchangeRepository.kt](file:///d:/skills%20exchange/app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt))**: Removed neighborhood-post seed data/flow (~42 lines).
+- **Database**: Removed `NeighborhoodPostEntity` (Entities.kt) and `NeighborhoodPostDao` (Daos.kt); removed both from `AppDatabase` registrations; version bumped 16 → 17; added and registered `MIGRATION_16_17` executing `DROP TABLE IF EXISTS neighborhood_posts` (safe/idempotent — no data migration needed for a dropped feature table).
+- **Component**: Deleted `app/src/main/java/com/example/ui/components/NeighborhoodFeedView.kt`.
+- **Kept deliberately (dependencies / false positives)**: `ServiceProviderEntity.neighborhood` and the provider `neighborhood` Firestore field (location data used by marketplace filtering and `functions/src/index.ts` district queries); the "COMMUNITY SKILL ENDORSEMENTS" label (endorsements feature); "community guidelines" training-module copy (worker training TRAIN-001/002).
+- **Pre-existing failure found during verification (NOT caused by COMM-002)**: `AuthViewModelTest` 2/19 still asserted pre-SEC-009 `UserProfileEntity` defaults; `git diff app/src/test` was empty before repair, proving COMM-002 never touched tests. Assertions corrected to the shipped SEC-009 fail-closed defaults (`workerKycStatus=NOT_APPLIED`, `isWorkerActivated=false`, `trainingCompleted=false`); no production code changed.
+- **Verification**: `:app:compileDebugKotlin` PASSED; `:app:testDebugUnitTest` PASSED — **19/19, 0 failures** (UserProfilePersistenceTest 7, AuthViewModelTest 9, ExampleRobolectricTest 1, ExampleUnitTest 1, GreetingScreenshotTest 1); `:app:assembleDebug` PASSED (BUILD SUCCESSFUL in 8m 12s). Offline, `GRADLE_USER_HOME=D:\gradle-home`, `JAVA_HOME=JDK17`, `--max-workers=1`, `--no-parallel`, `--no-configuration-cache`; no memory/Gradle/JDK settings changed.
+- **PRD**: `COMM-002` marked `completed` in `prd.json` (completed count: 83).
+- **Pre-existing records gap repaired during sync**: `AUTH-011` (Google Sign-In, P0, completed 2026-09-09) had `status: completed` but was missing from `completed_stories[]` and had no row in `TASKS.md`; added to both. Corrected totals: 83 completed / 9 pending / 92 total.
+
 ### [2026-09-23] [FEAT] SEC-009 — Worker Dashboard Security & Access Control Implemented & Verified
 
 - **Entities ([Entities.kt](file:///d:/skills%20exchange/app/src/main/java/com/example/data/db/Entities.kt))**: Set `UserProfileEntity` defaults to fail-closed: `workerKycStatus = "NOT_APPLIED"`, `isWorkerActivated = false`, `trainingCompleted = false`.

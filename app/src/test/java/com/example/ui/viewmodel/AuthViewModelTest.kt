@@ -18,7 +18,8 @@ class AuthViewModelTest {
         )
         assertEquals("CLIENT", profile.initialRole)
         assertEquals("CLIENT", profile.currentActiveMode)
-        assertTrue(profile.workerKycStatus == "APPROVED" || profile.workerKycStatus == "UNVERIFIED")
+        // SEC-009: new client accounts fail closed — worker KYC is NOT_APPLIED by default.
+        assertEquals("NOT_APPLIED", profile.workerKycStatus)
     }
 
     @Test
@@ -28,8 +29,9 @@ class AuthViewModelTest {
             fullName = "Worker User",
             district = "Sunnyside"
         )
-        assertEquals(true, profile.isWorkerActivated)
-        assertEquals(true, profile.trainingCompleted)
+        // SEC-009: worker activation and training completion default to fail-closed (false).
+        assertEquals(false, profile.isWorkerActivated)
+        assertEquals(false, profile.trainingCompleted)
     }
 
     @Test

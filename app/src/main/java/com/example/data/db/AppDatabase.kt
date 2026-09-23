@@ -13,7 +13,6 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SkillEndorsementEntity::class,
         JobPostEntity::class,
         ChatMessageEntity::class,
-        NeighborhoodPostEntity::class,
         UserProfileEntity::class,
         WorkerKycEntity::class,
         GuarantorEntity::class,
@@ -26,7 +25,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         JobStatusAuditEntity::class,
         ReportEntity::class
     ],
-    version = 16,
+    version = 17,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -34,7 +33,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun skillEndorsementDao(): SkillEndorsementDao
     abstract fun jobPostDao(): JobPostDao
     abstract fun chatMessageDao(): ChatMessageDao
-    abstract fun neighborhoodPostDao(): NeighborhoodPostDao
     abstract fun userProfileDao(): UserProfileDao
     abstract fun workerKycDao(): WorkerKycDao
     abstract fun guarantorDao(): GuarantorDao
@@ -365,6 +363,13 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_16_17 = object : Migration(16, 17) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // COMM-002: Community feature removal — drop the neighborhood_posts table
+                database.execSQL("DROP TABLE IF EXISTS neighborhood_posts")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -372,7 +377,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "skills_exchange_database"
                 )
-                    .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16)
+                    .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17)
                     .build()
                 INSTANCE = instance
                 instance

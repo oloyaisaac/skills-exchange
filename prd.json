@@ -3188,7 +3188,8 @@
       "phase": 17,
       "title": "Community Feature Removal (Future)",
       "priority": "P3",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-09-23T14:40:00+03:00",
       "description": "The Community feature should eventually be removed permanently. When implementation begins, the agent must audit and safely remove all relevant: navigation entries, screens, routes, ViewModels, repository logic, entities/data structures where applicable, PRD/requirements references, and other obsolete Community-related code. Do not remove Community during this documentation task.",
       "problem": "Community feature exists but is planned for future removal.",
       "goal": "Document the Community feature removal requirement as a future requirement without implementation.",
@@ -3201,10 +3202,18 @@
         "Future removal requirement is documented",
         "Implementation checklist includes audit of navigation, screens, routes, ViewModels, repositories, entities, and PRD references"
       ],
-      "verification": [],
-      "risks": [],
-      "rollback": "Edit PRD documentation",
-      "notes": "FUTURE / PLANNED / NOT IMPLEMENTED. Do NOT remove Community now. Related existing code: NeighborhoodFeedView, NeighborhoodPostEntity, and related MainScreen navigation.",
+      "verification": [
+        "Codebase re-search: no Community/NeighborhoodFeed/neighborhoodPosts/DynamicFeed references remain in app source",
+        "gradlew :app:compileDebugKotlin PASSED (offline, JDK 17)",
+        "gradlew :app:testDebugUnitTest PASSED - 19/19 tests, 0 failures",
+        "gradlew :app:assembleDebug PASSED - BUILD SUCCESSFUL in 8m 12s",
+        "AppDatabase MIGRATION_16_17 drops neighborhood_posts; database version 17"
+      ],
+      "risks": [
+        "Room migration 16->17 must run on existing installs (DROP TABLE IF EXISTS neighborhood_posts - safe/idempotent); not yet exercised on a physical device"
+      ],
+      "rollback": "git checkout Community-related source files",
+      "notes": "COMPLETED 2026-09-23. Community (Board/neighborhood feed) feature permanently removed: NeighborhoodFeedView.kt deleted, MainScreen Board tab/branch and DynamicFeed import removed, neighborhoodPosts removed from ViewModel/Repository, NeighborhoodPostEntity/NeighborhoodPostDao removed, AppDatabase bumped to v17 with MIGRATION_16_17 dropping the neighborhood_posts table. Verified by compile and full unit test suite (19/19).",
       "depends_on": []
     },
     {
@@ -3391,8 +3400,10 @@
     "DISP-005",
     "STAB-003",
     "SEC-009",
-    "PAY-005"
+    "PAY-005",
+    "COMM-002",
+    "AUTH-011"
   ],
   "blocked_stories": [],
-  "last_updated": "2026-09-23T11:55:00+03:00"
+  "last_updated": "2026-09-23T14:40:00+03:00"
 }

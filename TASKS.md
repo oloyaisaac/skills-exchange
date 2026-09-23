@@ -196,6 +196,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 | AUTH-008 | P1 | Implement Session/Device Security | ✅ Completed | Session timeout, device validation |
 | AUTH-009 | P1 | Implement Auth State Restoration | ✅ Completed | User profile, role mode, FCM token restoration |
 | AUTH-010 | P1 | Implement Authentication Tests | ✅ Completed | Auth flow unit tests |
+| AUTH-011 | P0 | Implement Google Sign-In Authentication | ✅ Completed | Google Sign-In via GoogleSignInHelper + Firebase Auth; completed 2026-09-09 in prd — row added during 2026-09-23 records sync (was missing from TASKS.md) |
 | DB-001 | P1 | Add Proper Room Migrations | ✅ Completed | Migration 11→12 |
 
 ---
@@ -213,7 +214,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 | REG-004 | P2 | Worker Profile Photo (Future) | ⏳ Pending | Worker selects profile picture for clients. FUTURE / NOT IMPLEMENTED |
 | LOC-005 | P2 | Worker Location Using Device GPS (Future) | ⏳ Pending | GPS-based worker location, remove manual district fields. FUTURE / NOT IMPLEMENTED |
 | MAP-002 | P2 | Google Maps Usage Minimization (Future) | ⏳ Pending | Maps only during active job interactions. FUTURE / NOT IMPLEMENTED |
-| COMM-002 | P3 | Community Feature Removal (Future) | ⏳ Pending | Permanent removal of Community feature. FUTURE / NOT IMPLEMENTED |
+| COMM-002 | P3 | Community Feature Removal (Future) | ✅ Completed | Community/Board feed removed: NeighborhoodFeedView deleted, Board tab/branch, neighborhoodPosts, NeighborhoodPostEntity/Dao removed; AppDatabase v17 + MIGRATION_16_17 drops neighborhood_posts; compile + full unit suite 19/19 PASSED |
 | SEC-009 | P1 | Worker Dashboard Security & Access Control | ✅ Completed | Multi-layer enforcement in Entities, ViewModel (canAccessWorkerFeatures & isWorkerApprovedAndActivated), MainScreen, and 7/7 passing unit tests |
 | LEGAL-001 | P2 | Liability Disclaimer (Future) | ⏳ Pending | Liability disclaimer for T&C, onboarding, transactions. FUTURE / NOT IMPLEMENTED |
 | LEGAL-002 | P2 | Privacy Policy / Terms & Conditions / User Consent (Future) | ⏳ Pending | Full legal docs and consent tracking. FUTURE / NOT IMPLEMENTED |
@@ -254,7 +255,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 |---|---|---|
 | M1 | A4 Job History screen | ⏳ Pending Audit Fix |
 | M2 | A7 AccountComplianceDialog wiring | ⏳ Pending Audit Fix |
-| M3 | A8 Community Hire | ⏳ Pending Audit Fix |
+| M3 | A8 Community Hire (obsolete — Community/Board removed under COMM-002) | ⏳ Pending Audit Fix |
 | M4 | B4 Worker Online toggle persistence | ⏳ Pending Audit Fix |
 | M5 | B6 Notification navigation | ⏳ Pending Audit Fix |
 | M6 | B8 Map empty state | ⏳ Pending Audit Fix |
@@ -282,13 +283,13 @@ Full finding text (A1–A8, B1–B9, G1–G7, D1–D11, N1–N4, P1–P2, M1–M
 
 | Status | Count |
 |---|---|
-| ✅ Completed | 81 |
+| ✅ Completed | 83 |
 | 🔄 In Progress | 0 |
-| ⏳ Pending | 10 |
+| ⏳ Pending | 9 |
 | 🚫 Blocked | 0 |
-| **Total** | **91** |
+| **Total** | **92** |
 
 ---
 
 _This file is synchronized with `prd.json`. Always update both when story status changes._
-_Last synchronized: 2026-09-23T12:15:00+03:00_
+_Last synchronized: 2026-09-23T14:40:00+03:00_
