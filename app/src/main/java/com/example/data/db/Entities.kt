@@ -267,7 +267,22 @@ data class WorkerKycEntity(
     val status: String = "NOT_STARTED",
     val submittedAt: Long = 0,
     val reviewedAt: Long = 0,
-    val reviewFeedback: String = ""
+    val reviewFeedback: String = "",
+    // --- REG-002: group photograph + guarantor verification state ---
+    /**
+     * Private Storage path of the single group photograph that must contain the worker
+     * together with both guarantors. Client-writable locally only; the Firestore copy is
+     * written by the guarantor-submission callable and read back for review.
+     */
+    val groupPhotoStoragePath: String = "",
+    /**
+     * Guarantor step state: NOT_STARTED | DRAFT | SUBMITTED | APPROVED | CHANGES_REQUIRED
+     * | REJECTED. Admin-owned values are only ever applied from the synced
+     * guarantor_submissions document, never from client input.
+     */
+    val guarantorStatus: String = "NOT_STARTED",
+    val guarantorsSubmittedAt: Long = 0,
+    val guarantorReviewFeedback: String = ""
 )
 
 /**
@@ -284,7 +299,7 @@ data class WorkerKycEntity(
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index(value = ["workerKycId"])]
+    indices = [Index(value = ["workerKycId"]), Index(value = ["phoneNumber"])]
 )
 data class GuarantorEntity(
     @PrimaryKey val id: String,
@@ -295,7 +310,20 @@ data class GuarantorEntity(
     val district: String,
     val idFrontStoragePath: String,
     val idBackStoragePath: String,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    // --- REG-002: guarantor verification requirements (KYC-003 is preserved above) ---
+    /** Guarantor NIN as typed by the worker. Never written to logcat — scrub first. */
+    val nationalIdNumber: String = "",
+    /** Private Storage path of the guarantor's own photograph (never a signed URL). */
+    val guarantorPhotoStoragePath: String = "",
+    /** Private Storage path of the worker + this guarantor photograph. */
+    val workerWithGuarantorPhotoStoragePath: String = "",
+    /** Guarantor consent to being listed and to their data being processed. */
+    val consentProvided: Boolean = false,
+    /** Admin-set NIN check result. The client may only ever write "PENDING". */
+    val ninVerificationStatus: String = "PENDING",
+    val submittedAt: Long = 0,
+    val updatedAt: Long = 0
 )
 
 /**

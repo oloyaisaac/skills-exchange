@@ -21,6 +21,23 @@ service cloud.firestore {
         get(/databases/$(database)/documents/worker_kyc/$(request.auth.uid)).data.kycStatus == 'APPROVED';
     }
 
+    // REG-002: verification photographs must live under the submitting worker's own
+    // private prefix (users/{uid}/guarantors/...), never a public bucket and never
+    // another user's folder. Only the path string is stored in documents.
+    function isPrivatePhotoPath(path, uid) {
+      return path is string
+        && path.split("/")[0] == 'users'
+        && path.split("/")[1] == uid
+        && path.split("/")[2] == 'guarantors';
+    }
+
+    // REG-002 / SEC-006: privileged account-authorization fields on a user document.
+    // A worker may maintain their own profile but can never self-approve or self-activate.
+    function touchesPrivilegedUserFields() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['workerKycStatus', 'isWorkerActivated', 'isProviderActivated', 'admin', 'trainingCompleted']);
+    }
+
     // SEC-006: Rules for worker_kyc collection
     match /worker_kyc/{userId} {
       allow read: if isDocOwner(userId) || isAdmin();
@@ -38,11 +55,63 @@ service cloud.firestore {
     }
 
     // SEC-006: Rules for guarantors collection
+    // REG-002 hardening: a guarantor record contains a third party's NIN number and
+    // photographs. Reads are no longer open to every signed-in user — only the owning
+    // worker and admins. A worker may file/refresh guarantors for themselves only, must
+    // supply the full required field set with consent, and can never write the
+    // admin-owned verification outcome fields.
     match /guarantors/{docId} {
-      allow read: if isAuthenticated(); // Workers can read guarantors for verification
-      allow create: if isAuthenticated();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow read: if isAdmin() ||
+        (isAuthenticated() && resource.data.workerKycId == request.auth.uid);
+
+      allow create: if isAuthenticated()
+        && request.resource.data.workerKycId == request.auth.uid
+        && request.resource.data.fullName is string
+        && request.resource.data.fullName.size() >= 3
+        && request.resource.data.nationalIdNumber is string
+        && request.resource.data.nationalIdNumber.size() >= 5
+        && request.resource.data.phoneNumber is string
+        && request.resource.data.consentProvided == true
+        && isPrivatePhotoPath(request.resource.data.guarantorPhotoStoragePath, request.auth.uid)
+        && isPrivatePhotoPath(request.resource.data.workerWithGuarantorPhotoStoragePath, request.auth.uid)
+        && request.resource.data.ninVerificationStatus == 'PENDING';
+
+      allow update: if isAdmin() || (
+        isAuthenticated()
+        && resource.data.workerKycId == request.auth.uid
+        && request.resource.data.workerKycId == resource.data.workerKycId
+        && request.resource.data.consentProvided == true
+        && !request.resource.data.diff(resource.data).affectedKeys()
+             .hasAny(['ninVerificationStatus', 'verifiedAt', 'verifiedBy'])
+      );
+
+      allow delete: if isAdmin() ||
+        (isAuthenticated() && resource.data.workerKycId == request.auth.uid);
+    }
+
+    // REG-002: One verification submission per worker (the two guarantors + the group
+    // photograph). The worker may file and re-file their own submission; the review
+    // outcome (status / feedback / reviewer / NIN result) is admin-only, so a worker can
+    // never self-approve the guarantor step.
+    match /guarantor_submissions/{workerId} {
+      allow read: if isDocOwner(workerId) || isAdmin();
+
+      allow create: if isDocOwner(workerId)
+        && request.resource.data.workerId == workerId
+        && request.resource.data.guarantorCount == 2
+        && request.resource.data.consentConfirmed == true
+        && request.resource.data.status == 'PENDING_REVIEW'
+        && isPrivatePhotoPath(request.resource.data.groupPhotoStoragePath, request.auth.uid);
+
+      // Re-submitting after a "changes required" decision: delete then re-create, so the
+      // status always returns to PENDING_REVIEW through the create rule above.
+      allow update: if isAdmin() || (
+        isDocOwner(workerId)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+             .hasAny(['status', 'reviewFeedback', 'reviewedAt', 'reviewedBy', 'ninVerificationStatus'])
+      );
+
+      allow delete: if isAdmin() || isDocOwner(workerId);
     }
 
     // SEC-006: Rules for job_quotes collection
@@ -92,7 +161,11 @@ service cloud.firestore {
     // --- MODULE 2: USER PROFILES & KYC VERIFICATION LAYER ---
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create, update: if isDocOwner(userId);
+      allow create: if isDocOwner(userId);
+      // REG-002 / SEC-006: owner-managed profile fields, but the verification and
+      // activation decisions are admin-owned. A worker can never flip their own
+      // workerKycStatus / isWorkerActivated / admin flag through a profile write.
+      allow update: if isDocOwner(userId) && !touchesPrivilegedUserFields();
 
       // Sensitive KYC verification fields: owner may submit, admin may update status
       match /verification/{docId} {

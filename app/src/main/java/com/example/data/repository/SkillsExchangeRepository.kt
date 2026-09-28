@@ -1,8 +1,11 @@
 package com.example.data.repository
 
+import android.net.Uri
 import com.example.data.db.*
 import com.example.data.remote.FirebaseService
 import com.example.data.remote.SmsNotificationService
+import com.example.util.GuarantorInput
+import com.example.util.GuarantorValidators
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -61,6 +64,217 @@ class SkillsExchangeRepository(
     suspend fun validateGuarantorCount(workerKycId: String): Boolean {
         return db.guarantorDao().countGuarantorsForWorker(workerKycId) == 2
     }
+
+    // ==================== REG-002: GUARANTOR VERIFICATION SUBMISSION ====================
+
+    /** Non-reactive read used to restore a saved (unsubmitted) guarantor draft. */
+    suspend fun getGuarantorsOnce(workerKycId: String): List<GuarantorEntity> =
+        db.guarantorDao().getGuarantorsForWorkerOnce(workerKycId)
+
+    /**
+     * REG-002: saves and files the worker's two guarantors together with the group photograph.
+     *
+     * Order of operations: validate → persist locally (always, offline-first) → upload the
+     * photographs that are not in Storage yet → file for admin review → record SUBMITTED +
+     * submittedAt locally, but only once the remote copy was accepted. A remote failure keeps
+     * the saved draft and reports a friendly, identifier-free reason so the worker can retry.
+     *
+     * Guarantor records are third-party personal data, so exactly two distinct guarantors
+     * (never the worker's own phone number), consent from both, and a structural check on the
+     * National ID number are required before anything leaves the device — see
+     * [GuarantorValidators.validateGuarantorSet]. No name, phone number or NIN is ever logged.
+     *
+     * @param guarantors the two drafts; photo slots may still hold content URIs while offline.
+     * @param groupPhotoSource content URI or Storage path of the worker + both guarantors photo.
+     * @param isSignedIn whether the caller holds a real authenticated account — demo data must
+     *   never file another person's identity data.
+     */
+    suspend fun submitGuarantorVerification(
+        workerId: String,
+        guarantors: List<GuarantorEntity>,
+        groupPhotoSource: String,
+        isSignedIn: Boolean
+    ): Result<Unit> {
+        if (!isSignedIn || workerId.isBlank()) {
+            return Result.failure(GuarantorSubmissionException(GUARANTOR_SIGN_IN_MESSAGE))
+        }
+        val profile = db.userProfileDao().getUserProfile(workerId).first()
+            ?: return Result.failure(GuarantorSubmissionException(GUARANTOR_ACCOUNT_MESSAGE))
+        val isWorkerAccount = profile.initialRole.equals("WORKER", ignoreCase = true) ||
+            profile.currentActiveMode.equals("WORKER", ignoreCase = true)
+        if (!isWorkerAccount) {
+            return Result.failure(GuarantorSubmissionException(GUARANTOR_WORKER_MODE_MESSAGE))
+        }
+
+        val blocker = GuarantorValidators.validateGuarantorSet(
+            guarantors = guarantors.map {
+                GuarantorInput(
+                    fullName = it.fullName,
+                    nationalIdNumber = it.nationalIdNumber,
+                    phoneNumber = it.phoneNumber,
+                    relationship = it.relationship,
+                    district = it.district,
+                    consentProvided = it.consentProvided,
+                    guarantorPhotoPath = it.guarantorPhotoStoragePath,
+                    workerWithGuarantorPhotoPath = it.workerWithGuarantorPhotoStoragePath
+                )
+            },
+            workerPrimaryPhone = profile.phoneNumber,
+            groupPhotoPath = groupPhotoSource
+        )
+        if (blocker != null) {
+            return Result.failure(GuarantorSubmissionException(blocker))
+        }
+
+        val now = System.currentTimeMillis()
+        ensureWorkerKycRow(workerId, profile.fullName)
+
+        // Persist locally first, so a lost connection never costs the worker their photos.
+        db.guarantorDao().deleteGuarantorsForWorker(workerId)
+        db.guarantorDao().insertGuarantors(guarantors)
+        // Upload the photographs that are not in private Storage yet. Failures are reported
+        // without identifiers; the rows saved above survive so nothing has to be retyped.
+        val uploaded = guarantors.map { draft ->
+            val portraitPath = resolveVerificationPhoto(
+                workerId,
+                draft.guarantorPhotoStoragePath,
+                GuarantorValidators.PHOTO_SLOT_GUARANTOR
+            ) ?: return Result.failure(GuarantorSubmissionException(GUARANTOR_UPLOAD_MESSAGE))
+            val togetherPath = resolveVerificationPhoto(
+                workerId,
+                draft.workerWithGuarantorPhotoStoragePath,
+                GuarantorValidators.PHOTO_SLOT_WITH_WORKER
+            ) ?: return Result.failure(GuarantorSubmissionException(GUARANTOR_UPLOAD_MESSAGE))
+            draft.copy(
+                guarantorPhotoStoragePath = portraitPath,
+                workerWithGuarantorPhotoStoragePath = togetherPath
+            )
+        }
+        val groupPhotoPath = resolveVerificationPhoto(
+            workerId,
+            groupPhotoSource,
+            GuarantorValidators.PHOTO_SLOT_GROUP
+        ) ?: return Result.failure(GuarantorSubmissionException(GUARANTOR_UPLOAD_MESSAGE))
+        // Keep the real Storage paths locally, not the temporary content URIs.
+        db.guarantorDao().deleteGuarantorsForWorker(workerId)
+        db.guarantorDao().insertGuarantors(uploaded)
+
+        // File for admin review, then mirror the outcome locally: SUBMITTED is only recorded
+        // once the remote copy exists, so the state never claims more than admins can see.
+        val filed = firebaseService.submitGuarantorVerification(workerId, uploaded, groupPhotoPath)
+        db.workerKycDao().updateGuarantorStep(
+            userId = workerId,
+            guarantorStatus = if (filed) "SUBMITTED" else "DRAFT",
+            groupPhotoStoragePath = groupPhotoPath,
+            submittedAt = if (filed) now else 0L
+        )
+        return if (filed) {
+            Result.success(Unit)
+        } else {
+            Result.failure(GuarantorSubmissionException(GUARANTOR_SUBMIT_MESSAGE))
+        }
+    }
+
+    /**
+     * REG-002: keeps the local guarantor state honest about the admin's decision by pulling
+     * the worker's own submission (status, feedback, aggregate NIN result) into Room.
+     * Returns a friendly failure when offline or when nothing has been filed yet.
+     */
+    suspend fun refreshGuarantorVerificationStatus(workerId: String): Result<Unit> {
+        if (workerId.isBlank()) {
+            return Result.failure(GuarantorSubmissionException(GUARANTOR_ACCOUNT_MESSAGE))
+        }
+        val submission = firebaseService.fetchGuarantorSubmission(workerId)
+            ?: return Result.failure(GuarantorSubmissionException(GUARANTOR_STATUS_MESSAGE))
+        val current = db.workerKycDao().getWorkerKycOnce(workerId)
+            ?: return Result.failure(GuarantorSubmissionException(GUARANTOR_ACCOUNT_MESSAGE))
+        // Review fields come from the worker's own submission document, never from user input.
+        db.workerKycDao().updateGuarantorStep(
+            userId = workerId,
+            guarantorStatus = remoteGuarantorStatus(submission["status"] as? String),
+            groupPhotoStoragePath = current.groupPhotoStoragePath,
+            submittedAt = current.guarantorsSubmittedAt,
+            feedback = submission["reviewFeedback"] as? String ?: ""
+        )
+        db.guarantorDao().updateNinStatusForWorker(
+            workerKycId = workerId,
+            ninStatus = when (submission["ninVerificationStatus"] as? String) {
+                "VERIFIED" -> "VERIFIED"
+                "FAILED" -> "FAILED"
+                else -> "PENDING"
+            }
+        )
+        return Result.success(Unit)
+    }
+
+    /**
+     * REG-002: stores the guarantor drafts and the group photograph locally without filing
+     * anything, so a long form can be abandoned and resumed (requirement: drafts survive
+     * app restarts). Photos stay as content URIs until [submitGuarantorVerification] uploads
+     * them — a draft never leaves the device.
+     */
+    suspend fun saveGuarantorDraft(
+        workerId: String,
+        guarantors: List<GuarantorEntity>,
+        groupPhotoStoragePath: String
+    ) {
+        val fullName = db.userProfileDao().getUserProfile(workerId).first()?.fullName.orEmpty()
+        ensureWorkerKycRow(workerId, fullName)
+        db.guarantorDao().deleteGuarantorsForWorker(workerId)
+        db.guarantorDao().insertGuarantors(guarantors)
+        db.workerKycDao().updateGuarantorStep(
+            userId = workerId,
+            guarantorStatus = "DRAFT",
+            groupPhotoStoragePath = groupPhotoStoragePath,
+            submittedAt = 0L
+        )
+    }
+
+    /**
+     * Guarantor rows carry a foreign key on worker_kyc, the row identity verification
+     * (KYC-001/002) owns. Nothing in the app writes that table today, so the known profile
+     * facts are filed here rather than dropping an otherwise valid submission.
+     */
+    private suspend fun ensureWorkerKycRow(workerId: String, fullName: String) {
+        if (db.workerKycDao().getWorkerKycOnce(workerId) != null) return
+        db.workerKycDao().insertWorkerKyc(
+            WorkerKycEntity(
+                userId = workerId,
+                fullLegalName = fullName,
+                nationalIdNumber = "",
+                dateOfBirth = "",
+                gender = "",
+                idFrontStoragePath = "",
+                idBackStoragePath = ""
+            )
+        )
+    }
+
+    /**
+     * REG-002: an already-uploaded path is reused as is (idempotent re-submission); a content
+     * URI is uploaded once into the worker's private verification prefix. Null means the photo
+     * is missing or the upload failed — the caller stops before filing anything incomplete.
+     */
+    private suspend fun resolveVerificationPhoto(
+        workerId: String,
+        source: String,
+        slot: String
+    ): String? {
+        if (source.isBlank()) return null
+        if (source.startsWith("users/$workerId/guarantors/")) return source
+        return firebaseService.uploadGuarantorPhoto(workerId, slot, Uri.parse(source))
+    }
+
+    /** REG-002: remote review state → the locally stored guarantor status. */
+    private fun remoteGuarantorStatus(raw: String?): String = when (raw) {
+        "APPROVED" -> "APPROVED"
+        "REJECTED" -> "REJECTED"
+        "CHANGES_REQUIRED" -> "CHANGES_REQUIRED"
+        "PENDING_REVIEW", "UNDER_REVIEW" -> "PENDING_REVIEW"
+        else -> "SUBMITTED"
+    }
+
+
 
     suspend fun submitWorkerKycApplication(userId: String) {
         db.workerKycDao().updateKycStatus(userId, "SUBMITTED")
@@ -1400,3 +1614,26 @@ class SkillsExchangeRepository(
         db.reportDao().updateReportStatus(reportId, status, adminNotes, System.currentTimeMillis(), resolvedBy)
     }
 }
+
+// ==================== REG-002: GUARANTOR VERIFICATION FAILURES ====================
+
+/**
+ * REG-002: a guarantor submission could not be saved or filed. The message is always
+ * user-presentable and never contains a guarantor name, phone number or National ID
+ * number — those stay in the Room row and the private Storage objects.
+ */
+class GuarantorSubmissionException(message: String) : Exception(message)
+
+private const val GUARANTOR_SIGN_IN_MESSAGE =
+    "Please sign in before submitting your guarantors. Their identity details may only be filed against a real account."
+private const val GUARANTOR_ACCOUNT_MESSAGE =
+    "We could not find your account on this device. Refresh the app and try again."
+private const val GUARANTOR_WORKER_MODE_MESSAGE =
+    "Guarantor verification is only available on worker accounts."
+private const val GUARANTOR_UPLOAD_MESSAGE =
+    "A verification photo could not be uploaded. Check your connection and try again — your answers are still saved."
+private const val GUARANTOR_SUBMIT_MESSAGE =
+    "We could not submit your guarantors for review. Your answers are saved, so you can try again."
+private const val GUARANTOR_STATUS_MESSAGE =
+    "Could not reach the verification service. Your saved guarantors are still here."
+

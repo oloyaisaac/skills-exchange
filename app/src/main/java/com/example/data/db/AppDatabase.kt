@@ -25,7 +25,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         JobStatusAuditEntity::class,
         ReportEntity::class
     ],
-    version = 18,
+    version = 19,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -378,6 +378,33 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * REG-002: Guarantor verification requirements.
+         *
+         * Additive only — the KYC-003 columns are untouched. Every new column defaults to
+         * an empty/neutral value so previously registered workers keep working and simply
+         * see the guarantor step as NOT_STARTED until they complete it.
+         */
+        val MIGRATION_18_19 = object : Migration(18, 19) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Guarantor NIN + the two required photographs + consent + admin NIN state.
+                database.execSQL("ALTER TABLE guarantors ADD COLUMN nationalIdNumber TEXT NOT NULL DEFAULT ''")
+                database.execSQL("ALTER TABLE guarantors ADD COLUMN guarantorPhotoStoragePath TEXT NOT NULL DEFAULT ''")
+                database.execSQL("ALTER TABLE guarantors ADD COLUMN workerWithGuarantorPhotoStoragePath TEXT NOT NULL DEFAULT ''")
+                database.execSQL("ALTER TABLE guarantors ADD COLUMN consentProvided INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE guarantors ADD COLUMN ninVerificationStatus TEXT NOT NULL DEFAULT 'PENDING'")
+                database.execSQL("ALTER TABLE guarantors ADD COLUMN submittedAt INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE guarantors ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+                // Guarantor contact-number lookups (duplicate-guarantor detection).
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_guarantors_phoneNumber ON guarantors(phoneNumber)")
+                // Group photograph + guarantor step state on the worker's KYC record.
+                database.execSQL("ALTER TABLE worker_kyc ADD COLUMN groupPhotoStoragePath TEXT NOT NULL DEFAULT ''")
+                database.execSQL("ALTER TABLE worker_kyc ADD COLUMN guarantorStatus TEXT NOT NULL DEFAULT 'NOT_STARTED'")
+                database.execSQL("ALTER TABLE worker_kyc ADD COLUMN guarantorsSubmittedAt INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE worker_kyc ADD COLUMN guarantorReviewFeedback TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -385,7 +412,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "skills_exchange_database"
                 )
-                    .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18)
+                    .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19)
                     .build()
                 INSTANCE = instance
                 instance

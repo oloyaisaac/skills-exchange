@@ -1,9 +1,150 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-09-23T21:20:00+03:00 — REG-003 (Worker Backup Contact) + REG-004 (Worker Profile Photo) IMPLEMENTED & VERIFIED. Added `backupContactName`/`backupContactPhone` to `UserProfileEntity` (Room + Firestore `users/{uid}`) with a shared `ProfileValidators.validateBackupContact` validator, and a new `ProfileSettingsSheet` (drawer → "Profile Photo & Backup Contact") that also handles gallery selection, preview, cancel, upload (Firebase Storage `avatars/{uid}/`), loading state, error handling and photo replacement. `AppDatabase` v17→v18 with `MIGRATION_17_18`. Verification: `:app:compileDebugKotlin` PASSED; `:app:testDebugUnitTest` PASSED **39/39, 0 failures** (ProfileValidatorsTest 15, ProfileContactPhotoPersistenceTest 5 added); `:app:assembleDebug` PASSED (5m). PRD: REG-003/REG-004 completed (85 completed / 7 pending / 92 total). Device verification of the gallery picker, upload and migration still required.
+2026-09-27T04:30:00+03:00 — REG-002 (Worker Registration Guarantor Verification) **BUILD-VERIFIED AND COMPLETED**. The 2026-09-26 "no JDK on this machine" blocker was **false**: `gradle.properties` pins the build JVM (`org.gradle.java.home=D:/kilo_downloads/jdk17/jdk17.0.20_10`, Amazon Corretto `17.0.20.1`, present on disk) and the Gradle home (`systemProp.org.gradle.user.home=D:/gradle-home`), so `.\gradlew.bat <task>` works with no environment setup; `jdk11/jdk-11.0.22+7/bin/java.exe` exists as well and Android Studio's JBR is OpenJDK `25.0.2`. The first real compile of the guarantor feature then found **two genuine errors**: `SkillsExchangeViewModel.kt` had `var` Compose state with no `androidx.compose.runtime.getValue/mutableStateOf/setValue` imports, and `GuarantorValidators.required` used `value.distinct()` on a `String` (now `value.toSet().size`, same rule). After both fixes: `:app:compileDebugKotlin` PASSED (warnings only), `:app:testDebugUnitTest` PASSED **57 tests / 8 suites / 0 failures / 0 errors** (GuarantorValidatorsTest **18/18**), `:app:assembleDebug` PASSED in 3m 35s → `app/build/outputs/apk/debug/app-debug.apk` (35,254,412 bytes). Room's KSP pass validated the entities, DAO queries and the new `phoneNumber` index. PRD: REG-002 `completed` and added to `completed_stories` (**86 completed / 0 in progress / 6 pending** of 92). Remaining: the on-device golden path and `firebase deploy --only firestore:rules,storage`.
+Previous update 2026-09-26T12:00:00+03:00 — REG-002 (Worker Registration Guarantor Verification) IMPLEMENTED at the UI + repository layer, **NOT compiled/tested at the time**. Completed the missing half of `GuarantorVerificationSheet.kt` (GuarantorDraft state + mappers, GuarantorDraftCard, photo pickers, group photo card, choice dropdown, status chip) and corrected the API mismatches a previous session had assumed: repository uses `WorkerKycDao.updateGuarantorStep(... guarantorStatus ...)`, and both sheet and repository consume `GuarantorValidators.validateGuarantorSet(...)` as a single `String?` blocker. Wired the sheet into `MainScreen` behind the drawer's National ID & Verification sheet, which gained a guarantor status row, admin feedback and an entry button. Added `GuarantorValidatorsTest` (pure JVM). BLOCKER RECORDED AT THE TIME — **and later proved wrong**: "this machine has no JDK (`jdk11/` and `jdk17/` are empty, `java` not on PATH), so `:app:compileDebugKotlin` / `:app:testDebugUnitTest` could not be run"; REG-002 therefore stayed `in_progress` and out of `completed_stories` until the build was actually run on 2026-09-27. A follow-up static audit in the same session cross-checked every layer's call signatures (UI→ViewModel→repository→DAO→FirebaseService), the Room v19 migration against the entity columns/defaults, and the client payloads against the `guarantors` / `guarantor_submissions` Firestore rules and the guarantor Storage rules; it fixed one real defect — `GuarantorEntity` never declared the `phoneNumber` index that `MIGRATION_18_19` creates.
+Previous update 2026-09-23T21:20:00+03:00 — REG-003 (Worker Backup Contact) + REG-004 (Worker Profile Photo) IMPLEMENTED & VERIFIED. Added `backupContactName`/`backupContactPhone` to `UserProfileEntity` (Room + Firestore `users/{uid}`) with a shared `ProfileValidators.validateBackupContact` validator, and a new `ProfileSettingsSheet` (drawer → "Profile Photo & Backup Contact") that also handles gallery selection, preview, cancel, upload (Firebase Storage `avatars/{uid}/`), loading state, error handling and photo replacement. `AppDatabase` v17→v18 with `MIGRATION_17_18`. Verification: `:app:compileDebugKotlin` PASSED; `:app:testDebugUnitTest` PASSED **39/39, 0 failures** (ProfileValidatorsTest 15, ProfileContactPhotoPersistenceTest 5 added); `:app:assembleDebug` PASSED (5m). PRD: REG-003/REG-004 completed (85 completed / 7 pending / 92 total). Device verification of the gallery picker, upload and migration still required.
 Previous update 2026-09-23T14:40:00+03:00 — COMM-002 Community Feature Removal IMPLEMENTED & VERIFIED. Audited and completed a prior session's uncommitted removal work (NeighborhoodFeedView.kt deleted; Board tab/branch, neighborhoodPosts, NeighborhoodPostEntity/Dao removed; AppDatabase v16→v17 with MIGRATION_16_17 dropping neighborhood_posts). Verification: :app:compileDebugKotlin PASSED; :app:testDebugUnitTest PASSED 19/19 after repairing 2 pre-existing AuthViewModelTest assertions that still expected pre-SEC-009 defaults (unrelated to COMM-002; app/src/test was untouched by the removal). TASKS.md synced: COMM-002 Completed, counts now 83 completed / 9 pending / 92 total (includes repair of a pre-existing gap: AUTH-011 was status=completed but missing from completed_stories[] and from TASKS.md).
 Previous update 2026-09-23T12:05:00+03:00 — SEC-009 and PAY-005 confirmed implemented. Unit tests re-verified this session: UserProfilePersistenceTest 7/7 PASSED (BUILD SUCCESSFUL in 1m 54s, GRADLE_USER_HOME=D:\gradle-home, JAVA_HOME=JDK17, timestamp 2026-09-23T09:01:22Z). TASKS.md synced: PAY-005 updated to Completed, count corrected to 81 completed / 10 pending. Session audit produced.
+
+## REG-002: Worker Registration Guarantor Verification — BUILD-VERIFIED & COMPLETED (2026-09-27)
+
+**Status: ✅ Completed — compiled, unit-tested and packaged on 2026-09-27 (86 completed / 0 in progress / 6 pending). Only the on-device golden path and the Firebase rules deploy remain.**
+
+### Build environment correction — the 2026-09-26 "no JDK" blocker was FALSE (read this before concluding you cannot build)
+
+`gradle.properties` already pins everything the build needs, so `.\gradlew.bat <task> --console=plain` works with **no** environment variables:
+
+| Reference | Reality |
+|---|---|
+| `org.gradle.java.home = D:/kilo_downloads/jdk17/jdk17.0.20_10` | EXISTS — Amazon Corretto `17.0.20.1`. This is the JVM the Gradle daemon actually runs on and it overrides `JAVA_HOME`, which is why `java` not being on `PATH` never mattered |
+| `systemProp.org.gradle.user.home = D:/gradle-home` | EXISTS — dependency cache is warm, builds are incremental |
+| `org.gradle.java.installations.paths = D:/skills exchange/jdk11/jdk-11.0.22+7` | EXISTS — `bin\java.exe` is present (JDK 11 toolchain). The 2026-09-26 claim that it has no `bin` was wrong |
+| repo-root `jdk17/` | genuinely EMPTY — and irrelevant, nothing referenced it |
+| `C:\Program Files\Android\Android Studio\jbr` | EXISTS — OpenJDK `25.0.2`, a usable fallback JVM; Gradle 9.5.0 / AGP 9.3.2 tolerate it for the Java toolchain DSL |
+
+Practical note for the next session: the daemon prints nothing for minutes at a time while compiling Kotlin and packaging. Poll `app\build\tmp\kotlin-classes\debug` and `app\build\outputs\apk\debug` timestamps instead of assuming a hang, and re-run only after the previous invocation has finished.
+
+### Build verification — 2026-09-27
+
+| Step | Result | Evidence / fix |
+|---|---|---|
+| `:app:compileDebugKotlin` (1st attempt) | ❌ FAILED — 2 real errors, both REG-002 code | `SkillsExchangeViewModel.kt:110 Unresolved reference 'getValue'` plus "does not call getValue/setValue" for the three `var` state properties; `GuarantorValidators.kt:138 Unresolved reference 'distinct'` (it was called on a `String`) |
+| Fixes | ✅ | [SkillsExchangeViewModel.kt](file:///d:/skills%20exchange/app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt) now imports `androidx.compose.runtime.getValue`, `mutableStateOf` and `setValue` (`kotlinx.coroutines.flow.*` covers neither property-delegate operators nor `mutableStateOf`); [GuarantorValidators.kt](file:///d:/skills%20exchange/app/src/main/java/com/example/util/GuarantorValidators.kt) `required()` now uses `value.toSet().size > 1` — the identical rule (reject a number made of one repeated digit), plain stdlib, and 6 of the 18 tests exercise that branch |
+| `:app:compileDebugKotlin` (re-run) | ✅ PASSED | "BUILD SUCCESSFUL in 45s", warnings only |
+| `:app:testDebugUnitTest` | ✅ PASSED | **57 tests / 8 suites / 0 failures / 0 errors / 0 skipped**; `GuarantorValidatorsTest` **18/18** (per `build/test-results/testDebugUnitTest/TEST-com.example.util.GuarantorValidatorsTest.xml`); `testReleaseUnitTest` passed too |
+| `:app:assembleDebug` | ✅ PASSED | BUILD SUCCESSFUL in 3m 35s → `app/build/outputs/apk/debug/app-debug.apk` (35,254,412 bytes) |
+| Room schema | ✅ validated | KSP processed the entities, DAO queries, `MIGRATION_18_19` and the new `Index(["phoneNumber"])` with no schema errors |
+| `git diff --check` | ✅ clean | no whitespace errors |
+
+**Recorded lesson:** the 2026-09-26 static audit was genuinely thorough yet still missed two compile errors, and both are the categories signature checks cannot see — imports that `by mutableStateOf` requires implicitly, and a stdlib call that does not resolve on `String`. If a JDK exists (it does), the build must run before a story is called complete.
+
+### What was wrong at the start of this session
+A previous session had written the REG-002 data layer (entities, DAO, validators, Firebase
+mirrors, ViewModel actions) and a **partially written** `GuarantorVerificationSheet.kt` that:
+- called `WorkerKycDao.updateGuarantorReview(status = ...)` — **no such DAO method exists**; the
+  real one is `updateGuarantorStep(userId, guarantorStatus, groupPhotoStoragePath, submittedAt, feedback)`;
+- consumed `GuarantorValidators.validateGuarantorSet(...)` as if it returned an `Outcome` object
+  with an `issues` map — it actually returns the **first blocking message as `String?`**;
+- referenced `GuarantorInput` and `KeyboardOptions` without importing them, and ended in
+  duplicated/truncated lines;
+- never defined `GuarantorDraft`, its mappers, `GuarantorDraftCard`, `GroupPhotoCard` or
+  `GuarantorChoiceField`, so the file could not compile.
+
+### What was changed
+1. **`SkillsExchangeRepository.kt`** — the guarantor draft/submit/refresh paths now call
+   `updateGuarantorStep` with `guarantorStatus`, use `GuarantorInput` from `com.example.util`,
+   and treat the validator result as a single blocker string. Photos go through
+   `resolveVerificationPhoto` (idempotent: an existing `users/{uid}/guarantors/...` path is
+   reused, a `content://` URI is uploaded once) and `SUBMITTED` is recorded only after the
+   remote write succeeded.
+2. **`GuarantorVerificationSheet.kt`** — completed the file:
+   - `GuarantorDraft` plus `GuarantorEntity.toDraft()`, `List<GuarantorEntity>.toDrafts(workerId)`
+     (always renders the required two cards so a partially saved form resumes),
+     `GuarantorDraft.toInput()` and `GuarantorDraft.toEntity(workerKycId, position)`;
+   - `GuarantorDraftCard`: phone (digit-filtered), full name, relationship and district pickers
+     (`GuarantorChoiceField`), NIN (masked entry, capped at `MAX_NIN_LENGTH`), the two photo
+     slots, and the consent checkbox;
+   - `GuarantorPhotoField` / `GroupPhotoCard`: `ActivityResultContracts.GetContent` picker with
+     attached / replace / remove states and a removal confirmation dialog — only the resulting
+     path or content URI is kept, never a signed URL;
+   - `VerificationStatusChip(label, positive)` for the "n of 2 guarantors ready" and group-photo
+     summary, and local `SpaceXS/SM/MD` values (the app has no shared spacing tokens; components
+     use literal dp).
+   - Submit is gated on `blocker == null` from `GuarantorValidators.validateGuarantorSet`; the
+     sheet passes an empty `workerPrimaryPhone` and the repository re-validates with the real
+     number, so a worker guaranteeing themselves is still rejected before anything is filed.
+3. **Wiring** — `MainScreen.kt` renders the sheet when `viewModel.guarantorVerificationOpen`,
+   and `IdentityVerificationSheet` (drawer → National ID & Verification) gained a "Guarantor
+   verification" status row, admin review feedback, and an entry button that calls
+   `viewModel.openGuarantorVerification(groupPhotoStoragePath)`. Both open paths also call
+   `viewModel.refreshGuarantorVerificationStatus()` so the state shown is the synced one.
+4. **Tests** — new pure-JVM `app/src/test/java/com/example/util/GuarantorValidatorsTest.kt`
+   covering: two complete guarantors + group photo accepted; one or three guarantors rejected;
+   the worker's own phone rejected; the same person / same number rejected; each missing
+   photograph rejected; missing consent rejected; NIN structural bounds; unauthenticated and
+   non-worker submission blockers; the photo-slot whitelist; deterministic `guarantorId`; and
+   identifier masking / log scrubbing.
+5. **Room schema alignment (found by that session's static cross-check, then confirmed by the 2026-09-27 KSP schema pass)** — `MIGRATION_18_19` creates `index_guarantors_phoneNumber ON guarantors(phoneNumber)`
+   for duplicate-guarantor lookups, but `GuarantorEntity` only declared `Index(["workerKycId"])`.
+   The entity now declares `Index(value = ["workerKycId"]), Index(value = ["phoneNumber"])`
+   ([Entities.kt](file:///d:/skills%20exchange/app/src/main/java/com/example/data/db/Entities.kt))
+   so the schema Room generates for a fresh install matches the migrated database: the default
+   Room index name `index_guarantors_phoneNumber` is exactly the one the migration creates. Left
+   undeclared, the physical database would carry an index Room does not know about, which surfaces
+   as a schema-mismatch/`TableInfo` failure in Room's migration validation and future migrations.
+
+### Static cross-checks performed in that session (they did NOT substitute for the build — see the verification table above)
+- **UI → ViewModel**: `GuarantorVerificationSheet`'s nine parameters match the `MainScreen.kt`
+  call site one-for-one (lines 698–709), and every member it reads — `guarantorVerificationOpen`,
+  `guarantorDrafts`, `guarantorGroupPhotoSource`, `guarantorSubmissionPending`,
+  `guarantorSubmissionError`, `guarantorSubmissionMessage`, `openGuarantorVerification`,
+  `onGuarantorDraftsChanged`, `saveGuarantorDraft`, `submitGuarantorVerification`,
+  `closeGuarantorVerification` — exists in `SkillsExchangeViewModel` with `private set` state.
+  `IdentityVerificationSheet` gained `onManageGuarantors: () -> Unit = {}` (defaulted, so no other
+  call site broke), and `MainScreen` resolves the sheet through its existing
+  `import com.example.ui.components.*`.
+- **ViewModel → repository → DAO → FirebaseService**: every call resolves with matching named
+  arguments — `getGuarantorsOnce`, `saveGuarantorDraft`, `submitGuarantorVerification`,
+  `refreshGuarantorVerificationStatus`, `updateGuarantorStep(userId, guarantorStatus,
+  groupPhotoStoragePath, submittedAt, feedback = "")`, `updateNinStatusForWorker`,
+  `uploadGuarantorPhoto(workerId, slot, photoUri)`, `fetchGuarantorSubmission(workerId)`; the
+  `Uri` / `GuarantorInput` / `GuarantorValidators` imports are present in the three files that use
+  them, and every icon/composable symbol used by the sheet is imported (no
+  `ExposedDropdownMenu`-style unimported references).
+- **Entity ↔ `MIGRATION_18_19`**: all seven new `guarantors` columns and four new `worker_kyc`
+  columns are `NOT NULL` with SQL defaults equal to the Kotlin defaults (`''`, `0`, `0`,
+  `'PENDING'`, `'NOT_STARTED'`), so existing rows migrate without NULL-into-non-null crashes;
+  `AppDatabase` is at **version 19** with `MIGRATION_18_19` registered in `addMigrations`.
+- **Client ↔ security rules (payload-level)**: the `guarantors` create rule (workerKycId == uid,
+  `fullName` ≥ 3, `nationalIdNumber` ≥ 5, `consentProvided == true`, both photo paths matching
+  `isPrivatePhotoPath`, `ninVerificationStatus == 'PENDING'`) is exactly what
+  `FirebaseService.submitGuarantorVerification` writes, and the update branch deliberately omits
+  `ninVerificationStatus`; the `guarantor_submissions` create rule (`workerId == docId`,
+  `guarantorCount == 2`, `consentConfirmed == true`, `status == 'PENDING_REVIEW'`, private group
+  photo path) matches `fileGuarantorSubmission`, which re-creates rather than updates so status
+  returns to PENDING_REVIEW without the client writing it. Storage `users/{uid}/guarantors/**` is
+  owner/admin read, owner write only under 8 MB with an `image/*` content type — the shape
+  `uploadGuarantorPhoto` produces (path returned, never a signed URL).
+- **Device-only unknowns left for the verification run**: gallery picks must report an `image/*`
+  MIME type or the Storage write rule rejects the upload (the app then fails closed with a
+  friendly retry message); the delete-then-create of the submission document assumes admins poll
+  rather than stream that document; `GuarantorValidatorsTest` expectations were reviewed by hand
+  against the validator but not executed.
+
+### Deliberate non-changes
+- `GuarantorFormSheet` in `AccountComplianceDialog.kt` (KYC-003, no NIN/photos) is left in place
+  and still unreferenced — removing it is out of scope; the REG-002 sheet is the live path.
+- The client can only ever write `ninVerificationStatus = "PENDING"`; admin results arrive only
+  through `refreshGuarantorVerificationStatus` reading the worker's own submission document.
+
+### Next action for the next session
+Run the build/tests listed in Known Blockers with a working JDK, fix compiler findings, then
+device-verify: fill both guarantors, attach the three photographs, save draft, kill the app,
+reopen and confirm it resumed, submit, and confirm the status moves SUBMITTED → admin decision.
+
+---
+
 
 ## REG-003 / REG-004: Worker Backup Contact & Profile Photo (COMPLETED & VERIFIED)
 
@@ -124,7 +265,8 @@ Next: confirm compile success → run `UserProfilePersistenceTest` → `assemble
 ---
 
 ## Current PRD Story
-**All Phase 16 implementable stories are complete, including STAB-003 build verification.**
+**Updated 2026-09-27**: REG-002 (Worker Registration Guarantor Verification) is **completed and build-verified** — 86 of 92 stories completed, 6 pending, all remaining ones FUTURE/deliberately-not-implemented. No story is `in_progress`.
+**(historical)** **All Phase 16 implementable stories are complete, including STAB-003 build verification.**
 "Status**: All implementation complete
 
 ---
@@ -238,7 +380,13 @@ All Phase 16 implementable stories are complete, including the STAB-003 automate
 ---
 
 ## Work In Progress / Next Task
-All Phase 16 implementable stories are complete. Phase 17 (documentation only) is complete.
+
+### Next action — 2026-09-27 (REG-002 code is done; what is left is operational)
+1. **Deploy the server-side rules the client already depends on**: `firebase deploy --only firestore:rules,storage`. The `guarantors` / `guarantor_submissions` Firestore rules and the `users/{uid}/guarantors/**` Storage rules exist in the repo but are only enforced once deployed, so guarantor submission will fail closed against a project that still runs the old rules.
+2. **Walk the golden path on a device/emulator** with a worker account: drawer → National ID & Verification → Manage guarantors → fill two guarantors (name, phone, relationship, district, NIN, two photographs each, consent) + the group photograph → **Save draft** → force-kill the app → reopen and confirm the draft resumed with photos and consent intact → **Submit** → confirm `guarantor_submissions/{uid}` reaches `PENDING_REVIEW` and the `guarantors` rows exist → have an admin approve/reject and confirm the drawer shows the status and feedback. Also confirm the negative cases the validator guarantees: one repeated digit phone, the worker's own number, and a duplicate guarantor are all blocked with the right message.
+3. **Then pick the next PRD story**: no implementable story is pending — the remaining six (`REG-001`, `LOC-005`, `MAP-002`, `LEGAL-001`, `LEGAL-002`, `PAY-006`) are explicitly FUTURE / NOT IMPLEMENTED. Do not start them without a product decision; otherwise work the audit register (A6 / B1 / M6 / M11 below) or the device-reported UI follow-up.
+
+**(historical)** All Phase 16 implementable stories are complete. Phase 17 (documentation only) is complete.
 
 **Current work:** Feature Connection Audit (Phase 17 POST-LAUNCH task — post-audit fixes)
 Auditing and fixing disconnected features identified during the systematic feature connection audit.
@@ -266,6 +414,10 @@ Auditing and fixing disconnected features identified during the systematic featu
 ---
 
 ## Files Recently Modified
+- `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt` (2026-09-27 — added the missing `androidx.compose.runtime.getValue` / `mutableStateOf` / `setValue` imports; REG-002 compile fix)
+- `app/src/main/java/com/example/util/GuarantorValidators.kt` (2026-09-27 — `required()` now uses `value.toSet().size` instead of the unresolvable `value.distinct()`; REG-002 compile fix)
+- `app/src/test/java/com/example/util/GuarantorValidatorsTest.kt` (2026-09-27 — run: 18/18 PASSED)
+- `AGENT_STATE.md` / `TASKS.md` / `CHANGELOG.md` / `DECISIONS.md` / `AGENTS.md` / `prd.json` (2026-09-27 — REG-002 marked completed, build environment corrected, false blocker retracted)
 - `app/proguard-rules.pro` (REL-001 ProGuard rules for Room, Firebase, Moshi, coroutines)
 - `app/src/main/java/com/example/ui/components/AccountComplianceDialog.kt` (TRAIN-002 WorkerTrainingScreen + KYC-004/005/007)
 - `app/src/main/java/com/example/ui/screens/MainScreen.kt` (TRAIN-002 training screen wiring + ROLE-003)
@@ -326,6 +478,11 @@ Auditing and fixing disconnected features identified during the systematic featu
 ## Tests Performed
 | Test | Command / Method | Result |
 |---|---|---|
+| REG-002 compile (2026-09-27) | `.\gradlew.bat :app:compileDebugKotlin --console=plain` | PASS after fixes — first attempt FAILED on 2 real errors (`SkillsExchangeViewModel.kt` missing Compose runtime `getValue`/`setValue`; `GuarantorValidators.kt:138 Unresolved reference 'distinct'`); re-run PASSED, warnings only |
+| REG-002 unit tests (2026-09-27) | `.\gradlew.bat :app:testDebugUnitTest --console=plain` | PASS — 57 tests / 8 suites, 0 failures / 0 errors / 0 skipped; `GuarantorValidatorsTest` 18/18 |
+| REG-002 package (2026-09-27) | `.\gradlew.bat :app:assembleDebug --console=plain` | PASS — BUILD SUCCESSFUL in 3m 35s → `app/build/outputs/apk/debug/app-debug.apk` (35,254,412 bytes) |
+| REG-002 Room schema (2026-09-27) | KSP schema processing during compile | PASS — entities, DAO queries, `MIGRATION_18_19` and the new `Index(["phoneNumber"])` validated |
+| REG-002 whitespace (2026-09-27) | `git diff --check` | PASS — no whitespace errors |
 | STAB-001 Code Inspection | Manual file inspection | PASS — asserts "Skills Exchange" |
 | STAB-002 Code Inspection | Manual file inspection | PASS — uses SkillsExchangeTheme |
 | AI-001 Model ID & Audio format | Grep and code inspection | PASS — gemini-2.0-flash & MPEG_4/AAC |
@@ -367,7 +524,8 @@ Auditing and fixing disconnected features identified during the systematic featu
 ## Known Blockers
 | Blocker | Reason | Needed |
 |---|---|---|
-| None | No active blockers after full test verification | N/A |
+| ~~REG-002 cannot be verified — no JDK~~ **CLOSED 2026-09-27** | That blocker was false: `gradle.properties` pins `org.gradle.java.home=D:/kilo_downloads/jdk17/jdk17.0.20_10` (Amazon Corretto 17.0.20.1) and `systemProp.org.gradle.user.home=D:/gradle-home`, so `gradlew.bat` builds with no environment setup; `jdk11/jdk-11.0.22+7/bin/java.exe` exists too and Android Studio's JBR is OpenJDK 25.0.2 | Nothing further — `:app:compileDebugKotlin`, `:app:testDebugUnitTest` (57 tests, 0 failures, GuarantorValidatorsTest 18/18) and `:app:assembleDebug` (app-debug.apk, 35,254,412 bytes) all PASSED on 2026-09-27 |
+| REG-002 device verification not possible | No emulator/device plus no live Firebase project available in this session, and `firestore.rules` / `storage.rules` changes are only enforced server-side | After the build passes: deploy rules (`firebase deploy --only firestore:rules,storage`), then walk the golden path on a device — two guarantors, three photographs, save draft, force-kill, resume, submit, and confirm `guarantor_submissions/{uid}` reaches `PENDING_REVIEW` and the drawer reflects the admin decision |
 
 ---
 

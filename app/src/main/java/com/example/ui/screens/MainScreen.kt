@@ -353,7 +353,10 @@ fun MainScreen(
                         } else {
                             WorkerVerificationStatusView(
                                 userProfile = currentUserProfile,
-                                onStartVerification = { isIdentitySheetOpen = true },
+                                onStartVerification = {
+                                    isIdentitySheetOpen = true
+                                    viewModel.refreshGuarantorVerificationStatus()
+                                },
                                 onStartTraining = { viewModel.startTraining() },
                                 onSwitchToClientMode = { viewModel.setUserRoleMode("Hire a Neighbor") },
                                 modifier = Modifier.fillMaxSize()
@@ -639,7 +642,10 @@ fun MainScreen(
         onOpenProfileSettings = { isProfileSettingsSheetOpen = true },
         onOpenHistory = { isJobHistorySheetOpen = true },
         onOpenDisputes = { isTrustSafetySheetOpen = true },
-        onOpenIdentity = { isIdentitySheetOpen = true },
+        onOpenIdentity = {
+            isIdentitySheetOpen = true
+            viewModel.refreshGuarantorVerificationStatus()
+        },
         onOpenDataBackup = { isDataBackupOpen = true },
         onOpenPrivacyPolicy = { isPrivacyPolicyOpen = true },
         onOpenDeleteAccount = { isAccountDeletionOpen = true }
@@ -681,8 +687,27 @@ fun MainScreen(
         isOpen = isIdentitySheetOpen,
         userProfile = currentUserProfile,
         workerKyc = myWorkerKyc,
+        onManageGuarantors = {
+            viewModel.openGuarantorVerification(myWorkerKyc?.groupPhotoStoragePath.orEmpty())
+        },
         onDismiss = { isIdentitySheetOpen = false }
     )
+
+    // REG-002: two guarantors + group photograph, filed for admin review.
+    if (viewModel.guarantorVerificationOpen) {
+        GuarantorVerificationSheet(
+            workerId = currentUserProfile?.id.orEmpty(),
+            initialGuarantors = viewModel.guarantorDrafts,
+            initialGroupPhotoSource = viewModel.guarantorGroupPhotoSource,
+            isSubmitting = viewModel.guarantorSubmissionPending,
+            submissionError = viewModel.guarantorSubmissionError,
+            submissionMessage = viewModel.guarantorSubmissionMessage,
+            onChange = viewModel::onGuarantorDraftsChanged,
+            onSaveDraft = viewModel::saveGuarantorDraft,
+            onSubmit = viewModel::submitGuarantorVerification,
+            onDismiss = viewModel::closeGuarantorVerification
+        )
+    }
 
     // Critical Production Dialogs & Sheets
     PermissionRationaleDialog(

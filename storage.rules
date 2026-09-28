@@ -24,8 +24,16 @@ service firebase.storage {
     }
 
     match /users/{userId}/guarantors/{allPaths=**} {
+      // REG-002: third-party NIN images and verification photographs stay private —
+      // owner and admins only, with no public read and no signed URLs issued to clients.
+      // Uploads are constrained to reasonable image sizes; reviewers fetch them through
+      // the admin-only Cloud Function.
       allow read: if isOwner(userId) || isAdmin();
-      allow write: if isOwner(userId) || isAdmin();
+      allow write: if isAdmin() || (
+        isOwner(userId)
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*')
+      );
     }
 
     match /users/{userId}/certificates/{allPaths=**} {

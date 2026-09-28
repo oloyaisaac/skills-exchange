@@ -2,6 +2,9 @@ package com.example.ui.viewmodel
 
 import android.app.Application
 import android.net.Uri
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.db.AppDatabase
@@ -1238,6 +1241,106 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     suspend fun isValidGuarantorCount(workerKycId: String): Boolean {
         return repository.validateGuarantorCount(workerKycId)
+    }
+
+    // ── REG-002: Guarantor verification (two guarantors + group photograph) ───────────────
+
+    /** Whether the guarantor submission sheet is open. */
+    var guarantorVerificationOpen by mutableStateOf(false)
+        private set
+
+    /** Saved (0–2) guarantors, so a partially completed form resumes after an app restart. */
+    var guarantorDrafts by mutableStateOf<List<com.example.data.db.GuarantorEntity>>(emptyList())
+        private set
+
+    /** Content URI or Storage path of the group photograph — empty until one is picked. */
+    var guarantorGroupPhotoSource by mutableStateOf("")
+        private set
+
+    var guarantorSubmissionPending by mutableStateOf(false)
+        private set
+
+    /** Validation or network reason the last submission did not go through. */
+    var guarantorSubmissionError by mutableStateOf<String?>(null)
+        private set
+
+    /** Confirmation shown by the sheet ("submitted" / "draft saved"). */
+    var guarantorSubmissionMessage by mutableStateOf<String?>(null)
+        private set
+
+    /** Opens the sheet and restores drafts; [currentGroupPhotoPath] is what is already filed. */
+    fun openGuarantorVerification(currentGroupPhotoPath: String) {
+        val userId = currentUser.value?.id ?: return
+        viewModelScope.launch {
+            guarantorDrafts = repository.getGuarantorsOnce(userId)
+            guarantorGroupPhotoSource = currentGroupPhotoPath
+            guarantorSubmissionError = null
+            guarantorSubmissionMessage = null
+            guarantorVerificationOpen = true
+        }
+    }
+
+    fun closeGuarantorVerification() {
+        guarantorVerificationOpen = false
+    }
+
+    fun onGuarantorDraftsChanged(
+        drafts: List<com.example.data.db.GuarantorEntity>,
+        groupPhotoSource: String
+    ) {
+        guarantorDrafts = drafts
+        guarantorGroupPhotoSource = groupPhotoSource
+    }
+
+    /** Saves the form as a draft — photos stay on the device until the worker submits. */
+    fun saveGuarantorDraft() {
+        val userId = currentUser.value?.id ?: return
+        val drafts = guarantorDrafts
+        val groupPhoto = guarantorGroupPhotoSource
+        viewModelScope.launch {
+            repository.saveGuarantorDraft(userId, drafts, groupPhoto)
+            guarantorSubmissionMessage = "Draft saved on this device."
+        }
+    }
+
+    /**
+     * Files the two guarantors and the group photograph for admin review. The seeded demo
+     * profile is not a real account, so it can never file third-party identity data; the
+     * repository repeats every check, and validation errors surface inline in the sheet.
+     */
+    fun submitGuarantorVerification() {
+        val user = currentUser.value ?: return
+        if (guarantorSubmissionPending) return
+        if (user.id == DEMO_PROFILE_ID) {
+            guarantorSubmissionError =
+                "Sign in to file your guarantors. Demo data cannot submit other people's identity details."
+            return
+        }
+        guarantorSubmissionPending = true
+        guarantorSubmissionError = null
+        guarantorSubmissionMessage = null
+        viewModelScope.launch {
+            val result = repository.submitGuarantorVerification(
+                workerId = user.id,
+                guarantors = guarantorDrafts,
+                groupPhotoSource = guarantorGroupPhotoSource,
+                isSignedIn = true
+            )
+            guarantorSubmissionPending = false
+            result.onSuccess {
+                guarantorSubmissionMessage =
+                    "Guarantors submitted for review. Decisions usually arrive within 48 hours."
+            }.onFailure {
+                guarantorSubmissionError =
+                    it.message ?: "Could not submit your guarantors. Please try again."
+            }
+        }
+    }
+
+    /** Pulls the admin decision for the sheet and the status card (48h review SLA). */
+    fun refreshGuarantorVerificationStatus() {
+        val userId = currentUser.value?.id?.takeIf { it != DEMO_PROFILE_ID } ?: return
+        viewModelScope.launch { repository.refreshGuarantorVerificationStatus(userId) }
     }
 
     fun uploadQualificationEvidence(evidenceType: String, fileBytes: ByteArray? = null, videoUrl: String? = null, onResult: (String?) -> Unit) {

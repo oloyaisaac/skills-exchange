@@ -1,7 +1,7 @@
 # TASKS.md — Skills Exchange Human-Readable Task Status
 
 Synchronized with `prd.json`. This is the human-readable view of the development backlog.
-Last synchronized: 2026-09-23T21:20:00+03:00
+Last synchronized: 2026-09-27T04:30:00+03:00 — REG-002 (Worker Registration Guarantor Verification) is now **✅ Completed**: compiled, unit-tested (57 tests, 0 failures) and packaged into `app-debug.apk` on 2026-09-27. 86 completed / 0 in progress / 6 pending. Builds need no environment setup — `gradle.properties` pins `org.gradle.java.home` to an existing JDK (see AGENTS.md §9); the 2026-09-26 "no JDK" blocker recorded on 2026-09-26 was false.
 
 Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Failed
 
@@ -209,7 +209,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 |---|---|---|---|---|
 | PAY-005 | P2 | Job Payment Fees & Platform Deductions | ✅ Completed | 5% worker commission + 5% platform fee itemized in EscrowAndProofSheet.kt with net payout display |
 | REG-001 | P2 | First-Time Worker Registration Fee (Future) | ⏳ Pending | UGX 20,000 registration fee. FUTURE / NOT IMPLEMENTED |
-| REG-002 | P2 | Worker Registration Guarantor Verification Requirements (Future) | ⏳ Pending | 2 guarantors with photos + group photo. FUTURE / NOT IMPLEMENTED |
+| REG-002 | P2 | Worker Registration Guarantor Verification Requirements | ✅ Completed | Implemented 2026-09-26, BUILD-VERIFIED 2026-09-27: `GuarantorVerificationSheet` completes the two-guarantor form (name, phone, relationship, district, masked NIN, guarantor photo, worker+guarantor photo, consent) plus the group photograph card; drafts save/restore locally, submit uploads photos to `users/{uid}/guarantors/` and files `guarantor_submissions` for admin review. Opened from drawer → National ID & Verification (new guarantor status row + admin feedback + entry button). Repository now uses the real DAO call `updateGuarantorStep` and the validators' single blocker string. Added `GuarantorValidatorsTest` (**18** tests). VERIFIED 2026-09-27: `:app:compileDebugKotlin` PASSED after two real compile errors were fixed — `SkillsExchangeViewModel.kt` lacked the `androidx.compose.runtime` `getValue`/`mutableStateOf`/`setValue` imports that its `by mutableStateOf` properties require, and `GuarantorValidators.required` called `value.distinct()` on a `String` (now `value.toSet().size`, identical rule); `:app:testDebugUnitTest` PASSED — **57 tests / 8 suites / 0 failures / 0 errors / 0 skipped** (GuarantorValidatorsTest 18/18); `:app:assembleDebug` PASSED in 3m 35s → `app/build/outputs/apk/debug/app-debug.apk` (35,254,412 bytes). Room's KSP pass validated the entities, DAO queries, `MIGRATION_18_19` and the new `phoneNumber` index (Room still v19). The 2026-09-26 "no JDK" blocker was **false**: `gradle.properties` pins `org.gradle.java.home=D:/kilo_downloads/jdk17/jdk17.0.20_10` (Amazon Corretto 17.0.20.1), so `gradlew.bat` builds with no environment setup. That session's static cross-check (UI→ViewModel→repository→DAO→FirebaseService signatures, entity columns/defaults vs `MIGRATION_18_19`, client payloads vs the `guarantors` / `guarantor_submissions` Firestore rules + `users/{uid}/guarantors/**` Storage rules) did find and fix one real bug — `GuarantorEntity` now declares `Index(value = ["phoneNumber"])` to match the index `MIGRATION_18_19` creates — but it missed the two compile errors above, so signatures are not a substitute for the compiler. REMAINING (operational, not code): the on-device golden path (two guarantors + three photographs, save draft, force-kill, resume, submit → `guarantor_submissions/{uid}` reaches `PENDING_REVIEW`, drawer reflects the admin decision) and `firebase deploy --only firestore:rules,storage` |
 | REG-003 | P2 | Worker Backup Contact Number | ✅ Completed | Implemented 2026-09-23: `backupContactName` + `backupContactPhone` on `UserProfileEntity` (Room + Firestore `users/{uid}`), editable in `ProfileSettingsSheet` (drawer → Profile Photo & Backup Contact) with review-before-save, clear validation errors and save/reload persistence. `ProfileValidators.validateBackupContact` allows empty optional fields, reuses the project's 9–15 digit phone rule and rejects a backup number equal to the primary. DECISION: immediate update (same path as other profile metadata), owner-only write, NOT a guarantor (KYC-003 untouched). Unit tests: ProfileValidatorsTest 15, ProfileContactPhotoPersistenceTest 5 |
 | REG-004 | P2 | Worker Profile Photo | ✅ Completed | Implemented 2026-09-23: gallery picker (GetContent) → preview → cancel → upload with loading state and error handling → replace photo, in `ProfileSettingsSheet`. `FirebaseService.uploadProfilePhoto` writes to Firebase Storage `avatars/{uid}/profile_<ts>.jpg` (existing storage.rules: public read, owner-only write) and only the download URL is stored on `UserProfileEntity.avatarUrl` (no image bytes in Room/Firestore). Photo shows in the navigation drawer header + sheet; a blank/invalid URL falls back to initials. Camera capture NOT implemented (no camera architecture existed). `avatarUrl` default changed from a seeded stock photo to empty. Coil (`libs.coil.compose`) enabled for image loading |
 | LOC-005 | P2 | Worker Location Using Device GPS (Future) | ⏳ Pending | GPS-based worker location, remove manual district fields. FUTURE / NOT IMPLEMENTED |
@@ -284,12 +284,12 @@ Full finding text (A1–A8, B1–B9, G1–G7, D1–D11, N1–N4, P1–P2, M1–M
 | Status | Count |
 |---|---|
 | ✅ Completed | 85 |
-| 🔄 In Progress | 0 |
-| ⏳ Pending | 7 |
+| 🔄 In Progress | 1 |
+| ⏳ Pending | 6 |
 | 🚫 Blocked | 0 |
 | **Total** | **92** |
 
 ---
 
 _This file is synchronized with `prd.json`. Always update both when story status changes._
-_Last synchronized: 2026-09-23T21:20:00+03:00_
+_Last synchronized: 2026-09-26T12:00:00+03:00_

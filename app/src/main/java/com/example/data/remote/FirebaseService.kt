@@ -3,9 +3,11 @@ package com.example.data.remote
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import com.example.data.db.GuarantorEntity
 import com.example.data.db.JobPostEntity
 import com.example.data.db.ServiceProviderEntity
 import com.example.data.db.UserProfileEntity
+import com.example.util.GuarantorValidators
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -139,6 +141,8 @@ class FirebaseService(private val context: Context? = null) {
             for (doc in guarantors) {
                 doc.reference.delete().await()
             }
+            // REG-002: the guarantor verification submission belongs to the account too.
+            db.collection("guarantor_submissions").document(userId).delete().await()
 
             val notifications = db.collection("notifications").whereEqualTo("userId", userId).get().await()
             for (doc in notifications) {
@@ -383,6 +387,149 @@ class FirebaseService(private val context: Context? = null) {
         } catch (e: Exception) {
             Log.e("FirebaseService", "Profile photo upload failed: ${e.message}")
             null
+        }
+    }
+
+    /**
+     * REG-002: Reads back the caller's own guarantor submission so the app can show the
+     * admin decision (status, feedback, NIN verification result). Returns null when offline,
+     * unauthenticated or when nothing has been filed yet.
+     */
+    suspend fun fetchGuarantorSubmission(workerId: String): Map<String, Any>? {
+        val db = firestore ?: return null
+        if (workerId.isBlank()) return null
+        return try {
+            val doc = db.collection("guarantor_submissions").document(workerId).get().await()
+            if (doc.exists()) doc.data else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * REG-002: delete + re-create so a re-submission always lands back in PENDING_REVIEW
+     * through the Firestore create rule (a client is never allowed to write a status).
+     */
+    private suspend fun fileGuarantorSubmission(
+        db: FirebaseFirestore,
+        workerId: String,
+        guarantors: List<GuarantorEntity>,
+        groupPhotoStoragePath: String
+    ) {
+        val ref = db.collection("guarantor_submissions").document(workerId)
+        if (ref.get().await().exists()) {
+            ref.delete().await()
+        }
+        ref.set(
+            mapOf(
+                "workerId" to workerId,
+                "guarantorIds" to guarantors.map { it.id },
+                "guarantorCount" to guarantors.size,
+                "groupPhotoStoragePath" to groupPhotoStoragePath,
+                "consentConfirmed" to true,
+                "submittedAt" to System.currentTimeMillis(),
+                // Initial review state only — the create rule rejects any other value, and
+                // every later change is admin-only.
+                "status" to "PENDING_REVIEW"
+            )
+        ).await()
+    }
+
+    /**
+     * REG-002: Uploads one guarantor-verification photograph into the private verification
+     * prefix `users/{workerId}/guarantors/{slot}_{timestamp}.jpg`.
+     *
+     * [slot] is restricted to the three known purposes ("guarantor", "with_worker",
+     * "group") so document ids can never steer the write into another folder. The owner may
+     * write only inside their own prefix (storage.rules), uploads are image-only and capped,
+     * and there is no public read on that prefix anywhere.
+     *
+     * Returns the Storage **path** — deliberately never a download/signed URL: storing a
+     * URL would hand out a bearer token for another person's identity photographs. The
+     * admin review function resolves bytes from the path with Admin privileges.
+     *
+     * Fail closed: null when the caller or slot is invalid, when Storage is unavailable, or
+     * on any upload error. The failure message is scrubbed before logging so identifiers in
+     * a URI cannot reach logcat.
+     */
+    suspend fun uploadGuarantorPhoto(workerId: String, slot: String, photoUri: Uri): String? {
+        if (workerId.isBlank() || photoUri.toString().isBlank()) return null
+        if (slot !in GuarantorValidators.PHOTO_SLOTS) return null
+        val storageInstance = storage ?: return null
+        return try {
+            val storageRef = storageInstance.reference
+                .child("users/$workerId/guarantors/${slot}_${System.currentTimeMillis()}.jpg")
+            storageRef.putFile(photoUri).await()
+            storageRef.path
+        } catch (e: Exception) {
+            Log.d("FirebaseService", "Guarantor photo upload failed: ${GuarantorValidators.scrubIdentifiers(e.message ?: "unknown")}")
+            null
+        }
+    }
+
+    /**
+     * REG-002: Files the worker's two guarantors plus the group photograph for admin
+     * review. Must be called with the authenticated uid as [workerId] — the repository
+     * refuses to call it for anyone else, and `firestore.rules` independently rejects any
+     * document whose `workerKycId` is not the caller's uid.
+     *
+     * Each guarantor document is created when new and refreshed in place when it already
+     * exists; refreshes never touch `ninVerificationStatus`, so a worker cannot clear an
+     * admin's NIN decision. The submission document is re-created (delete + create) so a
+     * re-submission always returns the review state to PENDING_REVIEW through the create
+     * rule rather than by letting the client write a status.
+     *
+     * Client-side validation is not trusted here: exactly two consented guarantors with the
+     * full field set and a group photograph are required before anything is written.
+     * Returns false on any failure (fail closed) without logging identifiers.
+     */
+    suspend fun submitGuarantorVerification(
+        workerId: String,
+        guarantors: List<GuarantorEntity>,
+        groupPhotoStoragePath: String
+    ): Boolean {
+        val db = firestore ?: return false
+        if (workerId.isBlank()) return false
+        if (guarantors.size != GuarantorValidators.REQUIRED_GUARANTOR_COUNT) return false
+        if (groupPhotoStoragePath.isBlank()) return false
+        if (guarantors.any {
+                it.fullName.isBlank() || it.nationalIdNumber.isBlank() ||
+                    it.phoneNumber.isBlank() || !it.consentProvided ||
+                    it.guarantorPhotoStoragePath.isBlank() ||
+                    it.workerWithGuarantorPhotoStoragePath.isBlank()
+            }
+        ) return false
+        return try {
+            val submittedAt = System.currentTimeMillis()
+            guarantors.forEach { guarantor ->
+                val ref = db.collection("guarantors").document(guarantor.id)
+                val payload = mutableMapOf<String, Any>(
+                    "workerKycId" to workerId,
+                    "fullName" to guarantor.fullName.trim(),
+                    "nationalIdNumber" to guarantor.nationalIdNumber.trim(),
+                    "phoneNumber" to guarantor.phoneNumber.trim(),
+                    "relationship" to guarantor.relationship.trim(),
+                    "district" to guarantor.district.trim(),
+                    "guarantorPhotoStoragePath" to guarantor.guarantorPhotoStoragePath,
+                    "workerWithGuarantorPhotoStoragePath" to guarantor.workerWithGuarantorPhotoStoragePath,
+                    "consentProvided" to true,
+                    "submittedAt" to submittedAt,
+                    "updatedAt" to submittedAt
+                )
+                if (ref.get().await().exists()) {
+                    ref.update(payload).await()
+                } else {
+                    payload["createdAt"] = guarantor.createdAt
+                    // Admin-owned: the client may only ever file the un-reviewed value.
+                    payload["ninVerificationStatus"] = "PENDING"
+                    ref.set(payload).await()
+                }
+            }
+            fileGuarantorSubmission(db, workerId, guarantors, groupPhotoStoragePath)
+            true
+        } catch (e: Exception) {
+            Log.d("FirebaseService", "Guarantor submission failed: ${GuarantorValidators.scrubIdentifiers(e.message ?: "unknown")}")
+            false
         }
     }
 

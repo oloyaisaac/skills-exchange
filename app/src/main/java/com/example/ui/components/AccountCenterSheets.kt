@@ -406,6 +406,7 @@ fun IdentityVerificationSheet(
     isOpen: Boolean,
     userProfile: UserProfileEntity?,
     workerKyc: WorkerKycEntity?,
+    onManageGuarantors: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     if (!isOpen) return
@@ -413,6 +414,8 @@ fun IdentityVerificationSheet(
     val phoneOnFile = userProfile?.phoneNumber.orEmpty()
     val isPhoneLinked = phoneOnFile.isNotBlank()
     val idStatus = workerKyc?.status ?: "NOT_STARTED"
+    // REG-002: admin-owned guarantor step state, read from the worker's own KYC row.
+    val guarantorStatus = workerKyc?.guarantorStatus ?: "NOT_STARTED"
     val isWorkerMode = userProfile?.initialRole == "WORKER" ||
         userProfile?.currentActiveMode == "WORKER"
 
@@ -447,6 +450,13 @@ fun IdentityVerificationSheet(
                 isPositive = idStatus == "APPROVED"
             )
 
+            // REG-002: the two-guarantor step is a separate admin-reviewed requirement.
+            VerificationStatusRow(
+                label = "Guarantor verification",
+                value = guarantorStatus.replace('_', ' '),
+                isPositive = guarantorStatus == "APPROVED"
+            )
+
             VerificationStatusRow(
                 label = "Worker activation",
                 value = if (userProfile?.isWorkerActivated == true) "Activated" else "Inactive",
@@ -469,6 +479,26 @@ fun IdentityVerificationSheet(
                     "National ID verification is only required when you offer skills as a worker. " +
                         "Switch to worker mode to begin verification."
                 )
+            }
+
+            if (isWorkerMode) {
+                if (workerKyc?.guarantorReviewFeedback?.isNotBlank() == true) {
+                    SheetInfoBox(
+                        "Admin feedback on your guarantors: ${workerKyc.guarantorReviewFeedback}"
+                    )
+                }
+                OutlinedButton(
+                    onClick = onManageGuarantors,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = if (guarantorStatus == "NOT_STARTED" || guarantorStatus == "DRAFT") {
+                            "Add your two guarantors"
+                        } else {
+                            "View or update your guarantors"
+                        }
+                    )
+                }
             }
 
             SheetFooterButton(onDismiss)

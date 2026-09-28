@@ -173,6 +173,28 @@ interface GuarantorDao {
     @Query("SELECT COUNT(*) FROM guarantors WHERE workerKycId = :workerKycId")
     suspend fun countGuarantorsForWorker(workerKycId: String): Int
 
+    /**
+     * REG-002: non-reactive read used by the submission flow (build the payload, verify
+     * the stored pair, restore the sheet for editing).
+     */
+    @Query("SELECT * FROM guarantors WHERE workerKycId = :workerKycId ORDER BY createdAt ASC")
+    suspend fun getGuarantorsForWorkerOnce(workerKycId: String): List<GuarantorEntity>
+
+    /**
+     * REG-002 / SEC-010: contact-number lookup used to detect a guarantor who is already
+     * listed for another worker. Returns rows only — no caller-side write is possible.
+     */
+    @Query("SELECT * FROM guarantors WHERE phoneNumber = :phoneNumber")
+    suspend fun findGuarantorsByPhone(phoneNumber: String): List<GuarantorEntity>
+
+    /**
+     * REG-002: applies an admin decision to the locally cached rows. Admin-privileged
+     * fields are never taken from user input — this is called with values read back from
+     * the signed guarantor_submissions document.
+     */
+    @Query("UPDATE guarantors SET ninVerificationStatus = :ninStatus WHERE workerKycId = :workerKycId")
+    suspend fun updateNinStatusForWorker(workerKycId: String, ninStatus: String)
+
     @Query("DELETE FROM guarantors")
     suspend fun clearAll()
 }
@@ -196,6 +218,29 @@ interface WorkerKycDao {
 
     @Query("UPDATE worker_kyc SET status = :status, reviewedAt = :reviewedAt, reviewFeedback = :feedback WHERE userId = :userId")
     suspend fun updateKycReview(userId: String, status: String, reviewedAt: Long = System.currentTimeMillis(), feedback: String = "")
+
+    /** REG-002: non-reactive read used by the guarantor submission + status refresh flow. */
+    @Query("SELECT * FROM worker_kyc WHERE userId = :userId")
+    suspend fun getWorkerKycOnce(userId: String): WorkerKycEntity?
+
+    /**
+     * REG-002: records the guarantor step on the worker's own KYC row. Only ever called
+     * with the caller's authenticated uid (the repository gates the write), and the admin
+     * outcome fields are supplied from the synced submission document, not from user input.
+     */
+    @Query(
+        "UPDATE worker_kyc SET guarantorStatus = :guarantorStatus, " +
+            "groupPhotoStoragePath = :groupPhotoStoragePath, " +
+            "guarantorsSubmittedAt = :submittedAt, " +
+            "guarantorReviewFeedback = :feedback WHERE userId = :userId"
+    )
+    suspend fun updateGuarantorStep(
+        userId: String,
+        guarantorStatus: String,
+        groupPhotoStoragePath: String,
+        submittedAt: Long,
+        feedback: String = ""
+    )
 
     @Query("DELETE FROM worker_kyc")
     suspend fun clearAll()

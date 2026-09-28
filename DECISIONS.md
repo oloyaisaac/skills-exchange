@@ -315,3 +315,110 @@ _This document will be updated whenever significant architectural or design deci
 
 ---
 
+
+## D-2026-09-26-1 — REG-002: guarantor verification reuses the KYC-003 tables, and the UI treats validation as a single blocker
+
+**Context**: REG-002 (two guarantors with NIN + three photographs) arrived after KYC-003 had
+already shipped a two-guarantor model (`GuarantorEntity` with `idFront/idBackStoragePath`) and an
+unwired `GuarantorFormSheet`. A partially written `GuarantorVerificationSheet.kt` assumed APIs
+that do not exist (`updateGuarantorReview`, a validator `Outcome` object), so nothing compiled.
+
+**Decision**:
+1. **Augment, do not migrate.** `GuarantorEntity` keeps the KYC-003 columns and gains the REG-002
+   ones (`nationalIdNumber`, `guarantorPhotoStoragePath`, `workerWithGuarantorPhotoStoragePath`,
+   `consentProvided`, `ninVerificationStatus`); `worker_kyc` gains `guarantorStatus`,
+   `groupPhotoStoragePath`, `guarantorsSubmittedAt`, `guarantorReviewFeedback`. No table rewrite,
+   no second guarantor model, and the dead KYC-003 `GuarantorFormSheet` is left untouched.
+2. **One blocker string, not a result object.** `GuarantorValidators.validateGuarantorSet`
+   returns the first blocking message (`String?`); the sheet shows exactly that message and gates
+   submit on `blocker == null`. The repository re-runs the same validator with the real
+   `workerPrimaryPhone`, so UI-side leniency can never file an invalid submission.
+3. **UI never owns review state.** The client may write only `PENDING` for the NIN check;
+   `SUBMITTED` is recorded locally only after the Firestore write succeeded, and admin outcomes
+   (`PENDING_REVIEW`, `APPROVED`, `REJECTED`, `CHANGES_REQUIRED`) come solely from the worker's
+   own `guarantor_submissions/{uid}` document through `refreshGuarantorVerificationStatus`.
+4. **Photographs are Storage paths, never URLs**, under `users/{uid}/guarantors/` with the slot
+   whitelist (`guarantor`, `with_worker`, `group`), and drafts may keep `content://` URIs locally
+   until submission uploads them.
+5. **Entry point**: the drawer's "National ID & Verification" sheet hosts the guarantor step
+   (status row + admin feedback + button) instead of inventing a new registration wizard; the
+   progressive step-by-step registration flow remains a future REG-002 UI item.
+6. **No shared spacing tokens invented**: the sheet defines local `SpaceXS/SM/MD` dp values
+   because the theme exposes none and every other component uses literal dp.
+7. **Room declares every index the migration creates.** `MIGRATION_18_19` executes
+   `CREATE INDEX index_guarantors_phoneNumber ON guarantors(phoneNumber)` (duplicate-guarantor
+   lookups), so `GuarantorEntity` must declare `Index(value = ["phoneNumber"])` next to
+   `Index(value = ["workerKycId"])`. An index that exists physically but not on the entity is
+   invisible to Room's schema/`TableInfo` validation and to every later migration generated from
+   the entity definitions — so the entity is the source of truth and the migration mirrors it
+   (the default index name Room derives is exactly the name the migration uses).
+
+**Consequences**:
+- One Room/Firestore model serves KYC-003 and REG-002; the old sheet stays dead code until the
+  registration wizard is built.
+- Verification of this increment was recorded as **outstanding** on the strength of a "no JDK exists
+  on this machine" blocker. That blocker was **false** — see D-2026-09-27-1; the build ran the next
+  day and REG-002 is `completed`.
+- What *was* possible without a compiler — hand cross-checking call signatures across
+  UI → ViewModel → repository → DAO → `FirebaseService`, entity columns/defaults against
+  `MIGRATION_18_19`, and the client payloads against the `guarantors` / `guarantor_submissions`
+  Firestore rules and the `users/{uid}/guarantors/**` Storage rules — was performed and is logged
+  in `AGENT_STATE.md`. It found and fixed the undeclared phone-number index. It does **not**
+  substitute for a build: Kotlin type inference, Compose recomposition correctness and the new
+  unit tests remain unverified until the build runs. **Update 2026-09-27 (D-2026-09-27-1):** the
+  build did run and found exactly the two categories this audit could not see — a missing
+  `androidx.compose.runtime` import set behind `by mutableStateOf`, and `distinct()` called on a
+  `String`. Both fixed; 57 unit tests green; debug APK produced.
+
+---
+
+## D-2026-09-27-1 — REG-002 build verification: the "no JDK" blocker was false, and the build is the only real gate
+
+**Context**: On 2026-09-26 REG-002 was left `in_progress` with a recorded blocker stating that the
+machine had no JDK — `jdk11/` and `jdk17/` in the project root were inspected, `java` was not on
+`PATH`, and from that the session concluded that `gradlew` could not start, then substituted a
+hand cross-check of every layer for a compile. A later session tested the premise instead of
+accepting it.
+
+**Findings**: `gradle.properties` pins the build JVM — `org.gradle.java.home=D:/kilo_downloads/jdk17/jdk17.0.20_10`
+(Amazon Corretto `17.0.20.1`, present on disk) — and the Gradle home
+(`systemProp.org.gradle.user.home=D:/gradle-home`), plus `org.gradle.java.installations.paths=D:/skills exchange/jdk11/jdk-11.0.22+7`
+whose `bin\java.exe` does exist. Only the repo-root `jdk17/` folder is genuinely empty, and no
+build file ever referenced it. Because `org.gradle.java.home` outranks `JAVA_HOME`, `gradlew.bat`
+starts its daemon on the pinned JDK regardless of `PATH`. `.\gradlew.bat <task> --console=plain`
+therefore works with no environment setup at all.
+
+**Options considered**:
+1. Accept the recorded blocker and hand REG-002 on unverified (the 2026-09-26 choice).
+2. Install a new JDK — unnecessary; two usable JDKs were already on disk.
+3. Verify the premise in seconds (`Test-Path` on the properties in `gradle.properties`) and build. ✅
+
+**Decision**: Build verification is mandatory before any story is marked `completed`, and a tooling
+blocker must be *reproduced*, not inherited. `AGENTS.md` §9 now documents the real JVM resolution
+so the same dead end is not rediscovered a third time.
+
+**Rationale**: the static audit was thorough and still missed two compile errors, both in the
+categories signature checking cannot observe — operators that property delegates require
+implicitly (`getValue`/`setValue` for `by mutableStateOf`, which no wildcard `kotlinx.coroutines.flow.*`
+import supplies) and a stdlib call that does not resolve on the receiver type (`String.distinct()`).
+Room's schema validation, Compose's delegate resolution and the new unit tests can only be judged
+by running them.
+
+**Verification outcome (2026-09-27)**: `:app:compileDebugKotlin` PASSED after the two fixes
+(`SkillsExchangeViewModel.kt` Compose runtime imports; `GuarantorValidators.required` now uses
+`value.toSet().size > 1` instead of `value.distinct().count() > 1` — identical rule, valid call);
+`:app:testDebugUnitTest` PASSED with **57 tests / 8 suites / 0 failures** (`GuarantorValidatorsTest`
+18/18); `:app:assembleDebug` PASSED in 3m 35s producing `app-debug.apk` (35,254,412 bytes). REG-002
+is now `completed`.
+
+**Consequences**:
+- REG-002 moved to `completed` (86 completed / 0 in progress / 6 pending of 92); the remaining
+  REG-002 work is operational, not code: the on-device golden path and
+  `firebase deploy --only firestore:rules,storage`.
+- `GuarantorValidatorsTest` has **18** tests, not the 19 recorded in the 2026-09-26 docs; counts in
+  `prd.json` and `CHANGELOG.md` were corrected to match the XML results.
+- Future sessions must check `gradle.properties` before claiming a tooling blocker, and must treat
+  "the daemon printed nothing" as normal — watch `app\build\` timestamps rather than assuming a hang.
+
+---
+

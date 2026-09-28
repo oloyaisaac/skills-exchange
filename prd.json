@@ -3067,7 +3067,8 @@
       "phase": 17,
       "title": "Worker Registration Guarantor Verification Requirements (Future)",
       "priority": "P2",
-      "status": "pending",
+      "status": "completed",
+      "completed_at": "2026-09-27T04:15:00+03:00",
       "description": "Worker registration must include two guarantors. Each guarantor must provide: full name, NIN number, contact number, guarantor photograph, and photograph showing the worker together with that guarantor. The second guarantor must provide the same information. There must also be a group photograph containing worker + guarantor 1 + guarantor 2. The worker-registration flow should eventually be organized into clear steps so the applicant can complete these requirements progressively.",
       "problem": "Detailed guarantor verification requirements for registration not yet documented.",
       "goal": "Document the two-guarantor verification requirements (including photographs) as a future requirement without implementation.",
@@ -3075,16 +3076,44 @@
         "include": [],
         "exclude": []
       },
-      "files_likely_affected": [],
+      "files_likely_affected": [
+        "app/src/main/java/com/example/ui/components/GuarantorVerificationSheet.kt",
+        "app/src/main/java/com/example/ui/components/AccountCenterSheets.kt",
+        "app/src/main/java/com/example/ui/screens/MainScreen.kt",
+        "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt",
+        "app/src/main/java/com/example/data/remote/FirebaseService.kt",
+        "app/src/main/java/com/example/data/db/Entities.kt",
+        "app/src/main/java/com/example/data/db/AppDatabase.kt",
+        "app/src/main/java/com/example/data/db/Daos.kt",
+        "app/src/main/java/com/example/util/GuarantorValidators.kt",
+        "app/src/test/java/com/example/util/GuarantorValidatorsTest.kt",
+        "firestore.rules",
+        "storage.rules"
+      ],
       "acceptance_criteria": [
         "Requirements specify 2 guarantors with full name, NIN, contact, guarantor photo, and joint worker-guarantor photo",
         "Group photograph requirement (worker + 2 guarantors) is documented",
         "Progressive step-by-step registration flow is noted as a future UI requirement"
       ],
-      "verification": [],
-      "risks": [],
-      "rollback": "Edit PRD documentation",
-      "notes": "FUTURE / PLANNED / NOT IMPLEMENTED. Note: This augments but does not replace existing KYC-003 two-guarantor data model (which covers National ID uploads).",
+      "verification": [
+        "BUILD ENVIRONMENT CORRECTED: the 2026-09-26 note claiming that no JDK exists on this machine was wrong. gradle.properties already pins the build JVM - org.gradle.java.home=D:/kilo_downloads/jdk17/jdk17.0.20_10 (Amazon Corretto 17.0.20.1, present on disk) together with systemProp.org.gradle.user.home=D:/gradle-home - so gradlew.bat builds with no environment variables at all. jdk11/jdk-11.0.22+7/bin/java.exe exists too (the JDK 11 toolchain), and Android Studio's JetBrains Runtime (OpenJDK 25.0.2) is available. The only true part of the old claim is that the repo-root jdk17/ folder is empty, which is irrelevant because Gradle never referenced it",
+        "gradlew :app:compileDebugKotlin PASSED 2026-09-27. The first attempt FAILED with two genuine compile errors that static inspection had missed, and both were fixed: SkillsExchangeViewModel.kt declares var Compose-state properties but had no androidx.compose.runtime getValue/mutableStateOf/setValue imports, and GuarantorValidators.required called value.distinct() on a String, which does not resolve in this module - it now uses value.toSet().size (identical rule: the number must not be one repeated digit)",
+        "gradlew :app:testDebugUnitTest PASSED - 57 tests across 8 suites, 0 failures, 0 errors, 0 skipped; the new GuarantorValidatorsTest is 18/18 and runs as plain JVM (no Robolectric needed)",
+        "gradlew :app:assembleDebug PASSED - app/build/outputs/apk/debug/app-debug.apk produced (35,254,412 bytes), so Room's KSP entity/DAO validation, dexing and packaging of the new sheet all succeed",
+        "Static alignment audit done beforehand (2026-09-26): DAO/validator/repository symbol alignment checked by inspection (updateGuarantorStep params, guarantorStatus, nationalIdNumber/guarantorPhotoStoragePath/workerWithGuarantorPhotoStoragePath/consentProvided/ninVerificationStatus on GuarantorEntity, validateGuarantorSet returning a single blocker String), and brace balance verified for every edited file",
+        "Follow-up static audit (same session): GuarantorVerificationSheet parameters vs the MainScreen call site and every SkillsExchangeViewModel member it reads; repository/DAO/FirebaseService call signatures and imports; the 11 new columns in MIGRATION_18_19 (AppDatabase v18 to v19) vs entity defaults; and the client payloads vs the guarantors/guarantor_submissions Firestore rules and the users/{uid}/guarantors Storage rules. This found and fixed one defect: GuarantorEntity never declared Index(value = [\"phoneNumber\"]) even though MIGRATION_18_19 creates index_guarantors_phoneNumber - the entity now declares it, matching how every other indexed entity in this database is written",
+        "OUTSTANDING (needs hardware/console access this environment does not have): device golden path - two guarantors with four photos through the system picker, Save draft, force-kill and reopen to prove the draft resumes, Submit, then confirm guarantor_submissions/{uid} moves to PENDING_REVIEW and the drawer Verification Status reflects the admin decision; and firebase deploy --only firestore:rules,storage so the new guarantor rules are actually live"
+      ],
+      "risks": [
+        "Code is compiled and unit-tested (57 unit tests green) but not yet exercised on a device: the golden path (photos via the system picker, draft resume after process death, submit, admin decision shown in Verification Status) still needs one manual run before release",
+        "Guarantor photographs are third-party personal data: uploads are owner-prefix only (users/{uid}/guarantors/), Storage paths (never signed URLs) are stored, and the client can only ever write ninVerificationStatus=PENDING",
+        "The older KYC-003 GuarantorFormSheet in AccountComplianceDialog.kt is still unreferenced (dead code) - the REG-002 sheet is the live entry point",
+        "Existing installs must run MIGRATION_18_19 (Room v18 to v19). GuarantorEntity declares the phoneNumber index that the migration creates, so a fresh install and a migrated database have the same schema - do not remove that Index entry without also removing the CREATE INDEX statement from the migration",
+        "Photo uploads depend on the picked image reporting an image/* content type (storage.rules rejects anything else under 8MB); the app then fails closed with a retry message rather than filing an incomplete submission"
+      ],
+      "rollback": "git checkout app/src/main/java/com/example/ui/components/GuarantorVerificationSheet.kt app/src/main/java/com/example/ui/components/AccountCenterSheets.kt app/src/main/java/com/example/ui/screens/MainScreen.kt app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt app/src/test/java/com/example/util/GuarantorValidatorsTest.kt",
+      "notes": "COMPLETED — implemented 2026-09-26, compiled and unit-tested 2026-09-27 (only the device golden path and the rules deploy remain). Data model, validators, DAO, Firebase mirrors and ViewModel actions were already present; the UI session completed the missing UI layer and corrected the repository/UI alignment with the real APIs: repository calls updateGuarantorStep (guarantorStatus/groupPhotoStoragePath/submittedAt/feedback) instead of the non-existent updateGuarantorReview, and the sheet uses the validators' single blocker String instead of an Outcome object. GuarantorVerificationSheet now defines GuarantorDraft, the GuarantorEntity<->GuarantorDraft<->GuarantorInput mappers, GuarantorDraftCard (phone, name, relationship, district, masked NIN, two photo slots, consent), GuarantorPhotoField/GroupPhotoCard (GetContent picker, attached state, replace/remove with confirmation), GuarantorChoiceField, and VerificationStatusChip. It is opened from the drawer National ID & Verification sheet (IdentityVerificationSheet gains a guarantor row, admin feedback and an entry button) and the admin decision is pulled with refreshGuarantorVerificationStatus when that sheet opens. Added pure-JVM GuarantorValidatorsTest (18 tests over the two-guarantor rule set). Note: this augments but does not replace the KYC-003 two-guarantor data model.",
       "depends_on": []
     },
     {
@@ -3426,9 +3455,10 @@
     "PAY-005",
     "COMM-002",
     "AUTH-011",
+    "REG-002",
     "REG-003",
     "REG-004"
   ],
   "blocked_stories": [],
-  "last_updated": "2026-09-23T21:20:00+03:00"
+  "last_updated": "2026-09-27T04:20:00+03:00"
 }
