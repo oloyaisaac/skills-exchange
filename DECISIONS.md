@@ -405,7 +405,7 @@ Room's schema validation, Compose's delegate resolution and the new unit tests c
 by running them.
 
 **Verification outcome (2026-09-27)**: `:app:compileDebugKotlin` PASSED after the two fixes
-(`SkillsExchangeViewModel.kt` Compose runtime imports; `GuarantorValidators.required` now uses
+(`SkillsExchangeViewModel.kt` Compose runtime imports; `GuarantorValidators.validateNationalIdNumber` now uses
 `value.toSet().size > 1` instead of `value.distinct().count() > 1` — identical rule, valid call);
 `:app:testDebugUnitTest` PASSED with **57 tests / 8 suites / 0 failures** (`GuarantorValidatorsTest`
 18/18); `:app:assembleDebug` PASSED in 3m 35s producing `app-debug.apk` (35,254,412 bytes). REG-002
