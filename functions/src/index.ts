@@ -1,11 +1,41 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as crypto from "crypto";
+import {
+  checkAdminCaller,
+  readWorkerId,
+  validateGuarantorReviewInput,
+  collectPrivatePhotoPaths,
+  resolvePhotoUrlTtlSeconds,
+  projectSubmissionForAdmin,
+  buildQueueRows,
+  buildGuarantorReviewFields,
+  buildGuarantorNinUpdate,
+  GUARANTOR_REVIEWABLE_STATUSES
+} from "./guarantorReview";
+import type { DocumentBody, MintedUrl } from "./guarantorReview";
 
 admin.initializeApp();
 const db = admin.firestore();
 
 const MOMO_WEBHOOK_SECRET = process.env.MOMO_WEBHOOK_SECRET;
+
+/**
+ * ADMIN-005: lifetime of the short-lived download links handed to an administrator for
+ * the private guarantor photographs (`users/{uid}/guarantors/**`). 15 minutes by
+ * default; `GUARANTOR_PHOTO_URL_TTL_SECONDS` may shorten or lengthen it inside the bound
+ * enforced by `resolvePhotoUrlTtlSeconds`.
+ */
+const PHOTO_URL_TTL_SECONDS = resolvePhotoUrlTtlSeconds(process.env.GUARANTOR_PHOTO_URL_TTL_SECONDS);
+
+/**
+ * ADMIN-005: the bucket holding the private verification photographs. Cloud Functions
+ * already know their own project's default bucket through `FIREBASE_CONFIG`
+ * (`skills-exchange-f9189.firebasestorage.app` for this project); `GS_STORAGE_BUCKET`
+ * only exists for a non-default bucket and must never be needed.
+ */
+const STORAGE_BUCKET_NAME = process.env.GS_STORAGE_BUCKET || "";
+
 
 if (!MOMO_WEBHOOK_SECRET) {
   console.error("FATAL: MOMO_WEBHOOK_SECRET environment variable is not set. Webhook verification will fail.");
@@ -332,14 +362,45 @@ async function sendSmsAlert(phoneNumber: string, message: string): Promise<boole
 
 /**
  * ADMIN-001: Helper to verify caller has admin custom claim.
+ *
+ * ADMIN-005: the one implementation of this decision now lives in
+ * `guarantorReview.checkAdminCaller` (same trust anchor — the `admin` claim of the
+ * *verified* ID token, never a client-supplied role), so every admin endpoint, old and
+ * new, authorizes through a single code path.
  */
 function isAdmin(context: functions.https.CallableContext): boolean {
-  return context.auth?.token?.admin === true;
+  return checkAdminCaller(context).ok;
 }
+
+/**
+ * ADMIN-005: authorize a callable as an administrator and return that administrator's
+ * uid, which is what a review gets attributed to. Unauthenticated callers are rejected as
+ * such; an authenticated caller without the claim gets `permission-denied`.
+ */
+function authorizeAdmin(context: functions.https.CallableContext): string {
+  const caller = checkAdminCaller(context);
+  if (!caller.ok) {
+    throw new functions.https.HttpsError(caller.code, caller.message);
+  }
+  return caller.value;
+}
+
 
 /**
  * ADMIN-002: Get Pending Verification Queue
  * Returns worker applications with status SUBMITTED or UNDER_REVIEW, sorted by submittedAt (48h SLA).
+ *
+ * ADMIN-005 (REG-002 gap G2) changes, deliberately small:
+ *  - the worker's National ID number is no longer returned. It is returned *masked* as
+ *    `nationalIdNumberMasked`; an administrator who needs the real number opens the
+ *    protected `getGuarantorSubmission` / KYC detail instead of carrying it in a list
+ *    that is polled, cached and screenshotted.
+ *  - every row now also carries the guarantor review state (`guarantorStatus`,
+ *    `guarantorSubmittedAt`, `guarantorCount`, `ninVerificationStatus`,
+ *    `guarantorsAwaitingReview`) and `kycOnFile`, so a worker whose guarantor submission
+ *    is waiting is visible to an administrator even though the app does not mirror
+ *    `worker_kyc` into Firestore yet (blocker recorded in AGENT_STATE.md).
+ *  - only Storage *paths* are ever emitted, never URLs.
  */
 export const getPendingVerificationQueue = functions.https.onCall(async (data, context) => {
   if (!isAdmin(context)) {
@@ -349,31 +410,62 @@ export const getPendingVerificationQueue = functions.https.onCall(async (data, c
     );
   }
 
-  const snapshot = await db
+  const requested = typeof data?.limit === "number" && data.limit > 0 ? data.limit : 50;
+  const limit = Math.min(Math.floor(requested), 100);
+  const now = Date.now();
+
+  const kycSnapshot = await db
     .collection("worker_kyc")
     .where("status", "in", ["SUBMITTED", "UNDER_REVIEW"])
     .orderBy("submittedAt", "asc")
-    .limit(50)
+    .limit(limit)
     .get();
 
-  const queue = snapshot.docs.map((doc) => {
-    const d = doc.data();
-    const slaDeadline = (d.submittedAt || 0) + (48 * 60 * 60 * 1000);
-    return {
-      userId: doc.id,
-      fullLegalName: d.fullLegalName || "",
-      nationalIdNumber: d.nationalIdNumber || "",
-      status: d.status || "NOT_STARTED",
-      submittedAt: d.submittedAt || 0,
-      slaDeadline,
-      idFrontStoragePath: d.idFrontStoragePath || "",
-      idBackStoragePath: d.idBackStoragePath || "",
-      reviewFeedback: d.reviewFeedback || ""
-    };
-  });
+  // Guarantor work is queried in its own right, for the reason documented above.
+  // No `orderBy` here on purpose: `status in [...]` + `orderBy` would silently require a
+  // composite index that this repository does not declare (`firestore.indexes.json` is not
+  // part of the project), and the call would fail with FAILED_PRECONDITION on a fresh
+  // project. `buildQueueRows` sorts by the SLA clock and applies the limit anyway, so the
+  // only thing the missing server-side sort costs is a slightly larger read.
+  const submissionSnapshot = await db
+    .collection("guarantor_submissions")
+    .where("status", "in", GUARANTOR_REVIEWABLE_STATUSES)
+    .limit(limit)
+    .get();
 
-  return { count: queue.length, applications: queue };
+  const kycDocs = kycSnapshot.docs.map(
+    (doc): { id: string; body: DocumentBody } => ({ id: doc.id, body: (doc.data() || {}) as DocumentBody })
+  );
+  const submissionDocs = submissionSnapshot.docs.map(
+    (doc): { id: string; body: DocumentBody } => ({ id: doc.id, body: (doc.data() || {}) as DocumentBody })
+  );
+
+  // A guarantor-only row still needs the worker's name: read just those user documents,
+  // in one batch, and take only the display name.
+  const kycIds = kycDocs.map((entry) => entry.id);
+  const missingNames = submissionDocs.map((entry) => entry.id).filter((id) => !kycIds.includes(id));
+  const namesByWorkerId: Record<string, string> = Object.create(null);
+  if (missingNames.length > 0) {
+    const userSnapshots = await db.getAll(
+      ...missingNames.map((id) => db.collection("users").doc(id))
+    );
+    missingNames.forEach((id, index) => {
+      const snapshot = userSnapshots[index];
+      if (!snapshot || !snapshot.exists) return;
+      const fullName = snapshot.data()?.["fullName"];
+      if (typeof fullName === "string") namesByWorkerId[id] = fullName;
+    });
+  }
+
+  const applications = buildQueueRows({ kycDocs, submissionDocs, namesByWorkerId, now, limit });
+
+  return {
+    count: applications.length,
+    guarantorsAwaitingReview: applications.filter((row) => row.guarantorsAwaitingReview).length,
+    applications
+  };
 });
+
 
 /**
  * ADMIN-003: Review Worker Application
@@ -496,7 +588,221 @@ export const setWorkerActivationStatus = functions.https.onCall(async (data, con
   return { success: true, userId, isActivated: activate };
 });
 
+// ============ ADMIN-005 (REG-002 recovery, gap G2): Admin Guarantor Review ============
+
+/**
+ * Resolves the bucket that holds the private verification photographs.
+ *
+ * On Cloud Functions the project's own default bucket is already known through
+ * `FIREBASE_CONFIG`, so nothing has to be configured; `GS_STORAGE_BUCKET` exists only for
+ * a non-default bucket. Returns null when the Storage client cannot name a bucket (for
+ * example when the functions shell runs without project configuration): the review
+ * response then still carries every field, with the photo links reported unavailable
+ * rather than the call failing.
+ */
+function privatePhotoBucket() {
+  try {
+    const storage = admin.storage();
+    return STORAGE_BUCKET_NAME.length > 0 ? storage.bucket(STORAGE_BUCKET_NAME) : storage.bucket();
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Mints one short-lived (v4, default 15 min) read URL per **already validated** private
+ * photo path, so an administrator can open the five verification photographs without the
+ * Storage prefix ever becoming publicly readable and without a long-lived token ever
+ * being written into a Firestore document.
+ *
+ * Fail-closed and identifier-free: any failure is reduced to a fixed reason code, because
+ * a raw client error can echo bucket paths or a half-built signature into a response.
+ */
+async function mintPrivatePhotoUrls(
+  paths: string[],
+  ttlSeconds: number
+): Promise<Record<string, MintedUrl>> {
+  const urlsByPath: Record<string, MintedUrl> = Object.create(null);
+  if (paths.length === 0) return urlsByPath;
+
+  const bucket = privatePhotoBucket();
+  if (!bucket) {
+    for (const path of paths) urlsByPath[path] = { url: null, error: "BUCKET_UNAVAILABLE" };
+    return urlsByPath;
+  }
+
+  const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
+  for (const path of paths) {
+    try {
+      const [url] = await bucket
+        .file(path)
+        .getSignedUrl({ action: "read", expires: expiresAt, version: "v4" });
+      urlsByPath[path] =
+        typeof url === "string" && url.length > 0 ? { url } : { url: null, error: "URL_MINT_FAILED" };
+    } catch (error) {
+      urlsByPath[path] = { url: null, error: "URL_MINT_FAILED" };
+    }
+  }
+  return urlsByPath;
+}
+
+/**
+ * ADMIN-005: read one worker's guarantor submission the way an administrator has to read
+ * it — the two guarantors, each guarantor's photograph and worker+guarantor photograph,
+ * the group photograph, the consent record, the NIN state and the current review state.
+ *
+ * Authorization is server-side and absolute: an unauthenticated caller gets
+ * `unauthenticated`, a signed-in worker or client without the `admin` claim gets
+ * `permission-denied`. Nothing here is reachable with a client-chosen role.
+ *
+ * Data handling: NINs are masked unless the caller explicitly passes `includeFullNin`
+ * (the reviewer's detail screen is the only legitimate use), and a photo URL is attached
+ * only to an object inside `users/{workerId}/guarantors/**` — never to another worker's
+ * prefix, never to an absolute URL, and only for `PHOTO_URL_TTL_SECONDS`.
+ */
+export const getGuarantorSubmission = functions.https.onCall(async (data, context) => {
+  authorizeAdmin(context);
+
+  const workerIdResult = readWorkerId(data);
+  if (!workerIdResult.ok) {
+    throw new functions.https.HttpsError(workerIdResult.code, workerIdResult.message);
+  }
+  const workerId = workerIdResult.value;
+
+  const submissionDoc = await db.collection("guarantor_submissions").doc(workerId).get();
+  if (!submissionDoc.exists) {
+    throw new functions.https.HttpsError(
+      "not-found",
+      "No guarantor submission is on file for this worker."
+    );
+  }
+  const submission = (submissionDoc.data() || {}) as DocumentBody;
+
+  // The guarantor records are located by owner id, never by trusting the id list stored
+  // inside the submission document, so a record belonging to a different worker can never
+  // be pulled into this review.
+  const guarantorSnapshot = await db
+    .collection("guarantors")
+    .where("workerKycId", "==", workerId)
+    .get();
+  const guarantorDocs = guarantorSnapshot.docs
+    .map((doc): { id: string; body: DocumentBody } => ({
+      id: doc.id,
+      body: (doc.data() || {}) as DocumentBody
+    }))
+    .filter((entry) => entry.body["workerKycId"] === workerId);
+
+  const kycDoc = await db.collection("worker_kyc").doc(workerId).get();
+  const rawKycStatus = kycDoc.exists ? kycDoc.data()?.["status"] : "NOT_STARTED";
+
+  const urlsByPath = await mintPrivatePhotoUrls(
+    collectPrivatePhotoPaths({ workerId, submission, guarantorDocs }),
+    PHOTO_URL_TTL_SECONDS
+  );
+
+  return projectSubmissionForAdmin({
+    workerId,
+    submission,
+    guarantorDocs,
+    workerKycStatus:
+      typeof rawKycStatus === "string" && rawKycStatus.length > 0 ? rawKycStatus : "NOT_STARTED",
+    includeFullNin: data?.includeFullNin === true,
+    urlsByPath,
+    now: Date.now(),
+    ttlSeconds: PHOTO_URL_TTL_SECONDS
+  });
+});
+
+/**
+ * ADMIN-005: record the administrator's decision on a guarantor submission.
+ *
+ * Reuses the vocabulary that already exists end to end — decision verbs `APPROVE | REJECT
+ * | CHANGES_REQUIRED` (same as `reviewWorkerApplication`) mapping onto the statuses the
+ * worker's own app already understands (`APPROVED | REJECTED | CHANGES_REQUIRED`, see
+ * `SkillsExchangeRepository.remoteGuarantorStatus`), and NIN results
+ * `PENDING | VERIFIED | FAILED`.
+ *
+ * The reviewer's identity comes from the verified ID token and the review timestamp from
+ * the Firestore server clock, so neither can be forged by the caller. Only admin-owned
+ * fields are written, and `firestore.rules` already forbids the worker from touching them.
+ */
+export const reviewGuarantorSubmission = functions.https.onCall(async (data, context) => {
+  const adminUid = authorizeAdmin(context);
+
+  const validated = validateGuarantorReviewInput(data, adminUid);
+  if (!validated.ok) {
+    throw new functions.https.HttpsError(validated.code, validated.message);
+  }
+  const command = validated.value;
+
+  const submissionRef = db.collection("guarantor_submissions").doc(command.workerId);
+  const submissionDoc = await submissionRef.get();
+  if (!submissionDoc.exists) {
+    throw new functions.https.HttpsError(
+      "not-found",
+      "No guarantor submission is on file for this worker."
+    );
+  }
+
+  // 1. The decision: status + feedback + NIN result + who reviewed + when.
+  const serverNow = admin.firestore.FieldValue.serverTimestamp();
+  await submissionRef.update(buildGuarantorReviewFields(command, serverNow));
+
+  // 2. The per-guarantor NIN outcome (`ninVerificationStatus` / `verifiedAt` /
+  //    `verifiedBy` are exactly the admin-reserved keys in firestore.rules), again only
+  //    for documents verifiably owned by the reviewed worker.
+  const guarantorSnapshot = await db
+    .collection("guarantors")
+    .where("workerKycId", "==", command.workerId)
+    .get();
+  const ninUpdate = buildGuarantorNinUpdate(command, serverNow);
+  const batch = db.batch();
+  let guarantorsUpdated = 0;
+  guarantorSnapshot.docs.forEach((doc) => {
+    if (doc.data()?.["workerKycId"] !== command.workerId) return;
+    batch.update(doc.ref, ninUpdate);
+    guarantorsUpdated += 1;
+  });
+  if (guarantorsUpdated > 0) await batch.commit();
+
+  // 3. Keep the KYC row's guarantor mirror honest — but only when that row exists. The app
+  //    never creates `worker_kyc` in Firestore today (documented blocker); creating it from
+  //    here would hide that gap instead of fixing it.
+  const kycRef = db.collection("worker_kyc").doc(command.workerId);
+  if ((await kycRef.get()).exists) {
+    await kycRef.update({
+      guarantorStatus: command.status,
+      guarantorReviewFeedback: command.feedback
+    });
+  }
+
+  // 4. Tell the worker, using the notification shape the app already renders.
+  await db.collection("notifications").add({
+    userId: command.workerId,
+    type: "VERIFICATION_DECISION",
+    message:
+      command.status === "APPROVED"
+        ? "Your guarantors have been verified. Thank you — your worker verification is moving forward."
+        : command.status === "REJECTED"
+        ? `Your guarantor verification was not approved. Reason: ${command.feedback || "No reason provided."}`
+        : `Changes required for your guarantor verification. Reason: ${command.feedback || "Please review the feedback."}`,
+    createdAt: serverNow,
+    read: false
+  });
+
+  return {
+    success: true,
+    workerId: command.workerId,
+    status: command.status,
+    ninVerificationStatus: command.ninStatus,
+    guarantorsUpdated
+  };
+});
+
 // ==================== DISP-003: Admin Dispute Resolution ====================
+
+
+
 
 /**
  * DISP-003: Resolve Dispute
