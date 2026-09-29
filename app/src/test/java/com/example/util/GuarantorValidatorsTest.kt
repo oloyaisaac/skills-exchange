@@ -116,6 +116,80 @@ class GuarantorValidatorsTest {
         )
     }
 
+    @Test
+    fun `the same NIN entered twice is rejected`() {
+        val blocker = GuarantorValidators.validateGuarantorSet(
+            guarantors = setOfTwo(
+                second = guarantor(name = "Ivan Mugisha", nin = "CM31019880042E", phone = "+256 701 555 322")
+            ),
+            workerPrimaryPhone = "+256 758 000 111",
+            groupPhotoPath = groupPhoto
+        )
+        assertEquals("Guarantor 1 and Guarantor 2 must have different NIN numbers.", blocker)
+    }
+
+    @Test
+    fun `a duplicate NIN is detected even when typed with different spacing or case`() {
+        val blocker = GuarantorValidators.validateGuarantorSet(
+            guarantors = setOfTwo(
+                second = guarantor(name = "Ivan Mugisha", nin = " cm3101988 0042e ", phone = "+256 701 555 322")
+            ),
+            workerPrimaryPhone = "+256 758 000 111",
+            groupPhotoPath = groupPhoto
+        )
+        assertEquals("Guarantor 1 and Guarantor 2 must have different NIN numbers.", blocker)
+    }
+
+    // --- required fields & formats ---
+
+    @Test
+    fun `missing full name is rejected`() {
+        assertEquals(
+            "Enter guarantor 1's full name (letters, spaces, hyphens or apostrophes).",
+            GuarantorValidators.validateGuarantorSet(
+                guarantors = setOfTwo(first = guarantor(name = "   ")),
+                workerPrimaryPhone = "+256 758 000 111",
+                groupPhotoPath = groupPhoto
+            )
+        )
+    }
+
+    @Test
+    fun `missing NIN is rejected`() {
+        assertEquals(
+            "Enter the guarantor's NIN number.",
+            GuarantorValidators.validateGuarantorSet(
+                guarantors = setOfTwo(first = guarantor(nin = "")),
+                workerPrimaryPhone = "+256 758 000 111",
+                groupPhotoPath = groupPhoto
+            )
+        )
+    }
+
+    @Test
+    fun `missing contact number is rejected`() {
+        assertEquals(
+            "Enter a valid contact number for guarantor 1 (9-15 digits).",
+            GuarantorValidators.validateGuarantorSet(
+                guarantors = setOfTwo(first = guarantor(phone = "")),
+                workerPrimaryPhone = "+256 758 000 111",
+                groupPhotoPath = groupPhoto
+            )
+        )
+    }
+
+    @Test
+    fun `malformed contact number is rejected`() {
+        assertEquals(
+            "Enter a valid contact number for guarantor 1 (9-15 digits).",
+            GuarantorValidators.validateGuarantorSet(
+                guarantors = setOfTwo(first = guarantor(phone = "07ABC123")),
+                workerPrimaryPhone = "+256 758 000 111",
+                groupPhotoPath = groupPhoto
+            )
+        )
+    }
+
     // --- photographs ---
 
     @Test

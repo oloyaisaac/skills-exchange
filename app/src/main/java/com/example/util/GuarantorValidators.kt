@@ -90,6 +90,14 @@ object GuarantorValidators {
 
 
     /**
+     * Canonical comparison form of a NIN: trimmed, spaces removed, upper-cased. Used only
+     * to detect the same guarantor entered twice — the stored value is always what the
+     * worker typed.
+     */
+    private fun normalizeNin(nin: String): String =
+        nin.trim().replace(" ", "").uppercase()
+
+    /**
      * Validates one guarantor entry. [workerPrimaryPhone] is the signed-in worker's own
      * number (a worker may not stand as their own guarantor) and [otherGuarantorPhone]
      * is the other guarantor's number (the two guarantors must be different people).
@@ -154,6 +162,13 @@ object GuarantorValidators {
             ProfileValidators.normalizePhoneDigits(second.phoneNumber)
         ) {
             return "Guarantor 1 and Guarantor 2 must be two different people."
+        }
+        // A NIN identifies exactly one person, so the same number twice means the same
+        // guarantor was entered twice even when the name or phone was typed differently.
+        if (normalizeNin(first.nationalIdNumber).isNotEmpty() &&
+            normalizeNin(first.nationalIdNumber) == normalizeNin(second.nationalIdNumber)
+        ) {
+            return "Guarantor 1 and Guarantor 2 must have different NIN numbers."
         }
         validateGuarantor("Guarantor 1", first, workerPrimaryPhone, second.phoneNumber)?.let { return it }
         validateGuarantor("Guarantor 2", second, workerPrimaryPhone, first.phoneNumber)?.let { return it }
