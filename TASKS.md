@@ -1,7 +1,7 @@
 # TASKS.md — Skills Exchange Human-Readable Task Status
 
 Synchronized with `prd.json`. This is the human-readable view of the development backlog.
-Last synchronized: 2026-09-27T04:30:00+03:00 — REG-002 (Worker Registration Guarantor Verification) is now **✅ Completed**: compiled, unit-tested (57 tests, 0 failures) and packaged into `app-debug.apk` on 2026-09-27. 86 completed / 0 in progress / 6 pending. Builds need no environment setup — `gradle.properties` pins `org.gradle.java.home` to an existing JDK (see AGENTS.md §9); the 2026-09-26 "no JDK" blocker recorded on 2026-09-26 was false.
+Last synchronized: 2026-09-27T04:30:00+03:00 — REG-002 (Worker Registration Guarantor Verification) is now **✅ Completed**: compiled, unit-tested (57 tests, 0 failures) and packaged into `app-debug.apk` on 2026-09-27. 86 completed / 0 in progress / 6 pending. Builds need no environment setup — `gradle.properties` pins `org.gradle.java.home` to an existing JDK (see AGENTS.md §9); the 2026-09-26 "no JDK" blocker recorded on 2026-09-26 was false. **Update 2026-09-29 (post-PRD gap fix, not a PRD story — counts unchanged):** the missing *admin* guarantor review path (gap G2 — `getGuarantorSubmission` + `reviewGuarantorSubmission` callables, security core `functions/src/guarantorReview.ts`, 32 `node --test` tests) is implemented and verified in isolation — real `tsc` (`npm run build`) exit 0 and 32/32 tests pass. It is **not deployed** and no live Firebase round-trip ran. Gaps **G1, G3, G4, G5, G6, G7 and G12 remain open**; `prd.json` was not modified.
 
 Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Failed
 

@@ -422,3 +422,90 @@ is now `completed`.
 
 ---
 
+## 2026-09-29
+
+### [2026-09-29] DEC-009 Admin Guarantor Review — Authorization Anchor and Single Gate
+
+**Context**: REG-002 (guarantor verification) had no admin read/decide path at all (post-PRD gap G2). The existing admin callables each re-implemented their own check (`context.auth?.token?.admin === true` inside `isAdmin`), and `firestore.rules` uses `request.auth.token.admin == true`. An admin endpoint that mints signed URLs for private identity photographs is the most sensitive surface in the project, so the gate had to be unambiguous and identical everywhere.
+
+**Options considered**:
+1. Trust a role/claim supplied in the callable payload (e.g. `data.role === "admin"`).
+2. Read an `admins/{uid}` Firestore document on every call.
+3. Require the boolean `admin === true` **custom claim of the verified ID token**, checked in one shared helper.
+
+**Decision**: Option 3. `functions/src/guarantorReview.ts` owns `checkAdminCaller(context)`, which returns `unauthenticated` when there is no verified uid and `permission-denied` unless `auth.token.admin === true` (strictly boolean — `"true"`, `1`, `{}` and `role: "admin"` all fail). The legacy `isAdmin()` in `index.ts` now delegates to it, and the new `authorizeAdmin()` throws the matching `HttpsError`. Client-supplied roles are never read.
+
+**Rationale**: It mirrors the anchor already deployed in `firestore.rules`, so server code and rules cannot drift; it costs no extra Firestore read; and a caller cannot choose their own authorization level because the claim only exists on a token Firebase Auth signed.
+
+**Consequences**: Promoting an admin stays an operational task (set the custom claim, refresh the token), not a code change. Every future admin endpoint must use `authorizeAdmin`/`checkAdminCaller` instead of re-implementing the check. Anonymous and non-admin callers stay distinguishable, which keeps client error handling honest.
+
+---
+
+### [2026-09-29] DEC-010 NIN Handling in Admin Payloads — Masked by Default, Explicit Opt-In for the Full Value
+
+**Context**: `getPendingVerificationQueue` returned every worker's full `nationalIdNumber` inside a list payload that is polled, cached and screenshotted, while the admin detail view genuinely needs the digits to compare them against a photograph. A NIN is a third party's identifier (data-protection exposure) as much as the worker's.
+
+**Options considered**:
+1. Keep returning full NINs everywhere (status quo).
+2. Never return the full NIN (an admin would compare only the last two digits — impractical for a real review).
+3. Mask by default, releasing the full value only on an explicit admin-only detail request.
+
+**Decision**: Option 3. `maskIdentifier` (a TypeScript twin of `GuarantorValidators.maskIdentifier` in the app) keeps only the last two characters. The queue emits `nationalIdNumberMasked` and no `nationalIdNumber` key at all; `projectGuarantorForAdmin` omits the `nationalIdNumber` property unless the caller passes `includeFullNin: true` to `getGuarantorSubmission`.
+
+**Rationale**: The common case (finding work to do) carries no identifier; the exceptional case (reviewing one submission) is one audited call away and is never cached in a list. Sharing the validator's masking format keeps client and server displays identical.
+
+**Consequences**: An admin UI must opt in per submission rather than receiving NINs wholesale. Tests assert the property is **absent**, not merely empty, when it was not requested, so a future refactor cannot silently reintroduce it.
+
+---
+
+### [2026-09-29] DEC-011 Private Verification Photographs — Server-Minted Short-Lived Signed URLs
+
+**Context**: The guarantor photographs live under `users/{uid}/guarantors/**`, which `storage.rules` restricts to the owner (`request.auth.uid == userId || request.auth.token.admin == true`). No admin client exists, and making the prefix readable "for admins" would risk exposing every worker's documents to anyone whose client enforces access incorrectly.
+
+**Options considered**:
+1. Loosen `storage.rules` so admin-claimed clients read the files directly.
+2. Copy images into an admin-only prefix, or store download tokens in Firestore.
+3. Mint short-lived signed URLs server-side, only for paths that pass an ownership check.
+
+**Decision**: Option 3. `collectPrivatePhotoPaths` gathers at most the five photographs of the reviewed submission, each only after `isPrivateGuarantorPhotoPath(path, workerId)` proves it sits inside `users/{workerId}/guarantors/<file>` (absolute URLs, `..`, leading slashes, empty segments and foreign worker prefixes are all refused). `mintPrivatePhotoUrls` then creates v4 read URLs with a 15-minute default capped at 60 minutes, reporting failures as fixed reason codes (`OUTSIDE_PRIVATE_PREFIX`, `MISSING`, `NOT_MINTED`, `URL_MINT_FAILED`, `BUCKET_UNAVAILABLE`).
+
+**Rationale**: Storage rules stay exactly as strict as before (the prefix remains owner-only); no long-lived token is ever written into a document; a tampered submission cannot steer an admin's URL into another worker's folder; and the fixed codes avoid echoing bucket paths or half-built signatures into a response.
+
+**Consequences**: An admin can only view a photograph while holding a fresh URL from an authorized call, so the UI must re-request rather than bookmark. If review volume ever grows, the TTL default is the single knob to revisit — it is already bounded by tests.
+
+---
+
+### [2026-09-29] DEC-012 Guarantor Queue Without a Composite Firestore Index
+
+**Context**: The queue merges two collections. Combining `status in [...]` with `orderBy("submittedAt")` requires a composite index, and this repository has **no** `firestore.indexes.json`, so such an index exists only if somebody created it by hand in the console. On a fresh project such a query fails with `FAILED_PRECONDITION`, breaking the whole queue.
+
+**Options considered**:
+1. Query with `orderBy` and depend on a hand-created console index.
+2. Introduce `firestore.indexes.json` as part of this change.
+3. Query with the `in` filter only, and sort/limit in code.
+
+**Decision**: Option 3. The new `guarantor_submissions` query keeps `where("status", "in", GUARANTOR_REVIEWABLE_STATUSES)` and `limit`, but drops `orderBy`; `buildQueueRows` sorts by the earliest outstanding timestamp and applies the limit.
+
+**Rationale**: The queue must not depend on unversioned console state, and correctness is unaffected because the authoritative ordering already happens in code. (The older `worker_kyc` query keeps its `orderBy` — it predates this decision and is left untouched.)
+
+**Consequences**: The read is slightly larger when a backlog is very large. Adding `firestore.indexes.json` with a composite index on `guarantor_submissions` (`status`, `submittedAt`) is an optional future improvement, recorded as such in `AGENT_STATE.md`.
+
+---
+
+### [2026-09-29] DEC-013 Security Core Kept Free of Firebase Imports; Tests Run Against the TypeScript Source
+
+**Context**: A previous session recorded a **false** verification ("`npx tsc` exits 0") because `npx` resolved to the placeholder `tsc` npm package while `node_modules/typescript` had been gutted. The project needs a verification path that is cheap, honest and hard to fake.
+
+**Options considered**:
+1. Emulator-based integration tests for the callables.
+2. Jest/mocha with a build step and mocked `firebase-admin`.
+3. Keep the decision logic in an import-free module and test it directly with `node --test`, which strips the types from the `.ts` file (native in Node 22).
+
+**Decision**: Option 3. `guarantorReview.ts` imports neither `firebase-admin` nor `firebase-functions`; it is pure functions over loose data. `functions/test/guarantorReview.test.mjs` imports it straight from source and runs via `node --test test/guarantorReview.test.mjs` (wired as `npm test`). `functions/package.json` now declares `@types/express` and `@types/node`, which its `build` script always needed.
+
+**Rationale**: The whole security contract (authorization, masking, path guard, write allowlist, validation, queue semantics) is assertable in about a second with no emulator, device or Firebase project — while `npm run build` (the real `tsc`) still proves the module compiles with the rest of the tree.
+
+**Consequences**: Anything security-relevant must stay in the import-free module and orchestration in `index.ts` should stay thin. Never record a type-check result produced by `npx tsc` in this repository — run the compiler by path (`node node_modules\typescript\bin\tsc`) and require no output plus exit 0. Emulator/live-project verification is still required before this gap can be called closed.
+
+---
+

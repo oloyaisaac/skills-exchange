@@ -40,3 +40,11 @@ debug.keystore
 jdk11/
 jdk17/
 *.zip
+
+# Dependency trees and build output — regenerated locally, never to be tracked.
+# `functions/node_modules/` is the npm install tree for the Cloud Functions package and
+# `functions/lib/` is the compiled output of `npm run build` (`main: lib/index.js`).
+# Ignoring them keeps `git status` to the real source changes instead of thousands of
+# dependency files. No file is deleted by these rules.
+node_modules/
+functions/lib/
