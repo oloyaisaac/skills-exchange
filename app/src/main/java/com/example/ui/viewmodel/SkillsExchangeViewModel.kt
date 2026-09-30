@@ -797,65 +797,52 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             // C2: no synthetic-ID fallback remains. When Firebase cannot supply a UID the
             // flow fails closed (error, no profile/session persisted) instead of forking
             // the identity under a throwaway id.
-            val firebaseUser = firebaseService.getCurrentUser() ?: firebaseService.signInAnonymously()
-            val uid = firebaseUser?.uid
-            if (uid.isNullOrBlank()) {
+            // C2-1: the identity that owns a profile is the REAL Firebase UID of the
+            // authenticated user. `signInAnonymously()` is deliberately NOT used as a
+            // fallback here: a phone number alone (or no verification at all) must never mint
+            // the identity that owns a profile or a session.
+            val firebaseUser = firebaseService.getCurrentUser()
+            val uid = firebaseUser?.uid?.takeIf { it.isNotBlank() }
+            if (uid == null) {
                 isAuthenticated.value = false
                 authState.value = AuthState.SignedOut
-                val error = "Sign-in unavailable. Check your connection and try again."
+                val error = "Verify your phone number to continue."
                 authError.value = error
+                phoneError.value = error
                 return@launch
             }
 
-            // AUTH-006: Check for existing account by phone number or UID to prevent duplicates.
-            // The seeded demo row (DEMO_PROFILE_ID) is never a real account, so it is never reused:
-            // reusing it would keep the demo identity AND silently downgrade a selected WORKER to the
-            // demo row's CLIENT role.
-            val existingByPhone = if (phone.isNotBlank()) {
-                repository.getUserProfileByPhone(phone).first()?.takeIf { it.id != DEMO_PROFILE_ID }
-            } else null
+            // C2-1: existing-account recognition is UID-scoped only.
+            //
+            // Previously this also adopted whatever Room row carried the same phone string
+            // (and, failing that, the newest row on the device) and then copied it onto the
+            // authenticated uid — including workerKycStatus / isWorkerActivated /
+            // trainingCompleted. Knowing a phone number was therefore enough to inherit
+            // another account's admin-granted worker state. A record that is not owned by
+            // THIS uid is no longer evidence of anything: the user simply completes normal
+            // onboarding under their verified identity.
+            //
+            // The two accepted sources are both keyed by the authenticated uid:
+            // 1) the device-local Room row written under that uid, and
+            // 2) the durable `users/{uid}` identity record (survives logout, app-data clear,
+            //    reinstall and sign-in on another device).
             val existingByUid = repository.getUserProfile(uid).first()?.takeIf { it.id != DEMO_PROFILE_ID }
-            // AUTH-006: The Room profile row is device-local and is wiped on logout
-            // (`clearAllUserData()`). Without this server-side lookup a returning user looks
-            // brand new after logout / app-data clear / reinstall / new device and is pushed
-            // back through onboarding. `users/{uid}` is the durable identity record.
-            val existingOnServer = if (existingByPhone == null && existingByUid == null) {
-                repository.fetchUserIdentityFromServer(uid)
-                    ?: if (phone.isNotBlank()) repository.fetchUserIdentityByPhoneFromServer(phone) else null
+            val existingOnServer = if (existingByUid == null) {
+                repository.fetchUserIdentityFromServer(uid)?.takeIf { it.id == uid && it.id != DEMO_PROFILE_ID }
             } else null
-            val existing = existingByPhone
-                ?: existingByUid
-                ?: existingOnServer
-                ?: repository.currentUser.first()?.takeIf { it.isOnboardingCompleted && it.id != DEMO_PROFILE_ID }
+            val existing = existingByUid ?: existingOnServer
 
-            val profile = if (existing != null) {
-                // Restored identity keeps the REAL Firebase UID as its primary key.
-                existing.copy(
-                    id = uid,
-                    phoneNumber = if (phone.isNotBlank()) phone else existing.phoneNumber,
-                    fullName = fullName.ifBlank { existing.fullName },
-                    district = district.ifBlank { existing.district },
-                    isOnboardingCompleted = true,
-                    updatedAtTimestamp = System.currentTimeMillis()
-                )
-            } else {
-                val isWorker = initialRole == "WORKER"
-                // C3: legal name is always typed by the user. Never fall back to the Google
-                // display name or a generic placeholder — a blank name stays blank so the
-                // UI keeps enforcing explicit entry.
-                UserProfileEntity(
-                    id = uid,
-                    phoneNumber = phone,
-                    fullName = fullName,
-                    district = district,
-                    initialRole = initialRole,
-                    currentActiveMode = initialRole,
-                    workerKycStatus = if (isWorker) "UNVERIFIED" else "NOT_APPLIED",
-                    isWorkerActivated = false,
-                    trainingCompleted = false,
-                    isOnboardingCompleted = true
-                )
-            }
+            // C2-1: worker privileges are never copied from a record that is not owned by this
+            // authenticated uid (see resolveAuthenticatedProfile), so a phone match can never
+            // hand over an approved worker's state.
+            val profile = resolveAuthenticatedProfile(
+                authenticatedUid = uid,
+                existing = existing,
+                phone = phone,
+                fullName = fullName,
+                district = district,
+                initialRole = initialRole
+            )
             repository.saveUserProfile(profile)
             // AUTH-002/AUTH-006: Mirror the identity record to Firestore so this account can
             // be recognised again after logout or on another device.
@@ -1702,12 +1689,29 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             try {
                 val result = firebaseService.verifyPhoneCode(otpCode)
                 if (result.isSuccess) {
+                    // C2-1: the session owner is the Firebase UID that the SMS-code verification
+                    // just produced. It is never a local Room row id and never a placeholder —
+                    // verification events that produced no phone-backed identity have already
+                    // failed closed inside FirebaseService.
+                    val verifiedUser = result.getOrNull() ?: firebaseService.getCurrentUser()
+                    val userId = resolveSessionOwnerId(verifiedUser?.uid, firebaseService.getCurrentUser()?.uid)
+                    if (userId == null) {
+                        isAuthenticated.value = false
+                        val error = "Phone verification did not complete. Request a new code and try again."
+                        authState.value = AuthState.Error(error)
+                        authError.value = error
+                        otpError.value = error
+                        onResult(false, error)
+                        return@launch
+                    }
+                    val phone = pendingPhoneNumber?.takeIf { it.isNotBlank() }
+                        ?: verifiedUser?.phoneNumber?.takeIf { it.isNotBlank() }
+                        ?: currentUserPhone.value
                     authState.value = AuthState.SignedIn
                     isAuthenticated.value = true
+                    currentUserPhone.value = phone
                     otpError.value = null
                     // AUTH-002: Persist session
-                    val phone = pendingPhoneNumber ?: currentUserPhone.value
-                    val userId = currentUser.value?.id ?: firebaseService.getCurrentUser()?.uid
                     val deviceId = sessionManager.getDeviceId(appContext)
                     sessionManager.saveSession(
                         isAuthenticated = true,
@@ -1913,6 +1917,71 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             if (!user.trainingCompleted) return false
             if (!user.isWorkerActivated) return false
             return true
+        }
+
+        /**
+         * C2-1: Builds the profile that an authenticated identity owns.
+         *
+         * The authenticated Firebase UID is the ONLY identity that may own a profile. A record
+         * whose id differs from [authenticatedUid] — for example a device row that merely carries
+         * the same phone number — is NEVER treated as this account: nothing at all is copied from
+         * it, so knowing a phone number can never hand over another person's worker approval,
+         * activation, training state, national ID, avatar, backup contact or wallet.
+         *
+         * Where a record IS owned by [authenticatedUid] (the same account returning after logout,
+         * app-data clear, reinstall or on another device) its identity is kept, including state an
+         * admin granted server-side — that is legitimate recovery of the same account.
+         *
+         * New/unowned identities fail closed exactly like worker onboarding: `UNVERIFIED` (WORKER)
+         * or `NOT_APPLIED` (CLIENT), `isWorkerActivated = false`, `trainingCompleted = false`; the
+         * admin-approved `worker_kyc/{uid}` record remains the gate (see [isWorkerAuthorized]).
+         */
+        fun resolveAuthenticatedProfile(
+            authenticatedUid: String,
+            existing: UserProfileEntity?,
+            phone: String,
+            fullName: String,
+            district: String,
+            initialRole: String
+        ): UserProfileEntity {
+            val owned = existing?.takeIf { it.id == authenticatedUid && it.id != DEMO_PROFILE_ID }
+            if (owned != null) {
+                // Restored identity keeps the REAL Firebase UID as its primary key.
+                return owned.copy(
+                    id = authenticatedUid,
+                    phoneNumber = if (phone.isNotBlank()) phone else owned.phoneNumber,
+                    fullName = if (fullName.isNotBlank()) fullName else owned.fullName,
+                    district = if (district.isNotBlank()) district else owned.district,
+                    isOnboardingCompleted = true,
+                    updatedAtTimestamp = System.currentTimeMillis()
+                )
+            }
+            // Unowned (or brand-new) identity: only what this user entered, and fail-closed
+            // worker state. Deliberately no copy() of the other record's fields.
+            val isWorker = initialRole == "WORKER"
+            return UserProfileEntity(
+                id = authenticatedUid,
+                phoneNumber = phone,
+                fullName = fullName,
+                district = district,
+                initialRole = initialRole,
+                currentActiveMode = initialRole,
+                workerKycStatus = if (isWorker) "UNVERIFIED" else "NOT_APPLIED",
+                isWorkerActivated = false,
+                trainingCompleted = false,
+                isOnboardingCompleted = true
+            )
+        }
+
+        /**
+         * C2-1: The session owner must be the Firebase UID produced by a real phone verification
+         * ([verifiedPhoneAuthUid]). The fallback is only accepted when Firebase has a signed-in
+         * user at that moment; when neither exists the caller must fail closed instead of writing
+         * a session without an authenticated owner.
+         */
+        fun resolveSessionOwnerId(verifiedPhoneAuthUid: String?, fallbackFirebaseUid: String?): String? {
+            return verifiedPhoneAuthUid?.takeIf { it.isNotBlank() }
+                ?: fallbackFirebaseUid?.takeIf { it.isNotBlank() }
         }
     }
 }

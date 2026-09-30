@@ -1,7 +1,27 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-09-30T17:47:00+03:00 — **SEC-009 / G1 / G3 / H1 / H8 / M8 — Worker Dashboard Fail-Closed Authorization IMPLEMENTED, UNIT-TESTED, DOCUMENTED.**
+2026-09-30T20:10:00+03:00 — **C2-1 (Phone Authentication Identity Security) IMPLEMENTED — ⚠️ NOT VERIFIED. `C2` is deliberately still ⏳ and must not be marked complete.**
+
+**What was done (source-only; no build, test, deploy or device run happened — see BLOCKER):**
+- `FirebaseService.kt`: the phone-auth placeholder is gone. `sendPhoneVerificationCode` used to return a fabricated `"<timestamp>_<phoneHash>"` id; `verifyPhoneCode` accepted ANY six-digit code and then called `signInAnonymously()`. Both now use real Firebase Phone Auth: `PhoneAuthProvider.verifyPhoneNumber(PhoneAuthOptions)` (Activity-bound, 60s timeout, `suspendCancellableCoroutine` over `onCodeSent` / `onVerificationCompleted` / `onVerificationFailed`) and `PhoneAuthProvider.getCredential(...)` + `auth.signInWithCredential(...)`. Input is normalised to E.164 by the new `toE164PhoneNumber` (default country `+256`); unusable input fails closed.
+- The pending verification (`verificationId`, Play-Services auto credential, requested number) is instance-private and cleared on sign-out, account deletion, resend, coroutine cancellation, success and failure. The new pure gate `phoneVerificationGateFailureReason(...)` refuses every code when no Firebase verification is pending — an arbitrary six-digit string can no longer authenticate. The resulting identity must be non-anonymous, phone-backed, and match the number the code was requested for.
+- Activity plumbing: `FirebaseService.attachPhoneAuthActivity/detachPhoneAuthActivity` (WeakReference) called from `MainActivity.onCreate/onDestroy`.
+- Privilege copying removed from `loginUser`: it no longer adopts a Room row by phone number, no longer falls back to the newest row on the device, and no longer mints an anonymous UID when Firebase has no user. The new companion policy `resolveAuthenticatedProfile(...)` reuses a record only when its id == the authenticated Firebase UID; otherwise it builds a fail-closed profile (`UNVERIFIED`/`NOT_APPLIED`, `isWorkerActivated = false`, `trainingCompleted = false`) with **none** of the other record's fields copied. `verifyOtp` now keys the persisted session to the verified Firebase UID (`resolveSessionOwnerId`), not to a Room row id.
+- `firestore.rules`: `match /users/{userId}` read changed from `allow read: if isAuthenticated();` to `allow read: if isDocOwner(userId) || isAdmin();` (admin capability preserved; server paths use the Admin SDK). Consequence: the client by-phone query `fetchUserIdentityByPhone` is now denied by the rules and returns null — it is documented in code as NON-authoritative and is no longer an ownership path (AUTH-006 uid-keyed recovery is unaffected).
+- New tests (not yet executed): `app/src/test/java/com/example/data/remote/PhoneAuthVerificationSecurityTest.kt` (pure), `.../PhoneAuthServiceFailClosedTest.kt` (Robolectric), `.../FirestoreUsersReadPrivacyTest.kt` (rules-source invariants), `app/src/test/java/com/example/ui/viewmodel/PhoneAuthIdentitySecurityTest.kt` (pure).
+
+**BLOCKER (why nothing is verified):** every `run_commands` call this session returned exit 1 with no observable output and no side effects — three independent probes (`Set-Content`, `Out-File`, `cmd /c "dir > file"`) never created their target files, so `gradlew` never ran. Therefore there was **no `:app:compileDebugKotlin`, no `:app:testDebugUnitTest`, no `:app:assembleDebug`, no `firebase deploy --only firestore:rules`, and no device/emulator verification.** `prd.json` and `TASKS.md` were intentionally left untouched: `C2` stays ⏳ PENDING and is not in `completed_stories`.
+
+**Next action (in this order, with a working shell):**
+1. `:app:compileDebugKotlin` — expect this to be the first real check of the new Firebase Phone Auth API usage.
+2. `:app:testDebugUnitTest` — the four new suites; `PhoneAuthServiceFailClosedTest` is Robolectric (`@Config(sdk = [36])`) and constructs `FirebaseService(null)`, so confirm its diagnostics if it errors.
+3. `:app:assembleDebug`.
+4. `firebase deploy --only firestore:rules` — the `users` read rule is NOT live until deployed.
+5. Device (Samsung SM-A025F): real SMS code end-to-end; confirm the resulting Firebase UID owns the Room profile and `users/{uid}`, that a phone-match cannot inherit worker state, and that the Firebase project has Phone sign-in enabled plus the app's SHA-1/SHA-256 registered (Play-Integrity/reCAPTCHA requirement).
+6. Only then sync `TASKS.md` / `prd.json`.
+
+Previous update 2026-09-30T17:47:00+03:00 — **SEC-009 / G1 / G3 / H1 / H8 / M8 — Worker Dashboard Fail-Closed Authorization IMPLEMENTED, UNIT-TESTED, DOCUMENTED.**
 
 **What was done:**
 - Centralised a pure `isWorkerAuthorized(isAuthenticated, user)` companion function in `SkillsExchangeViewModel.kt` — the single authoritative source. Requires `initialRole == "WORKER"`, `workerKycStatus == "APPROVED"`, `trainingCompleted == true`, `isWorkerActivated == true`; defaults to `false` for every other state (null, loading, unknown, pending, deactivated).

@@ -2,6 +2,16 @@
 
 All meaningful development changes are recorded here in reverse chronological order.
 
+### [2026-09-30] [C2-1] [SECURITY] Phone Authentication Identity Boundary — Implemented, ⚠️ NOT VERIFIED
+
+- **Defect (reported by the C1/C2/C3 audit):** `FirebaseService.sendPhoneVerificationCode` fabricated a local `"<timestamp>_<phoneHash>"` "verification id" and `verifyPhoneCode` accepted **any** six-digit code before calling `signInAnonymously()`; `SkillsExchangeViewModel.loginUser` then treated a phone-number match as account recovery and copied `workerKycStatus` / `isWorkerActivated` / `trainingCompleted` onto the newly authenticated UID; `firestore.rules` allowed `allow read: if isAuthenticated();` on `match /users/{userId}`.
+- **Fix — real phone auth:** `PhoneAuthProvider.verifyPhoneNumber(PhoneAuthOptions)` (Activity-bound via a `WeakReference` holder registered by `MainActivity`, 60s timeout, awaited with `suspendCancellableCoroutine`) plus `PhoneAuthProvider.getCredential` + `signInWithCredential`. New `toE164PhoneNumber` normalises UG input (`0772198420` / `256…` / `+256…` / 9-digit) and fails closed on anything ambiguous. `signInAnonymously()` no longer appears on any successful phone-auth path.
+- **Fix — fail-closed verification gate:** `phoneVerificationGateFailureReason(...)` refuses every code while no Firebase verification is pending; the authenticated identity must be non-anonymous, phone-backed and match the requested number. Pending state is cleared on resend, cancel, sign-out, account deletion, success and failure.
+- **Fix — no privilege copying:** new companion policy `resolveAuthenticatedProfile(...)` reuses a record only when its id == the authenticated Firebase UID; a phone match with any other uid is rebuilt fail-closed (`UNVERIFIED`/`NOT_APPLIED`, `isWorkerActivated = false`, `trainingCompleted = false`) with none of the other record's fields copied. `loginUser` no longer mints an anonymous UID and no longer falls back to "newest row". `verifyOtp` keys the session to the verified Firebase UID.
+- **Fix — Firestore privacy:** `users/{userId}` read is now `isDocOwner(userId) || isAdmin()`. The client by-phone query degrades to null under the tightened rules and is documented as non-authoritative.
+- **Tests added (NOT yet executed):** `PhoneAuthVerificationSecurityTest`, `PhoneAuthServiceFailClosedTest` (Robolectric), `FirestoreUsersReadPrivacyTest`, `PhoneAuthIdentitySecurityTest`.
+- **⚠️ NOT VERIFIED — `C2` remains ⏳ in `TASKS.md` / `prd.json`.** No `compileDebugKotlin`, `testDebugUnitTest`, `assembleDebug`, `firebase deploy` or device run was possible: `run_commands` returned exit 1 with no output and no side effects for every attempt this session (three file-writing probes never created their files). See `AGENT_STATE.md` for the ordered next actions.
+
 ### [2026-09-30] [SEC-009 / G1 / G3 / H1 / H8 / M8] [SECURITY] Worker Dashboard Fail-Closed Authorization Implemented
 
 - **Problem:** `isWorkerApprovedAndActivated` initialized to `true` (fail-open, G1); worker dashboard authorization depended on UI state (G3); `setUserRoleMode("Offer Skills")` lacked a server-authoritative gate (M8); `FreelancerDashboardView` had no component-level auth guard (H8); the combined pattern violated H1 (fail-closed requirement).

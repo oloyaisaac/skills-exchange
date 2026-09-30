@@ -160,7 +160,12 @@ service cloud.firestore {
 
     // --- MODULE 2: USER PROFILES & KYC VERIFICATION LAYER ---
     match /users/{userId} {
-      allow read: if isAuthenticated();
+      // C2-1: a `users/{uid}` document carries a phone number (and optionally a backup
+      // contact — a third party's number), so reads are owner-or-admin only. It previously
+      // allowed every signed-in user to read every account. Admin/inspection paths use the
+      // Admin SDK (rules bypassed) and admin clients carry the `admin` custom claim
+      // (see isAdmin()); no client needs another user's private account document.
+      allow read: if isDocOwner(userId) || isAdmin();
       allow create: if isDocOwner(userId);
       // REG-002 / SEC-006: owner-managed profile fields, but the verification and
       // activation decisions are admin-owned. A worker can never flip their own

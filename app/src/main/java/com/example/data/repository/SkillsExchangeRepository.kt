@@ -33,6 +33,11 @@ class SkillsExchangeRepository(
         return db.userProfileDao().getUserProfile(userId)
     }
 
+    /**
+     * C2-1: device-local phone lookup. NON-AUTHORITATIVE — a phone match does not establish who
+     * owns an account, so this must never be used to select the record that an authenticated
+     * identity inherits. Identity is always `FirebaseAuth.currentUser.uid`.
+     */
     fun getUserProfileByPhone(phoneNumber: String): Flow<UserProfileEntity?> {
         return db.userProfileDao().getUserProfileByPhoneNumber(phoneNumber)
     }
@@ -373,7 +378,11 @@ class SkillsExchangeRepository(
         return firebaseService.fetchUserIdentity(userId)
     }
 
-    /** AUTH-006: Server-side identity lookup by phone number (fallback path). */
+    /**
+     * C2-1: server-side phone lookup. NON-AUTHORITATIVE — retained for future migration work
+     * only. It must never be used as an ownership gate: the authenticated Firebase UID is the
+     * only identity allowed to own a profile or inherit privileged state.
+     */
     suspend fun fetchUserIdentityByPhoneFromServer(phoneNumber: String): UserProfileEntity? {
         return firebaseService.fetchUserIdentityByPhone(phoneNumber)
     }

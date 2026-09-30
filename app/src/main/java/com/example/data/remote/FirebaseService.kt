@@ -1,5 +1,6 @@
 package com.example.data.remote
 
+import android.app.Activity
 import android.content.Context
 import android.net.Uri
 import android.util.Log
@@ -9,20 +10,150 @@ import com.example.data.db.ServiceProviderEntity
 import com.example.data.db.UserProfileEntity
 import com.example.util.GuarantorValidators
 import com.google.firebase.FirebaseApp
+import com.google.firebase.FirebaseException
+import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.auth.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.PhoneAuthCredential
+import com.google.firebase.auth.PhoneAuthOptions
+import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import java.lang.ref.WeakReference
+import java.util.concurrent.TimeUnit
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 
 class FirebaseService(private val context: Context? = null) {
+
+    companion object {
+        /**
+         * C2-1: Firebase Phone Auth needs a live Activity for the Play-Integrity / reCAPTCHA
+         * fallback used by [PhoneAuthProvider.verifyPhoneNumber]. The single-activity app
+         * registers itself here (MainActivity) so any FirebaseService instance can run the
+         * real verification without threading an Activity through the ViewModel API.
+         *
+         * A WeakReference is used deliberately: this holder must never keep a destroyed
+         * Activity alive. When no Activity is attached the phone flow fails closed.
+         */
+        private var phoneAuthActivityRef: WeakReference<Activity>? = null
+
+        /** Firebase SMS code lifetime (Google's default is 60s). */
+        private const val PHONE_VERIFICATION_TIMEOUT_SECONDS = 60L
+
+        /** Digits of the phone number Firebase actually verified (E.164, no punctuation). */
+        private fun phoneDigitsOf(phone: String?): String = phone.orEmpty().filter { it.isDigit() }
+
+        /** Called from the host Activity so real phone verification can run. */
+        fun attachPhoneAuthActivity(activity: Activity) {
+            phoneAuthActivityRef = WeakReference(activity)
+        }
+
+        /** Called from the host Activity when it is destroyed. */
+        fun detachPhoneAuthActivity(activity: Activity) {
+            if (phoneAuthActivityRef?.get() === activity) phoneAuthActivityRef = null
+        }
+
+        private fun currentPhoneAuthActivity(): Activity? = phoneAuthActivityRef?.get()
+
+        /**
+         * C2-1: Normalises user input to the E.164 form Firebase Phone Auth requires
+         * (`+256772198420`). Ugandan input is accepted as `0XXXXXXXXX`, `XXXXXXXXX`,
+         * `256XXXXXXXXX` or `+256XXXXXXXXX`; a number that cannot be resolved confidently
+         * returns null so the caller fails closed instead of guessing a country.
+         */
+        fun toE164PhoneNumber(rawPhone: String, defaultCountryCode: String = "+256"): String? {
+            val trimmed = rawPhone.trim()
+            if (trimmed.isEmpty()) return null
+            if (trimmed.any { !it.isDigit() && it != '+' && it !in " ()-" }) return null
+            val digits = trimmed.filter { it.isDigit() }
+            if (digits.length < 9 || digits.length > 15) return null
+            val countryDigits = defaultCountryCode.filter { it.isDigit() }
+            if (countryDigits.isEmpty()) return null
+            return when {
+                trimmed.startsWith("+") -> "+$digits"
+                digits.startsWith(countryDigits) -> "+$digits"
+                digits.startsWith("0") && digits.length >= 10 -> "+$countryDigits${digits.drop(1)}"
+                !digits.startsWith("0") && digits.length in 9..10 -> "+$countryDigits$digits"
+                else -> null
+            }
+        }
+
+        /**
+         * C2-1: Pure fail-closed gate for an OTP submission.
+         *
+         * Returns null only when a REAL Firebase phone verification is in flight — i.e. a
+         * verification id from `onCodeSent` (with a well-formed 6-digit code) or an
+         * auto-retrieved Play-Services credential. In every other case it returns the error
+         * to surface, which is what makes "any six-digit code" impossible: without a pending
+         * Firebase verification there is nothing to exchange for a credential.
+         */
+        fun phoneVerificationGateFailureReason(
+            verificationId: String?,
+            hasAutoCredential: Boolean,
+            otpCode: String
+        ): String? {
+            if (verificationId.isNullOrBlank() && !hasAutoCredential) {
+                return "Request a verification code first."
+            }
+            if (verificationId.isNullOrBlank()) return null // Play Services already verified the number.
+            val code = otpCode.trim()
+            if (code.length != 6 || code.any { !it.isDigit() }) {
+                return "Enter the 6-digit code we sent to your phone."
+            }
+            return null
+        }
+
+        /** Maps a Firebase phone-auth failure to a message the UI can show. */
+        private fun phoneAuthFailureMessage(error: Throwable): String = when (error) {
+            is FirebaseAuthInvalidCredentialsException ->
+                "That code is not valid. Check it and try again."
+            is FirebaseAuthUserCollisionException ->
+                "This phone number is already linked to another account. Sign in with that account instead."
+            is FirebaseTooManyRequestsException ->
+                "Too many verification attempts. Please wait a moment and try again."
+            is FirebaseNetworkException ->
+                "Check your internet connection and try again."
+            else -> "Phone verification failed. Please try again."
+        }
+    }
+
+    // ==================== C2-1: real phone verification state ====================
+
+    /** Verification id returned by Firebase `onCodeSent`; null until a code is requested. */
+    @Volatile
+    private var pendingPhoneVerificationId: String? = null
+
+    /** Credential handed back by Play Services when the number was verified without a code. */
+    @Volatile
+    private var pendingAutoPhoneCredential: PhoneAuthCredential? = null
+
+    /** E.164 number the pending verification was requested for (identity cross-check). */
+    @Volatile
+    private var pendingVerificationPhoneNumber: String? = null
+
+    /**
+     * C2-1: Drops any in-flight verification. Must be called whenever the flow is abandoned
+     * (new code requested, sign-out, or a completed/failed verification) so a stale
+     * verification id can never be replayed.
+     */
+    fun clearPendingPhoneVerification() {
+        pendingPhoneVerificationId = null
+        pendingAutoPhoneCredential = null
+        pendingVerificationPhoneNumber = null
+    }
 
     private fun initializeFirebase(): Boolean {
         return try {
@@ -88,6 +219,11 @@ class FirebaseService(private val context: Context? = null) {
         }
     }
 
+    /**
+     * C2-1: Anonymous sign-in is NOT an authentication method for this app. It may only be used
+     * for a throwaway guest context — never as a substitute for a successful phone verification,
+     * and never to mint the identity that owns a profile/session (see `loginUser`).
+     */
     suspend fun signInAnonymously(): FirebaseUser? {
         val authInstance = auth ?: return null
         return try {
@@ -109,6 +245,8 @@ class FirebaseService(private val context: Context? = null) {
 
     fun signOut() {
         try {
+            // C2-1: an abandoned verification must never survive a sign-out.
+            clearPendingPhoneVerification()
             auth?.signOut()
             _currentUserState.value = null
         } catch (e: Exception) {
@@ -119,6 +257,7 @@ class FirebaseService(private val context: Context? = null) {
     suspend fun deleteCurrentUser(): Boolean {
         val authInstance = auth ?: return false
         return try {
+            clearPendingPhoneVerification()
             val user = authInstance.currentUser
             user?.delete()?.await()
             _currentUserState.value = null
@@ -198,48 +337,115 @@ class FirebaseService(private val context: Context? = null) {
 
 
     /**
-     * Sends a phone verification code via Firebase Phone Auth.
-     * Returns Result with verificationId on success.
+     * C2-1: Sends a real verification code through Firebase Phone Auth
+     * ([PhoneAuthProvider.verifyPhoneNumber]).
+     *
+     * The user's input is normalised to E.164 first, the request is bound to the attached
+     * Activity (Play-Integrity / reCAPTCHA fallback), and the returned verification id is held
+     * privately so the code can only ever be exchanged by this service instance. No identity
+     * is created here — a Firebase UID exists only after [verifyPhoneCode] succeeds.
+     *
+     * Returns `Result.success(verificationId)` (blank when Play Services already verified the
+     * number and no SMS code was needed) or `Result.failure` with a UI-ready message.
      */
     suspend fun sendPhoneVerificationCode(phoneNumber: String): Result<String> {
+        val e164PhoneNumber = toE164PhoneNumber(phoneNumber)
+            ?: return Result.failure(Exception("Enter a valid phone number, e.g. +256 772 198 420."))
         val authInstance = auth ?: return Result.failure(Exception("Firebase Auth not available"))
+        val activity = currentPhoneAuthActivity()
+            ?: return Result.failure(Exception("Phone verification is unavailable right now. Please try again."))
+
+        // A new request invalidates any previous verification id.
+        clearPendingPhoneVerification()
+
         return try {
-            // Store verification ID for later use
-            val verificationId = "${System.currentTimeMillis()}_${phoneNumber.hashCode()}"
-            // Note: Full Firebase Phone Auth requires Play Services and proper SHA certificates
-            // This is a structured placeholder that integrates with the auth flow
-            // In production, use PhoneAuthProvider.getInstance(auth).verifyPhoneNumber()
-            Log.d("FirebaseService", "Phone verification requested for: $phoneNumber")
-            Result.success(verificationId)
+            val verificationId = suspendCancellableCoroutine<String?> { continuation ->
+                continuation.invokeOnCancellation { clearPendingPhoneVerification() }
+                val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+                    override fun onVerificationCompleted(credential: PhoneAuthCredential) {
+                        // Play Services verified the number itself (SMS Retriever / instant
+                        // verification). Keep the credential; the user may never receive a code.
+                        pendingAutoPhoneCredential = credential
+                        if (continuation.isActive) continuation.resume(null)
+                    }
+
+                    override fun onVerificationFailed(exception: FirebaseException) {
+                        if (continuation.isActive) continuation.resumeWithException(exception)
+                    }
+
+                    override fun onCodeSent(
+                        id: String,
+                        forceResendingToken: PhoneAuthProvider.ForceResendingToken
+                    ) {
+                        pendingPhoneVerificationId = id
+                        if (continuation.isActive) continuation.resume(id)
+                    }
+                }
+                val options = PhoneAuthOptions.newBuilder(authInstance)
+                    .setPhoneNumber(e164PhoneNumber)
+                    .setTimeout(PHONE_VERIFICATION_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .setActivity(activity)
+                    .setCallbacks(callbacks)
+                    .build()
+                try {
+                    PhoneAuthProvider.verifyPhoneNumber(options)
+                } catch (e: Exception) {
+                    if (continuation.isActive) continuation.resumeWithException(e)
+                }
+            }
+            pendingVerificationPhoneNumber = e164PhoneNumber
+            Result.success(verificationId.orEmpty())
         } catch (e: Exception) {
             Log.d("FirebaseService", "Send phone verification error: ${e.message}")
-            Result.failure(e)
+            clearPendingPhoneVerification()
+            Result.failure(Exception(phoneAuthFailureMessage(e)))
         }
     }
 
     /**
-     * Verifies the OTP code entered by the user.
-     * Returns Result with FirebaseUser on success.
+     * C2-1: Exchanges the submitted code for a Firebase credential and signs in.
+     *
+     * The code is never interpreted here — it is handed to Firebase
+     * ([PhoneAuthProvider.getCredential] + `signInWithCredential`), so only a code Firebase
+     * actually issued for the pending verification can produce an authenticated UID.
+     *
+     * Fail closed: no pending verification, a malformed code, a rejected code, or a resulting
+     * identity that is not phone-backed all return `Result.failure` and leave no authenticated
+     * identity behind. `signInAnonymously()` is deliberately NOT used as a substitute for
+     * successful phone verification.
      */
     suspend fun verifyPhoneCode(otpCode: String): Result<FirebaseUser?> {
+        val verificationId = pendingPhoneVerificationId
+        val autoCredential = pendingAutoPhoneCredential
+        val requestedPhoneNumber = pendingVerificationPhoneNumber
+
+        phoneVerificationGateFailureReason(verificationId, autoCredential != null, otpCode)
+            ?.let { return Result.failure(Exception(it)) }
+
         val authInstance = auth ?: return Result.failure(Exception("Firebase Auth not available"))
+
         return try {
-            // Note: Full Firebase Phone Auth requires Play Services and proper SHA certificates
-            // This is a structured placeholder that integrates with the auth flow
-            // In production, use PhoneAuthProvider.verifyPhoneNumber() with verificationId
-            Log.d("FirebaseService", "OTP verification attempted")
-            // For now, accept any 6-digit code as valid (development mode)
-            // In production, this would verify against Firebase
-            if (otpCode.length == 6) {
-                // Attempt anonymous sign-in as fallback for development
-                signInAnonymously()
-                Result.success(_currentUserState.value)
+            val credential = verificationId?.let { PhoneAuthProvider.getCredential(it, otpCode.trim()) }
+                ?: autoCredential!!
+            val authResult = authInstance.signInWithCredential(credential).await()
+            val user = authResult.user
+            // Only a phone-backed Firebase identity may continue: an anonymous or phone-less
+            // user means verification did not establish the requested phone identity.
+            val verifiedPhoneMismatch = requestedPhoneNumber != null &&
+                phoneDigitsOf(user?.phoneNumber) != phoneDigitsOf(requestedPhoneNumber)
+            if (user == null || user.isAnonymous || user.phoneNumber.isNullOrBlank() || verifiedPhoneMismatch) {
+                clearPendingPhoneVerification()
+                Result.failure(Exception("Phone verification did not complete. Request a new code and try again."))
             } else {
-                Result.failure(Exception("Invalid code format"))
+                clearPendingPhoneVerification()
+                _currentUserState.value = user
+                Result.success(user)
             }
         } catch (e: Exception) {
+            // A rejected code must never leave a previously signed-in identity looking verified.
+            clearPendingPhoneVerification()
             Log.d("FirebaseService", "Verify phone code error: ${e.message}")
-            Result.failure(e)
+            Result.failure(Exception(phoneAuthFailureMessage(e)))
         }
     }
 
@@ -693,8 +899,17 @@ class FirebaseService(private val context: Context? = null) {
     }
 
     /**
-     * AUTH-006: Phone-number fallback lookup, used when a returning user signs in on a
-     * device where the Room profile is gone and the UID lookup misses.
+     * AUTH-006 fallback, retained but NON-AUTHORITATIVE after C2-1: this is a convenience lookup
+     * for a returning user on a device where the Room profile is gone and the uid lookup missed.
+     *
+     * C2-1 WARNING: it must NEVER be used to decide who owns an account. A match only proves that
+     * some stored record carries the same phone string — not that the caller controls that number
+     * or that the record belongs to the authenticated Firebase UID. The authoritative identity is
+     * always `FirebaseAuth.currentUser.uid` (see [getCurrentUser]); privileged state is only ever
+     * granted to the uid that `worker_kyc/{uid}` was approved for.
+     *
+     * (Note: the tightened `users` read rule means this client query now returns null for
+     * non-owners — deliberately. Never re-purpose it as an ownership gate.)
      */
     suspend fun fetchUserIdentityByPhone(phoneNumber: String): UserProfileEntity? {
         if (phoneNumber.isBlank()) return null
