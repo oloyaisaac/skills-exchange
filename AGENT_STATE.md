@@ -1,7 +1,23 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-09-30T15:52:00+03:00 — **DEFECT D1 (MAP-001 InteractiveMapView Crash) RESOLVED & FULLY VERIFIED.**
+2026-09-30T17:47:00+03:00 — **SEC-009 / G1 / G3 / H1 / H8 / M8 — Worker Dashboard Fail-Closed Authorization IMPLEMENTED, UNIT-TESTED, DOCUMENTED.**
+
+**What was done:**
+- Centralised a pure `isWorkerAuthorized(isAuthenticated, user)` companion function in `SkillsExchangeViewModel.kt` — the single authoritative source. Requires `initialRole == "WORKER"`, `workerKycStatus == "APPROVED"`, `trainingCompleted == true`, `isWorkerActivated == true`; defaults to `false` for every other state (null, loading, unknown, pending, deactivated).
+- `isWorkerApprovedAndActivated: StateFlow<Boolean>` now combines `isAuthenticated` + `currentUserProfile` through `isWorkerAuthorized()`.
+- `canAccessWorkerFeatures()` delegates to `isWorkerAuthorized()` — `setUserRoleMode("Offer Skills")` therefore silently denies unqualified users (G3 / M8 closed).
+- `FreelancerDashboardView.kt` accepts `isAuthorized: Boolean` and renders a hard-coded locked UI guard if `false` — component boundary cannot be bypassed by state injection.
+- `MainScreen.kt` passes `isWorkerApprovedAndActivated.collectAsState()` to `FreelancerDashboardView` as `isAuthorized`.
+- `WorkerAuthorizationSecurityTest.kt` — 13 test cases (unauthenticated, client mode, various KYC/pending/deactivated states, fully qualified worker, null/error profiles) — all PASSED.
+- Existing full unit-test suite PASSED (all UP-TO-DATE, no regressions).
+- Real-device install was **not possible**: Samsung SM-A025F `/data` partition at 98% (≈22.5 GB / 23 GB used) — `adb install` returned `INSTALL_FAILED_INSUFFICIENT_STORAGE`. This is a hardware/storage constraint, not a code defect. Clear device storage and re-run `adb install` to complete on-device verification.
+
+**Files changed:** `SkillsExchangeViewModel.kt`, `FreelancerDashboardView.kt`, `MainScreen.kt` (modified); `WorkerAuthorizationSecurityTest.kt` (new).
+**Stories closed:** G1 (fail-open initializer), G3 (UI-state dependency), H1 (fail-closed worker auth), H8 (worker dashboard security), M8 (setUserRoleMode gate).
+**PRD story:** SEC-009 → `completed`.
+**Next action:** After device storage is cleared, install APK and perform on-device golden path for G1/H1 (attempt \"Offer Skills\" tab as a non-worker; confirm it is blocked). Then proceed to next unfinished eligible PRD story.
+
 The real-device crash on Samsung SM-A025F (`IllegalStateException: API key not found` at `InteractiveMapView.kt:98`) has been resolved and verified:
 1. `InteractiveMapView.kt`: Wired `isMapsApiKeyPresent(context)` check to detect missing or placeholder keys (`DEFAULT_MAPS_API_KEY`, `MY_MAPS_API_KEY`, `YOUR_KEY_HERE`, or `${...}`) before creating `MapView`, rendering `MapUnavailableFallback` instead of throwing. Wrapped `map.onCreate(null)` in `try/catch` as defense-in-depth against missing Play Services or SDK init errors.
 2. Configuration & Secrets Wiring: Configured `MAPS_API_KEY=DEFAULT_MAPS_API_KEY` in `.env`, `.env.example`, and `manifestPlaceholders["MAPS_API_KEY"] = "DEFAULT_MAPS_API_KEY"` in `app/build.gradle.kts`. Wired `<meta-data android:name="com.google.android.geo.API_KEY" android:value="${MAPS_API_KEY}" />` into `app/src/main/AndroidManifest.xml`. This prevents secrets-gradle-plugin 2.0.1 empty-value syntax errors in `BuildConfig.java`.

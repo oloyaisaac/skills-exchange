@@ -242,14 +242,14 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 ### High
 | ID | Title | Status |
 |---|---|---|
-| H1 | Worker authorization fail-closed | ⏳ Pending Audit Fix |
+| H1 | Worker authorization fail-closed | ✅ Completed (2026-09-30) — `isWorkerAuthorized()` companion pure function; `isWorkerApprovedAndActivated` combines `isAuthenticated` + DB user; `canAccessWorkerFeatures()` delegates to same function; `FreelancerDashboardView` enforces at render boundary; 13/13 new security tests PASSED |
 | H2 | AuthModal legal-name handling (OnboardingScreen fix already made pending verification; AuthModal still pending) | ⏳ Pending Audit Fix |
 | H3 | National ID & Verification drawer | ⏳ Pending Audit Fix |
 | H4 | Fake wallet balance | ⏳ Pending Audit Fix |
 | H5 | ServiceCatalogPicker | ⏳ Pending Audit Fix |
 | H6 | Rating UI | ⏳ Pending Audit Fix |
 | H7 | Trust/Safety & SOS | ⏳ Pending Audit Fix |
-| H8 | Worker dashboard security | ⏳ Pending Audit Fix |
+| H8 | Worker dashboard security | ✅ Completed (2026-09-30) — dual-layer enforcement: ViewModel gate + component-level `isAuthorized` guard in `FreelancerDashboardView` |
 
 ### Medium (M1–M12 from the audit — all pending)
 | ID | Title | Status |
@@ -261,7 +261,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 | M5 | B6 Notification navigation | ⏳ Pending Audit Fix |
 | M6 | B8 Map empty state | ⏳ Pending Audit Fix |
 | M7 | B9 Distance filtering | ⏳ Pending Audit Fix |
-| M8 | G2 setUserRoleMode gate | ⏳ Pending Audit Fix |
+| M8 | G2 setUserRoleMode gate | ✅ Completed (2026-09-30) — `setUserRoleMode("Offer Skills")` calls `canAccessWorkerFeatures()` which calls `isWorkerAuthorized()`; combined with H1/H8 fix |
 | M9 | G4 Verification entry flow | ⏳ Pending Audit Fix |
 | M10 | G5 Verified-claim accuracy | ⏳ Pending Audit Fix |
 | M11 | G6 Firestore/storage role checks | ⏳ Pending Audit Fix |
@@ -301,13 +301,13 @@ Full finding text (A1–A8, B1–B9, G1–G7, D1–D11, N1–N4, P1–P2, M1–M
 
 | Status | Count |
 |---|---|
-| ✅ Completed | 85 |
-| 🔄 In Progress | 1 |
+| ✅ Completed | 89 |
+| 🔄 In Progress | 0 |
 | ⏳ Pending | 7 |
 | 🚫 Blocked | 0 |
-| **Total** | **93** |
+| **Total** | **96** |
 
 ---
 
 _This file is synchronized with `prd.json`. Always update both when story status changes._
-_Last synchronized: 2026-09-30T14:36:00+03:00 — MAP-003 (Google Maps Fallback for Active-Job Screen) added as ⏳ Pending future requirement. No implementation performed. Story count: 85 completed / 1 in-progress / 7 pending / 93 total._
+_Last synchronized: 2026-09-30T17:47:00+03:00 — G1/G3/H1/H8/M8 Worker Dashboard Fail-Closed Authorization completed. `isWorkerAuthorized()` pure function in companion; `isWorkerApprovedAndActivated` combines authentication + DB profile; `canAccessWorkerFeatures()` delegates; `FreelancerDashboardView` enforces at component boundary. 13/13 new security tests PASSED + existing suite PASSED (all UP-TO-DATE). Real-device install blocked by Samsung SM-A025F storage at 98%/23 GB — documented limitation._

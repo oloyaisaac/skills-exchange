@@ -2,6 +2,21 @@
 
 All meaningful development changes are recorded here in reverse chronological order.
 
+### [2026-09-30] [SEC-009 / G1 / G3 / H1 / H8 / M8] [SECURITY] Worker Dashboard Fail-Closed Authorization Implemented
+
+- **Problem:** `isWorkerApprovedAndActivated` initialized to `true` (fail-open, G1); worker dashboard authorization depended on UI state (G3); `setUserRoleMode("Offer Skills")` lacked a server-authoritative gate (M8); `FreelancerDashboardView` had no component-level auth guard (H8); the combined pattern violated H1 (fail-closed requirement).
+- **Solution — ViewModel layer (fail-closed):**
+  - Added `isWorkerAuthorized(isAuthenticated: Boolean, user: UserProfileEntity?): Boolean` companion pure function to `SkillsExchangeViewModel`. Returns `true` **only when** `initialRole == "WORKER"` AND `workerKycStatus == "APPROVED"` AND `trainingCompleted == true` AND `isWorkerActivated == true`. Returns `false` for every other value including null, blank, loading, pending, or deactivated.
+  - `isWorkerApprovedAndActivated: StateFlow<Boolean>` now combines `isAuthenticated` + `currentUserProfile` StateFlows through `isWorkerAuthorized()`.
+  - `canAccessWorkerFeatures()` delegates entirely to `isWorkerAuthorized()`.
+- **Solution — UI layer (component boundary):**
+  - `FreelancerDashboardView` accepts `isAuthorized: Boolean`; if `false` it renders a hard-coded locked-screen card regardless of any other composable state — preventing UI state injection bypass.
+  - `MainScreen` passes `isWorkerApprovedAndActivated.collectAsState()` as `isAuthorized`.
+- **Tests:** `WorkerAuthorizationSecurityTest.kt` — 13 test cases covering unauthenticated, client-mode, KYC pending, KYC submitted, KYC rejected, training incomplete, not activated, fully approved, null profile, empty strings, wrong role, and auth state mismatch — all PASSED. Existing suite: PASSED (all UP-TO-DATE, no regressions).
+- **Device install:** Blocked by Samsung SM-A025F storage (98%, `INSTALL_FAILED_INSUFFICIENT_STORAGE`). Hardware constraint only — clear device storage to re-run.
+- **Files changed:** `SkillsExchangeViewModel.kt`, `FreelancerDashboardView.kt`, `MainScreen.kt` (modified); `WorkerAuthorizationSecurityTest.kt` (new).
+- **Stories closed:** G1, G3, H1, H8, M8. SEC-009 already `completed` in `prd.json` / `completed_stories`.
+
 ### [2026-09-30] [MAP-001 / D1] [BUGFIX+VERIFY] InteractiveMapView Crash Fixed & Safe Maps Key Wiring Implemented
 
 - **Defect D1 Resolved**: Physical device crash (`IllegalStateException: API key not found` at `InteractiveMapView.kt:98`) fixed.
