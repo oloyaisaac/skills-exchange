@@ -13,6 +13,28 @@
 
 **BLOCKER (why nothing is verified):** every `run_commands` call this session returned exit 1 with no observable output and no side effects — three independent probes (`Set-Content`, `Out-File`, `cmd /c "dir > file"`) never created their target files, so `gradlew` never ran. Therefore there was **no `:app:compileDebugKotlin`, no `:app:testDebugUnitTest`, no `:app:assembleDebug`, no `firebase deploy --only firestore:rules`, and no device/emulator verification.** `prd.json` and `TASKS.md` were intentionally left untouched: `C2` stays ⏳ PENDING and is not in `completed_stories`.
 
+**ENVIRONMENT DIAGNOSIS 2026-09-30 (command execution is broken at the runner/PTY level — NOT the project, NOT the JDK, NOT Gradle):**
+
+Diagnostic run of 12 distinct payloads produced **one identical signature for all of them**: `"[Command completion could not be observed...]"` + `error: Command exited with code 1`, with zero stdout/stderr and zero filesystem side effects. Payloads: `echo DIAG_OK`; `cmd /c echo CMD_OK`; `Write-Output PS_WRITE_OK`; `cd /d "D:\skills exchange"; echo ...`; `C:\Windows\System32\cmd.exe /c ver`; `powershell.exe -NoProfile -Command "Write-Output ..."`; `nosuchcommand_zzz_diag_c2`; `.\gradlew.bat --version --console=plain`; `powershell -NoProfile -Command "exit 0"`; `bash -lc "echo ..."`; `Start-Process cmd -ArgumentList '/c','ver' -NoNewWindow -Wait`; `Out-File` probe.
+
+Decisive proofs that the child process is never observed at all:
+1. `echo` — which cannot fail — returns exit 1.
+2. A **deliberately invalid** command produces byte-identical output to a valid one (a real shell would print "not recognized").
+3. `powershell -NoProfile -Command "exit 0"` — a payload that cannot exit nonzero — is **reported as exit 1**. The reported code therefore comes from the runner, not the payload.
+
+Ruled out (each verified): **cwd** — `read_files`/`search_codebase` prove `D:\skills exchange` exists and is fully readable, and the agent-side `editor` tool writes successfully, so the filesystem is fine; **PowerShell vs cmd** — both fail identically, as does a nested `powershell.exe` and an absolute `cmd.exe` path; **Gradle wrapper** — `echo` fails long before Gradle, and no `_gradle_version.txt` was ever produced, so the wrapper was never reached; **file permissions** — the process never spawns, so permissions never apply; **quoting/syntax** — the simplest payload fails like the most complex. Conclusion: the `run_commands` terminal backend has no working PTY this session (stale/dead terminal), so **verification is impossible until it is restored**.
+
+**Smallest corrective actions (in order):**
+1. Kill/close the Cline integrated terminal and let it respawn, or reload the VS Code window — a fresh PTY is the most likely fix.
+2. If it persists, start a **new agent session** (the terminal is per-session) and re-run the checks.
+3. Fallback needing no agent terminal: run these in any ordinary PowerShell window (or Android Studio's Terminal / Gradle tool window) and paste the output back —
+   `.\gradlew.bat :app:compileDebugKotlin --console=plain`
+   `.\gradlew.bat :app:testDebugUnitTest --console=plain`
+   `.\gradlew.bat :app:assembleDebug --console=plain`
+4. Do **not** diagnose this as a missing JDK: `D:\kilo_downloads\jdk17\jdk17.0.20_10\release` confirms Amazon Corretto `17.0.20.1+10-LTS` exists and `gradle.properties:38` pins it.
+
+Environment facts confirmed **by reading files** (no execution needed): project `D:\skills exchange`; Gradle wrapper **9.5.0** (`gradle/wrapper/gradle-wrapper.properties:3`); Gradle JVM = Corretto 17.0.20.1+10-LTS via `org.gradle.java.home`; toolchain JDK 11 at `D:/skills exchange/jdk11/jdk-11.0.22+7`; Gradle home `D:/gradle-home`; Android SDK `C:\Users\mine\AppData\Local\Android\Sdk` (`local.properties`). A stale `app\build\outputs\apk\debug\app-debug.apk` exists from an **older** build — it predates C2-1 and is **not** evidence that the C2-1 code compiles, so it must never be cited as C2-1 verification. Leftover untracked debris from earlier sessions (`diag-vm-*.txt`, `_cmdprobe.txt`, `_p2.txt`, `_gradle_version.txt`) is documented here as never-created or stale.
+
 **Next action (in this order, with a working shell):**
 1. `:app:compileDebugKotlin` — expect this to be the first real check of the new Firebase Phone Auth API usage.
 2. `:app:testDebugUnitTest` — the four new suites; `PhoneAuthServiceFailClosedTest` is Robolectric (`@Config(sdk = [36])`) and constructs `FirebaseService(null)`, so confirm its diagnostics if it errors.
