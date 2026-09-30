@@ -2,6 +2,16 @@
 
 All meaningful development changes are recorded here in reverse chronological order.
 
+### [2026-09-30] [MAP-003] [DOCS] Google Maps Fallback Requirement Added as Future Pending Story
+
+- **Scope:** Documentation only. No source code was changed. No Firebase configuration was changed. No Google Maps dependency or API key was added. No implementation was performed.
+- **Added story `MAP-003` (phase 17, priority P2, status `pending`)** to `prd.json`, `TASKS.md`, `AGENT_STATE.md`, `CHANGELOG.md`, and `DECISIONS.md`.
+- **Requirement summary:** Google Maps must NOT be a hard dependency for the Skills Exchange job lifecycle. Maps may only appear on the active-job screen (after a client has accepted/hired a worker). If Maps fails for any reason (no API key, billing disabled, SDK init failure, network failure, location/map load failure, invalid config, location permission denied, or any other Maps-related failure) the app must NOT crash, freeze, or show an infinite loading screen. Instead the active-job screen must fall back gracefully to a clear message ("Map location is currently unavailable.") and offer a **Contact Worker** action (reusing the existing COMM-001 masked Firestore-chat mechanism — no private phone number exposed, no new communication system created) and a **Continue Without Map** action. Worker GPS location collection must remain independent from Google Maps. All existing job lifecycle flows (acceptance, start, status update, arrival PIN, completion, notifications, reviews, payment/escrow, and disputes) must remain fully functional when Maps is unavailable. API key must be managed via secure configuration (manifestPlaceholders / .env), never hardcoded in Kotlin/source. Treat Google Maps as a **visualization layer only**.
+- **Ordering:** placed after `MAP-002` (Google Maps Usage Minimization) and all other existing unfinished items in Phase 17. `depends_on: ["MAP-002"]`.
+- **DECISIONS.md:** DEC-020 (Google Maps Is an Optional Visualization Layer — Graceful Fallback Required on Active-Job Screen).
+- **prd.json:** total stories now 93 (85 completed / 1 in-progress / 7 pending). `last_updated` updated to `2026-09-30T14:36:00+03:00`.
+- **TASKS.md:** pending count updated from 6 → 7, total from 92 → 93.
+
 ### [2026-09-29] [MAP-001 / REG-002] [DEVICE-VERIFY] Real-Device Test on Samsung SM-A025F — Migration 18→19 Proven, Two Defects Found
 
 - **Scope:** build → install → cold launch → UI walkthrough → crash repro → on-device database inspection on a physical Samsung **SM-A025F (Android 12 / API 31, 720×1600 @280 dpi)**, package `com.aistudio.skillsexchange.nxptvq` (versionCode 1 / versionName 1.0, minSdk 24, targetSdk 36). **No source file was changed; nothing was committed; `prd.json` was not modified.** Consolidated evidence: `_device_test/DEVICE_TEST_REPORT.md`.

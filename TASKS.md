@@ -214,6 +214,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 | REG-004 | P2 | Worker Profile Photo | ✅ Completed | Implemented 2026-09-23: gallery picker (GetContent) → preview → cancel → upload with loading state and error handling → replace photo, in `ProfileSettingsSheet`. `FirebaseService.uploadProfilePhoto` writes to Firebase Storage `avatars/{uid}/profile_<ts>.jpg` (existing storage.rules: public read, owner-only write) and only the download URL is stored on `UserProfileEntity.avatarUrl` (no image bytes in Room/Firestore). Photo shows in the navigation drawer header + sheet; a blank/invalid URL falls back to initials. Camera capture NOT implemented (no camera architecture existed). `avatarUrl` default changed from a seeded stock photo to empty. Coil (`libs.coil.compose`) enabled for image loading |
 | LOC-005 | P2 | Worker Location Using Device GPS (Future) | ⏳ Pending | GPS-based worker location, remove manual district fields. FUTURE / NOT IMPLEMENTED |
 | MAP-002 | P2 | Google Maps Usage Minimization (Future) | ⏳ Pending | Maps only during active job interactions. FUTURE / NOT IMPLEMENTED |
+| MAP-003 | P2 | Google Maps Fallback for Active-Job Screen (Future) | ⏳ Pending | Maps must NOT be a hard dependency. If Maps fails (no API key, billing disabled, SDK failure, network, permissions, any reason) the app must NOT crash or freeze — show fallback UI ("Map location is currently unavailable.") with Contact Worker (reuses COMM-001 masked chat) and Continue Without Map. Maps only on active-job screen. Worker GPS remains independent. All job lifecycle flows (acceptance, start, status, PIN, completion, payment, dispute) unaffected. API key via secure config. FUTURE / NOT IMPLEMENTED |
 | COMM-002 | P3 | Community Feature Removal (Future) | ✅ Completed | Community/Board feed removed: NeighborhoodFeedView deleted, Board tab/branch, neighborhoodPosts, NeighborhoodPostEntity/Dao removed; AppDatabase v17 + MIGRATION_16_17 drops neighborhood_posts; compile + full unit suite 19/19 PASSED |
 | SEC-009 | P1 | Worker Dashboard Security & Access Control | ✅ Completed | Multi-layer enforcement in Entities, ViewModel (canAccessWorkerFeatures & isWorkerApprovedAndActivated), MainScreen, and 7/7 passing unit tests |
 | LEGAL-001 | P2 | Liability Disclaimer (Future) | ⏳ Pending | Liability disclaimer for T&C, onboarding, transactions. FUTURE / NOT IMPLEMENTED |
@@ -302,12 +303,11 @@ Full finding text (A1–A8, B1–B9, G1–G7, D1–D11, N1–N4, P1–P2, M1–M
 |---|---|
 | ✅ Completed | 85 |
 | 🔄 In Progress | 1 |
-| ⏳ Pending | 6 |
+| ⏳ Pending | 7 |
 | 🚫 Blocked | 0 |
-| **Total** | **92** |
+| **Total** | **93** |
 
 ---
 
 _This file is synchronized with `prd.json`. Always update both when story status changes._
-_Last synchronized: 2026-09-29T18:50:00+03:00 — story counts unchanged; a real-device test section
-was added above (evidence: `_device_test/DEVICE_TEST_REPORT.md`)_
+_Last synchronized: 2026-09-30T14:36:00+03:00 — MAP-003 (Google Maps Fallback for Active-Job Screen) added as ⏳ Pending future requirement. No implementation performed. Story count: 85 completed / 1 in-progress / 7 pending / 93 total._

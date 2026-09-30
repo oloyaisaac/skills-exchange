@@ -548,3 +548,62 @@ not build outputs.
 
 ---
 
+### [2026-09-30] DEC-020 Google Maps Is an Optional Visualization Layer — Graceful Fallback Required on Active-Job Screen
+
+**Context**: Device testing on 2026-09-29 (Samsung SM-A025F, Android 12) proved that the existing
+`InteractiveMapView.kt` crashes the process (`IllegalStateException: API key not found` at line 98)
+whenever the Maps tab is tapped, because no `com.google.android.geo.API_KEY` `<meta-data>` element
+exists in `AndroidManifest.xml`. The crash is unguarded. Additionally, the current design shows a
+Map View tab during ordinary worker browsing — not only during active jobs — which is inconsistent
+with the intended usage pattern captured in MAP-002.
+
+**Future requirement added as MAP-003** (phase 17, status `pending`): when eventually implemented,
+Maps must only appear on the active-job screen (after a client has accepted/hired a worker) and must
+degrade gracefully when unavailable.
+
+**Decision**: Treat Google Maps as a **visualization layer only**, not as a requirement for any part
+of the job lifecycle. Specifically:
+
+1. **Isolation**: Maps SDK calls must be confined to the active-job screen. They must not appear
+   during ordinary worker browsing, provider discovery, quoting, or any other normal app navigation.
+2. **Graceful fallback**: Any Maps failure (missing API key, billing disabled, SDK init exception,
+   network failure, map load failure, location permission denied, or any other Maps-related error)
+   must produce a clear fallback UI — not a crash, freeze, or infinite loading screen.
+3. **Contact Worker via COMM-001**: The fallback UI's Contact Worker action must reuse the existing
+   Firestore real-time chat + phone-masking mechanism (COMM-001), not expose a raw phone number and
+   not create a second communication system.
+4. **Worker GPS independence**: Worker GPS location collection (used by existing LOC-001/LOC-003
+   features) must remain independent from the Google Maps SDK. Maps failing must not stop GPS.
+5. **Job lifecycle independence**: All job flows (acceptance, start, status updates, arrival PIN,
+   completion, notifications, reviews, payment/escrow, disputes) must work even when Maps is
+   unavailable.
+6. **Secure key management**: The Maps API key must be delivered via `manifestPlaceholders` / `.env`,
+   never hardcoded in Kotlin or committed to source control.
+7. **Feature abstraction**: A feature flag or configuration abstraction should allow Maps to be
+   enabled or disabled without redesigning the active-job system.
+
+**Options considered**:
+1. Make Maps a hard dependency (current broken state) — rejected: causes crash.
+2. Remove Maps entirely — rejected: the intent is to show it when a job is active and the key is
+   configured.
+3. Optional visualization layer with fallback — chosen: lowest coupling, preserves all job
+   functionality, unblocks release even without a Maps key.
+
+**Rationale**: A crashed app cannot complete a job. The job lifecycle (acceptance → active → arrival
+PIN → completion → payment) is the core product value. Maps is a UX convenience — helpful when
+available, but its absence must never block a worker from being paid or a client from managing
+their job. The COMM-001 reuse decision avoids duplicating the masked-communication security model.
+
+**Consequences**: When MAP-003 is eventually implemented:
+- `InteractiveMapView.kt` must wrap `map.onCreate()` in a try/catch and set a fallback state.
+- A new `ActiveJobScreen` (or updated existing screen) must show the fallback UI when Maps is
+  unavailable.
+- The manifest must include a `manifestPlaceholders`-backed `MAPS_API_KEY` entry.
+- No new Maps dependency is needed (MAP-001 already added it).
+- No existing story status is changed by this decision record.
+
+**Stories affected**: MAP-003 (new, pending). MAP-002 (pending — usage-minimization strategy that
+MAP-003 depends on). MAP-001 (completed, but D1 device defect means its acceptance criterion has
+not been satisfied on hardware — DECISIONS.md DEC-014).
+
+---
