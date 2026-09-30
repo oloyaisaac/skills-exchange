@@ -120,12 +120,11 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     val currentUser: StateFlow<UserProfileEntity?> = repository.currentUser
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val isWorkerApprovedAndActivated: StateFlow<Boolean> = repository.currentUser.map { user ->
-        user != null &&
-        (user.initialRole == "WORKER" || user.workerKycStatus == "APPROVED") &&
-        user.workerKycStatus == "APPROVED" &&
-        user.trainingCompleted &&
-        user.isWorkerActivated
+    val isWorkerApprovedAndActivated: StateFlow<Boolean> = combine(
+        isAuthenticated,
+        repository.currentUser
+    ) { authenticated, user ->
+        isWorkerAuthorized(authenticated, user)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false) // fail closed until real profile is emitted
 
     /**
@@ -335,20 +334,15 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
-    // AUTH-007 / SEC-009: Strict multi-layer permission enforcement for worker dashboard & actions.
+    // AUTH-007 / SEC-009 / G1 / G3 / H1 / H8: Strict multi-layer permission enforcement for worker dashboard & actions.
     // Worker dashboard and capabilities require:
     // 1. Authenticated session
-    // 2. Worker account registration or approved worker qualification
-    // 3. KYC verification status APPROVED
+    // 2. Worker account registration (initialRole == "WORKER")
+    // 3. KYC verification status explicitly APPROVED by admin
     // 4. Worker training completed
     // 5. Worker activated by administrator
     fun canAccessWorkerFeatures(): Boolean {
-        if (!isAuthenticated.value) return false
-        val user = currentUser.value ?: return false
-        return (user.initialRole == "WORKER" || user.workerKycStatus == "APPROVED") &&
-               user.workerKycStatus == "APPROVED" &&
-               user.trainingCompleted &&
-               user.isWorkerActivated
+        return isWorkerAuthorized(isAuthenticated.value, currentUser.value)
     }
 
     fun toggleUserRoleMode() {
@@ -1897,5 +1891,28 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
          * satisfy getCurrentUser() or the onboarding "existing account" lookup.
          */
         const val DEMO_PROFILE_ID = "user_default_me"
+
+        /**
+         * Authoritative fail-closed evaluation of worker dashboard authorization (SEC-009 / G1 / G3 / H1 / H8).
+         *
+         * Requirements:
+         * 1. Authenticated session (must be true)
+         * 2. Real user profile (non-null, non-blank ID, not demo placeholder)
+         * 3. Registered as a Worker (initialRole == "WORKER")
+         * 4. KYC verification explicitly approved by admin (workerKycStatus == "APPROVED")
+         * 5. Mandatory worker training completed (trainingCompleted == true)
+         * 6. Account explicitly activated by admin (isWorkerActivated == true)
+         *
+         * Any missing, unknown, loading, malformed, or error state FAILS CLOSED (returns false).
+         */
+        fun isWorkerAuthorized(authenticated: Boolean, user: UserProfileEntity?): Boolean {
+            if (!authenticated || user == null) return false
+            if (user.id.isBlank() || user.id == DEMO_PROFILE_ID) return false
+            if (!user.initialRole.equals("WORKER", ignoreCase = true)) return false
+            if (user.workerKycStatus != "APPROVED") return false
+            if (!user.trainingCompleted) return false
+            if (!user.isWorkerActivated) return false
+            return true
+        }
     }
 }

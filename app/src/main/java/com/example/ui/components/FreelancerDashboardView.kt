@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.db.JobPostEntity
@@ -33,8 +34,52 @@ fun FreelancerDashboardView(
     onOpenQuickRequest: () -> Unit,
     isAuthenticated: Boolean,
     onTriggerAuth: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isAuthorized: Boolean = false
 ) {
+    // SEC-009 / G3 / H1 / H8: Authoritative access-control boundary.
+    // Fail closed: never display worker dashboard controls, job lists, or toggle
+    // buttons to unauthenticated or unapproved users, even if composed maliciously.
+    if (!isAuthenticated || !isAuthorized) {
+        Surface(
+            modifier = modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = "Access Denied",
+                        tint = RedDanger,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Text(
+                        text = "Worker Dashboard Access Denied",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = Slate900
+                    )
+                    Text(
+                        text = "Worker registration, approved identity verification, and administrator activation are required to access this dashboard.",
+                        fontSize = 14.sp,
+                        color = Slate600,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+        return
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()

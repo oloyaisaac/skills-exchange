@@ -333,6 +333,7 @@ fun MainScreen(
                             onOpenQuickRequest = { viewModel.setQuickRequestOpen(true) },
                             isAuthenticated = isAuthenticated,
                             onTriggerAuth = { viewModel.triggerAuthFlow(it) },
+                            isAuthorized = isWorkerApprovedAndActivated,
                             modifier = Modifier.fillMaxSize()
                         )
                     } else {
