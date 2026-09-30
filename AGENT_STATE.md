@@ -1,6 +1,9 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
+2026-09-29T18:45:00+03:00 — **REAL-DEVICE VERIFICATION RUN on Samsung SM-A025F (Android 12 / API 31). Consolidated report: `_device_test/DEVICE_TEST_REPORT.md`. No source file was changed, nothing committed, `prd.json` untouched.** The freshly built debug APK (35,254,412 B) was installed **in place** — its signing cert matched the installed package, so no uninstall and app data survived — after `INSTALL_FAILED_INSUFFICIENT_STORAGE` was diagnosed as a 99 %-full `/data` partition (**not** a signature conflict) and ~551 MB was reclaimed non-destructively with `pm trim-caches`. Proven on hardware: cold start (6,305 ms, no ANR, Firebase initialised), **Room `MIGRATION_18_19` executing on a real device** (the pulled DB reads `user_version = 19`, matching `AppDatabase version = 19`, with `guarantors.nationalIdNumber` / `phoneNumber` present — the first time that migration has been evidenced outside unit tests), client-mode home with live GPS filtering, drawer, correct guest gating of National ID & Verification (CLIENT ONBOARDING sheet, no crash), Job Status, theme switching and the providers list. **Two real defects found — see `## Real-Device Verification (SM-A025F) — 2026-09-29` below:** **D1 (critical)** Map View tap kills the process 3/3 (`IllegalStateException: API key not found`, `InteractiveMapView.kt:98`; the manifest has no `com.google.android.geo.API_KEY` `<meta-data>` at all and `map.onCreate(null)` is unguarded) — **MAP-001 is still `completed` on `verified_by: code_inspection` while its own acceptance criterion fails on hardware; reopening it is recommended but was not done unilaterally**; **D2** the guest tap on the worker-mode card is refused but **silent** (the message it sets via `authError` is rendered only inside `AuthModal`/`OnboardingScreen`, which are closed at that moment — `MainScreen` has no visible channel for it).
+
+
 2026-09-29T12:00:00+03:00 — **ADMIN-005 (post-REG-002 gap G2: admin guarantor review path) IMPLEMENTED AND VERIFIED in isolation.** REG-002 shipped only the *worker* half of guarantor verification; no administrator could read or decide a `guarantor_submissions` document, and `getPendingVerificationQueue` returned every worker's **unmasked** `nationalIdNumber`. This session added the missing path: `functions/src/guarantorReview.ts` (dependency-free security core) plus `getGuarantorSubmission` and `reviewGuarantorSubmission` callables in `functions/src/index.ts`, a rewritten queue that emits `nationalIdNumberMasked`, and a private-photo signer (15 min default, 60 min cap) that only ever mints `users/{workerId}/guarantors/**`. Verification was **real this time**: `npm run build` (tsc) exit 0 with `lib/index.js` + `lib/guarantorReview.js` emitted, and `node --test test/guarantorReview.test.mjs` **32 tests / 32 pass / 0 fail**. The earlier "`npx tsc` exits 0" evidence recorded before this session was **invalid** (`npx tsc` was resolving to the placeholder `tsc` npm package; `node_modules/typescript` had no `bin/tsc`), and `functions/package.json` never declared `@types/express` / `@types/node` even though its `build` script needs them — both fixed. NOT deployed, no live Firestore/Storage round-trip, and gaps **G1, G3, G4, G5, G6, G7, G12 remain untouched**. REG-002's own PRD status is untouched (still `completed`); no PRD story was added for this work because the gap is post-PRD.
 2026-09-27T04:30:00+03:00 — REG-002 (Worker Registration Guarantor Verification) **BUILD-VERIFIED AND COMPLETED**. The 2026-09-26 "no JDK on this machine" blocker was **false**: `gradle.properties` pins the build JVM (`org.gradle.java.home=D:/kilo_downloads/jdk17/jdk17.0.20_10`, Amazon Corretto `17.0.20.1`, present on disk) and the Gradle home (`systemProp.org.gradle.user.home=D:/gradle-home`), so `.\gradlew.bat <task>` works with no environment setup; `jdk11/jdk-11.0.22+7/bin/java.exe` exists as well and Android Studio's JBR is OpenJDK `25.0.2`. The first real compile of the guarantor feature then found **two genuine errors**: `SkillsExchangeViewModel.kt` had `var` Compose state with no `androidx.compose.runtime.getValue/mutableStateOf/setValue` imports, and `GuarantorValidators.validateNationalIdNumber` used `value.distinct()` on a `String` (now `value.toSet().size`, same rule). After both fixes: `:app:compileDebugKotlin` PASSED (warnings only), `:app:testDebugUnitTest` PASSED **57 tests / 8 suites / 0 failures / 0 errors** (GuarantorValidatorsTest **18/18**), `:app:assembleDebug` PASSED in 3m 35s → `app/build/outputs/apk/debug/app-debug.apk` (35,254,412 bytes). Room's KSP pass validated the entities, DAO queries and the new `phoneNumber` index. PRD: REG-002 `completed` and added to `completed_stories` (**86 completed / 0 in progress / 6 pending** of 92). Remaining: the on-device golden path and `firebase deploy --only firestore:rules,storage`.
 Previous update 2026-09-26T12:00:00+03:00 — REG-002 (Worker Registration Guarantor Verification) IMPLEMENTED at the UI + repository layer, **NOT compiled/tested at the time**. Completed the missing half of `GuarantorVerificationSheet.kt` (GuarantorDraft state + mappers, GuarantorDraftCard, photo pickers, group photo card, choice dropdown, status chip) and corrected the API mismatches a previous session had assumed: repository uses `WorkerKycDao.updateGuarantorStep(... guarantorStatus ...)`, and both sheet and repository consume `GuarantorValidators.validateGuarantorSet(...)` as a single `String?` blocker. Wired the sheet into `MainScreen` behind the drawer's National ID & Verification sheet, which gained a guarantor status row, admin feedback and an entry button. Added `GuarantorValidatorsTest` (pure JVM). BLOCKER RECORDED AT THE TIME — **and later proved wrong**: "this machine has no JDK (`jdk11/` and `jdk17/` are empty, `java` not on PATH), so `:app:compileDebugKotlin` / `:app:testDebugUnitTest` could not be run"; REG-002 therefore stayed `in_progress` and out of `completed_stories` until the build was actually run on 2026-09-27. A follow-up static audit in the same session cross-checked every layer's call signatures (UI→ViewModel→repository→DAO→FirebaseService), the Room v19 migration against the entity columns/defaults, and the client payloads against the `guarantors` / `guarantor_submissions` Firestore rules and the guarantor Storage rules; it fixed one real defect — `GuarantorEntity` never declared the `phoneNumber` index that `MIGRATION_18_19` creates.
@@ -698,3 +701,72 @@ REG-002 delivered the worker half of guarantor verification — two guarantors, 
 3. Call `getGuarantorSubmission` for a real submission (masked NIN first, then `includeFullNin: true`) and confirm the five signed photo URLs open and expire within 15 minutes.
 4. Call `reviewGuarantorSubmission` with `APPROVE` / `REJECT` / `CHANGES_REQUIRED`, then re-read the submission and each `guarantors/{id}` document to confirm the written fields and the notification.
 5. Only then consider the gap closed; nothing from steps 1–4 was executed here.
+
+## Real-Device Verification (SM-A025F) — 2026-09-29
+
+Full evidence and every screenshot/log reference: **`_device_test/DEVICE_TEST_REPORT.md`**. This
+section is the agent-facing summary; it does not repeat the report's detail.
+
+### Environment
+Samsung **SM-A025F** (Galaxy A02, 3 GB RAM), **Android 12 / API 31**, 720×1600 @ 280 dpi, Google
+Play Services present. Package `com.aistudio.skillsexchange.nxptvq`, versionCode 1 / versionName 1.0,
+minSdk 24, targetSdk 36. Debug variant only.
+
+### What the device proved
+| Item | Evidence |
+|---|---|
+| APK built this session is what ran | `adb shell ls -l` on installed `base.apk` = 35,254,412 B, mtime 2026-09-29 17:01 |
+| Update was in-place, data preserved | `firstInstallTime` unchanged (2026-09-16 20:20:52); `lastUpdateTime` 2026-09-29 17:02:25 |
+| **Room `MIGRATION_18_19` executed on hardware** | pulled DB `user_version = 19` == `AppDatabase version = 19`; `guarantors` has `nationalIdNumber` + `phoneNumber` |
+| App is otherwise stable | 0 `FATAL`/`ANR` in the launch and walkthrough logs apart from D1; post-crash relaunch lands on `MainActivity` with live GPS restored |
+| Guest gating works | National ID & Verification → CLIENT ONBOARDING sheet; mode card refuses |
+
+### Defect D1 — CRITICAL: Map View kills the process (3/3)
+`java.lang.IllegalStateException: API key not found …` thrown into
+`app/src/main/java/com/example/ui/components/InteractiveMapView.kt:98` (`map.onCreate(null)` in the
+`AndroidView` factory). PIDs 23654 / 25548 / 25768 in three separate captures.
+
+Confirmed in source, not inferred: `app/src/main/AndroidManifest.xml` has **no `<meta-data>` at
+all** (so no `com.google.android.geo.API_KEY`); `.env` / `.env.example` define only
+`GEMINI_API_KEY`; nothing injects or validates a Maps key; `README.md` step 4 tells the developer
+to hand-edit the manifest while its `.env` block advertises a `MAPS_API_KEY` that no code reads.
+Related older audit rows still open: **B8** (no useful map empty state), **M1–M4**.
+
+**PRD consequence:** `prd.json` **MAP-001** is `completed` with `verified_by: "code_inspection"`,
+yet its own acceptance criterion and verification step fail on a real device. Per AGENTS.md §2 a
+story must not stay `completed` without verified implementation — **recommend reopening MAP-001**.
+Deliberately **not** done by this verification task; the next session should change `status` to
+`in_progress`, drop it from `completed_stories`, and record the reason.
+
+### Defect D2 — role gate refuses correctly but shows nothing on screen
+The guest tap on the mode card is refused by `toggleUserRoleMode()`
+(`SkillsExchangeViewModel.kt:354-359`), which sets
+`authError = "Worker verification and activation required to switch to worker mode."`. The string is
+**not** dead state — `AuthModal.kt:57/322/335` and `OnboardingScreen.kt:75/933-935` do render it —
+but both live inside the auth/onboarding UI, and `MainScreen.kt:741` hosts `AuthModal` only
+`if (isAuthModalOpen)`, which the refusal path does not open. `SnackbarHost` appears in **zero**
+source files, so on `MainScreen` there is no channel that could show it: the user sees nothing while
+the drawer copy invites the tap. Distinct from audit rows **A8** (obsolete) and **G2** (the gate
+itself now exists — only the feedback is missing).
+
+### New blockers recorded
+| Blocker | Reason | Needed |
+|---|---|---|
+| Map View tab is unusable and crashes the app | No Maps API key anywhere + unguarded `MapView.onCreate` in `InteractiveMapView.kt:96-98` | Guard `onCreate` with a fallback panel; feed `MAPS_API_KEY` from `.env` through `manifestPlaceholders` into a manifest `<meta-data>`; add a blank `MAPS_API_KEY=` to `.env.example`; never commit a real key (§8) |
+| MAP-001 status does not match reality | Marked `completed` on inspection only; fails its own acceptance criterion on hardware | Reopen and re-verify on device with a real key before re-completing |
+| Gated actions give no on-screen feedback | `toggleUserRoleMode()` sets `authError`, but it is rendered only inside `AuthModal`/`OnboardingScreen` (closed at that moment); `MainScreen` has no snackbar/banner and `SnackbarHost` exists in no source file | Add a `SnackbarHost` to `MainScreen`'s `Scaffold` (show + clear), or open the existing `AuthModal`/onboarding sheet on refusal |
+| Target device is chronically near-full | `/data` measured 97–99 % used; the first install failed for space | Check `df /data` before install; prefer `pm trim-caches` over deleting user data |
+
+### Still NOT verified by this run (do not mistake for a pass)
+Anything requiring an authenticated session (worker dashboard, chat, quotes, escrow/payment, the
+REG-002 guarantor submission end-to-end, ADMIN-005 callables), the release variant / R8 / signing,
+and every server-side rule — `firebase deploy --only firestore:rules,storage` and
+`firebase deploy --only functions` remain undone.
+
+### Next action (for the next session)
+1. Make `InteractiveMapView` un-crashable, then wire `MAPS_API_KEY` properly; rebuild, reinstall,
+   reopen Map View and confirm real street tiles.
+2. Reopen MAP-001 in `prd.json` with the reason recorded here.
+3. Render `authError` (D2) and re-test the mode-card tap as a guest.
+4. Then resume the operational backlog from `### Next action (for the next session)` above.
+

@@ -509,3 +509,42 @@ is now `completed`.
 
 ---
 
+### [2026-09-29] DEC-014 Real-Device Verification Is Mandatory Before a Map/UI-Visible Story Is Called Complete
+
+**Context**: The 2026-09-29 device run on a Samsung SM-A025F (Android 12 / API 31) found that
+**MAP-001** — marked `completed` with `verified_by: "code_inspection"` — does not work at all:
+tapping Map View throws `IllegalStateException: API key not found` at
+`InteractiveMapView.kt:98` and kills the process 3 times out of 3, because
+`app/src/main/AndroidManifest.xml` has no `com.google.android.geo.API_KEY` `<meta-data>`. Code
+inspection, `compileDebugKotlin`, `testDebugUnitTest` and `assembleDebug` all pass with that defect
+present. The same run *also* proved something no unit test had: `MIGRATION_18_19` really executes on
+a device that was updated rather than reinstalled (`user_version = 19` read from the pulled DB).
+
+**Options considered**:
+1. Leave the workflow as it is — verification by reading code and compiling.
+2. Reopen `MAP-001` in `prd.json` immediately in this verification session.
+3. Keep the PRD as the master plan untouched, record the failed verification prominently, and let
+   the story be reopened by the session that actually fixes it.
+
+**Decision**: Option 1 is rejected: **a story whose acceptance criterion describes something a user
+can see or tap may only be marked `completed` after it has been observed on a device or emulator.**
+Options 2/3 were combined as **3** for this session: `prd.json` was **not** modified (AGENTS.md §2 —
+the master plan is not edited by a verification task that implements nothing), while AGENT_STATE.md,
+CHANGELOG.md and `_device_test/DEVICE_TEST_REPORT.md` all record that MAP-001's criterion fails and
+that reopening it is the required next step.
+
+**Rationale**: A status field that a compile check can satisfy is not evidence. The cheapest honest
+gate for UI-visible behaviour is the device that is already plugged in: install, tap, screenshot,
+`logcat`. Equally, a verification task must not silently rewrite planning state it did not
+implement — the reopen should happen in the session that lands the fix, so status and evidence move
+together.
+
+**Consequences**: Every future map/navigation/UI story needs a device step in its verification list,
+and `verified_by: "code_inspection"` is now treated as *not verified* for UI-visible behaviour.
+Install steps must check `df /data` first and prefer `adb shell pm trim-caches` (non-destructive)
+over deleting user data or uninstalling — the first install of this run failed for space, not for
+signatures. DEX/APK copies made for diagnosis go in `_device_test/` and are safe to delete; they are
+not build outputs.
+
+---
+

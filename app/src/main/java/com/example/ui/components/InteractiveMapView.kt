@@ -19,16 +19,41 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import com.example.data.db.ServiceProviderEntity
 import com.example.ui.theme.*
 import com.example.util.CurrencyRegion
+import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+
+/**
+ * MAP-001 hardening (2026-09-30): a missing Maps API key must never kill the
+ * process. When the key is absent or Play Services are unavailable the
+ * composable renders an explanatory fallback card instead of creating a
+ * MapView; MapView creation itself is guarded so an [IllegalStateException]
+ * ("API key not found") degrades to the same fallback.
+ */
+private fun isMapsApiKeyPresent(context: android.content.Context): Boolean {
+    return try {
+        val appInfo = context.packageManager.getApplicationInfo(
+            context.packageName,
+            android.content.pm.PackageManager.GET_META_DATA
+        )
+        val key = appInfo.metaData?.getString("com.google.android.geo.API_KEY")
+        !key.isNullOrBlank() && !key.startsWith("\${")
+    } catch (_: Exception) {
+        false
+    }
+}
 
 @Composable
 fun InteractiveMapView(

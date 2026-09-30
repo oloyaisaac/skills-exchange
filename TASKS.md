@@ -279,6 +279,23 @@ Full finding text (A1–A8, B1–B9, G1–G7, D1–D11, N1–N4, P1–P2, M1–M
 
 ---
 
+## Real-Device Test — 2026-09-29 (Samsung SM-A025F, Android 12 / API 31)
+
+> Evidence for every line: `_device_test/DEVICE_TEST_REPORT.md`. **No `prd.json` story status was
+> changed by this test** — the counts in the summary below are unchanged.
+
+| ID | Priority | Title | Status | Notes |
+|---|---|---|---|---|
+| DEV-VERIFY-01 | P0 | Install the current debug APK on a physical device | ✅ Completed | In-place update after `pm trim-caches` (space, not signatures); `firstInstallTime` 2026-09-16 preserved, installed `base.apk` = 35,254,412 B = build output |
+| DEV-VERIFY-02 | P0 | Prove Room `MIGRATION_18_19` runs on a device | ✅ Completed | Pulled `skills_exchange_database` reads `user_version = 19`, matching `AppDatabase version = 19`; `guarantors` carries `nationalIdNumber` + `phoneNumber` |
+| DEV-VERIFY-03 | P1 | Client-mode UI walkthrough (home, drawer, gates, tabs, theme) | ✅ Completed | 15 screenshots; cold start 6,305 ms, no ANR; guest tap on National ID correctly opens CLIENT ONBOARDING |
+| D1 | P0 | Map View tab kills the process (`IllegalStateException: API key not found`, `InteractiveMapView.kt:98`) | 🚫 Blocked | No `com.google.android.geo.API_KEY` `<meta-data>` in the manifest, no `MAPS_API_KEY` in `.env`; needs a real key **and** a guarded `onCreate` + fallback UI |
+| D1-PRD | P1 | Reopen **MAP-001** (`completed` → `in_progress`) and re-verify its acceptance criterion on device | ⏳ Pending | Deliberately not done by a verification-only session (DECISIONS.md DEC-014) |
+| D2 | P2 | Give the guest role-gate visible feedback on `MainScreen` (`authError` is set by `toggleUserRoleMode()` but only rendered inside `AuthModal`/onboarding, which are closed; no `SnackbarHost` anywhere) | ⏳ Pending | Drawer copy invites the tap that visibly no-ops |
+| DEV-VERIFY-04 | P1 | Authenticated device flows (worker dashboard, chat, quotes, escrow, REG-002 guarantor end-to-end, ADMIN-005 callables) | ⏳ Pending | Needs a signed-in test account plus `firebase deploy` of rules/functions |
+
+---
+
 ## Summary
 
 | Status | Count |
@@ -292,4 +309,5 @@ Full finding text (A1–A8, B1–B9, G1–G7, D1–D11, N1–N4, P1–P2, M1–M
 ---
 
 _This file is synchronized with `prd.json`. Always update both when story status changes._
-_Last synchronized: 2026-09-26T12:00:00+03:00_
+_Last synchronized: 2026-09-29T18:50:00+03:00 — story counts unchanged; a real-device test section
+was added above (evidence: `_device_test/DEVICE_TEST_REPORT.md`)_
