@@ -43,6 +43,19 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <!--
+            D1 fix (MAP-001): Google Maps API key injected via Secrets Gradle Plugin.
+            MAPS_API_KEY is read from .env at build time and passed through
+            manifestPlaceholders in app/build.gradle.kts.
+            An empty or missing key will NOT crash the app — InteractiveMapView
+            detects the absent key and renders a fallback card instead.
+            To enable real map tiles: add MAPS_API_KEY=<your_key> to .env.
+            Never hardcode a real key here — use the .env mechanism.
+        -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${MAPS_API_KEY}" />
     </application>
 
 </manifest>

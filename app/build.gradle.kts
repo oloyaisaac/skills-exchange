@@ -21,6 +21,11 @@ android {
     versionName = "1.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+    // D1 fix: inject MAPS_API_KEY from .env (via Secrets Gradle Plugin) at build time.
+    // An empty/missing key results in the map fallback UI, NOT a crash.
+    // To enable Maps: add MAPS_API_KEY=<your_key> to .env (never commit a real key).
+    manifestPlaceholders["MAPS_API_KEY"] = "DEFAULT_MAPS_API_KEY"
   }
 
   signingConfigs {

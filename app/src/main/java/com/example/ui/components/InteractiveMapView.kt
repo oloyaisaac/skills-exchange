@@ -2,11 +2,11 @@ package com.example.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -17,17 +17,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
 import com.example.data.db.ServiceProviderEntity
 import com.example.ui.theme.*
 import com.example.util.CurrencyRegion
-import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
@@ -36,11 +33,23 @@ import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 
 /**
- * MAP-001 hardening (2026-09-30): a missing Maps API key must never kill the
- * process. When the key is absent or Play Services are unavailable the
- * composable renders an explanatory fallback card instead of creating a
- * MapView; MapView creation itself is guarded so an [IllegalStateException]
- * ("API key not found") degrades to the same fallback.
+ * D1 fix / MAP-001 hardening (2026-09-30):
+ *
+ * A missing or empty Maps API key must NEVER kill the process.
+ *
+ * Strategy:
+ *  1. Before creating any MapView, check whether a non-blank, non-placeholder
+ *     key is present in the application's manifest metadata.
+ *  2. If absent → render [MapUnavailableFallback] immediately; no MapView is
+ *     created, so the SDK never throws [IllegalStateException] "API key not found".
+ *  3. If present → create the MapView normally, but also wrap map.onCreate()
+ *     in a try/catch as defense-in-depth (e.g. if Play Services are missing).
+ *     Any exception sets mapsInitError = true, which also shows the fallback.
+ *
+ * The key is injected at build time by the Secrets Gradle Plugin:
+ *   .env  →  manifestPlaceholders["MAPS_API_KEY"]  →  AndroidManifest.xml
+ * See app/build.gradle.kts and AndroidManifest.xml for the wiring.
+ * Never hardcode a real key into this file.
  */
 private fun isMapsApiKeyPresent(context: android.content.Context): Boolean {
     return try {
@@ -49,9 +58,54 @@ private fun isMapsApiKeyPresent(context: android.content.Context): Boolean {
             android.content.pm.PackageManager.GET_META_DATA
         )
         val key = appInfo.metaData?.getString("com.google.android.geo.API_KEY")
-        !key.isNullOrBlank() && !key.startsWith("\${")
+        // Treat blank, null, un-substituted placeholder, or default placeholder as absent.
+        !key.isNullOrBlank() &&
+            !key.startsWith("\${") &&
+            key != "DEFAULT_MAPS_API_KEY" &&
+            key != "MY_MAPS_API_KEY" &&
+            key != "YOUR_KEY_HERE"
     } catch (_: Exception) {
         false
+    }
+}
+
+/** Shown when Maps SDK is unavailable (no API key, Play Services absent, init error). */
+@Composable
+private fun MapUnavailableFallback(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color(0xFFEBF1F5))
+            .border(1.dp, Slate300),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(32.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.LocationOff,
+                contentDescription = "Map unavailable",
+                tint = Slate400,
+                modifier = Modifier.size(48.dp)
+            )
+            Text(
+                text = "Map view unavailable",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp,
+                color = Slate700,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "A Google Maps API key has not been configured.\n" +
+                       "Add MAPS_API_KEY to your .env file to enable the map.",
+                fontSize = 12.sp,
+                color = Slate500,
+                textAlign = TextAlign.Center,
+                lineHeight = 18.sp
+            )
+        }
     }
 }
 
@@ -64,6 +118,22 @@ fun InteractiveMapView(
     activeRegion: CurrencyRegion = CurrencyRegion.currentRegion,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+
+    // --- D1 fix: gate on key presence BEFORE touching MapView ---
+    val keyPresent = remember(context) { isMapsApiKeyPresent(context) }
+
+    // Track whether MapView.onCreate() threw despite the key appearing present
+    // (e.g. Play Services absent, emulator without Maps, etc.)
+    var mapsInitError by remember { mutableStateOf(false) }
+
+    // When neither a key nor a working SDK is available, show the fallback immediately.
+    if (!keyPresent || mapsInitError) {
+        MapUnavailableFallback(modifier = modifier)
+        return
+    }
+
+    // --- Key is present: proceed with MapView lifecycle ---
     var googleMapInstance: GoogleMap? by remember { mutableStateOf(null) }
     var markers by remember { mutableStateOf<List<Marker>>(emptyList()) }
     var mapViewReference by remember { mutableStateOf<MapView?>(null) }
@@ -117,19 +187,32 @@ fun InteractiveMapView(
             .border(1.dp, Slate300)
     ) {
         AndroidView(
-            factory = { context ->
-                MapView(context).also { map ->
+            factory = { ctx ->
+                MapView(ctx).also { map ->
                     mapViewReference = map
-                    map.onCreate(null)
-                    map.getMapAsync { googleMap ->
-                        googleMapInstance = googleMap
-
-                        googleMap.uiSettings.isZoomControlsEnabled = true
-                        googleMap.uiSettings.isMyLocationButtonEnabled = true
-                        googleMap.uiSettings.isMapToolbarEnabled = true
-
-                        val userLocation = LatLng(0.0, 0.0)
-                        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 12f))
+                    // Defense-in-depth: catch any SDK exception so an unexpected
+                    // initialization failure degrades to the fallback card instead
+                    // of crashing the process.
+                    try {
+                        map.onCreate(null)
+                        map.getMapAsync { googleMap ->
+                            googleMapInstance = googleMap
+                            googleMap.uiSettings.isZoomControlsEnabled = true
+                            googleMap.uiSettings.isMyLocationButtonEnabled = true
+                            googleMap.uiSettings.isMapToolbarEnabled = true
+                            val userLocation = LatLng(0.0, 0.0)
+                            googleMap.moveCamera(
+                                CameraUpdateFactory.newLatLngZoom(userLocation, 12f)
+                            )
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e(
+                            "InteractiveMapView",
+                            "Maps SDK init failed — showing fallback. " +
+                            "Verify MAPS_API_KEY is set in .env and billing is enabled.",
+                            e
+                        )
+                        mapsInitError = true
                     }
                 }
             },
