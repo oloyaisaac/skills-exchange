@@ -1,7 +1,7 @@
 # TASKS.md — Skills Exchange Human-Readable Task Status
 
 Synchronized with `prd.json`. This is the human-readable view of the development backlog.
-Last synchronized: 2026-09-27T04:30:00+03:00 — REG-002 (Worker Registration Guarantor Verification) is now **✅ Completed**: compiled, unit-tested (57 tests, 0 failures) and packaged into `app-debug.apk` on 2026-09-27. 86 completed / 0 in progress / 6 pending. Builds need no environment setup — `gradle.properties` pins `org.gradle.java.home` to an existing JDK (see AGENTS.md §9); the 2026-09-26 "no JDK" blocker recorded on 2026-09-26 was false. **Update 2026-09-29 (post-PRD gap fix, not a PRD story — counts unchanged):** the missing *admin* guarantor review path (gap G2 — `getGuarantorSubmission` + `reviewGuarantorSubmission` callables, security core `functions/src/guarantorReview.ts`, 32 `node --test` tests) is implemented and verified in isolation — real `tsc` (`npm run build`) exit 0 and 32/32 tests pass. It is **not deployed** and no live Firebase round-trip ran. Gaps **G1, G3, G4, G5, G6, G7 and G12 remain open**; `prd.json` was not modified.
+Last synchronized: 2026-09-30T15:50:00+03:00 — Defect D1 (MAP-001: InteractiveMapView crash on absent Maps API key) **✅ Resolved & Verified**: guarded key presence, fallback UI on absent/placeholder key, try/catch around MapView initialization, safe DEFAULT_MAPS_API_KEY placeholder wiring in .env / manifestPlaceholders; 75/75 unit tests passed, assembleDebug passed.
 
 Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Failed
 
@@ -129,7 +129,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | ID | Priority | Title | Status | Notes |
 |---|---|---|---|---|
-| MAP-001 | P1 | Integrate Google Maps SDK for Nearby Worker View | ✅ Completed | Google Maps MapView composable, play-services-maps dep |
+| MAP-001 | P1 | Integrate Google Maps SDK for Nearby Worker View | ✅ Completed | Google Maps MapView composable, play-services-maps dep; D1 crash resolved with fallback card & safe key placeholder |
 | AI-001 | P0 | Repair Gemini Audio Transcription & Model Identifier (gemini-2.0-flash) | ✅ Completed | Fixed model URL & MPEG_4/AAC format |
 | AI-002 | P2 | Repair Gemini Maps Grounding Model Identifier & Tools Payload | ✅ Completed | Fixed model URL to gemini-2.0-flash |
 

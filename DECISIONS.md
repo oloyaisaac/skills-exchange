@@ -607,3 +607,29 @@ MAP-003 depends on). MAP-001 (completed, but D1 device defect means its acceptan
 not been satisfied on hardware — DECISIONS.md DEC-014).
 
 ---
+
+### [2026-09-30] DEC-021 D1 Defect Resolution — InteractiveMapView Crash & Safe Key Placeholder Wiring
+
+**Context**: Real-device testing on Samsung SM-A025F (Android 12) revealed critical defect D1:
+tapping the Map View tab crashed the app with `IllegalStateException: API key not found` at
+`InteractiveMapView.kt:98`. Root cause: `AndroidManifest.xml` lacked any `<meta-data>` entry for
+`com.google.android.geo.API_KEY`, while `MapView(ctx).onCreate(null)` was called unconditionally.
+Furthermore, secrets-gradle-plugin 2.0.1 generates invalid Java in `BuildConfig.java` (`String MAPS_API_KEY = ;`)
+if the key is an empty string in `.env`.
+
+**Decision**:
+1. Follow the established `GEMINI_API_KEY=MY_GEMINI_API_KEY` convention: configure `MAPS_API_KEY=DEFAULT_MAPS_API_KEY`
+   in `.env.example`, `.env`, and `manifestPlaceholders["MAPS_API_KEY"] = "DEFAULT_MAPS_API_KEY"` in `app/build.gradle.kts`.
+2. Add `<meta-data android:name="com.google.android.geo.API_KEY" android:value="${MAPS_API_KEY}" />` to `AndroidManifest.xml`.
+3. In `InteractiveMapView.kt`, gate `MapView` creation on `isMapsApiKeyPresent(context)`. The guard checks that the key
+   is not null/blank, does not start with `${`, and does not equal placeholders (`DEFAULT_MAPS_API_KEY`, `MY_MAPS_API_KEY`,
+   `YOUR_KEY_HERE`). If absent or default placeholder, render `MapUnavailableFallback` immediately without touching `MapView`.
+4. Wrap `map.onCreate(null)` in `try/catch` defense-in-depth so any SDK initialization error (e.g. missing Google Play Services)
+   sets `mapsInitError = true` and degrades cleanly to the fallback UI instead of crashing the process.
+
+**Verification**:
+- `compileDebugJavaWithJavac`: PASSED cleanly.
+- `testDebugUnitTest`: PASSED 75/75 tests across 9 suites (0 failures, 0 errors).
+- `assembleDebug`: PASSED, outputting debug APK (35,259,265 bytes).
+
+---

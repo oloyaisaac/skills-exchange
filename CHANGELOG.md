@@ -2,6 +2,19 @@
 
 All meaningful development changes are recorded here in reverse chronological order.
 
+### [2026-09-30] [MAP-001 / D1] [BUGFIX+VERIFY] InteractiveMapView Crash Fixed & Safe Maps Key Wiring Implemented
+
+- **Defect D1 Resolved**: Physical device crash (`IllegalStateException: API key not found` at `InteractiveMapView.kt:98`) fixed.
+- **Root Cause & Solution**:
+  1. `InteractiveMapView.kt` now calls `isMapsApiKeyPresent(context)` before creating `MapView`. If the key is null, empty, un-substituted (`${...}`), or matching placeholder tokens (`DEFAULT_MAPS_API_KEY`, `MY_MAPS_API_KEY`, `YOUR_KEY_HERE`), the composable renders `MapUnavailableFallback` immediately without touching `MapView`.
+  2. Wrapped `map.onCreate(null)` in `try/catch` as defense-in-depth against Play Services absence or runtime SDK initialization exceptions.
+  3. Configured `.env.example`, `.env`, and `app/build.gradle.kts` (`manifestPlaceholders["MAPS_API_KEY"] = "DEFAULT_MAPS_API_KEY"`) using the `DEFAULT_MAPS_API_KEY` token (aligned with `GEMINI_API_KEY=MY_GEMINI_API_KEY`), preventing secrets-gradle-plugin 2.0.1 from generating invalid Java syntax in `BuildConfig.java`.
+  4. Injected `<meta-data android:name="com.google.android.geo.API_KEY" android:value="${MAPS_API_KEY}" />` into `app/src/main/AndroidManifest.xml`.
+- **Verification**:
+  - `:app:compileDebugJavaWithJavac`: PASSED.
+  - `:app:testDebugUnitTest`: PASSED (75 tests across 9 suites, 0 failures, 0 errors).
+  - `:app:assembleDebug`: PASSED in 7m 59s (`app-debug.apk` 35,259,265 bytes).
+
 ### [2026-09-30] [MAP-003] [DOCS] Google Maps Fallback Requirement Added as Future Pending Story
 
 - **Scope:** Documentation only. No source code was changed. No Firebase configuration was changed. No Google Maps dependency or API key was added. No implementation was performed.
