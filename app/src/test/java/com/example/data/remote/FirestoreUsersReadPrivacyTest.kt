@@ -19,7 +19,7 @@ import org.junit.runners.JUnit4
  * behaviour end-to-end, run:
  *
  * ```
- * firebase emulators:exec --only firestore "node --test functions/test/*.mjs"
+ * firebase emulators:exec --only firestore "node --test functions/test/"
  * ```
  *
  * (or any emulator-backed rules test) with a collection of `users/{uid}` documents and confirm
