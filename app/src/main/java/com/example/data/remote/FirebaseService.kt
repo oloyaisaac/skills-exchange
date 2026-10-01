@@ -12,10 +12,12 @@ import com.example.util.GuarantorValidators
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseException
 import com.google.firebase.FirebaseNetworkException
+// C2-1: FirebaseTooManyRequestsException lives in firebase-common's `com.google.firebase` package
+// (verified in firebase-common-22.1.0.aar), not in `com.google.firebase.auth`.
+import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
-import com.google.firebase.auth.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
