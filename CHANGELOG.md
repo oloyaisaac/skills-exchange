@@ -2,6 +2,26 @@
 
 All meaningful development changes are recorded here in reverse chronological order.
 
+### [2026-10-04] [C2-2 Fix #1] [SECURITY] UID-Keyed Current-User Resolution — Implemented, Test Fixture Corrected, VERIFIED
+
+- **Scope:** Fix #1 of the C2-2 audit only — make the authenticated Firebase UID the authoritative key for resolving the current Room `UserProfileEntity`. The rest of the C2-2 audit is NOT addressed here, and `C2` in `TASKS.md` / `prd.json` remains ⏳ **Pending Audit Fix** — this story is **not** marked complete.
+- **Implementation (committed earlier in `db694a2` "Add UID-keyed DAO lookup"):**
+  - `data/db/Daos.kt` — new `UserProfileDao.getCurrentUserById(uid): Flow<UserProfileEntity?>` = `SELECT * FROM user_profiles WHERE id = :uid LIMIT 1`. Exact-id only: no timestamp ordering, no `ORDER BY`, no fallback row.
+  - `data/repository/SkillsExchangeRepository.kt` — new `getCurrentUserByUid(firebaseUid: String?)`. Blank/whitespace UID or the legacy id `user_default_me` short-circuits to `flowOf(null)`; otherwise delegates to `getCurrentUserById`. The legacy newest-row `currentUser` flow is deliberately retained for existing display consumers.
+  - `ui/viewmodel/SkillsExchangeViewModel.kt` — new `currentUserByUid: StateFlow<UserProfileEntity?>` = `firebaseUser.flatMapLatest { repository.getCurrentUserByUid(it?.uid) }.stateIn(viewModelScope, WhileSubscribed(5000), null)`. Signed-out ⇒ `null` (fail closed).
+- **Test-fixture defect found and fixed (this session).** `user_profiles` declares `indices = [Index(value = ["phoneNumber"], unique = true)]` (`Entities.kt:335`) and inserts use `@Insert(onConflict = REPLACE)` (`Daos.kt:278`). The first regression test seeded two profiles that shared the helper's default `phoneNumber`, so the second insert **replaced** the first and `getCurrentUserById("uid_A")` correctly returned `null` — a false failure caused by the fixture, not by the production query. Fix: `authenticatedWorkerProfile(...)` now takes an explicit `phoneNumber` (plus `fullName` / `updatedAtTimestamp`), every multi-row test uses distinct numbers, and the pre-existing "updating an existing profile" test now keeps the uniquely-indexed phone number constant (a same-account edit in production goes through targeted `UPDATE` queries, never `REPLACE` on a new number).
+- **Tests (executed, evidence captured):**
+  - `app/src/test/java/com/example/data/UserProfilePersistenceTest.kt` — 10 tests, incl. 3 new UID-keyed regressions: the UID row is returned even when another row is newer; `null` when the UID has no row; the demo placeholder is never returned.
+  - Same file, second class `CurrentUserByUidRepositoryTest` — 3 new repository-boundary tests pinning the fail-closed rules: missing UID ⇒ `null`; `null` / `""` / `"   "` / `user_default_me` ⇒ `null` (never the newest row).
+  - `:app:testDebugUnitTest --tests com.example.data.UserProfilePersistenceTest --tests com.example.data.CurrentUserByUidRepositoryTest` → **BUILD SUCCESSFUL**; `TEST-com.example.data.UserProfilePersistenceTest.xml` = 10 tests / 0 failures / 0 errors / 0 skipped; `TEST-com.example.data.CurrentUserByUidRepositoryTest.xml` = 3 / 0 / 0 / 0.
+  - Full suite `:app:testDebugUnitTest` → **BUILD SUCCESSFUL**; 15 suites / 119 tests / 0 failures / 0 errors / 0 skipped (no regressions).
+  - `:app:compileDebugKotlin` → **BUILD SUCCESSFUL** (KSP generated `UserProfileDao_Impl.getCurrentUserById` with `WHERE id = ? LIMIT 1` — confirmed at `app/build/generated/ksp/debug/.../UserProfileDao_Impl.kt:451`).
+  - `:app:assembleDebug` → **BUILD SUCCESSFUL** (Room schema/KSP validation, dexing and packaging all pass).
+  - `git --no-pager diff --check` → clean. Diff scope this session: **only** `UserProfilePersistenceTest.kt` (the three production files landed in the earlier `db694a2` commit); no `prd.json`, `TASKS.md`, `firestore.rules` or C2-1 file was modified.
+- **Security behaviour proven:** with Room holding UID-A (older) and UID-B (newest), the legacy `getCurrentUser()` returns **UID-B** while `getCurrentUserById("uid_A")` and `repository.getCurrentUserByUid("uid_A")` both return **UID-A** — the authenticated identity. No UID / blank UID / `user_default_me` never yields a substitute identity.
+- **Still outstanding (C2-2 F2–F7, NOT this session's scope):** the legacy newest-row `getCurrentUser()` and its consumers still exist (no F7 call-site sweep yet), `currentUserByUid` has no UI consumer yet, `getUserProfileByPhone` remains device-local and non-authoritative, and the seeded `user_default_me` row is still present in Room. No device/emulator run was possible (no adb device attached).
+
+
 ### [2026-09-30] [C2-1] [SECURITY] Phone Authentication Identity Boundary — Implemented, ⚠️ NOT VERIFIED
 
 - **Defect (reported by the C1/C2/C3 audit):** `FirebaseService.sendPhoneVerificationCode` fabricated a local `"<timestamp>_<phoneHash>"` "verification id" and `verifyPhoneCode` accepted **any** six-digit code before calling `signInAnonymously()`; `SkillsExchangeViewModel.loginUser` then treated a phone-number match as account recovery and copied `workerKycStatus` / `isWorkerActivated` / `trainingCompleted` onto the newly authenticated UID; `firestore.rules` allowed `allow read: if isAuthenticated();` on `match /users/{userId}`.

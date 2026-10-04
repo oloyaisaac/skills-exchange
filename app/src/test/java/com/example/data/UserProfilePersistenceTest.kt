@@ -5,6 +5,9 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.db.AppDatabase
 import com.example.data.db.UserProfileEntity
+import com.example.data.remote.FirebaseService
+import com.example.data.remote.SmsNotificationService
+import com.example.data.repository.SkillsExchangeRepository
 import com.example.ui.viewmodel.SkillsExchangeViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -48,11 +51,19 @@ class UserProfilePersistenceTest {
         db.close()
     }
 
-    private fun authenticatedWorkerProfile(id: String = "2hda9VzyPbhUdM0mumJPDevWwd52") =
+    // NOTE: `user_profiles` carries a UNIQUE index on `phoneNumber` and inserts use
+    // OnConflictStrategy.REPLACE. Any test that wants two profiles to coexist MUST give them
+    // distinct phone numbers, otherwise the second insert deletes the first row.
+    private fun authenticatedWorkerProfile(
+        id: String = "2hda9VzyPbhUdM0mumJPDevWwd52",
+        phoneNumber: String = "+256 700 000 001",
+        fullName: String = "isaac OLOYA",
+        updatedAtTimestamp: Long = 2_000L
+    ) =
         UserProfileEntity(
             id = id,
-            phoneNumber = "",
-            fullName = "isaac OLOYA",
+            phoneNumber = phoneNumber,
+            fullName = fullName,
             district = "Nakawa",
             initialRole = "WORKER",
             currentActiveMode = "WORKER",
@@ -60,12 +71,12 @@ class UserProfilePersistenceTest {
             isWorkerActivated = false,
             trainingCompleted = false,
             isOnboardingCompleted = true,
-            updatedAtTimestamp = 2_000L
+            updatedAtTimestamp = updatedAtTimestamp
         )
 
-    private fun legacyDemoProfile() = UserProfileEntity(
+    private fun legacyDemoProfile(phoneNumber: String = "+256 772 198 420") = UserProfileEntity(
         id = demoProfileId,
-        phoneNumber = "+256 772 198 420",
+        phoneNumber = phoneNumber,
         fullName = "Sarah Namukasa",
         district = "Sunnyside",
         initialRole = "CLIENT",
@@ -186,16 +197,19 @@ class UserProfilePersistenceTest {
     fun `updating an existing profile keeps a single current user row`() = runBlocking {
         val original = authenticatedWorkerProfile()
         db.userProfileDao().insertUserProfile(original)
-        val updated = original.copy(
-            fullName = "isaac OLOYA",
-            phoneNumber = "+256 700 000 111",
+        // Same account (same id, same phone): only the descriptive data and timestamp move on.
+        // Distinct phone numbers are NOT used here on purpose — `phoneNumber` is uniquely
+        // indexed and inserts use REPLACE, so a changed number would be a *different* account.
+        val updated = authenticatedWorkerProfile(
+            fullName = "isaac OLOYA Revised",
             updatedAtTimestamp = 3_000L
         )
         db.userProfileDao().insertUserProfile(updated)
 
         val stored = db.userProfileDao().getUserProfile(original.id).first()
         assertNotNull(stored)
-        assertEquals("+256 700 000 111", stored?.phoneNumber)
+        assertEquals(original.phoneNumber, stored?.phoneNumber)
+        assertEquals("isaac OLOYA Revised", stored?.fullName)
         assertEquals(original.id, db.userProfileDao().getCurrentUser().first()?.id)
     }
 
@@ -205,11 +219,21 @@ class UserProfilePersistenceTest {
     fun `uid-keyed lookup returns the authenticated uid even when another row is newer`() = runBlocking {
         // Room holds two real profiles; UID-B is the NEWEST row (would win the legacy
         // newest-row query). The authenticated Firebase identity is UID-A.
+        // Distinct phone numbers are required: `phoneNumber` is uniquely indexed and inserts
+        // use REPLACE, so a shared number would delete the sibling row instead.
         db.userProfileDao().insertUserProfile(
-            authenticatedWorkerProfile(id = "uid_A").copy(updatedAtTimestamp = 1_000L)
+            authenticatedWorkerProfile(
+                id = "uid_A",
+                phoneNumber = "+256 700 000 101",
+                updatedAtTimestamp = 1_000L
+            )
         )
         db.userProfileDao().insertUserProfile(
-            authenticatedWorkerProfile(id = "uid_B").copy(updatedAtTimestamp = 9_000L)
+            authenticatedWorkerProfile(
+                id = "uid_B",
+                phoneNumber = "+256 700 000 102",
+                updatedAtTimestamp = 9_000L
+            )
         )
 
         // Sanity: the legacy newest-row query would return the WRONG row here.
@@ -225,7 +249,11 @@ class UserProfilePersistenceTest {
     @Test
     fun `uid-keyed lookup returns null when the authenticated uid has no row`() = runBlocking {
         db.userProfileDao().insertUserProfile(
-            authenticatedWorkerProfile(id = "uid_B").copy(updatedAtTimestamp = 9_000L)
+            authenticatedWorkerProfile(
+                id = "uid_B",
+                phoneNumber = "+256 700 000 102",
+                updatedAtTimestamp = 9_000L
+            )
         )
 
         // Fail closed: no substitution of the newest row, no placeholder, just null.
@@ -236,11 +264,100 @@ class UserProfilePersistenceTest {
     fun `uid-keyed lookup never returns the demo placeholder`() = runBlocking {
         db.userProfileDao().insertUserProfile(legacyDemoProfile())
 
-        // The DAO answers only exact-id matches; production resolution additionally excludes
-        // the demo placeholder (see repository.getCurrentUserByUid), so belt and suspenders
-        // hold even if the DAO row is addressed directly.
+        // The DAO answers only exact-id matches, so addressing a real UID must not hand back the
+        // demo row; production resolution additionally excludes the placeholder by id
+        // (see repository.getCurrentUserByUid), so belt and suspenders hold both ways.
         val resolved = db.userProfileDao()
             .getCurrentUserById("uid_A").first()
         assertNull(resolved)
+
+        // ...and the demo row is not reachable by "resolving whatever is newest" either.
+        assertNull(db.userProfileDao().getCurrentUser().first())
+    }
+}
+
+/**
+ * C2-2 Fix #1 at the repository boundary — the layer that actually gates identity.
+ *
+ * The DAO only answers exact-id queries; `SkillsExchangeRepository.getCurrentUserByUid` adds the
+ * fail-closed rules: no UID, a blank UID, or the legacy demo id must yield `null` rather than
+ * promoting "whatever row happens to be newest" to the authenticated identity.
+ */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [36])
+class CurrentUserByUidRepositoryTest {
+
+    private lateinit var db: AppDatabase
+    private lateinit var repository: SkillsExchangeRepository
+
+    @Before
+    fun setUp() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
+            .allowMainThreadQueries()
+            .build()
+        repository = SkillsExchangeRepository(db, FirebaseService(), SmsNotificationService())
+    }
+
+    @After
+    fun tearDown() {
+        db.close()
+    }
+
+    private suspend fun seedRealAndNewestRows() {
+        db.userProfileDao().insertUserProfile(
+            UserProfileEntity(
+                id = "uid_A",
+                phoneNumber = "+256 700 000 201",
+                fullName = "isaac OLOYA",
+                initialRole = "WORKER",
+                currentActiveMode = "WORKER",
+                workerKycStatus = "UNVERIFIED",
+                isOnboardingCompleted = true,
+                updatedAtTimestamp = 1_000L
+            )
+        )
+        db.userProfileDao().insertUserProfile(
+            UserProfileEntity(
+                id = "uid_B",
+                phoneNumber = "+256 700 000 202",
+                fullName = "Newer Other Account",
+                initialRole = "CLIENT",
+                currentActiveMode = "CLIENT",
+                workerKycStatus = "NOT_APPLIED",
+                isOnboardingCompleted = true,
+                updatedAtTimestamp = 9_000L
+            )
+        )
+    }
+
+    @Test
+    fun `resolves the authenticated uid and ignores the newer row`() = runBlocking {
+        seedRealAndNewestRows()
+
+        val resolved = repository.getCurrentUserByUid("uid_A").first()
+
+        assertNotNull(resolved)
+        assertEquals("uid_A", resolved?.id)
+        assertEquals("isaac OLOYA", resolved?.fullName)
+    }
+
+    @Test
+    fun `fails closed when the uid has no matching row`() = runBlocking {
+        seedRealAndNewestRows()
+
+        assertNull(repository.getCurrentUserByUid("uid_MISSING").first())
+    }
+
+    @Test
+    fun `fails closed for null blank and legacy demo uids`() = runBlocking {
+        seedRealAndNewestRows()
+
+        assertNull(repository.getCurrentUserByUid(null).first())
+        assertNull(repository.getCurrentUserByUid("").first())
+        assertNull(repository.getCurrentUserByUid("   ").first())
+        assertNull(
+            repository.getCurrentUserByUid(SkillsExchangeViewModel.DEMO_PROFILE_ID).first()
+        )
     }
 }
