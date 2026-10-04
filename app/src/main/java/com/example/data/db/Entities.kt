@@ -579,7 +579,17 @@ data class JobStatusAuditEntity(
     val jobId: String,
     val fromStatus: String,
     val toStatus: String,
-    val changedBy: String, // User ID who made the change
+    /**
+     * C2-2 Fix #6 (audit finding **F6**) — the AUTHENTICATED actor who made the change, i.e.
+     * `FirebaseAuth.currentUser.uid`. It is written by the repository, never by a caller, so it is
+     * an attribution of record rather than an assertion.
+     *
+     * The column is NOT NULL and that is deliberate going forward: F6 fails closed rather than
+     * writing `"system"`/`"unknown"`. Historical rows written before this fix may still contain
+     * those legacy values — they are immutable historical data and are never rewritten to the
+     * current user.
+     */
+    val changedBy: String, // authenticated Firebase uid of the actor
     val changedAt: Long = System.currentTimeMillis(),
     val reason: String = ""
 )

@@ -629,19 +629,18 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         viewModelScope.launch {
             val currentJob = repository.jobs.first().find { it.id == jobId }
             val fromStatus = currentJob?.status ?: ""
-            // NOTE (C2-2 F7 sweep): this attribution still reads the newest Room row explicitly via
-            // `repository.currentUser` and is audit finding **F6** (job-status attribution); it is
-            // deliberately NOT migrated here so the F7 change stays scoped. It must be swept before
-            // C2-2 can be closed.
-            val userId = repository.currentUser.first()?.id ?: "system"
-
-            repository.transitionJobStatus(
+            // C2-2 Fix #6 (F6): the actor is NOT resolved here. The repository derives `changedBy`
+            // from FirebaseAuth.currentUser.uid and fails closed when there is none, so this call
+            // site can no longer attribute the change to the newest Room row ("system" is gone).
+            val transitioned = repository.transitionJobStatus(
                 jobId = jobId,
                 fromStatus = fromStatus,
                 toStatus = newStatus,
-                changedBy = userId,
                 reason = reason
             )
+            // F6: nothing was written while unauthenticated — do not emit a status-change
+            // notification for a transition that did not happen.
+            if (!transitioned) return@launch
 
             val assignedProviderId = currentJob?.assignedProviderId
             if (assignedProviderId != null) {

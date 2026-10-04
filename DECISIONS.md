@@ -855,4 +855,64 @@ in `GuarantorVerificationPersistenceTest`. Full suite 19 suites / 148 tests / 0 
 device attached) and the rules were **not deployed**.
 
 ---
+
+## D-2026-10-04-2 — Job-status `changedBy` is derived in the repository, not supplied by the caller
+
+**Decision** (C2-2 Fix #6, audit finding **F6**):
+
+- `SkillsExchangeRepository.transitionJobStatus(jobId, fromStatus, toStatus, reason)` **no longer
+  accepts a `changedBy` argument**. It resolves the actor itself via
+  `resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)` and writes that uid to
+  `JobStatusAuditEntity.changedBy`.
+- With no authoritative uid it **returns `false` before any write**: neither the job status update
+  nor the audit insert happens. The identity check precedes the `JobStatus.isValidTransition` check.
+- `SkillsExchangeViewModel.updateJobStatus()` no longer reads the legacy newest-Room-row `currentUser`
+  flow, has no `"system"` fallback, and returns early on failure so no `JOB_STATUS_CHANGE`
+  notification is emitted for a transition that did not occur.
+- **No Room migration.** `changedBy` already existed as a non-null `String`; only its source and
+  meaning changed. `AppDatabase` stays at v21.
+- **No Firestore change.** The audit trail is Room-only (`job_status_audit`); a codebase-wide sweep
+  confirms `changedBy` has no serialization path.
+
+**Rationale**:
+- The defect was an *identity* defect, not a display defect: the actor came from
+  `repository.currentUser.first()?.id ?: "system"`, so on a device that had held another account the
+  change was attributed to the wrong person, and with no profile it was attributed to a fabricated
+  `"system"`.
+- Making the actor a **caller-supplied parameter** was the deeper problem — any call site could
+  assert an actor of its choosing. Deriving it inside the repository means the value is correct by
+  construction and the compiler prevents re-introduction, matching how F3/F4/F5/F7 were fixed.
+- **Failing closed beats recording a guess.** A missing audit entry is recoverable; a wrong or
+  fabricated one silently corrupts an accountability trail.
+- **Historical rows are not rewritten.** Legacy `"system"` / `"unknown"` values are data as recorded;
+  inventing a replacement actor would itself be fabrication.
+
+**Scope boundary — deliberately not fixed here**:
+- `JobStatus.isValidTransition()` remains the **only** gate on a status transition. There is **no
+  per-role or ownership authorization** determining who may move a job to which state, so any
+  signed-in user can move any job along any legal edge. This is a **separate finding**, identified
+  and reported, and intentionally left unfixed — F6 makes the recorded actor correct and weakens no
+  existing check. It remains open and should be its own fix.
+- This decision does not close `C2`; the F3 remainder also remains open, and `prd.json` was not
+  modified.
+
+**Known limitation recorded rather than papered over**: `resolveAuthoritativeUid` rejects literal
+synthetic sentinels, `user_default_me`, and whitespace/bracket-bearing presentation text, but it
+**cannot** reject a bare single alphanumeric token such as a district name — Firebase UIDs are opaque
+alphanumeric strings, so shape alone cannot distinguish one from a real UID, and blocklisting
+district names would be guesswork. A test asserting otherwise was corrected, not the production code.
+
+**Verification**: `JobStatusAttributionF6SecurityTest` (7 cases) — including the uid_A / uid_B
+newer-row trap, fail-closed with no profile row, fail-closed on invalid uid, and untouched legacy
+rows; full suite **20 suites / 155 tests / 0 failures / 0 errors / 0 skipped**;
+`:app:compileDebugKotlin` BUILD SUCCESSFUL; `git --no-pager diff --check` clean. No device run was
+possible (no adb device attached).
+
+**Environment caveat for future sessions**: `gradle.properties` pins `org.gradle.jvmargs=-Xmx4g`,
+but this machine has only **3.88 GB total RAM**, so the daemon crashes with a native
+`OutOfMemoryError` before running. Use `-Dorg.gradle.jvmargs=-Xmx1600m --max-workers=1
+-Dorg.gradle.parallel=false`, keep `TMP`/`TEMP` on D:, and in PowerShell place `-D…` arguments after
+the `--%` stop-parsing token or they are mangled into a bogus Gradle task name.
+
+---
 ---

@@ -25,13 +25,12 @@ class SkillsExchangeRepository(
      *
      * After the F7 sweep the SOS notification/alert paths, the worker authorization gate,
      * notifications, ratings, disputes, guarantors, training, profile writes and account deletion
-     * all resolve the authenticated user through the UID-keyed path. The only remaining production
-     * consumer of this flow is the job-status `changedBy` attribution in the ViewModel's
-     * `updateJobStatus` (audit finding **F6**) — deliberately not migrated by the F7 change and it
-     * must be swept before C2-2 can be closed.
+     * all resolve the authenticated user through the UID-keyed path.
      *
-     * F5 removed the former chat-sender consumer (finding **F5**): [sendChatMessage] now takes its
-     * author from `FirebaseAuth.currentUser.uid` and fails closed without one.
+     * After F6 there are **no** remaining production consumers of this newest-row flow; it survives
+     * only as a documented legacy helper. Job authorship (F4) uses `JobPostEntity.postedByUid`, chat
+     * senders (F5) and job-status attribution (F6) are all resolved from
+     * `FirebaseAuth.currentUser.uid`.
      */
     val currentUser: Flow<UserProfileEntity?> = db.userProfileDao().getCurrentUser()
     val currentTraining: Flow<WorkerTrainingEntity?> = db.workerTrainingDao().getCurrentUserTraining()
@@ -1738,7 +1737,28 @@ class SkillsExchangeRepository(
         return JobStatus.isValidTransition(fromStatus, toStatus)
     }
 
-    suspend fun transitionJobStatus(jobId: String, fromStatus: String, toStatus: String, changedBy: String, reason: String = ""): Boolean {
+    /**
+     * C2-2 Fix #6 (audit finding **F6**): job-status attribution.
+     *
+     * `changedBy` is resolved HERE, at the data boundary, from `FirebaseAuth.currentUser.uid`
+     * (validated by [resolveAuthoritativeUid]) — it is no longer a caller-supplied parameter, so no
+     * caller can assert an actor of its choosing, and the legacy newest-Room-row `currentUser`
+     * flow is not consulted at all.
+     *
+     * With no authoritative uid the whole transition FAILS CLOSED: the job status is not updated
+     * and no audit entry is written. A status change is never recorded against `"system"`,
+     * `"unknown"` or any other fabricated actor.
+     *
+     * NOTE (scope): the *transition* rules themselves (`JobStatus.isValidTransition`) and the
+     * absence of a per-role authorization check on who may move a job to which state are NOT
+     * addressed here — that is a separate finding. This change only makes the recorded actor
+     * correct, and it does not weaken any existing check.
+     */
+    suspend fun transitionJobStatus(jobId: String, fromStatus: String, toStatus: String, reason: String = ""): Boolean {
+        // F6: the ONLY acceptable actor identity. Never the newest Room row, never a display
+        // name/phone/district, never "unknown"/"system"/a synthetic or anonymous id.
+        val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+            ?: return false
         if (!JobStatus.isValidTransition(fromStatus, toStatus)) {
             return false
         }
@@ -1749,7 +1769,8 @@ class SkillsExchangeRepository(
                 jobId = jobId,
                 fromStatus = fromStatus,
                 toStatus = toStatus,
-                changedBy = changedBy,
+                // F6: authoritative actor (authenticated uid).
+                changedBy = actorUid,
                 reason = reason
             )
         )

@@ -1,7 +1,27 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-10-04 (latest) — **C2-2 Fix #5 (finding F5: chat sender identity) IMPLEMENTED AND VERIFIED at the unit/build level. `C2` remains ⏳ Pending Audit Fix and must NOT be marked complete; finding F6 (job-status `changedBy`) and the F3 remainder are still open. `firestore.rules` was NOT deployed. No device/emulator verification was possible (no adb device attached).**
+2026-10-04 (latest) — **C2-2 Fix #6 (finding F6: job-status `changedBy` attribution) IMPLEMENTED AND VERIFIED at the unit/build level. `C2` remains ⏳ Pending Audit Fix and must NOT be marked complete; the F3 remainder and the "no per-role authorization on a status transition" finding are still open. `prd.json` was NOT modified. No device/emulator verification was possible (no adb device attached).**
+
+**What Fix #6 (F6) changed — production:**
+- `data/db/Entities.kt`: documentation only — `JobStatusAuditEntity.changedBy` is now documented as the authenticated Firebase actor UID. **No schema change and NO Room migration**: the column already existed as a non-null `String`, so `AppDatabase` stays at **v21** and `MIGRATION_20_21` is untouched.
+- `data/repository/SkillsExchangeRepository.kt`: the caller-supplied `changedBy` parameter was **removed** from `transitionJobStatus()`. The actor is now resolved at the data boundary through the **existing** `resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)` (no second identity helper) and written to `changedBy`. With no authoritative uid the method **returns `false` before updating the job status and before inserting an audit row**, so the transition fails closed and nothing is ever recorded against `"system"`, `"unknown"` or any other fabricated actor. The identity check runs **before** the `JobStatus.isValidTransition` check.
+- `ui/viewmodel/SkillsExchangeViewModel.kt`: `updateJobStatus()` no longer uses the legacy newest-row flow or the `"system"` fallback, and returns early so the follow-up `JOB_STATUS_CHANGE` notification is not emitted when the transition failed. No dangling `userId` local remains.
+- **No Firestore change:** the job-status audit trail is Room-only (`job_status_audit`); `firestore.rules` and `functions/src/index.ts` were NOT touched for F6. A `changedBy` sweep across the codebase confirms it exists only in the entity, repository, ViewModel and tests — there is no Firestore serialization path.
+- **Legacy `currentUser` flow:** with F5 and F6 both done, the legacy newest-Room-row `currentUser` flow now has **zero production consumers** — it survives only as documented legacy plus test references.
+
+**Tests:** new `app/src/test/java/com/example/data/JobStatusAttributionF6SecurityTest.kt` (Robolectric, 7 cases).
+
+**Verification (executed):** focused `JobStatusAttributionF6SecurityTest` **7/0/0/0**; full suite `:app:testDebugUnitTest` → **20 suites / 155 tests / 0 failures / 0 errors / 0 skipped** (baseline 19/148, so +1 suite / +7 tests, no regressions); `:app:compileDebugKotlin` BUILD SUCCESSFUL as part of the test run; `git --no-pager diff --check` clean. No APK build, no device run.
+
+**Environment note (cost real time this session — read before running Gradle here):** the first focused run died with a JVM `OutOfMemoryError: Native memory allocation (malloc) failed`. The cause is **not** the code: `gradle.properties` sets `org.gradle.jvmargs=-Xmx4g`, but this machine has only **3.88 GB total RAM** with ~1 GB held by the IDE, so the daemon cannot start. Working invocation: `-Dorg.gradle.jvmargs=-Xmx1600m --max-workers=1 -Dorg.gradle.parallel=false` plus `TMP`/`TEMP` on D:. In PowerShell, `-D…` args to `gradlew.bat` must be passed after the `--%` stop-parsing token or they get mangled into a bogus task name. Several older `hs_err_pid*.log` crash logs in the repo are from this same chronic condition and predate F6.
+
+**Remaining F6 / C2-2 concerns (NOT fixed, deliberately):**
+- **No per-role authorization on status transitions.** `JobStatus.isValidTransition()` is still the *only* gate — any signed-in user can move any job to any legal next state regardless of role or ownership. This is a **separate finding**, identified and reported, and intentionally left unfixed; F6 only made the recorded actor correct and weakens no existing check.
+- Historical audit rows are **never rewritten**: legacy `"system"` / `"unknown"` values remain as recorded, because guessing a replacement actor would be fabrication.
+- F4/F5 Firestore rules and the F4 Cloud Function change remain **undeployed** (still true from prior sessions).
+
+Previous update 2026-10-04 — **C2-2 Fix #5 (finding F5: chat sender identity) IMPLEMENTED AND VERIFIED at the unit/build level**; its detail block is preserved below.
 
 **What Fix #5 (F5) changed — production:**
 - **Audit finding beyond the reported one:** `ChatMessageEntity` had **no `senderId` column at all** — Room persisted only `senderName` (display) and `isFromUser` (a client-supplied boolean). Authorship was therefore not stored locally and could not be enforced; the Firestore read path additionally **discarded** the `senderId` it received. Both were fixed.
@@ -11,7 +31,7 @@
 - `data/repository/SkillsExchangeRepository.kt`: `sendChatMessage()` returns `Boolean`, resolves the author via the **existing** `resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)` (no second identity helper; the Room profile is consulted for nothing) and **returns false, persisting and sending nothing**, when there is no authoritative uid — the `"unknown"` fallback is deleted. New `isMessageAuthoredByCurrentUser(message)` (uid-to-uid, false when unauthenticated or `senderId` is null). `getRealtimeChatMessages` now preserves `senderId` through deserialization.
 - `ui/viewmodel/SkillsExchangeViewModel.kt`: comment only — the repository now fails closed.
 - `firestore.rules` (minimal, F5-only): the `jobs/{jobId}/messages` subcollection previously had **no rule at all** (Firestore denies by default). Added `create` requiring `senderId == request.auth.uid`, `update` requiring the original author AND an unchanged `senderId`, `delete` denied. **NOT DEPLOYED.**
-- **Consequence worth noting:** with the F5 change, `repository.currentUser` (the legacy newest-row flow) now has exactly **one** remaining production consumer — the ViewModel's `updateJobStatus` `changedBy` (finding **F6**).
+- ~~**Consequence worth noting:** with the F5 change, `repository.currentUser` (the legacy newest-row flow) now has exactly **one** remaining production consumer — the ViewModel's `updateJobStatus` `changedBy` (finding **F6**).~~ **(SUPERSEDED 2026-10-04 by Fix #6/F6: that last consumer is now gone, so the legacy newest-row `currentUser` flow has ZERO production consumers.)**
 
 **Tests:** new `app/src/test/java/com/example/data/ChatSenderIdentityF5SecurityTest.kt` (Robolectric, 8 cases A–F). `GuarantorVerificationPersistenceTest` schema assertions moved to v21 — each migration's own start/end versions stay pinned and all MIGRATION_18_19 checks remain intact — plus a new `migration twenty to twenty one is additive and registered` case.
 
