@@ -9,6 +9,7 @@ import com.example.data.remote.FirebaseService
 import com.example.data.remote.SmsNotificationService
 import com.example.data.repository.SkillsExchangeRepository
 import com.example.ui.viewmodel.SkillsExchangeViewModel
+import com.example.ui.viewmodel.SkillsExchangeViewModel.RestoreIdentity
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -359,5 +360,58 @@ class CurrentUserByUidRepositoryTest {
         assertNull(
             repository.getCurrentUserByUid(SkillsExchangeViewModel.DEMO_PROFILE_ID).first()
         )
+    }
+
+    /**
+     * C2-2 Fix #2 (F2) at the repository boundary: when DataStore still caches the UID of a
+     * previous account, only the Firebase UID may be resolved — never the stale cached one.
+     */
+    @Test
+    fun `stale cached uid never wins over the authenticated firebase uid`() = runBlocking {
+        seedRealAndNewestRows()
+
+        val identity = SkillsExchangeViewModel.decideRestoreIdentity(
+            cachedUid = "uid_A",
+            firebaseUid = "uid_B"
+        )
+        val authenticatedUid = (identity as? RestoreIdentity.Authoritative)?.uid
+
+        assertEquals("uid_B", authenticatedUid)
+        assertFalse((identity as RestoreIdentity.Authoritative).cachedUidTrusted)
+        // The stale account's row is still in Room, addressing it by the authenticated UID
+        // must not return it...
+        assertNotNull(repository.getCurrentUserByUid("uid_A").first())
+        val resolved = repository.getCurrentUserByUid(authenticatedUid).first()
+        assertEquals("uid_B", resolved?.id)
+        assertEquals("Newer Other Account", resolved?.fullName)
+    }
+
+    /**
+     * C2-2 Fix #2 (F2) Test E: a database holding only the seeded placeholder must never hand out
+     * an authenticated identity, whatever UID the restore path asks for.
+     */
+    @Test
+    fun `a database holding only the demo placeholder yields no identity`() = runBlocking {
+        db.userProfileDao().insertUserProfile(
+            UserProfileEntity(
+                id = SkillsExchangeViewModel.DEMO_PROFILE_ID,
+                phoneNumber = "+256 700 000 203",
+                fullName = "Sarah Namukasa",
+                district = "Sunnyside",
+                initialRole = "CLIENT",
+                currentActiveMode = "CLIENT",
+                workerKycStatus = "APPROVED",
+                isWorkerActivated = true,
+                trainingCompleted = true,
+                isOnboardingCompleted = true,
+                updatedAtTimestamp = 9_000L
+            )
+        )
+
+        // Neither a real UID nor the placeholder's own id may resolve to the seeded row...
+        assertNull(repository.getCurrentUserByUid("uid_A").first())
+        assertNull(repository.getCurrentUserByUid(SkillsExchangeViewModel.DEMO_PROFILE_ID).first())
+        // ...and the legacy newest-row query refuses it too, so no restore path can adopt it.
+        assertNull(db.userProfileDao().getCurrentUser().first())
     }
 }

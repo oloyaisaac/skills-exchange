@@ -633,3 +633,58 @@ if the key is an empty string in `.env`.
 - `assembleDebug`: PASSED, outputting debug APK (35,259,265 bytes).
 
 ---
+
+### [2026-10-04] DEC-022 Session Restore Trusts FirebaseAuth Only — the Cached Session Is Never an Identity
+
+**Context**: C2-2 finding F2. `restoreSession()` reconstructed an authenticated session from
+DataStore: after the AUTH-008 expiry and device-id checks it read `SessionManager.getUserId()` and
+then resolved the profile with the legacy newest-row query (`repository.currentUser.first()`).
+The cached UID was therefore an *identity source* rather than a cache. A UID left behind by a
+previous Firebase account could survive a sign-in change and attribute that account's profile,
+phone number and worker approval to the newly signed-in user; with Firebase signed out, stale
+device state still produced a "signed-in" app; and a placeholder (`user_default_me`) or synthetic
+(`"unknown"`) id could be adopted as the session owner.
+
+**Options considered**:
+1. Keep the cached UID as the session identity and merely re-validate the Room row (status quo).
+2. Trust FirebaseAuth when it has a user, but keep restoring the cached session when Firebase has
+   no user (offline-tolerant recovery).
+3. Treat `FirebaseAuth.currentUser.uid` as the only identity; discard the cached session whenever it
+   does not match, and fail closed to signed-out/guest when Firebase has no authenticated user.
+
+**Decision**: Option 3, encoded as two pure companion functions plus a sealed result type so the
+policy is unit-testable without Android dependencies:
+- `decideRestoreIdentity(cachedUid, firebaseUid) : RestoreIdentity` — `None` unless Firebase reports
+  a usable, non-placeholder UID; `Authoritative(uid, cachedUidTrusted)` where `cachedUidTrusted` is
+  true **only** when the cached UID is non-blank, not `user_default_me`, and equal to the Firebase
+  UID.
+- `resolveRestoredProfile(authenticatedUid, row)` — a row is eligible **only** when `row.id ==
+  authenticatedUid`; otherwise `null` (no newest-row, no placeholder, no substitution).
+- `restoreSession()` fails closed (`clearSession()` + signed-out) when no authoritative UID exists;
+  clears the stale cache when the cached UID does not match; resolves the profile by UID
+  (`getCurrentUserByUid` → durable record → fail-closed `resolveAuthenticatedProfile`, reusing
+  cached descriptive fields only when the cached UID matched); and rewrites the DataStore session
+  only when the cached identity was stale.
+- The `init` block's role sync reads the UID-keyed row too, so it cannot undo the restore.
+
+**Rationale**:
+- FirebaseAuth is the only authority that can prove which account owns the device session; device
+  storage is attacker/stale-state reachable and must never mint an identity.
+- Matching cache ⇒ no session rewrite, so a mere relaunch cannot extend the AUTH-008 7-day expiry.
+- Failing closed on "no Firebase user" means a cached session can no longer resurrect a signed-out
+  account; the legitimate offline/room-wiped recovery path (`C1` branch + AUTH-006 durable record)
+  already exists and stays uid-keyed.
+
+**Consequences**:
+- A user who is genuinely offline at launch is signed out (guest/onboarding) until Firebase has a
+  user again — accepted deliberately over silently trusting stale device state.
+- The legacy newest-row `getCurrentUser()` remains for display consumers and is now explicitly
+  **not** a restore fallback; it must be swept from identity call sites under finding F7.
+- C2-2 is *not* complete: F3–F7 (F7 call-site sweep, wiring `currentUserByUid` to the UI,
+  `getUserProfileByPhone` device-local lookup, removing the seeded `user_default_me` row) remain
+  open, and no on-device verification was possible (no adb device attached).
+
+**Verification**: `RestoreSessionIdentitySecurityTest` (5 cases A–E) + 2 repository-boundary cases in
+`CurrentUserByUidRepositoryTest`; full suite 126 tests / 0 failures / 0 errors; `assembleDebug` PASSED.
+
+---

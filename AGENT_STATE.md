@@ -1,7 +1,34 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-09-30T20:10:00+03:00 — **C2-1 (Phone Authentication Identity Security) IMPLEMENTED — ⚠️ NOT VERIFIED. `C2` is deliberately still ⏳ and must not be marked complete.**
+2026-10-04 — **C2-2 Fix #2 (finding F2: session-restore identity cross-check) IMPLEMENTED AND VERIFIED at the unit/build level. `C2` remains ⏳ Pending Audit Fix and must NOT be marked complete; findings F3–F7 are still open. No device/emulator verification was possible (no adb device attached).**
+
+**Current story:** C2-2 audit fixes. **Fix #1** (UID-keyed `getCurrentUserById` / `getCurrentUserByUid` / `currentUserByUid`, commit `db694a2`) is intact and was NOT weakened. **Fix #2 (F2)** is complete and verified.
+
+**What Fix #2 changed — `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt`:**
+- New nested type `sealed class RestoreIdentity { object None; data class Authoritative(uid: String, cachedUidTrusted: Boolean) }` (declared next to `AuthState`; it is **nested**, so tests import `com.example.ui.viewmodel.SkillsExchangeViewModel.RestoreIdentity`).
+- New companion pure functions:
+  - `decideRestoreIdentity(cachedUid, firebaseUid): RestoreIdentity` — the Firebase UID is the ONLY identity; blank/whitespace/`user_default_me` Firebase ids ⇒ `None`; `cachedUidTrusted` is true only when the cached UID is non-blank, not the placeholder and equal to the Firebase UID.
+  - `resolveRestoredProfile(authenticatedUid, row): UserProfileEntity?` — the row is returned only when `row.id == authenticatedUid`, otherwise `null` (no newest-row fallback, no placeholder, no substitution).
+- `restoreSession()` rewrite: cached value renamed `userId` → `cachedUserId`; identity cross-checked against `firebaseService.getCurrentUser()?.uid`; **fail closed** (`clearSession()`, `isAuthenticated = false`, `currentUserPhone = null`, `AuthState.SignedOut`, return) when Firebase has no usable UID; `clearSession()` when the cached identity is stale; profile resolved UID-first (`getCurrentUserByUid` → `fetchUserIdentityFromServer` + `saveUserProfile` → fail-closed `resolveAuthenticatedProfile`), reusing cached descriptive fields only when the cached UID matched; `isAuthenticated` / `currentUserPhone` / `authState` / `userRoleMode` all come from that UID-keyed profile; the DataStore session is rewritten only when the cache was stale (so a matching cache keeps its AUTH-008 7-day expiry).
+- `init` block: post-restore role sync now uses `repository.getCurrentUserByUid(firebaseService.getCurrentUser()?.uid)` instead of `repository.currentUser.first()`, which would have undone the UID-keyed restore.
+
+**Tests added:** `app/src/test/java/com/example/ui/viewmodel/RestoreSessionIdentitySecurityTest.kt` (new, pure JUnit, 5 cases A–E) and 2 repository-boundary cases in `UserProfilePersistenceTest.kt` → `CurrentUserByUidRepositoryTest` (`stale cached uid never wins over the authenticated firebase uid`; `a database holding only the demo placeholder yields no identity`). Distinct phone numbers per seeded profile (UNIQUE `phoneNumber` index; inserts use `REPLACE`).
+
+**Verification (all executed this session):**
+- `:app:compileDebugUnitTestKotlin` → BUILD SUCCESSFUL.
+- Focused run → `RestoreSessionIdentitySecurityTest` 5/0/0/0, `CurrentUserByUidRepositoryTest` 5/0/0/0, `UserProfilePersistenceTest` 10/0/0/0, `PhoneAuthIdentitySecurityTest` 9/0/0/0, `WorkerAuthorizationSecurityTest` 13/0/0/0 (tests/failures/errors/skipped).
+- Full suite `:app:testDebugUnitTest` → BUILD SUCCESSFUL, **16 suites / 126 tests / 0 failures / 0 errors / 0 skipped**.
+- `:app:assembleDebug` → BUILD SUCCESSFUL. `git --no-pager diff --check` → clean.
+- Diff scope: `SkillsExchangeViewModel.kt`, `UserProfilePersistenceTest.kt` (modified), `RestoreSessionIdentitySecurityTest.kt` (new). `prd.json` intentionally untouched (C1–C3 are tracked in `TASKS.md`; `C2` status unchanged).
+
+**Next actions (ordered):**
+1. C2-2 **F7** — sweep remaining legacy newest-row `getCurrentUser()` / `repository.currentUser` identity consumers (the `init`-block and `restoreSession()` call sites are already converted; display-only consumers in UI/ViewModel remain) and confirm each is display-only or converted to `getCurrentUserByUid` / `currentUserByUid`.
+2. C2-2 remaining findings — wire `currentUserByUid` to the UI consumer(s); address the device-local, non-authoritative `getUserProfileByPhone`; remove/neutralise the seeded `user_default_me` row once no path depends on it (F3–F6 as enumerated in the audit).
+3. Then re-run the full suite + `assembleDebug`, and perform the pending **device** verification (main matrix A–F from the C1–C3 audit plus: sign in as account B on a device whose DataStore still caches account A's UID ⇒ B's profile must appear and A must never be adopted; sign out ⇒ no resurrection).
+4. Only then sync `prd.json` / mark `C2` complete.
+
+Previous update 2026-09-30T20:10:00+03:00 — **C2-1 (Phone Authentication Identity Security) IMPLEMENTED — ⚠️ NOT VERIFIED. `C2` is deliberately still ⏳ and must not be marked complete.**
 
 **What was done (source-only; no build, test, deploy or device run happened — see BLOCKER):**
 - `FirebaseService.kt`: the phone-auth placeholder is gone. `sendPhoneVerificationCode` used to return a fabricated `"<timestamp>_<phoneHash>"` id; `verifyPhoneCode` accepted ANY six-digit code and then called `signInAnonymously()`. Both now use real Firebase Phone Auth: `PhoneAuthProvider.verifyPhoneNumber(PhoneAuthOptions)` (Activity-bound, 60s timeout, `suspendCancellableCoroutine` over `onCodeSent` / `onVerificationCompleted` / `onVerificationFailed`) and `PhoneAuthProvider.getCredential(...)` + `auth.signInWithCredential(...)`. Input is normalised to E.164 by the new `toE164PhoneNumber` (default country `+256`); unusable input fails closed.

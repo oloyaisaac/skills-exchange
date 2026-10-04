@@ -236,7 +236,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 | ID | Title | Status |
 |---|---|---|
 | C1 | Existing-user profile persistence | ⏳ Pending Audit Fix |
-| C2 | UID consistency | ⏳ Pending Audit Fix |
+| C2 | UID consistency | ⏳ Pending Audit Fix — Fix #1 (UID-keyed `getCurrentUserById`/`getCurrentUserByUid`/`currentUserByUid`) and Fix #2 (restore cross-checks `FirebaseAuth.currentUser.uid`, discards stale cached identity, fails closed when Firebase has no user, resolves the profile by UID) implemented and unit-verified 2026-10-04: 126 tests / 0 failures / 0 errors; findings F3–F7 still open; no device verification |
 | C3 | Google AuthModal completion path | ⏳ Pending Audit Fix |
 
 ### High

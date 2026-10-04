@@ -168,10 +168,14 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             repository.seedInitialDataIfNeeded()
             // AUTH-002: Restore session from DataStore
             restoreSession()
-            // Sync initial mode from user profile
-            repository.currentUser.first()?.let { profile ->
-                userRoleMode.value = if (profile.currentActiveMode == "WORKER") "Offer Skills" else "Hire a Neighbor"
-            }
+            // C2-2 Fix #2 (F2): sync the initial mode from the AUTHENTICATED identity only —
+            // Firebase UID → exact Room row. Re-deriving it from the newest Room row would undo
+            // the UID-keyed restore performed above.
+            repository.getCurrentUserByUid(firebaseService.getCurrentUser()?.uid).first()
+                ?.let { profile ->
+                    userRoleMode.value =
+                        if (profile.currentActiveMode == "WORKER") "Offer Skills" else "Hire a Neighbor"
+                }
         }
         viewModelScope.launch {
             repository.currentTraining.collect { training ->
@@ -198,7 +202,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             val onboardingDone = sessionManager.getIsOnboardingCompleted()
             if (authenticated) {
                 val phone = sessionManager.getUserPhone()
-                val userId = sessionManager.getUserId()
+                val cachedUserId = sessionManager.getUserId()
                 val sessionTimestamp = sessionManager.getSessionTimestamp()
                 val savedDeviceId = sessionManager.getDeviceId()
                 val currentDeviceId = sessionManager.getDeviceId(appContext)
@@ -224,51 +228,90 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                     return
                 }
 
-                isAuthenticated.value = true
-                currentUserPhone.value = phone
-                authState.value = AuthState.SignedIn
-
-                // AUTH-009: Restore user profile and role mode
-                var userProfile = repository.currentUser.first()
-                // AUTH-002 / ROLE-001: Existing-user restore. If the persisted session is valid but the
-                // Room profile row is missing (cleared or recreated database, legacy demo-id session),
-                // rebuild it from the persisted session so that currentUser becomes available reactively
-                // and the NavigationDrawer shows the real name/initials instead of a guest fallback.
-                if (userProfile == null) {
-                    val sessionUserId = userId?.takeIf { it != DEMO_PROFILE_ID }
-                        ?: firebaseService.getCurrentUser()?.uid
-                    userProfile = sessionUserId?.let { repository.getUserProfile(it).first() }
-                    // AUTH-006: The Room row can be gone while the persisted session is still
-                    // valid (e.g. logout wipe followed by an in-flight restore, or a legacy
-                    // database). Prefer the durable Firestore identity record over a synthetic
-                    // profile so the real name/district are not lost.
-                    if (userProfile == null) {
-                        userProfile = sessionUserId?.let { repository.fetchUserIdentityFromServer(it) }
-                    }
-                    userProfile = userProfile
-                        ?: sessionUserId?.let { restoredId ->
-                            val restoredRole = sessionManager.getUserRole()
-                                ?: if (userRoleMode.value == "Offer Skills") "WORKER" else "CLIENT"
-                            val isWorker = restoredRole == "WORKER"
-                            val restoredProfile = UserProfileEntity(
-                                id = restoredId,
-                                phoneNumber = phone.orEmpty(),
-                                fullName = sessionManager.getUserName().orEmpty(),
-                                district = sessionManager.getUserDistrict().orEmpty(),
-                                initialRole = restoredRole,
-                                currentActiveMode = restoredRole,
-                                // SEC-009: Fail closed: a restored account never unlocks worker features without approved KYC and activation.
-                                workerKycStatus = if (isWorker) "UNVERIFIED" else "NOT_APPLIED",
-                                isWorkerActivated = false,
-                                trainingCompleted = false,
-                                isOnboardingCompleted = true
-                            )
-                            repository.saveUserProfile(restoredProfile)
-                            restoredProfile
-                        }
+                // C2-2 Fix #2 (F2): the cached DataStore identity is NEVER trusted on its own.
+                // FirebaseAuth is the authority: the cached UID must MATCH the signed-in Firebase
+                // UID, and when Firebase has no authenticated user the cached session is discarded
+                // instead of being resurrected from stale device state.
+                val identity = decideRestoreIdentity(
+                    cachedUid = cachedUserId,
+                    firebaseUid = firebaseService.getCurrentUser()?.uid
+                )
+                val authoritativeUid = (identity as? RestoreIdentity.Authoritative)?.uid
+                if (authoritativeUid == null) {
+                    // No trustworthy Firebase identity: fail closed to signed-out/guest. A cached
+                    // session alone is never enough to resurrect an authenticated session, and no
+                    // placeholder, anonymous, "unknown" or synthetic id may stand in for it.
+                    sessionManager.clearSession()
+                    isAuthenticated.value = false
+                    currentUserPhone.value = null
+                    authState.value = AuthState.SignedOut
+                    isOnboardingCompleted.value = onboardingDone
+                    isSessionRestored.value = true
+                    return
                 }
-                userProfile?.let { profile ->
-                    userRoleMode.value = if (profile.currentActiveMode == "WORKER") "Offer Skills" else "Hire a Neighbor"
+                val cachedIdentityTrusted =
+                    (identity as RestoreIdentity.Authoritative).cachedUidTrusted
+                if (!cachedIdentityTrusted) {
+                    // Stale cached UID (missing, blank, placeholder, or a DIFFERENT account than the
+                    // one Firebase now reports): invalidate it before anything can read it, then
+                    // rebuild strictly from the authenticated Firebase UID below.
+                    sessionManager.clearSession()
+                }
+
+                // AUTH-009: Restore user profile and role mode — via the C2-2 Fix #1 UID-keyed
+                // resolution only. The exact Room row whose id equals the authenticated Firebase UID
+                // is the sole candidate; the newest row, a foreign row and the demo placeholder can
+                // never satisfy it, so a missing row fails closed instead of borrowing another
+                // account's identity.
+                val restoredProfile = resolveRestoredProfile(
+                    authenticatedUid = authoritativeUid,
+                    row = repository.getCurrentUserByUid(authoritativeUid).first()
+                )
+                    // AUTH-006: legitimate UID-keyed recovery from the durable identity record.
+                    ?: resolveRestoredProfile(
+                        authenticatedUid = authoritativeUid,
+                        row = repository.fetchUserIdentityFromServer(authoritativeUid)
+                    )?.also { repository.saveUserProfile(it) }
+                    // Nothing exists for THIS uid anywhere: start the identity fail-closed, keyed by
+                    // the Firebase UID. Cached descriptive fields are reused only when they belong to
+                    // this same account (matching cached UID); a stale cache belongs to somebody else
+                    // and is dropped rather than attributed to the new identity.
+                    ?: resolveAuthenticatedProfile(
+                        authenticatedUid = authoritativeUid,
+                        existing = null,
+                        phone = if (cachedIdentityTrusted) phone.orEmpty() else "",
+                        fullName = if (cachedIdentityTrusted) sessionManager.getUserName().orEmpty() else "",
+                        district = if (cachedIdentityTrusted) sessionManager.getUserDistrict().orEmpty() else "",
+                        initialRole = if (cachedIdentityTrusted) {
+                            sessionManager.getUserRole()
+                                ?: if (userRoleMode.value == "Offer Skills") "WORKER" else "CLIENT"
+                        } else "CLIENT"
+                    ).also { repository.saveUserProfile(it) }
+
+                // C2-2 Fix #2 (F2): the restore is only "signed in" with the Firebase UID as the
+                // identity; the values below all come from the UID-keyed profile.
+                isAuthenticated.value = true
+                // The phone exposed to the progressive-auth gates comes from the UID-keyed profile,
+                // never from a cached value that may belong to another account.
+                currentUserPhone.value = restoredProfile.phoneNumber.takeIf { it.isNotBlank() }
+                authState.value = AuthState.SignedIn
+                userRoleMode.value =
+                    if (restoredProfile.currentActiveMode == "WORKER") "Offer Skills" else "Hire a Neighbor"
+
+                if (!cachedIdentityTrusted) {
+                    // The cached identity was stale: rewrite it with the AUTHORITATIVE Firebase UID
+                    // (and the UID-keyed profile) so the old value cannot survive a restore. When the
+                    // cache already matched, the stored session is left untouched — its 7-day
+                    // AUTH-008 expiry is deliberately NOT extended by a mere relaunch.
+                    sessionManager.saveSession(
+                        isAuthenticated = true,
+                        phone = restoredProfile.phoneNumber,
+                        userId = authoritativeUid,
+                        name = restoredProfile.fullName,
+                        district = restoredProfile.district,
+                        deviceId = currentDeviceId,
+                        role = restoredProfile.currentActiveMode
+                    )
                 }
 
                 // Restore FCM token if available.
@@ -1506,6 +1549,24 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         data class Error(val message: String) : AuthState()
     }
 
+    /**
+     * C2-2 Fix #2 (F2): the outcome of cross-checking the cached DataStore session identity
+     * against the authoritative Firebase authenticated user during [restoreSession].
+     *
+     * [None] means no identity may be restored at all (Firebase has no authenticated user, or the
+     * only thing present is a placeholder/pseudo id) — the caller must fail closed to
+     * signed-out/guest rather than resurrect a session from stale device state.
+     *
+     * [Authoritative] carries the ONE identity a restore may use — the Firebase UID.
+     * [cachedUidTrusted] is true only when the cached UID is non-blank, not the demo placeholder,
+     * and equal to the Firebase UID; otherwise the cached identity was stale and must be
+     * discarded before anything reads it.
+     */
+    sealed class RestoreIdentity {
+        object None : RestoreIdentity()
+        data class Authoritative(val uid: String, val cachedUidTrusted: Boolean) : RestoreIdentity()
+    }
+
     sealed class DisputeSubmissionState {
         object Idle : DisputeSubmissionState()
         object Submitting : DisputeSubmissionState()
@@ -1999,6 +2060,52 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         fun resolveSessionOwnerId(verifiedPhoneAuthUid: String?, fallbackFirebaseUid: String?): String? {
             return verifiedPhoneAuthUid?.takeIf { it.isNotBlank() }
                 ?: fallbackFirebaseUid?.takeIf { it.isNotBlank() }
+        }
+
+        /**
+         * C2-2 Fix #2 (F2): decides which identity a session restore is allowed to use.
+         *
+         * The authoritative identity is ALWAYS the Firebase authenticated UID
+         * (`FirebaseAuth.currentUser.uid`). The cached DataStore UID is never an identity on its
+         * own: it is only ever compared against Firebase, and a cached UID that is missing, blank,
+         * the demo placeholder, or a DIFFERENT account is reported as untrusted so the caller
+         * discards it.
+         *
+         * When Firebase has no authenticated user — or Firebase reports only a
+         * placeholder/pseudo id — [RestoreIdentity.None] is returned so the caller fails closed
+         * instead of resurrecting an authenticated session from stale DataStore state. There is
+         * deliberately no branch that promotes a cached UID, the newest Room row, "unknown", or a
+         * synthetic/anonymous id to the authenticated identity.
+         */
+        fun decideRestoreIdentity(cachedUid: String?, firebaseUid: String?): RestoreIdentity {
+            val authoritativeUid = firebaseUid
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() && it != DEMO_PROFILE_ID }
+                ?: return RestoreIdentity.None
+            val cached = cachedUid?.trim()?.takeIf { it.isNotEmpty() && it != DEMO_PROFILE_ID }
+            return RestoreIdentity.Authoritative(
+                uid = authoritativeUid,
+                cachedUidTrusted = cached == authoritativeUid
+            )
+        }
+
+        /**
+         * C2-2 Fix #2 (F2): the ONLY profile a restored session may adopt.
+         *
+         * A row is eligible solely when its id equals the authenticated Firebase UID. A row owned
+         * by somebody else (`id != authenticatedUid`) — including a NEWER row, a row that merely
+         * shares a phone number, or the seeded `user_default_me` placeholder — yields `null`
+         * (fail closed). Callers therefore never fall back to "whatever row is newest".
+         */
+        fun resolveRestoredProfile(
+            authenticatedUid: String?,
+            row: UserProfileEntity?
+        ): UserProfileEntity? {
+            val uid = authenticatedUid
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() && it != DEMO_PROFILE_ID }
+                ?: return null
+            return row?.takeIf { it.id == uid }
         }
     }
 }
