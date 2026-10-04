@@ -1,9 +1,24 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-10-04 — **C2-2 Fix #2 (finding F2: session-restore identity cross-check) IMPLEMENTED AND VERIFIED at the unit/build level. `C2` remains ⏳ Pending Audit Fix and must NOT be marked complete; findings F3–F7 are still open. No device/emulator verification was possible (no adb device attached).**
+2026-10-04 (latest) — **C2-2 Fix #3 (finding F7: legacy newest-row identity-consumer sweep) IMPLEMENTED AND VERIFIED at the unit/build level. `C2` remains ⏳ Pending Audit Fix and must NOT be marked complete; findings F4 (job authorship), F5 (chat sender), F6 (job-status attribution) and the F3 remainder are still open. No device/emulator verification was possible (no adb device attached).**
 
-**Current story:** C2-2 audit fixes. **Fix #1** (UID-keyed `getCurrentUserById` / `getCurrentUserByUid` / `currentUserByUid`, commit `db694a2`) is intact and was NOT weakened. **Fix #2 (F2)** is complete and verified.
+Previous update 2026-10-04 — C2-2 **Fix #2** (finding F2: session-restore identity cross-check) was
+IMPLEMENTED AND VERIFIED at the unit/build level; its detail block is preserved at the bottom of this
+section.
+
+**Current story:** C2-2 audit fixes. **Fix #1** (UID-keyed `getCurrentUserById` / `getCurrentUserByUid` / `currentUserByUid`, commit `db694a2`) and **Fix #2 (F2)** are intact and were NOT weakened. **Fix #3 (F7)** is complete and verified.
+
+**What Fix #3 (F7) changed — production:**
+- `ui/viewmodel/SkillsExchangeViewModel.kt`:
+  - New companion pure rule `resolveAuthoritativeUid(firebaseUid): String?` (trims; blank/whitespace/`user_default_me` ⇒ `null`) plus the public accessor `currentAuthenticatedUid()`. Identity at every security-sensitive call site is now `FirebaseAuth.currentUser.uid` ONLY.
+  - The legacy public `currentUser` StateFlow (newest Room row) was **deleted** — zero production consumers remain, so the compiler now blocks re-introduction.
+  - `currentUserByUid` switched `WhileSubscribed(5000)` → `SharingStarted.Eagerly` so the synchronous `.value` reads in the authorization gates can never observe the `null` initial value.
+  - Migrated to the UID-keyed path: `isWorkerApprovedAndActivated`, `canAccessWorkerFeatures()`, `setUserRoleMode` (the Room mode write), `updateWorkerLocation`, `permanentlyDeleteUserAccountAndData`, `saveBackupContact`, `uploadPendingProfilePhoto`, `uploadQualificationEvidence`, all four guarantor operations (open / save draft / submit / status refresh), `startTraining` / `completeTrainingModule` / `completeTraining`, `submitRecurringProposal`, `submitQuote`, notification + unread-count collections, `submitDispute`, `getUserDisputes`, `reportUser`, `markAllNotificationsRead`, `submitRating`, `logoutUser`'s pre-wipe identity mirror, and `triggerSosAlert`'s GPS fallback.
+  - Deliberately NOT migrated: `updateJobStatus`'s `changedBy` (finding **F6**) — it now reads the newest row *explicitly* via `repository.currentUser.first()?.id ?: "system"` with an inline note, so the sweep could not silently swallow F6.
+- `data/repository/SkillsExchangeRepository.kt`: new private `authenticatedProfileOnce()` (Firebase UID → `getCurrentUserById`) and companion pure helpers `resolveAuthoritativeUid(...)` / `resolveSosContactProfile(firebaseUid, row)`. `triggerSosAlert` notification attribution and `triggerEmergencySos` (SOS SMS name/phone) now use that UID-keyed profile only; the fabricated `"Worker"` / `"+256 700 000 000"` fallback is gone and no SMS is dispatched without an authenticated profile (the in-app SOS flag is still raised). `currentUser` kept but re-documented as LEGACY / NON-AUTHORITATIVE — its only remaining production consumers are `sendChatMessage`'s `senderId` (finding **F5**) and the ViewModel's `updateJobStatus` `changedBy` (finding **F6**), both deliberately out of F7 scope.
+- `ui/screens/MainScreen.kt`: `viewModel.currentUser` → `viewModel.currentUserByUid` (drawer / worker dashboard / wallet / identity / guarantor profile).
+- `ui/components/AccountComplianceDialog.kt`: guarantor `workerId` → `viewModel.currentAuthenticatedUid() ?: return@Button`.
 
 **What Fix #2 changed — `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt`:**
 - New nested type `sealed class RestoreIdentity { object None; data class Authoritative(uid: String, cachedUidTrusted: Boolean) }` (declared next to `AuthState`; it is **nested**, so tests import `com.example.ui.viewmodel.SkillsExchangeViewModel.RestoreIdentity`).
@@ -21,6 +36,18 @@
 - Full suite `:app:testDebugUnitTest` → BUILD SUCCESSFUL, **16 suites / 126 tests / 0 failures / 0 errors / 0 skipped**.
 - `:app:assembleDebug` → BUILD SUCCESSFUL. `git --no-pager diff --check` → clean.
 - Diff scope: `SkillsExchangeViewModel.kt`, `UserProfilePersistenceTest.kt` (modified), `RestoreSessionIdentitySecurityTest.kt` (new). `prd.json` intentionally untouched (C1–C3 are tracked in `TASKS.md`; `C2` status unchanged).
+
+**ENVIRONMENT INCIDENT 2026-10-04 (NOT a code regression — read before re-running the suite):**
+A later re-run of `:app:testDebugUnitTest` reported **41 failures across 7 suites**, and it was NOT a defect. Every failure was
+`java.nio.file.FileSystemException ... There is not enough space on the disk` (Windows error 92) raised from
+`org.robolectric.util.TempDirectory.createIfNotExists` — i.e. Robolectric could not create its per-test temp dir. The C: drive had only
+**0.57 GB free** (D: had 120 GB). The only production edits in that window were KDoc/comment text, so no logic change was involved.
+Resolution: cleared stale `robolectric-*` temp dirs and Temp files older than 14 days, stopped the Gradle daemons, and re-ran with
+`TMP`/`TEMP` pointed at `D:\gradle-home\tmp-f7` → **BUILD SUCCESSFUL, 17 suites / 131 tests / 0 failures / 0 errors / 0 skipped**.
+`:app:compileDebugKotlin` → **BUILD SUCCESSFUL**. Temp logs and the temp dir were deleted afterwards.
+**Rule for future sessions:** if Robolectric tests fail en masse with `FileSystemException`/error 92, check `Get-PSDrive C` free space
+FIRST — do not treat it as a code regression, and do not start editing production code on that evidence. C: is chronically near-full on
+this machine; consider directing `TMP`/`TEMP` to D: (which has ample space) for any Robolectric run.
 
 **Next actions (ordered):**
 1. C2-2 **F7** — sweep remaining legacy newest-row `getCurrentUser()` / `repository.currentUser` identity consumers (the `init`-block and `restoreSession()` call sites are already converted; display-only consumers in UI/ViewModel remain) and confirm each is display-only or converted to `getCurrentUserByUid` / `currentUserByUid`.

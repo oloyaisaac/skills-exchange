@@ -80,16 +80,32 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
      * C2-2 Fix #1: UID-keyed authoritative current user. When Firebase reports a signed-in
      * UID, ONLY the Room row whose id matches that UID is exposed — never the newest row,
      * never `user_default_me`, never a placeholder. When Firebase has no signed-in user the
-     * flow emits null (fail closed). The legacy newest-row `repository.currentUser` is
-     * intentionally NOT consulted here; it remains only for pre-existing display consumers
-     * until the F7 call-site sweep.
+     * flow emits null (fail closed).
+     *
+     * C2-2 Fix #3 (F7): this is now the ONLY current-user source in the app. It is started
+     * eagerly because security gates ([canAccessWorkerFeatures], [isWorkerApprovedAndActivated])
+     * and user-owned writes read `.value` synchronously — with a subscription-gated flow a caller
+     * that ran before the UI subscribed would have observed `null` and silently denied (or
+     * silently skipped) a legitimate operation. The legacy newest-row
+     * `repository.currentUser` flow is no longer consulted anywhere in this class.
      */
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val currentUserByUid: StateFlow<UserProfileEntity?> = firebaseUser
         .flatMapLatest { user ->
             repository.getCurrentUserByUid(user?.uid)
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /**
+     * C2-2 Fix #3 (F7): the authenticated Firebase UID, or `null` when there is none — callers
+     * MUST fail closed on `null`.
+     *
+     * Identity is `FirebaseAuth.currentUser.uid` only. The cached DataStore UID, the newest Room
+     * row, `user_default_me`, an anonymous uid and any synthetic/"unknown"/"system" stand-in are
+     * deliberately NOT accepted substitutes (see [resolveAuthoritativeUid]).
+     */
+    fun currentAuthenticatedUid(): String? =
+        resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
 
     val mapsSearchResults = MutableStateFlow<Pair<String, List<GroundedPlaceResult>>?>(null)
     val isMapsSearching = MutableStateFlow(false)
@@ -132,12 +148,16 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     // Pending actions queue for offline actions
     val pendingActions = MutableStateFlow<List<com.example.data.db.PendingActionEntity>>(emptyList())
 
-    val currentUser: StateFlow<UserProfileEntity?> = repository.currentUser
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    // C2-2 Fix #3 (F7): the legacy `currentUser` StateFlow (newest Room row) has been REMOVED.
+    // "Most recently updated profile row" is device state, not an identity: on a device that ever
+    // held another account it fed the WRONG profile to the worker gate, the drawer, the SOS payload
+    // and every user-owned write. `SkillsExchangeRepository.currentUser` (and the DAO's newest-row
+    // query) remain only as documented, non-authoritative legacy for the un-migrated F5 chat-sender
+    // path — nothing in this class or in the UI reads them any more.
 
     val isWorkerApprovedAndActivated: StateFlow<Boolean> = combine(
         isAuthenticated,
-        repository.currentUser
+        currentUserByUid
     ) { authenticated, user ->
         isWorkerAuthorized(authenticated, user)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false) // fail closed until real profile is emitted
@@ -149,7 +169,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
      * source at all and could only open the escrow sheet of an unrelated job.
      */
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    val myDisputes: StateFlow<List<DisputeEntity>> = currentUser
+    val myDisputes: StateFlow<List<DisputeEntity>> = currentUserByUid
         .flatMapLatest { user ->
             if (user == null) flowOf(emptyList()) else repository.getDisputesForUser(user.id)
         }
@@ -157,7 +177,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     /** The worker's own KYC submission, used by the identity-verification destination. */
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    val myWorkerKyc: StateFlow<com.example.data.db.WorkerKycEntity?> = currentUser
+    val myWorkerKyc: StateFlow<com.example.data.db.WorkerKycEntity?> = currentUserByUid
         .flatMapLatest { user ->
             if (user == null) flowOf(null) else repository.getWorkerKyc(user.id)
         }
@@ -388,7 +408,10 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
         userRoleMode.value = mode
         viewModelScope.launch {
-            val user = repository.currentUser.first() ?: return@launch
+            // C2-2 Fix #3 (F7): the mode switch is written to the AUTHENTICATED UID's exact row.
+            // The previous `repository.currentUser.first()` wrote it to whichever Room row happened
+            // to be newest — i.e. potentially to a different account's profile on this device.
+            val user = currentUserByUid.value ?: return@launch
             val dbMode = if (mode == "Offer Skills") "WORKER" else "CLIENT"
             repository.switchActiveMode(user.id, dbMode)
         }
@@ -402,7 +425,9 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     // 4. Worker training completed
     // 5. Worker activated by administrator
     fun canAccessWorkerFeatures(): Boolean {
-        return isWorkerAuthorized(isAuthenticated.value, currentUser.value)
+        // C2-2 Fix #3 (F7): the gate reads the UID-keyed profile only, so the newest Room row can
+        // neither satisfy nor deny worker authorization for the authenticated account.
+        return isWorkerAuthorized(isAuthenticated.value, currentUserByUid.value)
     }
 
     fun toggleUserRoleMode() {
@@ -600,7 +625,11 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         viewModelScope.launch {
             val currentJob = repository.jobs.first().find { it.id == jobId }
             val fromStatus = currentJob?.status ?: ""
-            val userId = currentUser.value?.id ?: "system"
+            // NOTE (C2-2 F7 sweep): this attribution still reads the newest Room row explicitly via
+            // `repository.currentUser` and is audit finding **F6** (job-status attribution); it is
+            // deliberately NOT migrated here so the F7 change stays scoped. It must be swept before
+            // C2-2 can be closed.
+            val userId = repository.currentUser.first()?.id ?: "system"
 
             repository.transitionJobStatus(
                 jobId = jobId,
@@ -703,7 +732,9 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     fun triggerSosAlert(jobId: String) {
         viewModelScope.launch {
             val jobPost = repository.jobs.first().find { it.id == jobId } ?: return@launch
-            val user = repository.currentUser.first()
+            // C2-2 Fix #3 (F7): only the AUTHENTICATED profile's coordinates may be used as the
+            // fallback location — never the newest Room row's.
+            val user = currentUserByUid.value
             val gps = gpsLocationState.value
             val latitude = gps.latitude ?: user?.latitude ?: 0.3476
             val longitude = gps.longitude ?: user?.longitude ?: 32.5825
@@ -1058,7 +1089,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
      */
     fun updateWorkerLocation(district: String, lat: Double = 0.3476, lng: Double = 32.5825, address: String? = null) {
         viewModelScope.launch {
-            val user = repository.currentUser.first() ?: return@launch
+            // C2-2 Fix #3 (F7): the location write targets the AUTHENTICATED UID's exact row.
+            val user = currentUserByUid.value ?: return@launch
             val updated = user.copy(
                 district = district,
                 latitude = lat,
@@ -1073,7 +1105,10 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     fun permanentlyDeleteUserAccountAndData() {
         viewModelScope.launch {
-            val userId = currentUser.value?.id ?: firebaseService.getCurrentUser()?.uid ?: return@launch
+            // C2-2 Fix #3 (F7): account deletion must target the AUTHENTICATED account. The UID
+            // comes from FirebaseAuth only — the newest Room row is no longer consulted, so a stale
+            // device profile can neither delete nor shield another account's data.
+            val userId = currentAuthenticatedUid() ?: return@launch
             val userJobIds = repository.jobs.first().map { it.id }
 
             val firestoreDeleted = firebaseService.deleteUserFirestoreData(userId, userJobIds)
@@ -1107,14 +1142,17 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
      *
      * DECISION: updates are IMMEDIATE — contact metadata follows the same path as other
      * profile edits (district, mode); the existing KYC review queue applies only to
-     * identity documents. Writes always target [currentUser]'s own Room row and Firestore
+     * identity documents. Writes always target [currentUserByUid]'s own Room row and Firestore
      * `users/{uid}` (owner-only write rule), so one user can never modify another user's
      * backup contact. Never touches the guarantors tables: a backup contact is NOT a
      * guarantor.
+     *
+     * C2-2 Fix #3 (F7): the target row is resolved from the authenticated Firebase UID
+     * ([currentUserByUid]) instead of "whatever profile row is newest on this device".
      */
     fun saveBackupContact(name: String, phone: String) {
         viewModelScope.launch {
-            val user = currentUser.value
+            val user = currentUserByUid.value
             val blocker = ProfileValidators.backupContactSaveBlocker(
                 isAuthenticated = isAuthenticated.value,
                 hasOwnProfile = user != null && user.id != DEMO_PROFILE_ID,
@@ -1170,7 +1208,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
      */
     fun uploadPendingProfilePhoto() {
         viewModelScope.launch {
-            val user = currentUser.value
+            // C2-2 Fix #3 (F7): the uploaded avatar is written to the authenticated UID's row.
+            val user = currentUserByUid.value
             val uri = pendingProfilePhotoUri.value
             val blocker = ProfileValidators.photoUploadBlocker(
                 isAuthenticated = isAuthenticated.value,
@@ -1311,7 +1350,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     /** Opens the sheet and restores drafts; [currentGroupPhotoPath] is what is already filed. */
     fun openGuarantorVerification(currentGroupPhotoPath: String) {
-        val userId = currentUser.value?.id ?: return
+        // C2-2 Fix #3 (F7): drafts are read for the AUTHENTICATED uid only.
+        val userId = currentAuthenticatedUid() ?: return
         viewModelScope.launch {
             guarantorDrafts = repository.getGuarantorsOnce(userId)
             guarantorGroupPhotoSource = currentGroupPhotoPath
@@ -1335,7 +1375,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     /** Saves the form as a draft — photos stay on the device until the worker submits. */
     fun saveGuarantorDraft() {
-        val userId = currentUser.value?.id ?: return
+        // C2-2 Fix #3 (F7): drafts are saved under the AUTHENTICATED uid only.
+        val userId = currentAuthenticatedUid() ?: return
         val drafts = guarantorDrafts
         val groupPhoto = guarantorGroupPhotoSource
         viewModelScope.launch {
@@ -1350,7 +1391,9 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
      * repository repeats every check, and validation errors surface inline in the sheet.
      */
     fun submitGuarantorVerification() {
-        val user = currentUser.value ?: return
+        // C2-2 Fix #3 (F7): third-party identity data is filed under the AUTHENTICATED account's
+        // own row — never under whoever's profile happens to be newest on the device.
+        val user = currentUserByUid.value ?: return
         if (guarantorSubmissionPending) return
         if (user.id == DEMO_PROFILE_ID) {
             guarantorSubmissionError =
@@ -1380,17 +1423,18 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     /** Pulls the admin decision for the sheet and the status card (48h review SLA). */
     fun refreshGuarantorVerificationStatus() {
-        val userId = currentUser.value?.id?.takeIf { it != DEMO_PROFILE_ID } ?: return
+        // C2-2 Fix #3 (F7): the admin decision is pulled for the AUTHENTICATED uid only.
+        val userId = currentAuthenticatedUid() ?: return
         viewModelScope.launch { repository.refreshGuarantorVerificationStatus(userId) }
     }
 
     fun uploadQualificationEvidence(evidenceType: String, fileBytes: ByteArray? = null, videoUrl: String? = null, onResult: (String?) -> Unit) {
         viewModelScope.launch {
-            // C2: never upload evidence under the demo placeholder id — resolve the real
-            // authenticated UID (Room profile, else Firebase) and abort when absent.
-            val userId = currentUser.value?.id?.takeIf { it != DEMO_PROFILE_ID }
-                ?: firebaseService.getCurrentUser()?.uid
-            if (userId.isNullOrBlank()) {
+            // C2-2 Fix #3 (F7): evidence is uploaded under the authenticated Firebase UID only.
+            // The previous form read the newest Room row FIRST (`currentUser.value?.id`) and only
+            // fell back to the Firebase UID, so a second account's cached row could capture the
+            // upload. Identity now comes from FirebaseAuth; the demo placeholder is rejected.
+            val userId = currentAuthenticatedUid() ?: run {
                 onResult(null)
                 return@launch
             }
@@ -1435,25 +1479,22 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     fun startTraining() {
         viewModelScope.launch {
-            // C2: training rows belong to the real authenticated UID, never the demo placeholder.
-            val userId = currentUser.value?.id?.takeIf { it != DEMO_PROFILE_ID }
-                ?: firebaseService.getCurrentUser()?.uid ?: return@launch
+            // C2-2 Fix #3 (F7): training rows belong to the AUTHENTICATED Firebase UID.
+            val userId = currentAuthenticatedUid() ?: return@launch
             repository.startTraining(userId)
         }
     }
 
     fun completeTrainingModule(modulesCsv: String, moduleIndex: Int) {
         viewModelScope.launch {
-            val userId = currentUser.value?.id?.takeIf { it != DEMO_PROFILE_ID }
-                ?: firebaseService.getCurrentUser()?.uid ?: return@launch
+            val userId = currentAuthenticatedUid() ?: return@launch
             repository.updateTrainingModule(userId, modulesCsv, moduleIndex)
         }
     }
 
     fun completeTraining() {
         viewModelScope.launch {
-            val userId = currentUser.value?.id?.takeIf { it != DEMO_PROFILE_ID }
-                ?: firebaseService.getCurrentUser()?.uid ?: return@launch
+            val userId = currentAuthenticatedUid() ?: return@launch
             repository.completeTraining(userId)
         }
     }
@@ -1472,12 +1513,11 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun submitRecurringProposal(jobId: String, proposedRate: Double, terms: String) {
-        // C2: worker-gated action — a missing/placeholder identity must abort, never file
-        // the proposal under "worker_default".
+        // C2-2 Fix #3 (F7): worker-gated action — identity is the authenticated Firebase UID, and a
+        // missing/placeholder identity aborts rather than filing the proposal under another row.
         if (!canAccessWorkerFeatures()) return
         viewModelScope.launch {
-            val userId = currentUser.value?.id?.takeIf { it != DEMO_PROFILE_ID }
-                ?: firebaseService.getCurrentUser()?.uid ?: return@launch
+            val userId = currentAuthenticatedUid() ?: return@launch
             repository.submitRecurringProposal(jobId, userId, proposedRate, terms)
             val updatedJob = repository.jobs.first().find { it.id == jobId }
             selectedJob.value = updatedJob
@@ -1490,9 +1530,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             return
         }
         viewModelScope.launch {
-            // C2: quotes are attributed to the real authenticated worker UID only.
-            val userId = currentUser.value?.id?.takeIf { it != DEMO_PROFILE_ID }
-                ?: firebaseService.getCurrentUser()?.uid ?: return@launch
+            // C2-2 Fix #3 (F7): quotes are attributed to the authenticated Firebase UID only.
+            val userId = currentAuthenticatedUid() ?: return@launch
             repository.submitQuote(jobId, userId, workerName, proposedRate, proposedHours, notes)
         }
     }
@@ -1591,7 +1630,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             }
         }
         viewModelScope.launch {
-            currentUser.collect { user ->
+            // C2-2 Fix #3 (F7): notifications are read for the AUTHENTICATED uid only.
+            currentUserByUid.collect { user ->
                 val userId = user?.id ?: return@collect
                 repository.getNotificationsForUser(userId).collect { notifList ->
                     notifications.value = notifList
@@ -1599,7 +1639,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             }
         }
         viewModelScope.launch {
-            currentUser.collect { user ->
+            currentUserByUid.collect { user ->
                 val userId = user?.id ?: return@collect
                 unreadNotificationCount.value = repository.getUnreadNotificationCount(userId)
             }
@@ -1646,7 +1686,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             disputeSubmissionState.value = DisputeSubmissionState.Submitting
 
             try {
-                val currentUserId = currentUser.value?.id ?: run {
+                // C2-2 Fix #3 (F7): the reporter is the authenticated Firebase UID.
+                val currentUserId = currentAuthenticatedUid() ?: run {
                     disputeSubmissionState.value = DisputeSubmissionState.Error("User not authenticated")
                     return@launch
                 }
@@ -1705,7 +1746,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun getUserDisputes(): Flow<List<DisputeEntity>> {
-        val userId = currentUser.value?.id ?: return flowOf(emptyList())
+        // C2-2 Fix #3 (F7): the caller's own disputes are keyed by the authenticated uid.
+        val userId = currentAuthenticatedUid() ?: return flowOf(emptyList())
         return repository.getDisputesForUser(userId)
     }
 
@@ -1828,8 +1870,9 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         viewModelScope.launch {
             // C2: reports need a real reporter id — drop unauthenticated reports instead
             // of filing them under an "anonymous" placeholder nobody can audit.
-            val currentUserId = currentUser.value?.id?.takeIf { it != DEMO_PROFILE_ID }
-                ?: firebaseService.getCurrentUser()?.uid ?: return@launch
+            // C2-2 Fix #3 (F7): and never file them under the newest Room row's id, which may
+            // belong to a different account on this device.
+            val currentUserId = currentAuthenticatedUid() ?: return@launch
             val updatedReport = report.copy(reportedBy = currentUserId)
             repository.reportUser(updatedReport)
         }
@@ -1837,7 +1880,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     fun markAllNotificationsRead() {
         viewModelScope.launch {
-            val userId = currentUser.value?.id ?: return@launch
+            // C2-2 Fix #3 (F7): only the AUTHENTICATED uid's notifications may be marked read.
+            val userId = currentAuthenticatedUid() ?: return@launch
             repository.markAllNotificationsRead(userId)
             unreadNotificationCount.value = 0
         }
@@ -1852,7 +1896,10 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             // fully cleared; only the non-sensitive identity record (uid, phone, name,
             // district, role, onboarding flag) is retained server-side so the account can be
             // recognised again. Worker KYC/activation is never mirrored (admin-controlled).
-            repository.currentUser.first()?.let { profile ->
+            // C2-2 Fix #3 (F7): mirror the AUTHENTICATED account's identity record before the wipe.
+            // The newest Room row could belong to a different account on a shared/stale device, and
+            // mirroring it to Firestore would overwrite the wrong `users/{uid}` document.
+            currentUserByUid.value?.let { profile ->
                 if (profile.id != DEMO_PROFILE_ID && isAuthenticated.value) {
                     repository.saveUserIdentityToServer(profile)
                 }
@@ -1917,7 +1964,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             ratingSubmissionState.value = RatingSubmissionState.Submitting
 
             try {
-                val fromUserId = currentUser.value?.id ?: run {
+                // C2-2 Fix #3 (F7): ratings are attributed to the authenticated Firebase UID.
+                val fromUserId = currentAuthenticatedUid() ?: run {
                     ratingSubmissionState.value = RatingSubmissionState.Error("User not authenticated")
                     return@launch
                 }
@@ -2061,6 +2109,22 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             return verifiedPhoneAuthUid?.takeIf { it.isNotBlank() }
                 ?: fallbackFirebaseUid?.takeIf { it.isNotBlank() }
         }
+
+        /**
+         * C2-2 Fix #3 (F7): the ONLY identity a security-sensitive operation may use.
+         *
+         * `FirebaseAuth.currentUser.uid` is authoritative; a missing, blank, whitespace-padded or
+         * legacy demo id (`user_default_me`) yields `null`, so the caller fails closed instead of
+         * promoting the newest Room row, a placeholder, an anonymous or a synthetic id.
+         *
+         * This is the rule every migrated F7 call site now applies (worker gate, role switch,
+         * location, SOS, guarantors, training, quotes/proposals, notifications, disputes, ratings,
+         * reports, profile writes, account deletion). The repository applies the identical rule at
+         * the data boundary (`SkillsExchangeRepository.resolveAuthoritativeUid`) because the data
+         * layer must stay decoupled from the UI layer.
+         */
+        fun resolveAuthoritativeUid(firebaseUid: String?): String? =
+            firebaseUid?.trim()?.takeIf { it.isNotEmpty() && it != DEMO_PROFILE_ID }
 
         /**
          * C2-2 Fix #2 (F2): decides which identity a session restore is allowed to use.

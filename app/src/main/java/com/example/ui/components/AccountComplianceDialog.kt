@@ -348,12 +348,11 @@ fun GuarantorFormSheet(
                         if (currentStep == 1) {
                             currentStep = 2
                         } else {
-                            // C2: guarantor rows belong to the real authenticated UID.
-                            // Never file them under the demo placeholder. Abort when no
-                            // authenticated identity is present (orphaned A7 dialog path).
-                            val workerId = viewModel.currentUser.value?.id
-                                ?.takeIf { it != com.example.ui.viewmodel.SkillsExchangeViewModel.DEMO_PROFILE_ID }
-                                ?: return@Button
+                            // C2-2 Fix #3 (F7): guarantor rows are filed under the AUTHENTICATED
+                            // Firebase UID and nothing else — never the newest Room row. Fail closed
+                            // when no authenticated identity exists (orphaned A7 dialog path); the
+                            // demo placeholder is rejected by the resolver itself.
+                            val workerId = viewModel.currentAuthenticatedUid() ?: return@Button
                             val entities = listOf(g1, g2).mapIndexed { index, entry ->
                                 GuarantorEntity(
                                     id = "guarantor_${workerId}_${index + 1}",

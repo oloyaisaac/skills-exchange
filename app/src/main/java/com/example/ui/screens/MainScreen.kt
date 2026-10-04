@@ -47,7 +47,11 @@ fun MainScreen(
     val selectedJob by viewModel.selectedJob.collectAsStateWithLifecycle()
 
     val userRoleMode by viewModel.userRoleMode.collectAsStateWithLifecycle()
-    val currentUserProfile by viewModel.currentUser.collectAsStateWithLifecycle()
+    // C2-2 Fix #3 (F7): the screen's own profile comes from the UID-keyed flow only. The legacy
+    // newest-row `viewModel.currentUser` source has been removed from the ViewModel entirely, so
+    // the drawer, worker gate, wallet, identity sheet and guarantor sheet can no longer render
+    // another account's cached profile.
+    val currentUserProfile by viewModel.currentUserByUid.collectAsStateWithLifecycle()
     val isWorkerApprovedAndActivated by viewModel.isWorkerApprovedAndActivated.collectAsStateWithLifecycle()
     val activeMobileTab by viewModel.activeMobileTab.collectAsStateWithLifecycle()
     val gpsState by viewModel.gpsLocationState.collectAsStateWithLifecycle()

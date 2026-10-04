@@ -236,7 +236,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 | ID | Title | Status |
 |---|---|---|
 | C1 | Existing-user profile persistence | ⏳ Pending Audit Fix |
-| C2 | UID consistency | ⏳ Pending Audit Fix — Fix #1 (UID-keyed `getCurrentUserById`/`getCurrentUserByUid`/`currentUserByUid`) and Fix #2 (restore cross-checks `FirebaseAuth.currentUser.uid`, discards stale cached identity, fails closed when Firebase has no user, resolves the profile by UID) implemented and unit-verified 2026-10-04: 126 tests / 0 failures / 0 errors; findings F3–F7 still open; no device verification |
+| C2 | UID consistency | ⏳ Pending Audit Fix — Fix #1 (UID-keyed `getCurrentUserById`/`getCurrentUserByUid`/`currentUserByUid`), Fix #2 (restore cross-checks `FirebaseAuth.currentUser.uid`, discards stale cached identity, fails closed when Firebase has no user, resolves the profile by UID) and Fix #3 / finding F7 (newest-row identity consumers swept: worker gate, role switch, worker location, account deletion, profile/backup/avatar writes, guarantors, training, quotes/proposals, notifications, disputes, ratings, reports, mark-all-read, logout identity mirror and SOS name/phone now use `FirebaseAuth.currentUser.uid` only; the legacy `viewModel.currentUser` StateFlow was deleted) implemented and unit-verified 2026-10-04: 131 tests / 0 failures / 0 errors; findings F4 (job authorship), F5 (chat sender), F6 (job-status attribution) and the F3 remainder still open; no device verification |
 | C3 | Google AuthModal completion path | ⏳ Pending Audit Fix |
 
 ### High

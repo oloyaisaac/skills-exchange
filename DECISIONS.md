@@ -686,5 +686,75 @@ policy is unit-testable without Android dependencies:
 
 **Verification**: `RestoreSessionIdentitySecurityTest` (5 cases A–E) + 2 repository-boundary cases in
 `CurrentUserByUidRepositoryTest`; full suite 126 tests / 0 failures / 0 errors; `assembleDebug` PASSED.
+(Follow-up 2026-10-04: the F7 sweep in DEC-023 migrated the legacy newest-row consumers; the F3
+remainder plus F4, F5 and F6 are still open.)
+
+---
+
+### [2026-10-04] DEC-023 The Newest Room Row Is Never an Identity — F7 Sweep Policy and the Deliberate SOS Fail-Closed Change
+
+**Context**: Audit finding F7. `UserProfileDao.getCurrentUser()` answers "the most recently updated
+real profile row on this device" (`ORDER BY updatedAtTimestamp DESC LIMIT 1`) and was still reachable
+from security-sensitive code — the worker authorization gate, the mode switch, worker location,
+account deletion, profile / backup-contact / avatar writes, guarantor drafts+submissions, training
+rows, quotes/proposals, notifications, disputes, ratings, reports, mark-all-notifications-read, the
+logout identity mirror, the SOS name/phone payload, and the drawer/worker/guarantor UI. A device that
+had ever held another account (or a sign-in change) could therefore attribute a write, an approval or
+a notification to the wrong account.
+
+**Options considered**:
+1. Delete the newest-row query and force every consumer to the UID-keyed path in one step.
+2. Keep the query and replace each consumer individually with `FirebaseAuth.currentUser.uid` →
+   `getCurrentUserByUid(uid)` (fail closed on null), leaving genuinely unrelated findings alone.
+3. Leave the query as-is and rely on the F2 restore fix alone.
+
+**Decision**: Option 2, applied strictly (C2-2 Fix #3).
+- Identity rule: `FirebaseAuth.currentUser.uid`, trimmed; blank/whitespace/`user_default_me` ⇒ `null`
+  and the operation is ABORTED (`resolveAuthoritativeUid` in the ViewModel, and the same rule in the
+  repository because the data layer must stay decoupled from the UI).
+- Every migrated consumer then resolves its own row with `getCurrentUserByUid(uid)` /
+  `getCurrentUserById(uid)` — exact `id == uid`, no fallback.
+- The legacy `viewModel.currentUser` StateFlow was **deleted**, so re-introducing a newest-row identity
+  source is now a compile error rather than a silent regression. `SkillsExchangeRepository.currentUser`
+  survives only as documented legacy for the un-migrated **F5** chat-sender attribution and the
+   **F6** job-status `changedBy` attribution.
+- `currentUserByUid` now uses `SharingStarted.Eagerly`: the authorization gates read `.value`
+  synchronously, and a subscription-gated flow would have returned the `null` initial value before the
+  UI subscribed — silently denying legitimate operations.
+- SOS (`triggerEmergencySos`) now takes name/phone from the authenticated row only; when no
+  authenticated profile exists the SMS is NOT dispatched (the in-app SOS flag is still raised). The
+  fabricated `"Worker"` / `"+256 700 000 000"` fallback is removed.
+- F4 (job authorship), F5 (chat sender) and F6 (job-status `changedBy`) are left untouched on purpose
+  so this change stays scoped; F6 keeps its newest-row read *explicitly*, with an inline note.
+
+**Rationale**: A timestamp is not an identity. The gate, the attribution fields and the ownership of a
+write must all derive from the authenticated UID, otherwise a stale or secondary account row can grant
+privileges (an older "APPROVED + activated" worker row could even outrank the current account's row if
+it were newer) or shift blame/earnings to the wrong person. Moving all consumers in one audit pass
+prevents the "half-migrated" state where some writes are UID-keyed and others are not.
+
+**Consequences**:
+- Any operation invoked with no Firebase user now aborts (fails closed) instead of quietly acting as
+  "whoever is newest" — including account deletion, ratings, disputes, reports, guarantors, training,
+  quotes, proposals, notifications, mark-all-read and both SOS paths.
+- A legitimate user whose Room row is missing (Room wiped) sees no profile until the normal UID-keyed
+  recovery re-creates it; worker features stay denied until then (correct: `trainingCompleted` /
+  `workerKycStatus` live on that row).
+- No SOS SMS is sent without an authenticated profile — accepted deliberately: sending a stranger's or
+  a made-up number and name to emergency contacts is worse than sending none.
+- Remaining legacy surface is now explicit and tracked: F4/F5/F6 plus
+  `WorkerTrainingDao.getCurrentUserTraining()` (`SELECT * FROM worker_training LIMIT 1`, display-only)
+  and the device-local `getUserProfileByPhone`.
+- The seeded `user_default_me` row was NOT deleted: `CurrentUserByUidRepositoryTest` /
+  `UserProfilePersistenceTest` still assert the DAO refuses it, and the seed is what those
+  regressions are written against; removal is a separate, audited step.
+
+**Verification**: new `app/src/test/java/com/example/data/LegacyCurrentUserSweepSecurityTest.kt`
+(5 Robolectric cases: with Firebase UID-A + Room UID-A older + Room UID-B newer, resolution and the
+worker gate use UID-A and never UID-B; missing/blank/placeholder Firebase UID fails closed while a real
+approved row exists; trimming + placeholder rejection in both layers; SOS contact selection).
+Full suite 17 suites / 131 tests / 0 failures / 0 errors / 0 skipped; `compileDebugKotlin` and
+`compileDebugUnitTestKotlin` BUILD SUCCESSFUL. No on-device verification was possible (no adb device
+attached), so C2-2 remains ⏳.
 
 ---

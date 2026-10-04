@@ -17,6 +17,20 @@ class SkillsExchangeRepository(
 ) {
     val providers: Flow<List<ServiceProviderEntity>> = db.serviceProviderDao().getAllProviders()
     val jobs: Flow<List<JobPostEntity>> = db.jobPostDao().getAllJobs()
+    /**
+     * LEGACY / NON-AUTHORITATIVE (C2-2 Fix #3, audit finding **F7**): "the most recently updated
+     * profile row on this device" is a cache of device state — it is NOT an identity. It must never
+     * decide who is signed in, who owns a write, or who an action is attributed to. Use
+     * [getCurrentUserByUid] with `FirebaseAuth.currentUser.uid` instead.
+     *
+     * After the F7 sweep the SOS notification/alert paths, the worker authorization gate,
+     * notifications, ratings, disputes, guarantors, training, profile writes and account deletion
+     * all resolve the authenticated user through the UID-keyed path. The only remaining production
+     * consumers of this flow are the chat-sender attribution in [sendChatMessage] (separate audit
+     * finding **F5**) and the job-status `changedBy` attribution in the ViewModel's
+     * `updateJobStatus` (separate audit finding **F6**) — both deliberately not migrated by the F7
+     * change, and both must be swept before C2-2 can be closed.
+     */
     val currentUser: Flow<UserProfileEntity?> = db.userProfileDao().getCurrentUser()
     val currentTraining: Flow<WorkerTrainingEntity?> = db.workerTrainingDao().getCurrentUserTraining()
     val serviceTaxonomyCatalog: List<ServiceTaxonomyItem> = ServiceTaxonomyCatalog.services
@@ -43,6 +57,18 @@ class SkillsExchangeRepository(
         val uid = firebaseUid?.takeIf { it.isNotBlank() && it != "user_default_me" }
             ?: return kotlinx.coroutines.flow.flowOf(null)
         return db.userProfileDao().getCurrentUserById(uid)
+    }
+
+    /**
+     * C2-2 Fix #3 (F7): the authenticated user's OWN profile row, or `null` (fail closed).
+     *
+     * The identity is `FirebaseAuth.currentUser.uid` (see [resolveAuthoritativeUid]); the row must
+     * match that uid exactly. The legacy newest-row [currentUser] query is deliberately NOT
+     * consulted, so no security-sensitive operation can resolve "whoever was updated last".
+     */
+    private suspend fun authenticatedProfileOnce(): UserProfileEntity? {
+        val uid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid) ?: return null
+        return db.userProfileDao().getCurrentUserById(uid).first()
     }
 
     /**
@@ -711,13 +737,13 @@ class SkillsExchangeRepository(
             )
         )
 
-        // C2: the SOS notification is attributed to the real authenticated UID.
-        // Never file it under a "worker_default" placeholder nobody can audit.
-        // NOTE: DEMO_PROFILE_ID check is inline (not via ViewModel companion) to keep
+        // C2 / C2-2 Fix #3 (F7): the SOS notification is attributed to the AUTHENTICATED Firebase
+        // UID's own row. The newest Room row is not an identity, so a device that ever held another
+        // account can no longer file this alert under somebody else's profile — and when Firebase
+        // has no authenticated profile the caller aborts instead of substituting a placeholder.
+        // NOTE: the demo-placeholder check is inline (not via the ViewModel companion) to keep
         // the data layer decoupled from the UI layer.
-        val currentUserId = currentUser.first()?.id
-            ?.takeIf { it != "user_default_me" }
-            ?: return
+        val currentUserId = authenticatedProfileOnce()?.id ?: return
         createNotification(
             NotificationEntity(
                 id = "notif_${System.currentTimeMillis()}_sos",
@@ -1061,6 +1087,32 @@ class SkillsExchangeRepository(
     }
 
     companion object {
+        /**
+         * C2-2 Fix #3 (F7): the ONLY identity a security-sensitive operation may use.
+         *
+         * `FirebaseAuth.currentUser.uid` is authoritative; a missing, blank, whitespace-padded or
+         * legacy demo id (`user_default_me`) yields `null` so the caller fails closed instead of
+         * promoting the newest Room row, a placeholder, an anonymous or a synthetic id.
+         */
+        fun resolveAuthoritativeUid(firebaseUid: String?): String? =
+            firebaseUid?.trim()?.takeIf { it.isNotEmpty() && it != "user_default_me" }
+
+        /**
+         * C2-2 Fix #3 (F7): the ONLY profile whose contact details may be broadcast in an SOS
+         * alert.
+         *
+         * Without an authenticated uid, without a matching row, or with a row that carries no
+         * usable phone number, this returns `null` — callers must fail closed rather than send
+         * another account's (or a fabricated) name and number to emergency responders.
+         */
+        fun resolveSosContactProfile(
+            firebaseUid: String?,
+            row: UserProfileEntity?
+        ): UserProfileEntity? {
+            val uid = resolveAuthoritativeUid(firebaseUid) ?: return null
+            return row?.takeIf { it.id == uid && it.phoneNumber.isNotBlank() }
+        }
+
         val initialProviders = listOf(
             ServiceProviderEntity(
                 id = "prov_1",
@@ -1476,13 +1528,19 @@ class SkillsExchangeRepository(
     suspend fun triggerEmergencySos(jobId: String, latitude: Double, longitude: Double, district: String) {
         db.jobPostDao().setSosAlert(jobId, true)
 
-        val currentUser = currentUser.first()
-        val workerName = currentUser?.fullName ?: "Worker"
-        val workerPhone = currentUser?.phoneNumber ?: "+256 700 000 000"
+        // C2-2 Fix #3 (F7): the details broadcast to emergency contacts must belong to the
+        // AUTHENTICATED account only — never the newest Room row, never a fabricated placeholder.
+        // With no authenticated profile the SMS is not dispatched at all (the in-app SOS flag set
+        // above is still raised): sending a stranger's number, or a made-up "+256 700 000 000", to
+        // responders is worse than sending none.
+        val profile = resolveSosContactProfile(
+            firebaseUid = firebaseService.getCurrentUser()?.uid,
+            row = authenticatedProfileOnce()
+        ) ?: return
 
         smsNotificationService.dispatchEmergencySosAlert(
-            workerPhone = workerPhone,
-            workerName = workerName,
+            workerPhone = profile.phoneNumber,
+            workerName = profile.fullName.ifBlank { "Authenticated user" },
             latitude = latitude,
             longitude = longitude,
             district = district
