@@ -166,8 +166,16 @@ export const releaseEscrowToWorker = functions.https.onCall(async (data, context
   const jobData = jobDoc.data();
   const callerUid = context.auth.uid;
 
-  // Check if caller is the job owner (postedByResident or postedBy UID)
-  if (jobData?.postedByResident !== callerUid && jobData?.postedBy !== callerUid) {
+  // C2-2 Fix #4 (F4): ownership is the immutable authenticated uid stored at creation time
+  // (postedByUid, bound to request.auth.uid by the firestore.rules create rule).
+  //
+  // The previous check was `jobData?.postedByResident !== callerUid && jobData?.postedBy !== callerUid`,
+  // which mixed a DISPLAY string with a uid: postedByResident is human-readable text such as
+  // "You (Nakawa)", so it could never equal a Firebase uid, while the field actually written by
+  // the client was never named postedBy — the escrow check therefore had no reliable owner to
+  // compare and fell through to whatever the document happened to contain.
+  const ownerUid = jobData?.postedByUid;
+  if (!ownerUid || ownerUid !== callerUid) {
     throw new functions.https.HttpsError(
       "permission-denied",
       "Only the job owner can release escrow."

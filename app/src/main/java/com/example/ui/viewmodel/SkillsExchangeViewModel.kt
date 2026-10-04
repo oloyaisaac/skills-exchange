@@ -603,6 +603,10 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 jobType = jobType,
                 recurringSchedule = recurringSchedule
             )
+            // C2-2 Fix #4 (F4): addJobPost fails closed and returns null when there is no
+            // authenticated Firebase uid. Nothing was persisted, so we must not close the sheet,
+            // select a "null" job or attempt a Firestore sync.
+            if (jobId == null) return@launch
             setQuickRequestOpen(false)
             val createdJob = repository.jobs.first().find { it.id == jobId }
             if (createdJob != null) {
@@ -2111,6 +2115,13 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
 
         /**
+         * C2-2 Fix #4 (F4): literal, non-identity values that must never be accepted as an owner
+         * or sender id. Firebase will never issue these; they are the fallbacks this codebase
+         * historically used when no authenticated user was available.
+         */
+        private val SYNTHETIC_ID_SENTINELS = setOf("unknown", "system", "anonymous", "guest", "none")
+
+        /**
          * C2-2 Fix #3 (F7): the ONLY identity a security-sensitive operation may use.
          *
          * `FirebaseAuth.currentUser.uid` is authoritative; a missing, blank, whitespace-padded or
@@ -2124,7 +2135,16 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
          * layer must stay decoupled from the UI layer.
          */
         fun resolveAuthoritativeUid(firebaseUid: String?): String? =
-            firebaseUid?.trim()?.takeIf { it.isNotEmpty() && it != DEMO_PROFILE_ID }
+            firebaseUid?.trim()?.takeIf { candidate ->
+                if (candidate.isEmpty() || candidate == DEMO_PROFILE_ID) return@takeIf false
+                // C2-2 Fix #4 (F4): a real Firebase uid (including an anonymous one) is
+                // alphanumeric. A value carrying whitespace or brackets is presentation text
+                // ("Robert K. (Sunnyside)", "You (Nakawa)") and must never be treated as an
+                // identity — and neither may the literal synthetic sentinels this codebase
+                // historically fell back to. Mirrors SkillsExchangeRepository.resolveAuthoritativeUid.
+                if (candidate.any { it.isWhitespace() || it == '(' || it == ')' }) return@takeIf false
+                candidate.lowercase() !in SYNTHETIC_ID_SENTINELS
+            }
 
         /**
          * C2-2 Fix #2 (F2): decides which identity a session restore is allowed to use.

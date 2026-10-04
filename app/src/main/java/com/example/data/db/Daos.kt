@@ -38,6 +38,16 @@ interface SkillEndorsementDao {
 
 @Dao
 interface JobPostDao {
+    @Query("SELECT * FROM job_posts WHERE postedByUid = :uid ORDER BY createdTimestamp DESC")
+    fun getJobsPostedBy(uid: String): Flow<List<JobPostEntity>>
+
+    /**
+     * C2-2 Fix #4 (F4): jobs with NO trustworthy owner (created before the `postedByUid` column
+     * existed). They belong to nobody and must never surface as "my jobs" for any account.
+     */
+    @Query("SELECT * FROM job_posts WHERE postedByUid IS NULL ORDER BY createdTimestamp DESC")
+    fun getJobsWithUnknownOwner(): Flow<List<JobPostEntity>>
+
     @Query("SELECT * FROM job_posts ORDER BY createdTimestamp DESC")
     fun getAllJobs(): Flow<List<JobPostEntity>>
 

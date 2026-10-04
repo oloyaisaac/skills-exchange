@@ -757,4 +757,56 @@ Full suite 17 suites / 131 tests / 0 failures / 0 errors / 0 skipped; `compileDe
 `compileDebugUnitTestKotlin` BUILD SUCCESSFUL. No on-device verification was possible (no adb device
 attached), so C2-2 remains ⏳.
 
+### [2026-10-04] DEC-024 A Job Has an Owner UID; A Display String Is Not an Owner — F4 `postedByUid`
+
+**Context**: Audit finding F4. `JobPostEntity` carried **no owner identity at all**. `addJobPost()`
+wrote `postedByResident = "You ($district)"` — presentation text — so no code path could answer
+"is this my job?" against something stable. The escrow Cloud Function made this concrete:
+`releaseEscrowToWorker` compared `postedByResident` / `postedBy` against `context.auth.uid`. A display
+string can never equal a Firebase uid, and the client never wrote a field named `postedBy`, so the
+escrow ownership check had no reliable owner to compare against at all.
+
+**Decision**:
+- `postedByUid: String?` is the authoritative, immutable owner — `FirebaseAuth.currentUser.uid`.
+  `postedByResident` is retained unchanged as DISPLAY-ONLY. Neither replaces the other.
+- `addJobPost()` resolves the uid through the existing `resolveAuthoritativeUid` (no competing
+  identity source was introduced) and **returns `null` without persisting anything** when there is no
+  authoritative uid. A job with no provable owner can never be cancelled, edited or attributed, so
+  refusing to create it is safer than creating an unattributable one.
+- Ownership reads (`getMyJobs`, `isJobOwnedByCurrentUser`) compare uid-to-uid only. There is no
+  display-string and no newest-Row fallback in either.
+- `MIGRATION_19_20` (DB 19 → 20) adds the column **nullable with no default**. Historical jobs are
+  left with an unknown owner rather than back-filled from `postedByResident` or from the newest Room
+  profile — guessing would hand real jobs (and their earnings and liability) to a random account.
+  The column is nullable for exactly that reason; new jobs always have it set.
+- `resolveAuthoritativeUid` was hardened in both layers to reject values containing whitespace or
+  brackets (i.e. presentation text) and the literal sentinels `unknown`/`system`/`anonymous`/
+  `guest`/`none`.
+- Firestore: minimal rules only — `create` binds `postedByUid` to `request.auth.uid`, and `update`
+  requires it to be unchanged, making ownership immutable in every state-machine branch. **Not
+  deployed.**
+
+**Rationale**: Authorship is a security fact, not a label. Attributing a job by a human-readable
+string that the same UI writes as `"You ($district)"` means ownership cannot be enforced at all, and
+the escrow check demonstrates exactly that. Making the uid immutable at creation and comparing it
+everywhere turns "whose job is this" into a question with a single, verifiable answer.
+
+**Consequences**:
+- Legacy jobs have no owner, so nobody can manage them through the new predicates. They remain
+  visible and readable; only ownership-gated actions are unavailable. Deliberate.
+- Legacy Firestore job documents lacking `postedByUid` will be rejected by the new `create` rule and
+  fail the Cloud Function's owner check — fail-closed by design. Re-homing historical cloud jobs is
+  a separate, unaddressed decision.
+- `momoPhoneNumber = "+256 772 198 420"` remains hardcoded in `addJobPost`; it is a payment-contact
+  issue, not an authorship one, and was deliberately left untouched.
+
+**Verification**: new `app/src/test/java/com/example/data/JobAuthorshipF4SecurityTest.kt` (Robolectric,
+7 cases A–F) covering uid-stamped creation, fail-closed creation with no Firebase user, display text
+never becoming ownership, the uid_A/uid_B-newer-row trap, uid-keyed ownership queries, and the
+unknown-owner legacy job; plus a new `migration nineteen to twenty is additive and registered` case
+in `GuarantorVerificationPersistenceTest`. Full suite 18 suites / 139 tests / 0 failures / 0 errors /
+0 skipped; `compileDebugKotlin` BUILD SUCCESSFUL. **No on-device verification was possible** (no adb
+device attached) and neither the rules nor the Cloud Function was deployed.
+
+---
 ---

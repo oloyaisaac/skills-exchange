@@ -461,6 +461,12 @@ class FirebaseService(private val context: Context? = null) {
                 "title" to job.title,
                 "category" to job.category,
                 "description" to job.description,
+                // C2-2 Fix #4 (F4): the authoritative owner uid travels with the document so the
+                // server side (releaseEscrowToWorker) can authorize on it. The client-supplied value
+                // is NOT trusted on its own — firestore.rules binds it to request.auth.uid on
+                // create, and the Cloud Function only ever READS it.
+                "postedByUid" to (job.postedByUid ?: ""),
+                // DISPLAY-ONLY text; never an authorization key.
                 "postedByResident" to job.postedByResident,
                 "district" to job.district,
                 "budget" to job.budget,

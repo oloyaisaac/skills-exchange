@@ -164,13 +164,36 @@ data class SkillEndorsementEntity(
             onDelete = ForeignKey.SET_NULL
         )
     ],
-    indices = [Index(value = ["assignedProviderId"]), Index(value = ["status"])]
+    indices = [
+        Index(value = ["assignedProviderId"]),
+        Index(value = ["status"]),
+        // C2-2 Fix #4 (F4): ownership lookups are by postedByUid, never by the display string.
+        Index(value = ["postedByUid"])
+    ]
 )
 data class JobPostEntity(
     @PrimaryKey val id: String,
     val title: String,
     val category: String,
     val description: String,
+    /**
+     * C2-2 Fix #4 (audit finding **F4**) — the AUTHORITATIVE, immutable owner identity of this
+     * job. It is the `FirebaseAuth.currentUser.uid` of the account that created the job and is the
+     * ONLY field that may be used for ownership/authorization ("is this my job?", cancel/edit/manage
+     * rights). It is nullable purely for backwards compatibility with rows created before this
+     * column existed: those jobs have an UNKNOWN owner and must never be attributed to anyone
+     * (see MIGRATION_19_20, which deliberately stores NULL rather than guessing from
+     * [postedByResident] or from the newest Room profile).
+     *
+     * New jobs created through [com.example.data.repository.SkillsExchangeRepository.addJobPost]
+     * are guaranteed to carry a non-null, validated UID — creation fails closed otherwise.
+     */
+    val postedByUid: String? = null,
+    /**
+     * DISPLAY-ONLY presentation text, e.g. `"Robert K. (Sunnyside)"`. It is human-readable and is
+     * NEVER an ownership or security key — the string is freely editable and is not an identity.
+     * Do not compare it to a uid and do not gate any permission on it.
+     */
     val postedByResident: String,
     val district: String,
     val budget: Double,

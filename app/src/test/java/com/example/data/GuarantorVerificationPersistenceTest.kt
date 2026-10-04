@@ -373,7 +373,30 @@ class GuarantorVerificationPersistenceTest {
 
         var schemaVersion = 0L
         forEachRow("PRAGMA user_version") { cursor -> schemaVersion = cursor.getLong(0) }
-        assertEquals("Room must build the v19 schema", 19L, schemaVersion)
+        // C2-2 Fix #4 (F4) bumped the schema to v20 (job authorship / postedByUid). The
+        // MIGRATION_18_19 assertions above are unchanged and still must hold.
+        assertEquals("Room must build the v20 schema", 20L, schemaVersion)
+    }
+
+    @Test
+    fun `migration nineteen to twenty is additive and registered`() {
+        // C2-2 Fix #4 (F4): job authorship. Additive only — the job_posts rows that already exist
+        // must survive, and postedByUid must be NULL for them (unknown owner) rather than
+        // back-filled from the display string.
+        assertEquals(19, AppDatabase.MIGRATION_19_20.startVersion)
+        assertEquals(20, AppDatabase.MIGRATION_19_20.endVersion)
+
+        var schemaVersion = 0L
+        forEachRow("PRAGMA user_version") { cursor -> schemaVersion = cursor.getLong(0) }
+        assertEquals("Room must build the v20 schema", 20L, schemaVersion)
+
+        var postedByUidColumn: String? = null
+        forEachRow("PRAGMA table_info(job_posts)") { cursor ->
+            if (cursor.getString(1) == "postedByUid") postedByUidColumn = cursor.getString(2)
+        }
+        assertNotNull("postedByUid must exist on job_posts", postedByUidColumn)
+        // Nullable on purpose: pre-F4 jobs have an unknown owner.
+        assertEquals("postedByUid must be TEXT", "TEXT", postedByUidColumn)
     }
 
     @Test

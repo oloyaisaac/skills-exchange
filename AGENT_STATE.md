@@ -1,11 +1,25 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-10-04 (latest) — **C2-2 Fix #3 (finding F7: legacy newest-row identity-consumer sweep) IMPLEMENTED AND VERIFIED at the unit/build level. `C2` remains ⏳ Pending Audit Fix and must NOT be marked complete; findings F4 (job authorship), F5 (chat sender), F6 (job-status attribution) and the F3 remainder are still open. No device/emulator verification was possible (no adb device attached).**
+2026-10-04 (latest) — **C2-2 Fix #4 (finding F4: job authorship / `postedByUid`) IMPLEMENTED AND VERIFIED at the unit/build level. `C2` remains ⏳ Pending Audit Fix and must NOT be marked complete; findings F5 (chat sender), F6 (job-status attribution) and the F3 remainder are still open. `firestore.rules` and the Cloud Function were NOT deployed. No device/emulator verification was possible (no adb device attached).**
 
-Previous update 2026-10-04 — C2-2 **Fix #2** (finding F2: session-restore identity cross-check) was
-IMPLEMENTED AND VERIFIED at the unit/build level; its detail block is preserved at the bottom of this
-section.
+**What Fix #4 (F4) changed — production:**
+- `data/db/Entities.kt`: `JobPostEntity.postedByUid: String?` (authoritative, immutable owner) added next to `postedByResident` (documented DISPLAY-ONLY), plus `Index(["postedByUid"])`.
+- `data/db/AppDatabase.kt`: **version 19 → 20**, new `MIGRATION_19_20` = `ALTER TABLE job_posts ADD COLUMN postedByUid TEXT` (nullable, **no default**) + the index, registered in `addMigrations`. Additive only — no job row deleted, reset or rewritten. Pre-F4 rows keep `postedByUid = NULL` = **unknown owner**; they are never back-filled from `postedByResident` or from the newest Room profile.
+- `data/db/Daos.kt`: `getJobsPostedBy(uid)` and `getJobsWithUnknownOwner()` ownership queries.
+- `data/repository/SkillsExchangeRepository.kt`: `addJobPost()` now returns `String?` and **fails closed** (returns null, persists nothing) when `resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)` is null. New `getMyJobs()` and `isJobOwnedByCurrentUser(job)` (uid-vs-uid, false for a NULL/absent owner, no display-string or newest-row fallback). `resolveAuthoritativeUid` hardened to also reject whitespace/bracket-bearing presentation text and the `unknown`/`system`/`anonymous`/`guest`/`none` sentinels.
+- `ui/viewmodel/SkillsExchangeViewModel.kt`: `postJob` returns early when `addJobPost` yields null (no sheet close, no selection, no Firestore sync). Same `resolveAuthoritativeUid` hardening applied.
+- `data/remote/FirebaseService.kt`: `postedByUid` added to the `syncJobToFirestore` payload.
+- `firestore.rules` (minimal, F4-only): `create` requires `request.resource.data.postedByUid == request.auth.uid`; `update` requires `request.resource.data.postedByUid == resource.data.postedByUid` so ownership is immutable. **NOT DEPLOYED.**
+- `functions/src/index.ts`: `releaseEscrowToWorker` ownership check fixed — it compared `postedByResident`/`postedBy` (a display string, and a field the client never wrote) against `callerUid`; it now reads `postedByUid` and fails closed. **NOT DEPLOYED.**
+
+**Tests:** new `app/src/test/java/com/example/data/JobAuthorshipF4SecurityTest.kt` (Robolectric, 7 cases A–F) incl. the uid_A/uid_B-newer-row trap, fail-closed creation, and the unknown-owner legacy job. `GuarantorVerificationPersistenceTest` schema assertion moved 19 → 20 (all MIGRATION_18_19 assertions intact) and a `migration nineteen to twenty is additive and registered` case added.
+
+**Verification (executed):** focused `JobAuthorshipF4SecurityTest` **7/0/0/0**; full suite `:app:testDebugUnitTest` → **18 suites / 139 tests / 0 failures / 0 errors / 0 skipped**; `:app:compileDebugKotlin` BUILD SUCCESSFUL; `git --no-pager diff --check` clean. No APK build, no device run. Environment: C: is chronically near-full — run Robolectric with `TMP`/`TEMP` pointed at D: (see the incident note below).
+
+**Remaining F4 concerns:** `momoPhoneNumber = "+256 772 198 420"` is still hardcoded in `addJobPost` (separate payment finding, deliberately untouched); legacy Firestore job documents with no `postedByUid` will be **denied** by the new `create` rule and fail the Cloud Function's owner check (fail-closed by design — needs a decision on re-homing historical jobs); `getMyJobs()`/`isJobOwnedByCurrentUser` are new API and are not yet wired into a UI screen.
+
+Previous update 2026-10-04 — **C2-2 Fix #3 (finding F7: legacy newest-row identity-consumer sweep) IMPLEMENTED AND VERIFIED** (committed as `89faab3`); its detail block is preserved below.
 
 **Current story:** C2-2 audit fixes. **Fix #1** (UID-keyed `getCurrentUserById` / `getCurrentUserByUid` / `currentUserByUid`, commit `db694a2`) and **Fix #2 (F2)** are intact and were NOT weakened. **Fix #3 (F7)** is complete and verified.
 

@@ -25,7 +25,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         JobStatusAuditEntity::class,
         ReportEntity::class
     ],
-    version = 19,
+    version = 20,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -405,6 +405,30 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * C2-2 Fix #4 (audit finding **F4**): job authorship / `postedByUid`.
+         *
+         * Additive only — no existing job data is deleted, moved or rewritten. The column is
+         * NULLABLE and deliberately added without a default:
+         *
+         * Pre-existing jobs have NO trustworthy owner. Their `postedByResident` is display text
+         * ("Robert K. (Sunnyside)"), not an identity, and the device's newest Room profile is not
+         * evidence of who posted a job weeks ago. Back-filling either one would silently hand
+         * historical jobs to a random account — an ownership/earnings/liability forgery. So the
+         * column stays NULL for them, which means "unknown owner": such a job is nobody's job,
+         * and ownership comparisons fail closed.
+         *
+         * Every NEW job created after this migration carries a validated
+         * `FirebaseAuth.currentUser.uid` (addJobPost fails closed when there is none).
+         */
+        val MIGRATION_19_20 = object : Migration(19, 20) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE job_posts ADD COLUMN postedByUid TEXT")
+                // Ownership lookups ("my jobs", can this user manage this job) are indexed.
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_job_posts_postedByUid ON job_posts(postedByUid)")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -412,7 +436,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "skills_exchange_database"
                 )
-                    .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19)
+                    .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20)
                     .build()
                 INSTANCE = instance
                 instance

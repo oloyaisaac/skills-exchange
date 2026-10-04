@@ -197,13 +197,24 @@ service cloud.firestore {
       // Allow public read of general list, but gate client GPS coordinates for unverified workers
       allow read: if true;
 
-      // Allow creation when authenticated
+      // C2-2 Fix #4 (F4): `postedByUid` is the authoritative owner of the job. On create it MUST
+      // equal the authenticated uid — a client can therefore never post a job on someone else's
+      // behalf by supplying a foreign value. Legacy documents synced before this field existed
+      // have it absent/empty, so the update branch compares against resource.data (server-held
+      // value) and never lets a caller rewrite ownership.
       allow create: if isAuthenticated() &&
         request.resource.data.status == 'REQUESTED' &&
-        request.resource.data.escrowStatus == 'QUOTE_PENDING';
+        request.resource.data.escrowStatus == 'QUOTE_PENDING' &&
+        request.resource.data.postedByUid == request.auth.uid;
 
-      // State Machine Enforcement on Updates
-      allow update: if isAuthenticated() && (
+      // State Machine Enforcement on Updates.
+      // C2-2 Fix #4 (F4): ownership is immutable once created. Any update that would change
+      // postedByUid is denied outright, in every branch of the state machine below — otherwise a
+      // caller could create a job, transfer ownership, then act on (or claim earnings from) a
+      // job that is no longer theirs.
+      allow update: if isAuthenticated() &&
+        request.resource.data.postedByUid == resource.data.postedByUid &&
+        (
         // Case 1: Client accepting quote -> ACCEPTED_FUNDED
         (resource.data.status == 'REQUESTED' && request.resource.data.status in ['QUOTED', 'ACCEPTED_FUNDED']) ||
 

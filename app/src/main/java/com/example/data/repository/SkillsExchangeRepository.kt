@@ -72,6 +72,32 @@ class SkillsExchangeRepository(
     }
 
     /**
+     * C2-2 Fix #4 (F4): "my jobs" — the jobs owned by the AUTHENTICATED account.
+     *
+     * Keyed exclusively on `postedByUid` vs `FirebaseAuth.currentUser.uid`. The display string
+     * `postedByResident` is never compared, and jobs with a NULL `postedByUid` (pre-F4 rows with
+     * no provable owner) are excluded — they belong to nobody, so they never appear as anybody's.
+     * With no authenticated uid this returns an empty list (fail closed).
+     */
+    fun getMyJobs(): Flow<List<JobPostEntity>> {
+        val uid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+            ?: return kotlinx.coroutines.flow.flowOf(emptyList())
+        return db.jobPostDao().getJobsPostedBy(uid)
+    }
+
+    /**
+     * C2-2 Fix #4 (F4): ownership predicate for edit/cancel/manage/authorize decisions.
+     *
+     * Returns `false` when there is no authenticated uid, when [job]'s `postedByUid` is NULL
+     * (unknown legacy owner) or when it names a different account. There is no display-string
+     * fallback and no newest-Row fallback — both would let one account act on another's job.
+     */
+    fun isJobOwnedByCurrentUser(job: JobPostEntity): Boolean {
+        val uid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid) ?: return false
+        return job.postedByUid != null && job.postedByUid == uid
+    }
+
+    /**
      * C2-1: device-local phone lookup. NON-AUTHORITATIVE — a phone match does not establish who
      * owns an account, so this must never be used to select the record that an authenticated
      * identity inherits. Identity is always `FirebaseAuth.currentUser.uid`.
@@ -461,6 +487,19 @@ class SkillsExchangeRepository(
         }
     }
 
+    /**
+     * C2-2 Fix #4 (audit finding **F4**): job authorship.
+     *
+     * Every job is stamped with `postedByUid = FirebaseAuth.currentUser.uid` (validated by
+     * [resolveAuthoritativeUid]) BEFORE it is persisted. Returns `null` — persisting nothing —
+     * when there is no authoritative authenticated uid. That is a deliberate fail-closed abort:
+     * a job with no provable owner can never be cancelled, edited or attributed, so creating it
+     * would be worse than refusing it.
+     *
+     * `postedByResident` remains a pure display string; it is never an ownership key. The
+     * hardcoded `momoPhoneNumber` below is left untouched — payment contact is a separate finding
+     * and changing it here would alter behaviour beyond F4's scope.
+     */
     suspend fun addJobPost(
         title: String,
         category: String,
@@ -473,7 +512,11 @@ class SkillsExchangeRepository(
         laborRate: Double = 60.0,
         jobType: String = "ONE_TIME",
         recurringSchedule: String = "WEEKLY"
-    ): String {
+    ): String? {
+        // F4: the ONLY acceptable owner identity. Never the newest Room row, never a display
+        // name/district, never "unknown"/"system"/a synthetic or anonymous id.
+        val ownerUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+            ?: return null
         val newJobId = "job_${System.currentTimeMillis()}"
         val laborTotal = laborHours * laborRate
         val isLaborOnly = materialsProvidedBy == "RESIDENT" || materialsProvidedBy == "NONE_NEEDED"
@@ -488,6 +531,9 @@ class SkillsExchangeRepository(
             title = title,
             category = category,
             description = description,
+            // F4: authoritative ownership (immutable authenticated uid).
+            postedByUid = ownerUid,
+            // F4: DISPLAY-ONLY text — never an ownership key.
             postedByResident = "You ($district)",
             district = district,
             budget = grandTotal,
@@ -1088,6 +1134,13 @@ class SkillsExchangeRepository(
 
     companion object {
         /**
+         * C2-2 Fix #4 (F4): literal, non-identity values that must never be accepted as an owner
+         * or sender id. Firebase will never issue these; they are the fallbacks this codebase
+         * historically used when no authenticated user was available.
+         */
+        private val SYNTHETIC_ID_SENTINELS = setOf("unknown", "system", "anonymous", "guest", "none")
+
+        /**
          * C2-2 Fix #3 (F7): the ONLY identity a security-sensitive operation may use.
          *
          * `FirebaseAuth.currentUser.uid` is authoritative; a missing, blank, whitespace-padded or
@@ -1095,7 +1148,16 @@ class SkillsExchangeRepository(
          * promoting the newest Room row, a placeholder, an anonymous or a synthetic id.
          */
         fun resolveAuthoritativeUid(firebaseUid: String?): String? =
-            firebaseUid?.trim()?.takeIf { it.isNotEmpty() && it != "user_default_me" }
+            firebaseUid?.trim()?.takeIf { candidate ->
+                if (candidate.isEmpty() || candidate == "user_default_me") return@takeIf false
+                // C2-2 Fix #4 (F4): a real Firebase uid (including an anonymous one) is
+                // alphanumeric. A value carrying whitespace or brackets is presentation text
+                // ("Robert K. (Sunnyside)", "You (Nakawa)") and must never be treated as an
+                // identity — and neither may the literal synthetic sentinels this codebase
+                // historically fell back to.
+                if (candidate.any { it.isWhitespace() || it == '(' || it == ')' }) return@takeIf false
+                candidate.lowercase() !in SYNTHETIC_ID_SENTINELS
+            }
 
         /**
          * C2-2 Fix #3 (F7): the ONLY profile whose contact details may be broadcast in an SOS
