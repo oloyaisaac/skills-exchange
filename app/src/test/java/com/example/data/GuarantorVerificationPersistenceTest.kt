@@ -373,9 +373,29 @@ class GuarantorVerificationPersistenceTest {
 
         var schemaVersion = 0L
         forEachRow("PRAGMA user_version") { cursor -> schemaVersion = cursor.getLong(0) }
-        // C2-2 Fix #4 (F4) bumped the schema to v20 (job authorship / postedByUid). The
-        // MIGRATION_18_19 assertions above are unchanged and still must hold.
-        assertEquals("Room must build the v20 schema", 20L, schemaVersion)
+        // C2-2 Fix #4 (F4) bumped the schema to v20 and Fix #5 (F5) to v21 (chat sender identity).
+        // The MIGRATION_18_19 assertions above are unchanged and still must hold.
+        assertEquals("Room must build the v21 schema", 21L, schemaVersion)
+    }
+
+    @Test
+    fun `migration twenty to twenty one is additive and registered`() {
+        // C2-2 Fix #5 (F5): chat sender identity. Additive only — existing messages survive with
+        // an UNKNOWN author (NULL), never back-filled from the display senderName.
+        assertEquals(20, AppDatabase.MIGRATION_20_21.startVersion)
+        assertEquals(21, AppDatabase.MIGRATION_20_21.endVersion)
+
+        var schemaVersion = 0L
+        forEachRow("PRAGMA user_version") { cursor -> schemaVersion = cursor.getLong(0) }
+        assertEquals("Room must build the v21 schema", 21L, schemaVersion)
+
+        var senderIdColumn: String? = null
+        forEachRow("PRAGMA table_info(chat_messages)") { cursor ->
+            if (cursor.getString(1) == "senderId") senderIdColumn = cursor.getString(2)
+        }
+        assertNotNull("senderId must exist on chat_messages", senderIdColumn)
+        // Nullable on purpose: pre-F5 messages and system rows have no provable author.
+        assertEquals("senderId must be TEXT", "TEXT", senderIdColumn)
     }
 
     @Test
@@ -388,7 +408,10 @@ class GuarantorVerificationPersistenceTest {
 
         var schemaVersion = 0L
         forEachRow("PRAGMA user_version") { cursor -> schemaVersion = cursor.getLong(0) }
-        assertEquals("Room must build the v20 schema", 20L, schemaVersion)
+        // C2-2 Fix #5 (F5) later bumped the schema to v21 (chat sender identity). This test asserts
+        // the F4 migration itself — its postedByUid checks below — so only the live schema version
+        // moves forward. The migration's own start/end versions stay pinned at 19 -> 20.
+        assertEquals("Room must build the current v21 schema", 21L, schemaVersion)
 
         var postedByUidColumn: String? = null
         forEachRow("PRAGMA table_info(job_posts)") { cursor ->

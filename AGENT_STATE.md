@@ -1,7 +1,25 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-10-04 (latest) — **C2-2 Fix #4 (finding F4: job authorship / `postedByUid`) IMPLEMENTED AND VERIFIED at the unit/build level. `C2` remains ⏳ Pending Audit Fix and must NOT be marked complete; findings F5 (chat sender), F6 (job-status attribution) and the F3 remainder are still open. `firestore.rules` and the Cloud Function were NOT deployed. No device/emulator verification was possible (no adb device attached).**
+2026-10-04 (latest) — **C2-2 Fix #5 (finding F5: chat sender identity) IMPLEMENTED AND VERIFIED at the unit/build level. `C2` remains ⏳ Pending Audit Fix and must NOT be marked complete; finding F6 (job-status `changedBy`) and the F3 remainder are still open. `firestore.rules` was NOT deployed. No device/emulator verification was possible (no adb device attached).**
+
+**What Fix #5 (F5) changed — production:**
+- **Audit finding beyond the reported one:** `ChatMessageEntity` had **no `senderId` column at all** — Room persisted only `senderName` (display) and `isFromUser` (a client-supplied boolean). Authorship was therefore not stored locally and could not be enforced; the Firestore read path additionally **discarded** the `senderId` it received. Both were fixed.
+- `data/db/Entities.kt`: `ChatMessageEntity.senderId: String?` (authenticated author) added, `senderName` documented DISPLAY-ONLY, plus `Index(["senderId"])`.
+- `data/db/AppDatabase.kt`: **version 20 → 21**, new `MIGRATION_20_21` = `ALTER TABLE chat_messages ADD COLUMN senderId TEXT` (nullable, **no default**) + the index, registered in `addMigrations`. Additive only. Pre-F5 messages and system/notification rows keep `senderId = NULL` = **unknown author**; never back-filled from `senderName`.
+- `data/db/Daos.kt`: `getMessagesAuthoredBy(uid)` authorship query.
+- `data/repository/SkillsExchangeRepository.kt`: `sendChatMessage()` returns `Boolean`, resolves the author via the **existing** `resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)` (no second identity helper; the Room profile is consulted for nothing) and **returns false, persisting and sending nothing**, when there is no authoritative uid — the `"unknown"` fallback is deleted. New `isMessageAuthoredByCurrentUser(message)` (uid-to-uid, false when unauthenticated or `senderId` is null). `getRealtimeChatMessages` now preserves `senderId` through deserialization.
+- `ui/viewmodel/SkillsExchangeViewModel.kt`: comment only — the repository now fails closed.
+- `firestore.rules` (minimal, F5-only): the `jobs/{jobId}/messages` subcollection previously had **no rule at all** (Firestore denies by default). Added `create` requiring `senderId == request.auth.uid`, `update` requiring the original author AND an unchanged `senderId`, `delete` denied. **NOT DEPLOYED.**
+- **Consequence worth noting:** with the F5 change, `repository.currentUser` (the legacy newest-row flow) now has exactly **one** remaining production consumer — the ViewModel's `updateJobStatus` `changedBy` (finding **F6**).
+
+**Tests:** new `app/src/test/java/com/example/data/ChatSenderIdentityF5SecurityTest.kt` (Robolectric, 8 cases A–F). `GuarantorVerificationPersistenceTest` schema assertions moved to v21 — each migration's own start/end versions stay pinned and all MIGRATION_18_19 checks remain intact — plus a new `migration twenty to twenty one is additive and registered` case.
+
+**Verification (executed):** focused `ChatSenderIdentityF5SecurityTest` **8/0/0/0**; full suite `:app:testDebugUnitTest` → **19 suites / 148 tests / 0 failures / 0 errors / 0 skipped**; `:app:compileDebugKotlin` BUILD SUCCESSFUL; `git --no-pager diff --check` clean. No APK build, no device run. Environment: C: held ~0.8 GB free; Robolectric was run with `TMP`/`TEMP` on D: (documented workaround) and **no disk-space failure occurred** this session.
+
+**Remaining F5 concerns:** `isMessageAuthoredByCurrentUser` and `getMessagesAuthoredBy` are new API and are **not yet wired into any UI** — there is currently no edit/delete/moderate affordance that uses them (so no live ownership bug today, but also no enforcement at the UI layer yet); `isFromUser` is still a client-supplied boolean that drives bubble alignment only and must never be treated as ownership; the Firestore rules are **not deployed**, so server-side authorship enforcement is not live until `firebase deploy --only firestore:rules` runs.
+
+Previous update 2026-10-04 — **C2-2 Fix #4 (finding F4: job authorship / `postedByUid`) IMPLEMENTED AND VERIFIED**; its detail block is preserved below.
 
 **What Fix #4 (F4) changed — production:**
 - `data/db/Entities.kt`: `JobPostEntity.postedByUid: String?` (authoritative, immutable owner) added next to `postedByResident` (documented DISPLAY-ONLY), plus `Index(["postedByUid"])`.

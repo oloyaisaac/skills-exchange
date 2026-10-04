@@ -26,10 +26,12 @@ class SkillsExchangeRepository(
      * After the F7 sweep the SOS notification/alert paths, the worker authorization gate,
      * notifications, ratings, disputes, guarantors, training, profile writes and account deletion
      * all resolve the authenticated user through the UID-keyed path. The only remaining production
-     * consumers of this flow are the chat-sender attribution in [sendChatMessage] (separate audit
-     * finding **F5**) and the job-status `changedBy` attribution in the ViewModel's
-     * `updateJobStatus` (separate audit finding **F6**) — both deliberately not migrated by the F7
-     * change, and both must be swept before C2-2 can be closed.
+     * consumer of this flow is the job-status `changedBy` attribution in the ViewModel's
+     * `updateJobStatus` (audit finding **F6**) — deliberately not migrated by the F7 change and it
+     * must be swept before C2-2 can be closed.
+     *
+     * F5 removed the former chat-sender consumer (finding **F5**): [sendChatMessage] now takes its
+     * author from `FirebaseAuth.currentUser.uid` and fails closed without one.
      */
     val currentUser: Flow<UserProfileEntity?> = db.userProfileDao().getCurrentUser()
     val currentTraining: Flow<WorkerTrainingEntity?> = db.workerTrainingDao().getCurrentUserTraining()
@@ -822,10 +824,34 @@ class SkillsExchangeRepository(
         )
     }
 
-    suspend fun sendChatMessage(jobId: String, senderName: String, isFromUser: Boolean, text: String) {
+    /**
+     * C2-2 Fix #5 (audit finding **F5**): chat sender identity.
+     *
+     * The author is `FirebaseAuth.currentUser.uid` (validated by the shared [resolveAuthoritativeUid]
+     * helper — the Room profile is consulted for NOTHING here). Returns `false` and persists/sends
+     * NOTHING when there is no authoritative uid; there is no `"unknown"` fallback and no
+     * newest-row fallback.
+     *
+     * `senderName` remains a DISPLAY string passed through from the caller, and `isFromUser` remains
+     * the bubble-alignment flag. Neither is an identity.
+     */
+    suspend fun sendChatMessage(
+        jobId: String,
+        senderName: String,
+        isFromUser: Boolean,
+        text: String
+    ): Boolean {
+        // F5: the ONLY acceptable author identity. Never the newest Room row, never a display
+        // name/phone/district, never "unknown"/"system"/a synthetic or anonymous id.
+        val authorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+            ?: return false
+
         val msg = ChatMessageEntity(
             id = "msg_${System.currentTimeMillis()}",
             jobId = jobId,
+            // F5: authoritative authorship (authenticated uid).
+            senderId = authorUid,
+            // F5: DISPLAY-ONLY text — never an identity.
             senderName = senderName,
             isFromUser = isFromUser,
             message = text,
@@ -834,9 +860,20 @@ class SkillsExchangeRepository(
         )
         db.chatMessageDao().insertMessage(msg)
 
-        val currentUser = currentUser.first()
-        val senderId = currentUser?.id ?: "unknown"
-        firebaseService.sendChatMessage(jobId, senderId, senderName, text, isFromUser)
+        firebaseService.sendChatMessage(jobId, authorUid, senderName, text, isFromUser)
+        return true
+    }
+
+    /**
+     * C2-2 Fix #5 (F5): authorship predicate for edit/delete/moderation/attribution decisions.
+     *
+     * Returns `false` when there is no authenticated uid, when the message's `senderId` is NULL
+     * (a legacy message or a system notification with no human author) or when it names another
+     * account. There is no display-name, `isFromUser`, phone or newest-row fallback.
+     */
+    fun isMessageAuthoredByCurrentUser(message: ChatMessageEntity): Boolean {
+        val uid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid) ?: return false
+        return message.senderId != null && message.senderId == uid
     }
 
     fun getFirestoreChatMessages(jobId: String): Flow<List<Map<String, Any>>> {
@@ -848,12 +885,17 @@ class SkillsExchangeRepository(
             firestoreMessages.mapNotNull { msg ->
                 val id = msg["docId"] as? String ?: "msg_${msg["timestamp"] ?: System.currentTimeMillis()}"
                 val senderName = msg["senderName"] as? String ?: "Unknown"
+                // C2-2 Fix #5 (F5): preserve the authenticated author through deserialization.
+                // Legacy documents have no `senderId` key, so this stays null = unknown author —
+                // it is NEVER back-filled from senderName, and a null never means "mine".
+                val senderId = msg["senderId"] as? String
                 val text = msg["text"] as? String ?: ""
                 val isFromUser = msg["isFromUser"] as? Boolean ?: false
                 val timestamp = msg["timestamp"] as? Long ?: System.currentTimeMillis()
                 ChatMessageEntity(
                     id = id,
                     jobId = jobId,
+                    senderId = senderId?.takeIf { it.isNotBlank() },
                     senderName = senderName,
                     isFromUser = isFromUser,
                     message = text,

@@ -230,6 +230,27 @@ service cloud.firestore {
       );
 
       allow delete: if false; // Audit trail preservation
+
+      // C2-2 Fix #5 (F5): chat messages live in a subcollection and previously had NO rule at
+      // all, which Firestore treats as deny-by-default. This adds the smallest possible
+      // subcollection rule so authorship is enforced by the server rather than trusted from the
+      // client:
+      //  - create binds `senderId` to the authenticated uid, so a client cannot post a message
+      //    as another account,
+      //  - update may only be performed by the original author AND may not change `senderId`
+      //    (authorship is immutable), and
+      //  - delete is denied, preserving the conversation audit trail.
+      // `senderName` is display text and is deliberately unconstrained.
+      match /messages/{messageId} {
+        allow read: if true;
+        allow create: if isAuthenticated() &&
+          request.resource.data.senderId == request.auth.uid &&
+          request.resource.data.senderName is string;
+        allow update: if isAuthenticated() &&
+          resource.data.senderId == request.auth.uid &&
+          request.resource.data.senderId == resource.data.senderId;
+        allow delete: if false;
+      }
     }
   }
 }

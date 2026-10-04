@@ -251,11 +251,24 @@ data class JobPostEntity(
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index(value = ["jobId"])]
+    indices = [Index(value = ["jobId"]), Index(value = ["senderId"])]
 )
 data class ChatMessageEntity(
     @PrimaryKey val id: String,
     val jobId: String,
+    /**
+     * C2-2 Fix #5 (audit finding **F5**) — the AUTHENTICATED author of this message, i.e.
+     * `FirebaseAuth.currentUser.uid`. This is the only field that may be used to decide "did I
+     * write this?" (edit/delete/moderation/notification attribution). It must never be compared
+     * against [senderName], against a phone number or against any display string.
+     *
+     * Nullable for two honest reasons, both meaning "NOT authored by a known account":
+     *  - rows written before this column existed (MIGRATION_20_21), and
+     *  - system/notification rows, which genuinely have no human author.
+     * A null here must never be treated as "mine".
+     */
+    val senderId: String? = null,
+    /** DISPLAY-ONLY name shown in the chat bubble. Never an identity. */
     val senderName: String,
     val isFromUser: Boolean,
     val message: String,

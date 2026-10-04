@@ -809,4 +809,50 @@ in `GuarantorVerificationPersistenceTest`. Full suite 18 suites / 139 tests / 0 
 device attached) and neither the rules nor the Cloud Function was deployed.
 
 ---
+### [2026-10-04] DEC-025 A Chat Message Has an Author UID — F5 `senderId`
+
+**Context**: Audit finding F5. `sendChatMessage()` set `senderId = currentUser?.id ?: "unknown"` from the
+legacy newest-Room-row query. Two problems, one of them larger than the reported one:
+1. On a device that had held another account, chat authorship was attributed to the wrong person, and
+   `"unknown"` is not an identity.
+2. **`ChatMessageEntity` had no `senderId` column at all.** Room persisted only `senderName` (display)
+   and `isFromUser` (a client-supplied boolean). Authorship was not stored locally, so it could not be
+   enforced, and the Firestore read path silently **discarded** the `senderId` it received.
+
+**Decision**:
+- `ChatMessageEntity.senderId: String?` is the authenticated author (`FirebaseAuth.currentUser.uid`);
+  `senderName` and `isFromUser` remain presentation/bubble-alignment fields and are never identities.
+- `sendChatMessage()` returns `Boolean` and resolves the author through the **existing**
+  `resolveAuthoritativeUid` helper — no second, competing identity source — and returns false
+  **without persisting or sending anything** when there is no authoritative uid.
+- `MIGRATION_20_21` (DB 20 → 21) adds the column **nullable with no default**. Pre-F5 messages and
+  system/notification rows keep an **unknown author** rather than being back-filled from
+  `senderName`. `isMessageAuthoredByCurrentUser` therefore returns false for them.
+- The Firestore read path now preserves `senderId` instead of dropping it.
+- `firestore.rules`: the `jobs/{jobId}/messages` subcollection had **no rule at all** (Firestore
+  denies by default). A minimal subcollection rule binds `create` to `request.auth.uid`, allows
+  `update` only by the original author and only with an unchanged `senderId`, and denies `delete`.
+  **Not deployed.**
+
+**Rationale**: Message authorship is the basis for "did I write this?", for moderation and for blame.
+Deriving it from a timestamp-ordered local row made it both wrong under account switching and
+unenforceable; the missing Room column meant there was nothing to enforce even in principle. Writing
+the uid at creation and comparing uid-to-uid makes authorship a verifiable fact, and binding it in
+rules stops the client from asserting someone else's identity.
+
+**Consequences**:
+- Pre-F5 messages and system rows have no author, so ownership-gated actions on them are unavailable.
+  Deliberate — they are not attributable.
+- `repository.currentUser` now has exactly one remaining production consumer: the ViewModel's
+  `updateJobStatus` `changedBy` (finding **F6**, still open).
+- The new authorship helpers are not yet wired into any UI; there is no edit/delete/moderate affordance
+  using them yet, so no live UI ownership bug exists today.
+
+**Verification**: new `app/src/test/java/com/example/data/ChatSenderIdentityF5SecurityTest.kt`
+(Robolectric, 8 cases A–F) plus a new `migration twenty to twenty one is additive and registered` case
+in `GuarantorVerificationPersistenceTest`. Full suite 19 suites / 148 tests / 0 failures / 0 errors /
+0 skipped; `compileDebugKotlin` BUILD SUCCESSFUL. **No on-device verification was possible** (no adb
+device attached) and the rules were **not deployed**.
+
+---
 ---

@@ -751,6 +751,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     fun sendChatMessage(jobId: String, messageText: String) {
         if (messageText.isBlank()) return
         viewModelScope.launch {
+            // C2-2 Fix #5 (F5): the repository fails closed when Firebase has no authenticated
+            // uid — nothing is written and nothing is sent. `senderName` stays display text.
             repository.sendChatMessage(
                 jobId = jobId,
                 senderName = "You (${filterState.value.district})",

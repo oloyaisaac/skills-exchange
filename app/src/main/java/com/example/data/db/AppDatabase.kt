@@ -25,7 +25,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         JobStatusAuditEntity::class,
         ReportEntity::class
     ],
-    version = 20,
+    version = 21,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -429,6 +429,23 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * C2-2 Fix #5 (audit finding **F5**): chat sender identity.
+         *
+         * Additive only — no existing message is deleted or rewritten. `senderId` is NULLABLE and
+         * deliberately added with no default: pre-F5 messages and system/notification rows have NO
+         * provable author, so they stay unknown rather than being back-filled from `senderName`
+         * (a display string) or from the device's newest Room profile. A null senderId must never
+         * be read as "this is my message".
+         */
+        val MIGRATION_20_21 = object : Migration(20, 21) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE chat_messages ADD COLUMN senderId TEXT")
+                // Authorship lookups ("my messages", can this user moderate/edit this message").
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_chat_messages_senderId ON chat_messages(senderId)")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -436,7 +453,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "skills_exchange_database"
                 )
-                    .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20)
+                    .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21)
                     .build()
                 INSTANCE = instance
                 instance

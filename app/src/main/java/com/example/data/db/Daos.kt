@@ -153,6 +153,9 @@ interface ChatMessageDao {
     @Query("SELECT * FROM chat_messages WHERE jobId = :jobId ORDER BY id ASC")
     fun getMessagesForJob(jobId: String): Flow<List<ChatMessageEntity>>
 
+    @Query("SELECT * FROM chat_messages WHERE senderId = :uid ORDER BY id ASC")
+    fun getMessagesAuthoredBy(uid: String): Flow<List<ChatMessageEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMessage(message: ChatMessageEntity)
 
