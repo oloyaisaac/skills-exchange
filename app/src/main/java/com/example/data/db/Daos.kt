@@ -266,6 +266,15 @@ interface UserProfileDao {
     @Query("SELECT * FROM user_profiles WHERE id != 'user_default_me' ORDER BY updatedAtTimestamp DESC LIMIT 1")
     fun getCurrentUser(): Flow<UserProfileEntity?>
 
+    /**
+     * C2-2 Fix #1: UID-keyed current-user lookup. When a Firebase UID is available it is
+     * the authoritative identity key — this query selects ONLY the row whose id matches,
+     * with no timestamp ordering and no fallback of any kind. Returns null when the UID
+     * has no Room row (caller must fail closed, never substitute another row).
+     */
+    @Query("SELECT * FROM user_profiles WHERE id = :uid LIMIT 1")
+    fun getCurrentUserById(uid: String): Flow<UserProfileEntity?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUserProfile(user: UserProfileEntity)
 

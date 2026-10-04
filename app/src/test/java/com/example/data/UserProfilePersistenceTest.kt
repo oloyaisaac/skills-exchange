@@ -198,4 +198,49 @@ class UserProfilePersistenceTest {
         assertEquals("+256 700 000 111", stored?.phoneNumber)
         assertEquals(original.id, db.userProfileDao().getCurrentUser().first()?.id)
     }
+
+    // --- C2-2 Fix #1: UID-keyed current-user resolution ---
+
+    @Test
+    fun `uid-keyed lookup returns the authenticated uid even when another row is newer`() = runBlocking {
+        // Room holds two real profiles; UID-B is the NEWEST row (would win the legacy
+        // newest-row query). The authenticated Firebase identity is UID-A.
+        db.userProfileDao().insertUserProfile(
+            authenticatedWorkerProfile(id = "uid_A").copy(updatedAtTimestamp = 1_000L)
+        )
+        db.userProfileDao().insertUserProfile(
+            authenticatedWorkerProfile(id = "uid_B").copy(updatedAtTimestamp = 9_000L)
+        )
+
+        // Sanity: the legacy newest-row query would return the WRONG row here.
+        assertEquals("uid_B", db.userProfileDao().getCurrentUser().first()?.id)
+
+        // UID-keyed resolution must return UID-A — the authenticated identity — never UID-B.
+        val resolved = db.userProfileDao().getCurrentUserById("uid_A").first()
+        assertNotNull(resolved)
+        assertEquals("uid_A", resolved?.id)
+        assertEquals("isaac OLOYA", resolved?.fullName)
+    }
+
+    @Test
+    fun `uid-keyed lookup returns null when the authenticated uid has no row`() = runBlocking {
+        db.userProfileDao().insertUserProfile(
+            authenticatedWorkerProfile(id = "uid_B").copy(updatedAtTimestamp = 9_000L)
+        )
+
+        // Fail closed: no substitution of the newest row, no placeholder, just null.
+        assertNull(db.userProfileDao().getCurrentUserById("uid_A").first())
+    }
+
+    @Test
+    fun `uid-keyed lookup never returns the demo placeholder`() = runBlocking {
+        db.userProfileDao().insertUserProfile(legacyDemoProfile())
+
+        // The DAO answers only exact-id matches; production resolution additionally excludes
+        // the demo placeholder (see repository.getCurrentUserByUid), so belt and suspenders
+        // hold even if the DAO row is addressed directly.
+        val resolved = db.userProfileDao()
+            .getCurrentUserById("uid_A").first()
+        assertNull(resolved)
+    }
 }

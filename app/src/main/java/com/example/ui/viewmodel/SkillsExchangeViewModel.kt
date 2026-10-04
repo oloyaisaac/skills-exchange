@@ -76,6 +76,21 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     // State flows for remote features
     val firebaseUser: StateFlow<FirebaseUser?> = firebaseService.currentUserState
 
+    /**
+     * C2-2 Fix #1: UID-keyed authoritative current user. When Firebase reports a signed-in
+     * UID, ONLY the Room row whose id matches that UID is exposed — never the newest row,
+     * never `user_default_me`, never a placeholder. When Firebase has no signed-in user the
+     * flow emits null (fail closed). The legacy newest-row `repository.currentUser` is
+     * intentionally NOT consulted here; it remains only for pre-existing display consumers
+     * until the F7 call-site sweep.
+     */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val currentUserByUid: StateFlow<UserProfileEntity?> = firebaseUser
+        .flatMapLatest { user ->
+            repository.getCurrentUserByUid(user?.uid)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     val mapsSearchResults = MutableStateFlow<Pair<String, List<GroundedPlaceResult>>?>(null)
     val isMapsSearching = MutableStateFlow(false)
 
@@ -133,6 +148,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
      * Backs the Trust, Safety & Emergency SOS destination, which previously had no data
      * source at all and could only open the escrow sheet of an unrelated job.
      */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val myDisputes: StateFlow<List<DisputeEntity>> = currentUser
         .flatMapLatest { user ->
             if (user == null) flowOf(emptyList()) else repository.getDisputesForUser(user.id)
@@ -140,6 +156,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /** The worker's own KYC submission, used by the identity-verification destination. */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val myWorkerKyc: StateFlow<com.example.data.db.WorkerKycEntity?> = currentUser
         .flatMapLatest { user ->
             if (user == null) flowOf(null) else repository.getWorkerKyc(user.id)

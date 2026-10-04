@@ -34,6 +34,18 @@ class SkillsExchangeRepository(
     }
 
     /**
+     * C2-2 Fix #1: UID-keyed current-user lookup. When [firebaseUid] is available it is the
+     * authoritative identity — only the Room row whose id matches is returned, never the
+     * newest row, never `user_default_me`, never a placeholder. Returns a null-emitting Flow
+     * when no UID is available or no row matches (caller must fail closed).
+     */
+    fun getCurrentUserByUid(firebaseUid: String?): Flow<UserProfileEntity?> {
+        val uid = firebaseUid?.takeIf { it.isNotBlank() && it != "user_default_me" }
+            ?: return kotlinx.coroutines.flow.flowOf(null)
+        return db.userProfileDao().getCurrentUserById(uid)
+    }
+
+    /**
      * C2-1: device-local phone lookup. NON-AUTHORITATIVE — a phone match does not establish who
      * owns an account, so this must never be used to select the record that an authenticated
      * identity inherits. Identity is always `FirebaseAuth.currentUser.uid`.
