@@ -2110,9 +2110,15 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
          * user at that moment; when neither exists the caller must fail closed instead of writing
          * a session without an authenticated owner.
          */
+        // C2-2 Fix #7 (F3 remainder): both candidates are now filtered through the single shared
+        // resolveAuthoritativeUid rule instead of a bare isNotBlank(). The old check would have
+        // persisted "user_default_me", "system" or presentation text as the session owner, and the
+        // cached session UID is later compared during restore -- so a placeholder written here could
+        // feed back into the identity decision. Both arguments are Firebase-owned in practice, so
+        // this closes the hole without changing legitimate behaviour.
         fun resolveSessionOwnerId(verifiedPhoneAuthUid: String?, fallbackFirebaseUid: String?): String? {
-            return verifiedPhoneAuthUid?.takeIf { it.isNotBlank() }
-                ?: fallbackFirebaseUid?.takeIf { it.isNotBlank() }
+            return resolveAuthoritativeUid(verifiedPhoneAuthUid)
+                ?: resolveAuthoritativeUid(fallbackFirebaseUid)
         }
 
         /**

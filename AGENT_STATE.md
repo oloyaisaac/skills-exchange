@@ -1,6 +1,26 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
+2026-10-05 (latest) — **C2-2 Fix #7 (finding F3 remainder: unbound device-local profile recovery) IMPLEMENTED AND VERIFIED at the unit/build level. All seven C2-2 fixes (#1–#7) are now implemented and unit-verified, but `C2` itself remains ⏳ Pending Audit Fix and must NOT be marked complete — the "no per-role authorization on a job status transition" finding is still open and unreported-as-fixed. `prd.json` was NOT modified. No device/emulator verification was possible (no adb device attached).** *(This block supersedes the 2026-10-04 Fix #6 block immediately below it, which is retained as history.)*
+
+**What Fix #7 (F3 remainder) changed — production:**
+- `data/repository/SkillsExchangeRepository.kt` — **gap 1 (real).** `getCurrentUserByUid()` carried its own weaker rule (`isNotBlank() && != "user_default_me"`), a competing identity resolver that accepted whitespace-padded values, presentation text (`"John Doe"`, `"You (Nakawa)"`) and the synthetic sentinels (`"system"`, `"unknown"`, `"anonymous"`, `"guest"`, `"none"`). It backs `SkillsExchangeViewModel.currentUserByUid`, the app's only current-user source. Now delegates to the shared `resolveAuthoritativeUid`.
+- `ui/viewmodel/SkillsExchangeViewModel.kt` — **gap 2 (real).** `resolveSessionOwnerId()` used a bare `isNotBlank()`, so a placeholder could be persisted as the session owner and compared back in during restore. Both arguments now go through `resolveAuthoritativeUid`. Legitimate sign-in behaviour is unchanged (both args are Firebase-owned in practice).
+- **Deleted (dead, zero callers):** `SkillsExchangeRepository.getUserProfileByPhone()` and `UserProfileDao.getUserProfileByPhoneNumber()`. Selecting a local Room profile by a mutable field is exactly the unbound recovery path this finding targets.
+- **Kept + relabelled non-authoritative:** `UserProfileDao.getCurrentUser()` (newest row; zero production consumers, but it is the *trap* the security tests assert against) and `fetchUserIdentityByPhoneFromServer()` (zero callers; already denied by the tightened `users` read rule).
+- **Not touched:** `user_default_me` stays as the seeded/display placeholder and is excluded from authenticated identity; the unique `phoneNumber` index was not weakened; no DB schema/migration change; no Firestore rules, Cloud Functions, deployment, MoMo cleanup, UI redesign, worker authorization or job-status authorization change. Fixes #1–#6 are untouched.
+
+**Verification (executed this session):** focused `DeviceLocalProfileRecoveryF3SecurityTest` **7 tests / 0 failures / 0 errors / 0 skipped** (cases A–G). Full `:app:testDebugUnitTest` → **21 suites / 162 tests / 0 failures / 0 errors / 0 skipped** (baseline was 20/155: +1 suite, +7 tests, zero regressions). `:app:compileDebugKotlin` BUILD SUCCESSFUL. `git --no-pager diff --check` clean. No APK build, no device run.
+
+**⚠ Two environment traps that cost ~2h this session — read before running Gradle here:**
+1. **Delete the results directory before a run you intend to trust.** Otherwise Gradle legitimately reports `testDebugUnitTest UP-TO-DATE`, writes no new XML, and a stale XML from an earlier run is easy to misread as fresh evidence. `Remove-Item 'app\build\test-results\testDebugUnitTest' -Recurse -Force` first.
+2. **Run Gradle DETACHED and poll, do not run it in the terminal and poll.** Foreground polling commands kill the in-flight build (the tool closes the terminal), which is how an early attempt appeared to hang for ~45 min. Working pattern: `Start-Process -FilePath '.\gradlew.bat' -ArgumentList <args> -RedirectStandardOutput <log> -RedirectStandardError <log.err> -NoNewWindow -PassThru`, then poll the log and the result XML timestamps.
+   - Heap: `-Dorg.gradle.jvmargs=-Xmx1400m -Dorg.gradle.parallel=false -Dkotlin.daemon.jvmargs=-Xmx1000m --max-workers=1` with `TMP`/`TEMP` on D:. The `gradle.properties` default `-Xmx4g` cannot start on this 3.88 GB machine.
+   - **Avoid `--rerun`**: it forces a full recompile of all sources and thrashed for over an hour. Kill leftover daemons (`Get-Process java | Stop-Process -Force`) before a retry, and check `CPU=` is actually climbing before concluding a build is hung.
+3. **Never edit these Kotlin files with PowerShell `Get-Content -Raw` + `WriteAllText`.** It double-encodes their UTF-8 em-dashes/arrows into mojibake across many unrelated comment lines. It happened once here and required `git checkout` of three files plus re-applying every edit with the editor tool (all newly added text ASCII-only). Detect it by scanning the diff for `+`-lines containing `ΓÇ`, `├ó`, `Γå` or `≡ƒ` — the expected count is 0.
+
+
+## Last Updated
 2026-10-04 (latest) — **C2-2 Fix #6 (finding F6: job-status `changedBy` attribution) IMPLEMENTED AND VERIFIED at the unit/build level. `C2` remains ⏳ Pending Audit Fix and must NOT be marked complete; the F3 remainder and the "no per-role authorization on a status transition" finding are still open. `prd.json` was NOT modified. No device/emulator verification was possible (no adb device attached).**
 
 **What Fix #6 (F6) changed — production:**

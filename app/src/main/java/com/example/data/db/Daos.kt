@@ -267,14 +267,18 @@ interface UserProfileDao {
     @Query("SELECT * FROM user_profiles WHERE id = :userId")
     fun getUserProfile(userId: String): Flow<UserProfileEntity?>
 
-    @Query("SELECT * FROM user_profiles WHERE phoneNumber = :phoneNumber LIMIT 1")
-    fun getUserProfileByPhoneNumber(phoneNumber: String): Flow<UserProfileEntity?>
-
     /**
-     * ROLE-001/AUTH-002: The current user is the most recently updated REAL profile row.
-     * The seeded demo row ("user_default_me") is never an authenticated account, so it is
-     * excluded. This prevents the demo identity ("Sarah Namukasa", KYC APPROVED, activated)
-     * from leaking into the NavigationDrawer and from satisfying the worker access gates.
+     * C2-2 Fix #7 (F3 remainder): LEGACY / NON-AUTHORITATIVE. This query answers "the most recently
+     * updated REAL profile row on this device", which is a cache of device state, NOT an identity.
+     *
+     * It has ZERO production consumers as of Fix #7: SkillsExchangeRepository.currentUser is the
+     * only wrapper, and the ViewModel reads currentUserByUid instead. It is deliberately RETAINED
+     * rather than deleted, because security tests use it as the trap: they insert two accounts and
+     * assert this query answers with the WRONG one, proving no identity path consumes its answer.
+     * Deleting it would destroy that evidence.
+     *
+     * It must never be used to decide who is signed in, who owns a write, or who an action is
+     * attributed to. Use getCurrentUserByUid with FirebaseAuth.currentUser.uid.
      */
     @Query("SELECT * FROM user_profiles WHERE id != 'user_default_me' ORDER BY updatedAtTimestamp DESC LIMIT 1")
     fun getCurrentUser(): Flow<UserProfileEntity?>

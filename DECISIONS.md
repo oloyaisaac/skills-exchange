@@ -1,6 +1,51 @@
 # DECISIONS.md — Skills Exchange Architectural & Design Decisions
 
 All significant architectural, design, and implementation decisions are recorded here. This allows future agents and developers to understand why specific choices were made.
+### D-2026-10-05-1 - One shared identity resolver; delete the dead device-local phone lookup (F3 remainder)
+
+**Decision.** `FirebaseAuth.currentUser.uid`, filtered by a single shared predicate, is the only
+identity the app may use. Concretely, for the F3 remainder:
+
+1. `SkillsExchangeRepository.getCurrentUserByUid()` and `SkillsExchangeViewModel.resolveSessionOwnerId()`
+   now both delegate to the shared `resolveAuthoritativeUid()` instead of each carrying its own
+   weaker `isNotBlank()`-style check. **Rationale:** two divergent definitions of "valid identity"
+   is the root cause of this class of finding - the repository copy silently accepted
+   presentation text and the synthetic sentinels, and it backs the app's only current-user source.
+   There is now one rule, mirrored in the data and UI layers (mirroring rather than sharing is
+   deliberate: the data layer must not depend on the UI layer).
+2. The device-local phone lookup (`SkillsExchangeRepository.getUserProfileByPhone()` +
+   `UserProfileDao.getUserProfileByPhoneNumber()`) was **deleted**, not just documented. Both had
+   zero callers. **Rationale:** the capability to select a local Room profile by a mutable,
+   user-editable field is exactly the unbound recovery path this finding targets; leaving a
+   documented-but-callable footgun invites reuse. The remote twin
+   `fetchUserIdentityByPhoneFromServer()` was **kept** and re-documented, because the tightened
+   `users` read rule already denies it for non-owners (it returns null in practice) and because
+   removing a migration-support path is out of scope for an identity fix.
+3. The newest-row query `UserProfileDao.getCurrentUser()` was **kept**, relabelled
+   LEGACY / NON-AUTHORITATIVE. **Rationale:** it has zero production consumers, and the security
+   tests depend on it as the trap that proves the newest row answers with the *wrong* account and
+   that no identity path consumes that answer. Deleting the trap would delete the evidence.
+4. `user_default_me` was **kept** and remains excluded from authenticated identity (shared resolver
+   + the `it.id != DEMO_PROFILE_ID` ownership test in `resolveAuthenticatedProfile`). It is still
+   the seeded placeholder for demo/display data, and the unique `phoneNumber` index was not weakened.
+
+**Consequence / tradeoff.** `getCurrentUserByUid()` is now stricter than before: a caller passing a
+non-uid-shaped string (spaces, parentheses, or a literal sentinel) gets `null` instead of a row.
+That is the intended fail-closed behaviour and is covered by tests, but it is a behaviour change at
+the data boundary and must be re-checked if a future caller supplies a non-Firebase identifier.
+
+**Not decided here (separate findings, intentionally out of scope).** Per-role/ownership checks on
+job status transitions; worker authorization; UI redesign; MoMo phone cleanup. Firestore rules and
+Cloud Functions were not modified and nothing was deployed.
+
+**Verification.** `DeviceLocalProfileRecoveryF3SecurityTest` 7/0/0/0; full `:app:testDebugUnitTest`
+**21 suites / 162 tests / 0 failures / 0 errors / 0 skipped** (baseline 20/155, +7 tests, no
+regressions); `:app:compileDebugKotlin` BUILD SUCCESSFUL; `git --no-pager diff --check` clean. No
+device run (no adb device attached).
+
+---
+
+
 
 Format:
 ```

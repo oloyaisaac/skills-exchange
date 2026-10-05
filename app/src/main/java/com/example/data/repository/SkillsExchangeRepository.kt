@@ -54,8 +54,16 @@ class SkillsExchangeRepository(
      * newest row, never `user_default_me`, never a placeholder. Returns a null-emitting Flow
      * when no UID is available or no row matches (caller must fail closed).
      */
+    // C2-2 Fix #7 (F3 remainder): this previously carried its OWN weaker rule
+    // (isNotBlank() && != "user_default_me"), i.e. a COMPETING identity resolver. It accepted
+    // whitespace-padded values, presentation text such as "John Doe" / "You (Nakawa)", and the
+    // literal synthetic sentinels ("system", "unknown", "anonymous", "guest", "none") -- none of
+    // which Firebase can ever issue. Because SkillsExchangeViewModel.currentUserByUid (the app's
+    // only current-user source) flows through here, that divergence was a real identity-binding
+    // gap. It now delegates to the single shared resolveAuthoritativeUid rule, so every
+    // authenticated path enforces exactly one definition of "valid identity".
     fun getCurrentUserByUid(firebaseUid: String?): Flow<UserProfileEntity?> {
-        val uid = firebaseUid?.takeIf { it.isNotBlank() && it != "user_default_me" }
+        val uid = resolveAuthoritativeUid(firebaseUid)
             ?: return kotlinx.coroutines.flow.flowOf(null)
         return db.userProfileDao().getCurrentUserById(uid)
     }
@@ -96,15 +104,6 @@ class SkillsExchangeRepository(
     fun isJobOwnedByCurrentUser(job: JobPostEntity): Boolean {
         val uid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid) ?: return false
         return job.postedByUid != null && job.postedByUid == uid
-    }
-
-    /**
-     * C2-1: device-local phone lookup. NON-AUTHORITATIVE — a phone match does not establish who
-     * owns an account, so this must never be used to select the record that an authenticated
-     * identity inherits. Identity is always `FirebaseAuth.currentUser.uid`.
-     */
-    fun getUserProfileByPhone(phoneNumber: String): Flow<UserProfileEntity?> {
-        return db.userProfileDao().getUserProfileByPhoneNumber(phoneNumber)
     }
 
     fun getChatMessages(jobId: String): Flow<List<ChatMessageEntity>> {
@@ -448,6 +447,12 @@ class SkillsExchangeRepository(
      * only. It must never be used as an ownership gate: the authenticated Firebase UID is the
      * only identity allowed to own a profile or inherit privileged state.
      */
+    // C2-2 Fix #7 (F3 remainder): still has ZERO callers. The device-local counterpart
+    // getUserProfileByPhone and its DAO query were REMOVED in this fix, because selecting a local
+    // Room profile by a mutable field (a phone number) is exactly the unbound recovery path this
+    // finding targets. This remote variant is retained only because the tightened `users` read rule
+    // already denies it for non-owners (it returns null in practice); if it is ever revived it may
+    // only feed display, never authenticated identity.
     suspend fun fetchUserIdentityByPhoneFromServer(phoneNumber: String): UserProfileEntity? {
         return firebaseService.fetchUserIdentityByPhone(phoneNumber)
     }
