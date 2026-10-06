@@ -618,7 +618,11 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     fun hireProviderForSelectedJob(jobId: String, provider: ServiceProviderEntity) {
         viewModelScope.launch {
-            repository.hireProviderForJob(jobId, provider.id, provider.name)
+            // C2-2 authorization: accepting a worker sets the job status, so the repository gates it
+            // on the caller being the job owner and now returns whether it was allowed. Do not refresh
+            // `selectedJob` on rejection -- there is nothing to show, since nothing changed.
+            val hired = repository.hireProviderForJob(jobId, provider.id, provider.name)
+            if (!hired) return@launch
             // Refresh current selected job
             val updatedJob = repository.jobs.first().find { it.id == jobId }
             selectedJob.value = updatedJob
@@ -1734,7 +1738,11 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                     )
                 )
 
-                // Update job status to DISPUTED
+                // C2-2 authorization: moving the job to DISPUTED is a status transition, so it goes
+                // through the secured boundary, which decides whether the authenticated actor may
+                // drive it. The dispute record itself is still filed either way (that is the user's
+                // right to report), but an unauthorized actor must not thereby move another user's
+                // job status, and must not be told that they did.
                 jobPost?.let {
                     repository.updateJobStatus(jobId, "DISPUTED")
                 }

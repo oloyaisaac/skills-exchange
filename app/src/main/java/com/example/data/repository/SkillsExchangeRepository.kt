@@ -582,19 +582,17 @@ class SkillsExchangeRepository(
         return newJobId
     }
 
-    suspend fun updateJobStatus(jobId: String, newStatus: String) {
-        db.jobPostDao().updateJobStatus(jobId, newStatus)
-        db.chatMessageDao().insertMessage(
-            ChatMessageEntity(
-                id = "msg_${System.currentTimeMillis()}",
-                jobId = jobId,
-                senderName = "System",
-                isFromUser = false,
-                message = "Job status updated to '$newStatus'.",
-                timestampText = "Just now",
-                isSystemNotification = true
-            )
-        )
+    /**
+     * C2-2 job-status authorization: this legacy wrapper previously wrote `job_posts.status`
+     * directly with NO identity check, NO ownership check, NO state-machine check and NO audit row.
+     * It is now a thin, AUTHORIZED delegate to [transitionJobStatus], which is the single secured
+     * boundary. Callers that need to move a job's status go through the boundary or not at all.
+     *
+     * @return true only when the transition was both authorized and structurally legal.
+     */
+    suspend fun updateJobStatus(jobId: String, newStatus: String): Boolean {
+        val job = db.jobPostDao().getJobById(jobId) ?: return false
+        return transitionJobStatus(jobId, job.status, newStatus)
     }
 
     suspend fun updateEscrowStatus(jobId: String, newEscrowStatus: String) {
@@ -637,7 +635,23 @@ class SkillsExchangeRepository(
             else -> null
         }
         if (mappedJobStatus != null) {
-            db.jobPostDao().updateJobStatus(jobId, mappedJobStatus)
+            // C2-2 job-status authorization: this used to write `job_posts.status` unconditionally,
+            // so ANY caller reaching this method could move any job's status as a side effect of an
+            // escrow write. It is now gated on the authenticated actor being the job OWNER, the one
+            // relationship the client can decide safely (see [isJobTransitionAuthorized]).
+            //
+            // NOTE (reported, not silently changed): these mapped values are DISPLAY strings
+            // ("In Progress"/"Review"/"Completed") that are not members of the `JobStatus` enum, so
+            // they deliberately do NOT go through [transitionJobStatus] -- routing them through the
+            // state machine would require changing the status vocabulary, which is out of scope for
+            // an authorization fix. The ownership gate is applied instead, and the vocabulary
+            // mismatch is recorded in AGENT_STATE.md as an open correctness item.
+            val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+            val isJobOwner = actorUid != null && job != null &&
+                job.postedByUid != null && job.postedByUid == actorUid
+            if (isJobOwner) {
+                db.jobPostDao().updateJobStatus(jobId, mappedJobStatus)
+            }
         }
 
         db.chatMessageDao().insertMessage(
@@ -713,6 +727,17 @@ class SkillsExchangeRepository(
     }
 
     suspend fun verifyDoorstepPin(jobId: String, enteredPin: String, expectedPin: String): Boolean {
+        // C2-2 job-status authorization: `JobPostDao.verifyDoorstepPin` also sets
+        // `status = 'In Progress'`, so this method is a STATUS MUTATION and not merely a PIN check.
+        // It previously ran with no identity and no ownership check, so any caller who knew or
+        // guessed a job's 4-digit PIN could move that job's status. The PIN stays a second,
+        // independent factor; it is no longer the ONLY factor. Owner-only (fail closed) because the
+        // PIN is the resident's and there is no worker uid to authorize a worker-side arrival.
+        val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+            ?: return false
+        val job = db.jobPostDao().getJobById(jobId) ?: return false
+        if (job.postedByUid == null || job.postedByUid != actorUid) return false
+
         if (enteredPin.trim() == expectedPin.trim()) {
             db.jobPostDao().verifyDoorstepPin(jobId)
             db.chatMessageDao().insertMessage(
@@ -813,7 +838,19 @@ class SkillsExchangeRepository(
         db.jobPostDao().updatePaymentChannel(jobId, channel, phone)
     }
 
-    suspend fun hireProviderForJob(jobId: String, providerId: String, providerName: String) {
+    /**
+     * C2-2 job-status authorization: `JobPostDao.assignProvider` also sets `status = 'Accepted'`, so
+     * accepting a worker is a STATUS MUTATION. It previously ran with no identity and no ownership
+     * check, so any caller could accept a worker onto somebody else's job and thereby move its
+     * status. Accepting a worker onto a job is the owner's decision, so this is owner-gated
+     * (fail closed). Returns false when the caller is not the job owner.
+     */
+    suspend fun hireProviderForJob(jobId: String, providerId: String, providerName: String): Boolean {
+        val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+            ?: return false
+        val job = db.jobPostDao().getJobById(jobId) ?: return false
+        if (job.postedByUid == null || job.postedByUid != actorUid) return false
+
         db.jobPostDao().assignProvider(jobId, providerId, providerName)
         db.chatMessageDao().insertMessage(
             ChatMessageEntity(
@@ -826,6 +863,7 @@ class SkillsExchangeRepository(
                 isSystemNotification = false
             )
         )
+        return true
     }
 
     /**
@@ -1185,6 +1223,30 @@ class SkillsExchangeRepository(
          * historically used when no authenticated user was available.
          */
         private val SYNTHETIC_ID_SENTINELS = setOf("unknown", "system", "anonymous", "guest", "none")
+
+        /**
+         * C2-2 job-status authorization: the states in which the CLIENT (job owner) is still driving
+         * the setup of the job -- publishing it, collecting quotes, choosing a worker, accepting.
+         * These mirror the client-facing part of `JobStatus.isValidTransition`, which continues to
+         * decide whether the move is *structurally* legal; this set only decides *who* may make it.
+         */
+        val CLIENT_SETUP_STATES = setOf(
+            JobStatus.DRAFT, JobStatus.POSTED, JobStatus.QUOTING,
+            JobStatus.WORKER_SELECTED, JobStatus.ACCEPTED
+        )
+
+        /** States a job owner may cancel their own job from. Never includes CANCELLED/EXPIRED. */
+        val CANCELLABLE_STATES = setOf(
+            JobStatus.DRAFT, JobStatus.POSTED, JobStatus.QUOTING, JobStatus.WORKER_SELECTED,
+            JobStatus.ACCEPTED, JobStatus.WORKER_EN_ROUTE, JobStatus.ARRIVED,
+            JobStatus.IN_PROGRESS, JobStatus.DISPUTED
+        )
+
+        /** States on which either party may raise a dispute. */
+        val DISPUTABLE_STATES = setOf(
+            JobStatus.ACCEPTED, JobStatus.WORKER_EN_ROUTE, JobStatus.ARRIVED,
+            JobStatus.IN_PROGRESS, JobStatus.COMPLETED, JobStatus.PAYMENT_RELEASED
+        )
 
         /**
          * C2-2 Fix #3 (F7): the ONLY identity a security-sensitive operation may use.
@@ -1759,22 +1821,123 @@ class SkillsExchangeRepository(
      * addressed here — that is a separate finding. This change only makes the recorded actor
      * correct, and it does not weaken any existing check.
      */
+        /**
+     * C2-2 job-status **AUTHORIZATION** (the layer F6 did not have).
+     *
+     * F6 answers "who did this?"; this answers "was that actor allowed to do it?". The two are
+     * deliberately separate and this function is the single place the second question is decided.
+     *
+     * It resolves the actor itself from `FirebaseAuth.currentUser.uid` via [resolveAuthoritativeUid]
+     * -- it never accepts a caller-supplied actor, never reads the newest Room row, never compares a
+     * display name, a phone number, a district or `"system"`/`"unknown"`, and never uses the UI mode.
+     * With no valid uid the answer is `false` (fail closed).
+     *
+     * @param job the REAL row loaded from the database, never a caller-constructed object.
+     * @param toStatus the requested target status.
+     * @return true only when the authenticated actor is permitted to perform this transition.
+     */
+    suspend fun canCurrentUserTransitionJob(job: JobPostEntity?, toStatus: String): Boolean {
+        val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+            ?: return false // fail closed: no authenticated Firebase identity
+        if (job == null) return false // fail closed: the job does not exist (or was never loaded)
+        // Re-resolve the job's stored status through the state machine's own vocabulary.
+        val target = JobStatus.fromValue(toStatus) ?: return false // unknown target status
+        return isJobTransitionAuthorized(actorUid, job, target)
+    }
+
+    /**
+     * Pure, actor-explicit form of the check above, so the policy is unit-testable without Firebase
+     * and so the reasoning for each status is written down in one readable place.
+     *
+     * ## Why this is owner-only today (and worker transitions therefore fail closed)
+     *
+     * `JobPostEntity.assignedProviderId` is a `ServiceProviderEntity` primary key (seeded values
+     * like `"prov_1"`), **not** a Firebase UID, and `ServiceProviderEntity` carries no UID column at
+     * all. There is therefore NO way to compare the authenticated uid against the assigned worker
+     * without inventing a new identity column -- which would be a schema/product decision, not a
+     * security fix. Admin is likewise unavailable here: the project recognizes admins solely through
+     * the Firestore custom claim `request.auth.token.admin`, which is evaluated server-side by
+     * `firestore.rules` and is deliberately NOT mirrored into a client-side boolean.
+     *
+     * So rather than guess, every worker-side and admin-side transition FAILS CLOSED here. The
+     * server-side boundary (`firestore.rules`) remains the place where the worker/escrow
+     * transitions are actually authorized. See `firestore.rules` `/jobs/{jobId}` update branch and
+     * DECISIONS.md D-2026-10-05-2 for the follow-up product decision this requires.
+     *
+     * Client (job owner) transitions are the ones the client can decide safely, because
+     * `postedByUid` is the authoritative owner identity established by C2-2 Fix #4 (F4):
+     *  - DRAFT/POSTED/QUOTING/WORKER_SELECTED/ACCEPTED -> publishing, selecting a worker, accepting
+     *  - CANCELLED (from a cancellable state) -> cancelling own job
+     *  - DISPUTED (from an active state) -> raising a dispute on own job
+     *  - PAYMENT_RELEASED -> the client approving release of escrow, matching `releaseEscrowToWorker`
+     *
+     * Worker-progress statuses (WORKER_EN_ROUTE, ARRIVED, IN_PROGRESS, COMPLETED) and admin
+     * resolutions (from DISPUTED) are NOT granted to the owner and NOT granted to anyone else here.
+     */
+    fun isJobTransitionAuthorized(
+        actorUid: String?,
+        job: JobPostEntity,
+        target: JobStatus
+    ): Boolean {
+        // F4: postedByUid is the ONLY ownership identity. A NULL postedByUid means a legacy job of
+        // unknown provenance, which belongs to nobody and may be driven by nobody.
+        val isOwner = actorUid != null && job.postedByUid != null && job.postedByUid == actorUid
+        if (!isOwner) return false
+
+        val from = JobStatus.fromValue(job.status) ?: return false // unknown/legacy status: fail closed
+        return when (target) {
+            // Client-side lifecycle while the job is still being set up.
+            JobStatus.POSTED, JobStatus.QUOTING, JobStatus.WORKER_SELECTED, JobStatus.ACCEPTED ->
+                from in CLIENT_SETUP_STATES
+            // The owner may cancel their own job, but never resurrect it.
+            JobStatus.CANCELLED -> from in CANCELLABLE_STATES
+            // Either party may raise a dispute on a live job.
+            JobStatus.DISPUTED -> from in DISPUTABLE_STATES
+            // The owner approves release of escrow for finished work.
+            JobStatus.PAYMENT_RELEASED -> from == JobStatus.COMPLETED
+            // Worker progress + admin dispute resolution: fail closed for everyone on the client.
+            JobStatus.DRAFT, JobStatus.WORKER_EN_ROUTE, JobStatus.ARRIVED, JobStatus.IN_PROGRESS,
+            JobStatus.COMPLETED, JobStatus.EXPIRED, JobStatus.PAYMENT_RELEASED /*handled*/,
+            JobStatus.DISPUTED /*handled*/, JobStatus.CANCELLED /*handled*/,
+            JobStatus.POSTED /*handled*/, JobStatus.QUOTING /*handled*/,
+            JobStatus.WORKER_SELECTED /*handled*/, JobStatus.ACCEPTED /*handled*/ -> false
+        }
+    }
+
     suspend fun transitionJobStatus(jobId: String, fromStatus: String, toStatus: String, reason: String = ""): Boolean {
         // F6: the ONLY acceptable actor identity. Never the newest Room row, never a display
         // name/phone/district, never "unknown"/"system"/a synthetic or anonymous id.
         val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
             ?: return false
-        if (!JobStatus.isValidTransition(fromStatus, toStatus)) {
+
+        // C2-2 authorization: load the REAL job. `fromStatus` is a caller-supplied parameter and is
+        // therefore NOT trusted for the authorization decision -- only the stored row is. A caller
+        // that lies about the current status cannot thereby gain authorization.
+        val job = db.jobPostDao().getJobById(jobId) ?: return false
+
+        // Authorization BEFORE the structural check, so an unauthorized caller learns nothing about
+        // which transitions are legal and can never move the job at all.
+        val target = JobStatus.fromValue(toStatus)
+        if (target == null || !isJobTransitionAuthorized(actorUid, job, target)) {
             return false
         }
+
+        // `JobStatus.isValidTransition` remains solely responsible for structural legality (STEP 9).
+        // It is checked against the STORED status, not the caller-supplied `fromStatus`, so the
+        // recorded audit `fromStatus` cannot disagree with the row that was actually changed.
+        val storedFrom = job.status
+        if (!JobStatus.isValidTransition(storedFrom, toStatus)) {
+            return false
+        }
+
         db.jobPostDao().updateJobStatus(jobId, toStatus)
         db.jobStatusAuditDao().insertAuditEntry(
             JobStatusAuditEntity(
                 id = "audit_${System.currentTimeMillis()}",
                 jobId = jobId,
-                fromStatus = fromStatus,
+                fromStatus = storedFrom,
                 toStatus = toStatus,
-                // F6: authoritative actor (authenticated uid).
+                // F6: authoritative actor (authenticated uid), still resolved here, never supplied.
                 changedBy = actorUid,
                 reason = reason
             )

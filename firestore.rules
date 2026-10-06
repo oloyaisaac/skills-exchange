@@ -212,21 +212,41 @@ service cloud.firestore {
       // postedByUid is denied outright, in every branch of the state machine below — otherwise a
       // caller could create a job, transfer ownership, then act on (or claim earnings from) a
       // job that is no longer theirs.
+      //
+      // C2-2 job-status AUTHORIZATION: previously only Case 2 checked WHO was acting. Cases 1, 3 and
+      // 4 were reachable by ANY authenticated user, so any signed-in account could move somebody
+      // else's job along a structurally legal transition. Each branch below now names the actor it
+      // requires. This mirrors the client-side `isJobTransitionAuthorized` policy; the client check
+      // is defence-in-depth for offline/local state, and these rules are the real server boundary.
+      // NOTE: this file is source only — it is NOT deployed (see CHANGELOG/AGENT_STATE).
       allow update: if isAuthenticated() &&
         request.resource.data.postedByUid == resource.data.postedByUid &&
         (
-        // Case 1: Client accepting quote -> ACCEPTED_FUNDED
-        (resource.data.status == 'REQUESTED' && request.resource.data.status in ['QUOTED', 'ACCEPTED_FUNDED']) ||
+        // Case 1: Client accepting quote -> ACCEPTED_FUNDED (OWNER ONLY)
+        (resource.data.status == 'REQUESTED' && request.resource.data.status in ['QUOTED', 'ACCEPTED_FUNDED'] &&
+          request.auth.uid == resource.data.postedByUid) ||
 
         // Case 2: Worker starting work -> IN_PROGRESS (Must be hired worker and KYC Approved)
         (resource.data.status == 'ACCEPTED_FUNDED' && request.resource.data.status == 'IN_PROGRESS' &&
           request.auth.uid == resource.data.assignedProviderId && isWorkerKycApproved()) ||
 
-        // Case 3: Worker submitting proof -> COMPLETED (Must go through IN_PROGRESS first, cannot skip from REQUESTED)
-        (resource.data.status == 'IN_PROGRESS' && request.resource.data.status == 'COMPLETED') ||
+        // Case 3: Worker submitting proof -> COMPLETED (ASSIGNED WORKER ONLY; must go through
+        // IN_PROGRESS first, so a caller cannot skip ahead from REQUESTED)
+        (resource.data.status == 'IN_PROGRESS' && request.resource.data.status == 'COMPLETED' &&
+          resource.data.assignedProviderId != null &&
+          request.auth.uid == resource.data.assignedProviderId) ||
 
-        // Case 4: Client approving & releasing funds -> RELEASED or DISPUTED
-        (resource.data.status == 'COMPLETED' && request.resource.data.status in ['RELEASED', 'DISPUTED'])
+        // Case 4: Client approving & releasing funds -> RELEASED or DISPUTED (OWNER ONLY)
+        (resource.data.status == 'COMPLETED' &&
+          request.resource.data.status in ['RELEASED', 'DISPUTED'] &&
+          request.auth.uid == resource.data.postedByUid) ||
+
+        // Case 5: Client cancelling or disputing a live job (OWNER ONLY). Cancellable/disputable
+        // states mirror the client's CANCELLABLE_STATES/DISPUTABLE_STATES sets. CANCELLED and
+        // EXPIRED are intentionally absent: a finished job is never resurrected or re-cancelled.
+        (resource.data.status in ['REQUESTED', 'QUOTED', 'ACCEPTED_FUNDED', 'IN_PROGRESS', 'COMPLETED', 'RELEASED', 'DISPUTED'] &&
+          request.resource.data.status in ['CANCELLED', 'DISPUTED'] &&
+          request.auth.uid == resource.data.postedByUid)
       );
 
       allow delete: if false; // Audit trail preservation

@@ -51,6 +51,14 @@ interface JobPostDao {
     @Query("SELECT * FROM job_posts ORDER BY createdTimestamp DESC")
     fun getAllJobs(): Flow<List<JobPostEntity>>
 
+    /**
+     * C2-2 job-status authorization: the authorization boundary must load the REAL job row to
+     * establish the actor's relationship to it (`postedByUid`, `assignedProviderId`). Callers
+     * cannot supply the job, so a caller cannot assert an ownership relationship of its choosing.
+     */
+    @Query("SELECT * FROM job_posts WHERE id = :jobId LIMIT 1")
+    suspend fun getJobById(jobId: String): JobPostEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertJob(job: JobPostEntity)
 
