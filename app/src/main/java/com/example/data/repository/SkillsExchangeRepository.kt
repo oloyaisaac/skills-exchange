@@ -1805,23 +1805,6 @@ class SkillsExchangeRepository(
     }
 
     /**
-     * C2-2 Fix #6 (audit finding **F6**): job-status attribution.
-     *
-     * `changedBy` is resolved HERE, at the data boundary, from `FirebaseAuth.currentUser.uid`
-     * (validated by [resolveAuthoritativeUid]) — it is no longer a caller-supplied parameter, so no
-     * caller can assert an actor of its choosing, and the legacy newest-Room-row `currentUser`
-     * flow is not consulted at all.
-     *
-     * With no authoritative uid the whole transition FAILS CLOSED: the job status is not updated
-     * and no audit entry is written. A status change is never recorded against `"system"`,
-     * `"unknown"` or any other fabricated actor.
-     *
-     * NOTE (scope): the *transition* rules themselves (`JobStatus.isValidTransition`) and the
-     * absence of a per-role authorization check on who may move a job to which state are NOT
-     * addressed here — that is a separate finding. This change only makes the recorded actor
-     * correct, and it does not weaken any existing check.
-     */
-        /**
      * C2-2 job-status **AUTHORIZATION** (the layer F6 did not have).
      *
      * F6 answers "who did this?"; this answers "was that actor allowed to do it?". The two are
@@ -1904,6 +1887,27 @@ class SkillsExchangeRepository(
         }
     }
 
+    /**
+     * The single SECURED boundary for moving a job's status — identity (F6), authorization and
+     * structural legality are all decided here, in that order, and the caller is trusted for none
+     * of them:
+     *
+     * 1. The actor is resolved from `FirebaseAuth.currentUser.uid` via [resolveAuthoritativeUid]
+     *    (F6 attribution). It is NOT a caller-supplied parameter, the legacy newest-Room-row
+     *    `currentUser` flow is not consulted, and with no authoritative uid the method returns
+     *    `false` before any write — nothing is ever recorded against `"system"`, `"unknown"` or
+     *    any other fabricated actor.
+     * 2. The REAL job row is loaded by id; the caller-supplied `fromStatus` is never trusted for
+     *    the decision.
+     * 3. [isJobTransitionAuthorized] decides whether that actor may perform that transition on
+     *    that job — checked BEFORE the structural check so an unauthorized caller learns nothing
+     *    about which transitions are legal.
+     * 4. [JobStatus.isValidTransition] checks structural legality against the STORED status, so
+     *    the audit `fromStatus` cannot disagree with the row that was actually changed.
+     *
+     * Only after all four checks pass are the job status and the audit row (with `changedBy =
+     * actorUid`) written. Any failure returns `false` with the database untouched.
+     */
     suspend fun transitionJobStatus(jobId: String, fromStatus: String, toStatus: String, reason: String = ""): Boolean {
         // F6: the ONLY acceptable actor identity. Never the newest Room row, never a display
         // name/phone/district, never "unknown"/"system"/a synthetic or anonymous id.

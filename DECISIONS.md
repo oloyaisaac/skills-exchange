@@ -45,6 +45,67 @@ device run (no adb device attached).
 
 ---
 
+### D-2026-10-05-2 - Job-status authorization is owner-only on the client; worker/admin transitions fail closed
+
+**Context.** C2-2 Fix #6 (F6) made `transitionJobStatus()` attribute `changedBy` to the
+authenticated Firebase UID, but the method still relied solely on `JobStatus.isValidTransition()`
+for permission: identity (who) was correct, authorization (may they) did not exist. Any signed-in
+user could move any other user's job along a structurally legal edge, because the transition graph
+knows nothing about the actor.
+
+**Options considered.**
+1. *Any authenticated user* — rejected; this is the defect itself.
+2. *Any worker* — rejected; there is no trustworthy worker identity on the client (see below).
+3. *Job owner for every transition* — rejected; `PAYMENT_RELEASED`-style and worker-progress
+   semantics would be wrong, and it would let an owner drive worker states.
+4. *Owner for owner-meaningful transitions; fail closed for the rest* — **chosen.**
+
+**Decision.** One central check, `SkillsExchangeRepository.isJobTransitionAuthorized(actorUid, job, target)`
+(the pure, actor-explicit form reachable in production via `canCurrentUserTransitionJob` and
+enforced inside `transitionJobStatus`), with this matrix:
+
+- **Owner only** (requires `job.postedByUid == actorUid`, F4 authoritative owner identity):
+  - setup lifecycle `POSTED / QUOTING / WORKER_SELECTED / ACCEPTED` — from `CLIENT_SETUP_STATES`
+  - `CANCELLED` — from `CANCELLABLE_STATES` (never resurrect a finished job)
+  - `DISPUTED` — from `DISPUTABLE_STATES`
+  - `PAYMENT_RELEASED` — only from `COMPLETED` (client approves escrow release)
+- **Fail closed for everyone on the client:** `DRAFT`, `WORKER_EN_ROUTE`, `ARRIVED`,
+  `IN_PROGRESS`, `COMPLETED`, `EXPIRED`, and dispute *resolutions* out of `DISPUTED`.
+
+**Rationale for fail-closed on worker/admin states.** The client cannot identify a worker or an
+admin, so guessing would be inventing a role model:
+- `JobPostEntity.assignedProviderId` is a `ServiceProviderEntity` primary key (`"prov_1"`), **not**
+  a Firebase UID; `ServiceProviderEntity` has no UID column. Comparing it to `request.auth.uid`
+  would be an identity check against a non-identity column.
+- Admin is only the Firestore custom claim `request.auth.token.admin`, evaluated server-side in
+  `firestore.rules`; mirroring it into a client boolean would be unverifiable client state.
+
+Worker/admin transitions are therefore authorized at the server boundary (`firestore.rules`
+`/jobs/{jobId}` update branch, whose Cases 1/3/4/5 were tightened to name their actor in the same
+change), and by `isWorkerKycApproved()` for worker progress. Enabling client-side worker/admin
+transitions requires a **product decision**: a worker-UID column on the job (or on the provider
+table) plus a client-readable admin claim — that is schema/product work, not a security fix.
+
+**Consequence / tradeoff.** Until a worker UID exists client-side, a worker using the client
+cannot mark their own job `IN_PROGRESS`/`COMPLETED` via `updateJobStatus()` — the call returns
+false and nothing is written. That is intentional fail-closed behaviour, reported as an open
+product decision rather than papered over. `hireProviderForJob()` and the escrow-mapped status
+write in `updateEscrowStatus()` were gated the same way (owner-only) because both mutate
+`job_posts.status` as a side effect.
+
+**Known vocabulary mismatch (reported, not fixed here):** `updateEscrowStatus()` maps escrow
+states to display strings (`"In Progress"`, `"Review"`, `"Completed"`) that are not `JobStatus`
+enum members, so that write deliberately bypasses the state machine and is protected by the
+direct ownership gate instead. Changing the status vocabulary is out of scope for an
+authorization fix.
+
+**Verification.** `JobStatusAuthorizationSecurityTest` 9/0/0/0; full `:app:testDebugUnitTest`
+**22 suites / 171 tests / 0 failures / 0 errors / 0 skipped** (baseline 21/162, +9 tests, no
+regressions); `git --no-pager diff --check` clean. `firestore.rules` change is source-only —
+**not deployed** (consistent with the F4/F5 rules changes, which are also undeployed).
+
+---
+
 
 
 Format:
