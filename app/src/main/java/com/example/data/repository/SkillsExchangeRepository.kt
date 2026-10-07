@@ -1249,6 +1249,22 @@ class SkillsExchangeRepository(
         )
 
         /**
+         * C2 job-status authorization (admin half): the ONLY transitions the `admin` custom
+         * claim may perform on the client -- resolving a dispute out of `DISPUTED`.
+         *
+         * PRD requirement_file.md section 10 (Administrative Web Dashboard, Dispute Resolution
+         * Module) assigns dispute resolution to administrators: "Release Escrow to Worker"
+         * maps to `DISPUTED -> COMPLETED` (work accepted, owner later releases payment) and
+         * "Refund to Client" maps to `DISPUTED -> CANCELLED`. The state machine offers exactly
+         * these two exits from `DISPUTED`, so admin authority stops here: worker-progress
+         * states (`WORKER_EN_ROUTE`/`ARRIVED`/`IN_PROGRESS`/`COMPLETED`), `EXPIRED`, escrow
+         * release and the client setup lifecycle remain governed by their existing rules and
+         * are NOT granted to admins (the PRD does not specify them -- see DECISIONS.md
+         * D-2026-10-06-1).
+         */
+        val ADMIN_DISPUTE_RESOLUTION_TARGETS = setOf(JobStatus.COMPLETED, JobStatus.CANCELLED)
+
+        /**
          * C2-2 Fix #3 (F7): the ONLY identity a security-sensitive operation may use.
          *
          * `FirebaseAuth.currentUser.uid` is authoritative; a missing, blank, whitespace-padded or
@@ -1825,27 +1841,39 @@ class SkillsExchangeRepository(
         if (job == null) return false // fail closed: the job does not exist (or was never loaded)
         // Re-resolve the job's stored status through the state machine's own vocabulary.
         val target = JobStatus.fromValue(toStatus) ?: return false // unknown target status
-        return isJobTransitionAuthorized(actorUid, job, target)
+        // Admin half: the server-signed `admin` custom claim of THIS user's ID token, re-read at
+        // the moment of the decision (never stored, never a client boolean). Any lookup failure
+        // yields false, so the policy below still fails closed without a verifiable claim.
+        val isAdminActor = firebaseService.hasAdminCustomClaim()
+        return isJobTransitionAuthorized(actorUid, job, target, isAdminActor)
     }
 
     /**
      * Pure, actor-explicit form of the check above, so the policy is unit-testable without Firebase
      * and so the reasoning for each status is written down in one readable place.
      *
-     * ## Why this is owner-only today (and worker transitions therefore fail closed)
+     * ## Worker half: still fail-closed (authoritative worker UID does NOT exist)
      *
      * `JobPostEntity.assignedProviderId` is a `ServiceProviderEntity` primary key (seeded values
      * like `"prov_1"`), **not** a Firebase UID, and `ServiceProviderEntity` carries no UID column at
      * all. There is therefore NO way to compare the authenticated uid against the assigned worker
      * without inventing a new identity column -- which would be a schema/product decision, not a
-     * security fix. Admin is likewise unavailable here: the project recognizes admins solely through
-     * the Firestore custom claim `request.auth.token.admin`, which is evaluated server-side by
-     * `firestore.rules` and is deliberately NOT mirrored into a client-side boolean.
+     * security fix. Worker-progress transitions keep FAILING CLOSED for everyone. See
+     * DECISIONS.md D-2026-10-05-2 and the design report in AGENT_STATE.md.
      *
-     * So rather than guess, every worker-side and admin-side transition FAILS CLOSED here. The
-     * server-side boundary (`firestore.rules`) remains the place where the worker/escrow
-     * transitions are actually authorized. See `firestore.rules` `/jobs/{jobId}` update branch and
-     * DECISIONS.md D-2026-10-05-2 for the follow-up product decision this requires.
+     * ## Admin half (C2 next fix): the authoritative claim DOES exist
+     *
+     * Unlike the worker gap, an authoritative admin identity already exists in this project: the
+     * boolean `admin` custom claim of the *signed* ID token -- the exact anchor `firestore.rules`
+     * (`isAdmin()` -> `request.auth.token.admin == true`) and the Cloud Functions
+     * (`checkAdminCaller`, verified-token based) already enforce. [isAdminActor] is resolved by
+     * the callers from `FirebaseService.hasAdminCustomClaim()` at the moment of the decision; it
+     * is never a stored client boolean, never a Room/SharedPreferences flag and never a UI mode.
+     *
+     * An admin may perform exactly [ADMIN_DISPUTE_RESOLUTION_TARGETS] out of `DISPUTED` (PRD
+     * requirement_file.md section 10: "Release Escrow to Worker" / "Refund to Client"), and
+     * nothing else: worker-progress states, `EXPIRED`, escrow release and the client setup
+     * lifecycle remain with their existing owners. See DECISIONS.md D-2026-10-06-1.
      *
      * Client (job owner) transitions are the ones the client can decide safely, because
      * `postedByUid` is the authoritative owner identity established by C2-2 Fix #4 (F4):
@@ -1854,17 +1882,35 @@ class SkillsExchangeRepository(
      *  - DISPUTED (from an active state) -> raising a dispute on own job
      *  - PAYMENT_RELEASED -> the client approving release of escrow, matching `releaseEscrowToWorker`
      *
-     * Worker-progress statuses (WORKER_EN_ROUTE, ARRIVED, IN_PROGRESS, COMPLETED) and admin
-     * resolutions (from DISPUTED) are NOT granted to the owner and NOT granted to anyone else here.
+     * Worker-progress statuses (WORKER_EN_ROUTE, ARRIVED, IN_PROGRESS, COMPLETED) are NOT granted
+     * to the owner, NOT granted to admins, and NOT granted to anyone else here.
+     *
+     * @param isAdminActor true only when the caller has just verified the server-signed `admin`
+     * custom claim on the authenticated user's ID token (see `FirebaseService.hasAdminCustomClaim`).
      */
     fun isJobTransitionAuthorized(
         actorUid: String?,
         job: JobPostEntity,
-        target: JobStatus
+        target: JobStatus,
+        isAdminActor: Boolean = false
     ): Boolean {
+        // Fail closed without an authenticated actor -- for the admin path too: attribution
+        // (`changedBy`) requires a real uid, so an admin claim with no uid behind it authorizes
+        // nothing.
+        if (actorUid == null) return false
+
+        // Admin dispute resolution: the narrow grant. Checked before the owner gate so a
+        // non-owner administrator can reach it; it unlocks ONLY the two exits from DISPUTED.
+        if (isAdminActor) {
+            val adminFrom = JobStatus.fromValue(job.status)
+            if (adminFrom == JobStatus.DISPUTED && target in ADMIN_DISPUTE_RESOLUTION_TARGETS) {
+                return true
+            }
+        }
+
         // F4: postedByUid is the ONLY ownership identity. A NULL postedByUid means a legacy job of
         // unknown provenance, which belongs to nobody and may be driven by nobody.
-        val isOwner = actorUid != null && job.postedByUid != null && job.postedByUid == actorUid
+        val isOwner = job.postedByUid != null && job.postedByUid == actorUid
         if (!isOwner) return false
 
         val from = JobStatus.fromValue(job.status) ?: return false // unknown/legacy status: fail closed
@@ -1878,7 +1924,9 @@ class SkillsExchangeRepository(
             JobStatus.DISPUTED -> from in DISPUTABLE_STATES
             // The owner approves release of escrow for finished work.
             JobStatus.PAYMENT_RELEASED -> from == JobStatus.COMPLETED
-            // Worker progress + admin dispute resolution: fail closed for everyone on the client.
+            // Worker progress + DRAFT/EXPIRED: fail closed for everyone on the client. COMPLETED is
+            // owner-denied here, but an admin may still reach it FROM DISPUTED via the narrow grant
+            // above; from any other state it stays fail-closed for everyone.
             JobStatus.DRAFT, JobStatus.WORKER_EN_ROUTE, JobStatus.ARRIVED, JobStatus.IN_PROGRESS,
             JobStatus.COMPLETED, JobStatus.EXPIRED, JobStatus.PAYMENT_RELEASED /*handled*/,
             JobStatus.DISPUTED /*handled*/, JobStatus.CANCELLED /*handled*/,
@@ -1901,7 +1949,9 @@ class SkillsExchangeRepository(
      *    the decision.
      * 3. [isJobTransitionAuthorized] decides whether that actor may perform that transition on
      *    that job — checked BEFORE the structural check so an unauthorized caller learns nothing
-     *    about which transitions are legal.
+     *    about which transitions are legal. The `admin` custom claim (the same server-signed
+     *    anchor `firestore.rules`/Cloud Functions use) is re-read from the ID token here and
+     *    passed in; it is never cached as client state, and a lookup failure yields false.
      * 4. [JobStatus.isValidTransition] checks structural legality against the STORED status, so
      *    the audit `fromStatus` cannot disagree with the row that was actually changed.
      *
@@ -1919,10 +1969,14 @@ class SkillsExchangeRepository(
         // that lies about the current status cannot thereby gain authorization.
         val job = db.jobPostDao().getJobById(jobId) ?: return false
 
+        // Admin half: re-read the server-signed `admin` claim from the ID token at decision time.
+        // Fail-closed: any lookup failure means "not admin" and the owner-only policy applies.
+        val isAdminActor = firebaseService.hasAdminCustomClaim()
+
         // Authorization BEFORE the structural check, so an unauthorized caller learns nothing about
         // which transitions are legal and can never move the job at all.
         val target = JobStatus.fromValue(toStatus)
-        if (target == null || !isJobTransitionAuthorized(actorUid, job, target)) {
+        if (target == null || !isJobTransitionAuthorized(actorUid, job, target, isAdminActor)) {
             return false
         }
 

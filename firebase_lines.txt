@@ -1,0 +1,1 @@
+|    +--- com.google.firebase:firebase-auth:24.1.0 (c)

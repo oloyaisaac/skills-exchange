@@ -222,6 +222,29 @@ class FirebaseService(private val context: Context? = null) {
     }
 
     /**
+     * C2 job-status authorization: reads the AUTHORITATIVE admin grant -- the boolean `admin`
+     * custom claim of the *signed* ID token. This is the exact anchor `firestore.rules`
+     * (`isAdmin()` -> `request.auth.token.admin == true`) and the Cloud Functions
+     * (`checkAdminCaller`, verified-token based) already trust; the client is reading the same
+     * server-signed claim, not inventing a role.
+     *
+     * Nothing client-writable is consulted: no Room column, no SharedPreferences, no UI mode,
+     * no hardcoded uid/email. A missing user, a missing token, a missing or non-boolean claim,
+     * or any error yields `false` (fail closed), so an account the operator has not provisioned
+     * with the claim gets no admin power on this client.
+     */
+    suspend fun hasAdminCustomClaim(): Boolean {
+        return try {
+            val user = auth?.currentUser ?: return false
+            val claims = user.getIdTokenResult(false).await()?.claims
+            claims?.get("admin") == true
+        } catch (e: Exception) {
+            Log.d("FirebaseService", "Admin claim lookup failed: ${e.message}")
+            false
+        }
+    }
+
+    /**
      * C2-1: Anonymous sign-in is NOT an authentication method for this app. It may only be used
      * for a throwaway guest context — never as a substitute for a successful phone verification,
      * and never to mint the identity that owns a profile/session (see `loginUser`).
