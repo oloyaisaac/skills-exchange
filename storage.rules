@@ -15,6 +15,22 @@ service firebase.storage {
       return isAuthenticated() && request.auth.token.admin == true;
     }
 
+    // Helper function for job photo participant authorization on stored objects
+    function isJobParticipantOnStoredObject() {
+      return resource.metadata != null && (
+        ('jobOwnerId' in resource.metadata && resource.metadata.jobOwnerId == request.auth.uid) ||
+        ('assignedProviderId' in resource.metadata && resource.metadata.assignedProviderId == request.auth.uid)
+      );
+    }
+
+    // Helper function for job photo participant authorization on incoming writes
+    function isJobParticipantOnIncomingWrite() {
+      return request.resource.metadata != null && (
+        ('jobOwnerId' in request.resource.metadata && request.resource.metadata.jobOwnerId == request.auth.uid) ||
+        ('assignedProviderId' in request.resource.metadata && request.resource.metadata.assignedProviderId == request.auth.uid)
+      );
+    }
+
     // --- SEC-003: PRIVATE KYC & IDENTITY DOCUMENT STORAGE ---
     // Strict isolation: National IDs, guarantor documents, selfie verifications, and qualification certificates
     // are accessible ONLY by the document owner and authorized administrators.
@@ -53,30 +69,42 @@ service firebase.storage {
     }
 
     // --- SEC-008: JOB BEFORE/AFTER PHOTOS & RECEIPTS ---
-    // SEC-008: Restrict job photo access to job owner, assigned provider, and admin
-    // Files must include custom metadata: jobOwnerId and assignedProviderId
+    // SEC-008: Restrict job photo access to job owner, assigned provider, and admin.
+    // Stored and incoming files must include custom metadata: jobOwnerId and assignedProviderId.
+    // Reads use stored resource metadata; writes validate incoming request metadata.
     match /jobs/{jobId}/{allPaths=**} {
       allow read: if isAuthenticated() && (
         isAdmin() ||
-        request.resource.data.jobOwnerId == request.auth.uid ||
-        request.resource.data.assignedProviderId == request.auth.uid
+        isJobParticipantOnStoredObject()
       );
-      allow write: if isAuthenticated() && (
+      allow create, update: if isAuthenticated() && (
+        isAdmin() || (
+          isJobParticipantOnIncomingWrite()
+          && request.resource.size < 10 * 1024 * 1024
+          && request.resource.contentType.matches('image/.*')
+        )
+      );
+      allow delete: if isAuthenticated() && (
         isAdmin() ||
-        request.resource.data.jobOwnerId == request.auth.uid ||
-        request.resource.data.assignedProviderId == request.auth.uid
+        isJobParticipantOnStoredObject()
       );
     }
 
     // --- PUBLIC ASSETS & AVATARS ---
+    // Public assets (app icons, branding): publicly readable, but write operations are restricted
+    // to administrators to prevent arbitrary public file hosting or asset tampering.
     match /public/{allPaths=**} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
     match /avatars/{userId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isOwner(userId);
+      allow write: if isAdmin() || (
+        isOwner(userId)
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*')
+      );
     }
   }
 }
