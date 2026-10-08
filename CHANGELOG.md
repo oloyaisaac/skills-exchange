@@ -1,6 +1,22 @@
 # CHANGELOG.md — Skills Exchange Development History
 
 All meaningful development changes are recorded here in reverse chronological order.
+### [2026-10-08] [DEPLOY-01] [FIREBASE][SECURITY] Firestore & Storage Security Rules Deployment/Verification — Executed
+
+- **Scope:** DEPLOY-01 only. `prd.json` **not modified**. No application source code modified. No credentials stored or modified. No Cloud Functions deployed. No Hosting deployed.
+- **Firebase Project Verified:** `skills-exchange-f9189` (confirmed from `.firebaserc`, `app/google-services.json`, and active CLI session `isaacvendeta1@gmail.com`).
+- **Firestore Rules Deployment (SUCCESS):** Executed `firebase deploy --only firestore:rules --non-interactive`. `firestore.rules` compiled cleanly and was released to `cloud.firestore`. The active server rules now enforce:
+  - `users/{userId}` owner-only and admin reads (C2-1); non-owners cannot read personal details or backup phone numbers.
+  - `providers/{providerId}` owner UID writes (`request.auth.uid == providerId`).
+  - `guarantors/{docId}` and `guarantor_submissions/{workerId}` worker isolation (REG-002) with admin-owned decision fields.
+  - `jobs/{jobId}` authoritative ownership (`postedByUid == request.auth.uid`, F4) and owner-exclusive immutability.
+  - `jobs/{jobId}` status transition authorization (owner-only for quote acceptance, cancellation, dispute, escrow release; assigned worker + KYC approval for in-progress and completion proof).
+  - `jobs/{jobId}/messages/{messageId}` sender UID binding (`senderId == request.auth.uid`, F5).
+- **Storage Rules Deployment (BLOCKED):** `storage.rules` deployment was attempted via Firebase CLI dry-run and blocked by two issues:
+  1. **Missing Backend Resource:** Firebase Storage has not been initialized on project `skills-exchange-f9189` (`Error: Firebase Storage has not been set up on project 'skills-exchange-f9189'. Go to console.firebase.google.com/project/skills-exchange-f9189/storage and click 'Get Started'`).
+  2. **Rule Syntax Defects:** Lines 61-62 and 66-67 in `storage.rules` reference `request.resource.data` (Firestore syntax) instead of `metadata`, and attempt to evaluate `request.resource` during read operations where it is null. Also `firebase.json` does not configure a `storage` target.
+- **Verification:** `FirestoreUsersReadPrivacyTest` 4/4 tests passed; full test suite (23 suites / 180 tests / 0 failures) verified.
+
 ### [2026-10-06] [C2 Job-Status Authorization] [SECURITY][AUTHZ] Per-role/ownership authorization for job-status transitions — Implemented, VERIFIED (unit)
 
 - **Scope:** the standalone finding discovered during F6 — "status transitions have no per-role/ownership authorization". C2-2 identity fixes F1–F7 are untouched and not redone. `prd.json` **not modified**. No DB schema/migration change. No Cloud Functions change. `firestore.rules` modified (source only) but **NOT deployed**. No device/emulator verification possible (no adb device attached).
