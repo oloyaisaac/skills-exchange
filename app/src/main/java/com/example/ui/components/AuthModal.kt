@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.example.util.LocationHelper
 import com.example.util.GoogleSignInHelper
+import com.example.util.ProfileValidators
 import com.example.ui.theme.*
 
 /**
@@ -539,6 +540,51 @@ fun AuthModal(
                         singleLine = true
                     )
 
+                    // C3 / A1: Mobile phone number is required for all accounts (Mobile Money
+                    // escrow and contact). A new Google user bypasses PHONE_ENTRY and lands
+                    // here directly, so collect and validate phone number in PROFILE_SETUP.
+                    val isPhoneFormatInvalid = phoneNumber.isNotBlank() && !ProfileValidators.isValidPhone(phoneNumber)
+                    OutlinedTextField(
+                        value = phoneNumber,
+                        onValueChange = { newValue ->
+                            if (newValue.length <= 15) phoneNumber = newValue
+                        },
+                        label = { Text("Mobile Phone Number", fontSize = 12.sp) },
+                        placeholder = { Text("+256 7XX XXX XXX", fontSize = 12.sp, color = Slate400) },
+                        supportingText = {
+                            if (isPhoneFormatInvalid) {
+                                Text(
+                                    text = "Enter a valid phone number (9-15 digits).",
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            } else {
+                                Text(
+                                    text = "Required for Mobile Money escrow payments & client contact.",
+                                    fontSize = 10.sp,
+                                    color = Slate500
+                                )
+                            }
+                        },
+                        isError = isPhoneFormatInvalid,
+                        leadingIcon = { Icon(imageVector = Icons.Default.PhoneAndroid, contentDescription = "Phone", tint = SignalBlue, modifier = Modifier.size(18.dp)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Slate900,
+                            unfocusedTextColor = Slate900,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            focusedLabelColor = SignalBlue,
+                            unfocusedLabelColor = Slate600,
+                            cursorColor = SignalBlue,
+                            focusedBorderColor = SignalBlue,
+                            unfocusedBorderColor = Slate300
+                        ),
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone)
+                    )
+
                     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -578,9 +624,10 @@ fun AuthModal(
 
                     Button(
                         onClick = { onLoginSuccess(phoneNumber, fullName, selectedDistrict) },
-                        // C3: explicit completion — legal name AND phone are both required.
-                        // An empty phone must never be submitted as a completed registration.
-                        enabled = fullName.isNotBlank() && phoneNumber.isNotBlank() && selectedDistrict.isNotBlank(),
+                        // C3 / A1: explicit completion — legal name, phone number, and district
+                        // are all required. An empty or invalid phone must never be submitted as
+                        // a completed registration.
+                        enabled = AuthModalValidation.isProfileSetupValid(fullName, phoneNumber, selectedDistrict),
                         modifier = Modifier.fillMaxWidth().height(46.dp),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = SignalBlue)
@@ -603,5 +650,26 @@ fun AuthModal(
                 }
             }
         }
+    }
+}
+
+object AuthModalValidation {
+    /**
+     * C3 / A1: Validates that a user in PROFILE_SETUP has supplied all required fields
+     * before the "Complete Setup" action is enabled.
+     *
+     * Rules:
+     * - Full legal name must be non-blank.
+     * - Mobile phone number must be non-blank and satisfy [ProfileValidators.isValidPhone] (9-15 digits).
+     * - District location must be non-blank.
+     */
+    fun isProfileSetupValid(fullName: String, phoneNumber: String, district: String): Boolean {
+        val trimmedName = fullName.trim()
+        val trimmedPhone = phoneNumber.trim()
+        val trimmedDistrict = district.trim()
+        return trimmedName.isNotEmpty() &&
+            trimmedPhone.isNotEmpty() &&
+            ProfileValidators.isValidPhone(trimmedPhone) &&
+            trimmedDistrict.isNotEmpty()
     }
 }

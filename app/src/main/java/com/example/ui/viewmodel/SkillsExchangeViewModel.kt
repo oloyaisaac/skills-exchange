@@ -877,11 +877,15 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun loginUser(phone: String, fullName: String = "", district: String = "", initialRole: String = "CLIENT") {
-        // C3: explicit authorisation — an empty/blank phone is never a completed
+        // C3: explicit authorisation — an empty/blank or invalid phone is never a completed
         // registration. Surface the error on the phone field and stop before any
         // profile, session, or server write happens.
         if (phone.isBlank()) {
             phoneError.value = "Enter your Mobile Money phone number to continue."
+            return
+        }
+        if (!ProfileValidators.isValidPhone(phone)) {
+            phoneError.value = "Enter a valid phone number (9-15 digits)."
             return
         }
         isAuthenticated.value = true
