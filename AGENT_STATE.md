@@ -1,8 +1,7 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-10-08 (latest) — **DEPLOY-01 (Firebase Firestore & Storage Rules Deployment/Verification) EXECUTED. Firebase Project ID verified: `skills-exchange-f9189`. Firestore Security Rules successfully compiled and deployed to live project `skills-exchange-f9189`. Storage Rules deployment is BLOCKED because Firebase Storage is not enabled/provisioned on the Firebase project (console action required: click 'Get Started' at console.firebase.google.com/project/skills-exchange-f9189/storage), and `storage.rules` contains invalid property references (`request.resource.data` instead of `metadata`). `FirestoreUsersReadPrivacyTest` passed (4/4). Full test suite passed (23 suites / 180 tests / 0 failures). No application code or credentials modified. `prd.json` not modified.**
-
+2026-10-08 (latest) — **DEPLOY-01 (Firebase Firestore & Storage Rules Deployment/Verification) EXECUTED. Firebase Project ID verified: `skills-exchange-f9189`. Firestore Security Rules successfully compiled and deployed to live project `skills-exchange-f9189`. Storage Rules deployment is BLOCKED because Firebase Storage is not enabled/provisioned on the Firebase project (console action required: click 'Get Started' at console.firebase.google.com/project/skills-exchange-f9189/storage), and `storage.rules` contains invalid property references (
 **DEPLOY-01 Summary:**
 - **Target Project:** `skills-exchange-f9189` (matched `.firebaserc`, `app/google-services.json`, and authenticated account `isaacvendeta1@gmail.com`).
 - **Firestore Rules Deployment:** ✅ **SUCCESS** (`firebase deploy --only firestore:rules --non-interactive` compiled and released rules to `cloud.firestore`). C2-1 (users/{uid} owner read), SEC-001 (provider owner write), REG-002 (guarantor isolation), F4 (postedByUid job authorship), F5 (senderId chat identity), and job status transition authorization rules are now active on the live backend.
