@@ -531,6 +531,7 @@ fun MainScreen(
         val liveJob = jobs.find { it.id == escrowJobTarget!!.id } ?: escrowJobTarget!!
         val disputeState by viewModel.disputeSubmissionState.collectAsStateWithLifecycle()
         val ratingState by viewModel.ratingSubmissionState.collectAsStateWithLifecycle()
+        val sosClearState by viewModel.sosClearState.collectAsStateWithLifecycle()
         EscrowAndProofSheet(
             job = liveJob,
             onUpdateEscrowStatus = { newEscrowStatus ->
@@ -560,17 +561,31 @@ fun MainScreen(
             onTriggerSosAlert = {
                 viewModel.triggerSosAlert(liveJob.id)
             },
+            onClearSosAlert = {
+                // H7/SAFE-003: STAND DOWN. The secured repository boundary decides owner-only
+                // authorization and maps any rejection into sosClearState for the sheet.
+                viewModel.clearSosAlert(liveJob.id)
+            },
             onSubmitDispute = { reason, description ->
-                val workerId = liveJob.assignedProviderId ?: "unknown_worker"
-                viewModel.submitDispute(
-                    jobId = liveJob.id,
-                    reportedUserId = workerId,
-                    reason = reason,
-                    description = description
-                )
+                // H7: never file a synthetic sentinel as the reported worker. A dispute
+                // without an assigned provider has no counterparty on file — fail closed
+                // to a visible error rather than writing "unknown_worker" as a
+                // reportedUserId no admin queue can ever resolve.
+                val workerId = liveJob.assignedProviderId
+                if (workerId.isNullOrBlank()) {
+                    viewModel.setDisputeError("No worker is assigned to this job yet")
+                } else {
+                    viewModel.submitDispute(
+                        jobId = liveJob.id,
+                        reportedUserId = workerId,
+                        reason = reason,
+                        description = description
+                    )
+                }
             },
             isSubmittingDispute = disputeState is SkillsExchangeViewModel.DisputeSubmissionState.Submitting,
             disputeSubmissionSuccess = disputeState is SkillsExchangeViewModel.DisputeSubmissionState.Success,
+            disputeSubmissionError = (disputeState as? SkillsExchangeViewModel.DisputeSubmissionState.Error)?.message,
             onSubmitRating = { stars, review ->
                 // H6: never submit a synthetic sentinel as the rated worker. The release-gated
                 // "Rate Worker" button only appears when assignedProviderId != null (EscrowAndProofSheet),
@@ -592,11 +607,14 @@ fun MainScreen(
             isSubmittingRating = ratingState is SkillsExchangeViewModel.RatingSubmissionState.Submitting,
             ratingSubmissionSuccess = ratingState is SkillsExchangeViewModel.RatingSubmissionState.Success,
             ratingSubmissionError = (ratingState as? SkillsExchangeViewModel.RatingSubmissionState.Error)?.message,
+            isClearingSos = sosClearState is SkillsExchangeViewModel.SosClearState.Clearing,
+            sosClearError = (sosClearState as? SkillsExchangeViewModel.SosClearState.Error)?.message,
             onDismiss = {
                 isEscrowSheetOpen = false
                 escrowJobTarget = null
                 viewModel.resetDisputeSubmissionState()
                 viewModel.resetRatingSubmissionState()
+                viewModel.resetSosClearState()
             }
         )
     }

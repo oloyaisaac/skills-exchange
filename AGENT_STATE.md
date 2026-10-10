@@ -1,7 +1,8 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
-2026-10-10 — **H6 (Rating UI) HARDENED + unit-tested (7/7) + compiled. State found:** prior session's uncommitted wiring kept (release-gated Rate button + dialog → `submitJobRating` secured boundary: authoritative-UID, owner-only, released-only, assigned-provider-only, 1–5, duplicate-blocked). **Gaps closed:** removed `"unknown_worker"` sentinel fallback (fail-closed visible error, no write); backend rejections now surface inside the dialog. Added `RatingAuthorizationSecurityTest` (7 pure-JVM tests, 7/0/0). `:app:compileDebugKotlin` BUILD SUCCESSFUL. Docs updated (uncommitted). `prd.json` untouched. No commit made. H2/H3/H4/H5 done earlier. Next: H7 (Trust/Safety & SOS) — NOT started.
+2026-10-10 — **H7 (Trust/Safety & SOS) IMPLEMENTED, wired, compiled & unit-tested (5/5). State found:** prior session's uncommitted wiring kept and verified end-to-end — `ViewModel.clearSosAlert`/`setDisputeError`, `DisputeSubmissionState`/`submitDispute`, `EscrowAndProofSheet` STAND DOWN button + dispute-error surfacing, `MainScreen.onSubmitDispute` fail-closed guard. **Confirmed complete this session:** repo secured boundary `clearEmergencySos(jobId): SosClearResult` + pure policy `isSosClearAuthorized` (owner-only via `postedByUid`, raised-only, F7 identity) + `SosClearState` flow wired through `MainScreen` (`isClearingSos`/`sosClearError`) into the sheet. Added `SosClearAuthorizationSecurityTest` (5 pure-JVM tests, 5/0/0). `:app:compileDebugKotlin` BUILD SUCCESSFUL; `RatingAuthorizationSecurityTest` 7/0/0 re-confirmed (no H6 regression). Env note: an initial compile hit `The paging file is too small`/OOM and reader `ENOSPC` — environmental (C: 0 GB free + 9 stale JDK-25 daemons), cleared with `gradlew --stop --no-daemon` + temp cleanup. Docs updated (uncommitted). `prd.json` untouched. No commit made. H1–H8 all now done. Next eligible: Medium M1–M12 (all Pending) — e.g. M1 (A4 Job History screen) or M2 (A7 AccountComplianceDialog wiring).
+
 **DEPLOY-01 Summary:**
 - **Target Project:** `skills-exchange-f9189` (matched `.firebaserc`, `app/google-services.json`, and authenticated account `isaacvendeta1@gmail.com`).
 - **Firestore Rules Deployment:** ✅ **SUCCESS** (`firebase deploy --only firestore:rules --non-interactive` compiled and released rules to `cloud.firestore`). C2-1 (users/{uid} owner read), SEC-001 (provider owner write), REG-002 (guarantor isolation), F4 (postedByUid job authorship), F5 (senderId chat identity), and job status transition authorization rules are now active on the live backend.
@@ -860,7 +861,7 @@ Auditing and fixing disconnected features identified during the systematic featu
 
 ### Recommended implementation order (from audit — NOT started, NOT completed)
 - Critical: C1 — Existing-user profile persistence; C2 — UID consistency; C3 — Google AuthModal completion path
-- High: H1 — Worker authorization fail-closed; H2 — AuthModal legal-name handling; H3 — National ID & Verification drawer; H4 — Fake wallet balance; H5 — ServiceCatalogPicker; H6 — Rating UI; H7 — Trust/Safety & SOS; H8 — Worker dashboard security
+- High: H1 — Worker authorization fail-closed; H2 — AuthModal legal-name handling; H3 — National ID & Verification drawer; H4 — Fake wallet balance; H5 — ServiceCatalogPicker; H6 — Rating UI; H7 — Trust/Safety & SOS (✅ DONE 2026-10-10); H8 — Worker dashboard security
 - Medium: M1 through M12 from the audit
 - Low: L1 through L5 from the audit
 

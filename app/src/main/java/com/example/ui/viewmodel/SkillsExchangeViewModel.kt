@@ -760,6 +760,47 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    /**
+     * H7/SAFE-003: stand down an active SOS flag. SOS is a safety latch — only the
+     * authenticated job owner may clear it, and the repository enforces that
+     * owner boundary (see [SkillsExchangeRepository.clearEmergencySos]). The
+     * secured boundary decides identity + authorization and returns a result; this
+     * method only maps that result into [sosClearState] so the sheet can react.
+     * Never writes any row when the boundary denies it.
+     */
+    fun clearSosAlert(jobId: String) {
+        viewModelScope.launch {
+            sosClearState.value = SosClearState.Clearing
+            when (val result = repository.clearEmergencySos(jobId)) {
+                is com.example.data.repository.SkillsExchangeRepository.SosClearResult.Success -> {
+                    sosClearState.value = SosClearState.Success
+                    val updatedJob = repository.jobs.first().find { it.id == jobId }
+                    selectedJob.value = updatedJob
+                }
+                is com.example.data.repository.SkillsExchangeRepository.SosClearResult.NotAuthenticated ->
+                    sosClearState.value = SosClearState.Error("You must be signed in to clear an emergency alert")
+                is com.example.data.repository.SkillsExchangeRepository.SosClearResult.JobNotFound ->
+                    sosClearState.value = SosClearState.Error("This job could not be found")
+                is com.example.data.repository.SkillsExchangeRepository.SosClearResult.NotAuthorized ->
+                    sosClearState.value = SosClearState.Error("Only the job owner can clear this emergency alert")
+            }
+        }
+    }
+
+    fun resetSosClearState() {
+        sosClearState.value = SosClearState.Idle
+    }
+
+    /**
+     * H7: surfaces a client-side pre-submission dispute failure (e.g. no assigned
+     * worker) through the same [DisputeSubmissionState] channel the sheet already
+     * observes, so the dialog shows a visible error instead of silently dropping
+     * the tap. Mirrors [setRatingError]. Never writes any dispute row.
+     */
+    fun setDisputeError(message: String) {
+        disputeSubmissionState.value = DisputeSubmissionState.Error(message)
+    }
+
     fun sendChatMessage(jobId: String, messageText: String) {
         if (messageText.isBlank()) return
         viewModelScope.launch {
@@ -1630,6 +1671,18 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         object Submitting : RatingSubmissionState()
         object Success : RatingSubmissionState()
         data class Error(val message: String) : RatingSubmissionState()
+    }
+
+    // SAFE-003: SOS stand-down state. The sheet observes [sosClearState] so a rejected stand-down
+    // (not authenticated / not the job owner / no such job) surfaces a visible message instead of
+    // silently leaving the panic banner up — mirroring the dispute/rating submission channels.
+    val sosClearState = MutableStateFlow<SosClearState>(SosClearState.Idle)
+
+    sealed class SosClearState {
+        object Idle : SosClearState()
+        object Clearing : SosClearState()
+        object Success : SosClearState()
+        data class Error(val message: String) : SosClearState()
     }
 
     sealed class AuthState {

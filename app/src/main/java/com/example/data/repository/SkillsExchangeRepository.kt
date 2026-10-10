@@ -1355,6 +1355,35 @@ class SkillsExchangeRepository(
             return provider.isNotBlank() && provider == toUserId
         }
 
+        /**
+         * SAFE-003 SOS **stand-down** authorization -- may [actorUid] clear the emergency SOS flag
+         * on [job]?
+         *
+         * Pure, actor-explicit and fail-closed, mirroring [isRatingAuthorized]. Raising the panic
+         * flag is an emergency action, but standing it down is a **status mutation on somebody's
+         * job**, so it is owner-gated:
+         *
+         *  1. The actor must be a real, authoritative uid (F7 rule); synthetic/blank/padded ids deny.
+         *  2. The actor must own the job (`postedByUid`, the F4 ownership identity). A legacy job
+         *     with a null `postedByUid` belongs to nobody and may be stood down by nobody, and a
+         *     stranger can never silence another account's emergency flag.
+         *  3. The flag must actually be raised -- there is nothing to clear on a job that is not in
+         *     an SOS state, and clearing a non-SOS row is a no-op we refuse to authorise.
+         *
+         * The job is always loaded by the secured boundary from its own id, so the caller can never
+         * assert an ownership relationship of its choosing.
+         */
+        fun isSosClearAuthorized(
+            actorUid: String?,
+            job: JobPostEntity
+        ): Boolean {
+            // F7/F4: only a real, authoritative uid is an identity; synthetic/blank/padded ids deny.
+            val uid = resolveAuthoritativeUid(actorUid) ?: return false
+            if (job.postedByUid == null || job.postedByUid != uid) return false
+            // Nothing to stand down unless the flag is actually raised.
+            return job.isSosTriggered
+        }
+
         val initialProviders = listOf(
             ServiceProviderEntity(
                 id = "prov_1",
@@ -1789,6 +1818,45 @@ class SkillsExchangeRepository(
         )
     }
 
+    /**
+     * SAFE-003: stand down an active emergency SOS flag. The panic flag is a safety latch the user
+     * raised from the escrow sheet; clearing it is a **status mutation on somebody's job**, so it is
+     * owner-gated and fail-closed (mirroring [submitJobRating]):
+     *
+     * 1. The actor is resolved from `FirebaseAuth.currentUser.uid` via [resolveAuthoritativeUid];
+     *    it is never a caller-supplied id. No authoritative uid ⇒ [SosClearResult.NotAuthenticated]
+     *    and the flag is left untouched.
+     * 2. The REAL job row is loaded by id (the caller-supplied `jobId` is never trusted to establish
+     *    ownership). A missing row ⇒ [SosClearResult.JobNotFound].
+     * 3. [isSosClearAuthorized] decides whether that actor may clear that job's flag — owner-only,
+     *    and only when it is actually raised. A failure returns [SosClearResult.NotAuthorized] and
+     *    the database is untouched, so a stranger can never silence another account's emergency.
+     *
+     * Returns [SosClearResult.Success] only after the flag is actually lowered.
+     */
+    suspend fun clearEmergencySos(jobId: String): SosClearResult {
+        val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+            ?: return SosClearResult.NotAuthenticated
+
+        val job = db.jobPostDao().getJobById(jobId) ?: return SosClearResult.JobNotFound
+
+        if (!isSosClearAuthorized(actorUid, job)) return SosClearResult.NotAuthorized
+
+        db.jobPostDao().setSosAlert(jobId, false)
+        db.chatMessageDao().insertMessage(
+            ChatMessageEntity(
+                id = "msg_${System.currentTimeMillis()}",
+                jobId = jobId,
+                senderName = "🚨 EMERGENCY SOS",
+                isFromUser = false,
+                message = "✅ Emergency SOS stood down by the job owner. Safety status is back to normal.",
+                timestampText = "Just now",
+                isSystemNotification = true
+            )
+        )
+        return SosClearResult.Success
+    }
+
     // ==================== DISP-001: Dispute Methods ====================
 
     fun getAllDisputes(): Flow<List<DisputeEntity>> = db.disputeDao().getAllDisputes()
@@ -1861,6 +1929,18 @@ class SkillsExchangeRepository(
         object JobNotFound : RatingResult()
         object NotAuthorized : RatingResult()
         object AlreadyRated : RatingResult()
+    }
+
+    /**
+     * SAFE-003: outcome of an SOS stand-down attempt, mirroring [RatingResult]. Each distinct
+     * failure lets the caller surface an honest message and lets tests assert each path without a
+     * persisted side effect.
+     */
+    sealed class SosClearResult {
+        object Success : SosClearResult()
+        object NotAuthenticated : SosClearResult()
+        object JobNotFound : SosClearResult()
+        object NotAuthorized : SosClearResult()
     }
 
     /**

@@ -50,13 +50,17 @@ fun EscrowAndProofSheet(
     onRequestMaterialAdvance: ((amount: Double) -> Unit)? = null,
     onRespondMaterialAdvance: ((approve: Boolean) -> Unit)? = null,
     onTriggerSosAlert: (() -> Unit)? = null,
+    onClearSosAlert: (() -> Unit)? = null,
     onSubmitDispute: ((reason: com.example.data.db.DisputeReason, description: String) -> Unit)? = null,
     isSubmittingDispute: Boolean = false,
     disputeSubmissionSuccess: Boolean = false,
+    disputeSubmissionError: String? = null,
     onSubmitRating: ((rating: Int, review: String) -> Unit)? = null,
     isSubmittingRating: Boolean = false,
     ratingSubmissionSuccess: Boolean = false,
-    ratingSubmissionError: String? = null
+    ratingSubmissionError: String? = null,
+    isClearingSos: Boolean = false,
+    sosClearError: String? = null
 ) {
     var selectedChannel by remember { mutableStateOf(job.paymentChannel) }
     var phoneNumber by remember { mutableStateOf(job.momoPhoneNumber) }
@@ -735,14 +739,30 @@ fun EscrowAndProofSheet(
                             )
                         }
                         Button(
-                            onClick = { onTriggerSosAlert?.invoke() },
+                            // H7: an active SOS flag can be stood down from the same contract.
+                            // The flag is one-way only in Room (setSosAlert true) — without this
+                            // the banner could never clear, so the Trust sheet would alarm forever.
+                            // The secured repository boundary decides owner-only authorization;
+                            // the button is disabled while a stand-down is in flight.
+                            onClick = { if (job.isSosTriggered) onClearSosAlert?.invoke() else onTriggerSosAlert?.invoke() },
+                            enabled = !isClearingSos,
                             colors = ButtonDefaults.buttonColors(containerColor = if (job.isSosTriggered) Color.Red else Slate800),
                             shape = RoundedCornerShape(6.dp)
                         ) {
                             Icon(imageVector = Icons.Default.Warning, contentDescription = "SOS", modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = if (job.isSosTriggered) "SOS ACTIVE" else "SOS PANIC", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                            Text(text = if (job.isSosTriggered) "STAND DOWN" else "SOS PANIC", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
                         }
+                    }
+                    // H7/SAFE-003: a rejected stand-down (not owner / not signed in) is surfaced
+                    // here so the panic banner is never silently stuck with no explanation.
+                    if (sosClearError != null) {
+                        Text(
+                            text = sosClearError,
+                            fontSize = 10.sp,
+                            color = Color.Red,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
                     }
                 }
             }
@@ -1403,6 +1423,22 @@ fun EscrowAndProofSheet(
 
     // QUALITY DISPUTE DIALOG - DISP-002: Wired to persistence
     if (showDisputeDialog) {
+        // H7: surface repository rejections (not authenticated / already filed /
+        // no assigned worker) inside the dialog so a failed filing is never
+        // mistaken for a recorded dispute — mirrors the H6 rating dialog.
+        LaunchedEffect(disputeSubmissionError) {
+            if (disputeSubmissionError != null) {
+                disputeError = disputeSubmissionError
+            }
+        }
+        // Auto-dismiss once the backend confirms a successful filing.
+        LaunchedEffect(disputeSubmissionSuccess) {
+            if (disputeSubmissionSuccess) {
+                showDisputeDialog = false
+                disputeReasonText = ""
+                disputeError = ""
+            }
+        }
         AlertDialog(
             onDismissRequest = {
                 if (!isSubmittingDispute) {
