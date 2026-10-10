@@ -52,7 +52,11 @@ fun EscrowAndProofSheet(
     onTriggerSosAlert: (() -> Unit)? = null,
     onSubmitDispute: ((reason: com.example.data.db.DisputeReason, description: String) -> Unit)? = null,
     isSubmittingDispute: Boolean = false,
-    disputeSubmissionSuccess: Boolean = false
+    disputeSubmissionSuccess: Boolean = false,
+    onSubmitRating: ((rating: Int, review: String) -> Unit)? = null,
+    isSubmittingRating: Boolean = false,
+    ratingSubmissionSuccess: Boolean = false,
+    ratingSubmissionError: String? = null
 ) {
     var selectedChannel by remember { mutableStateOf(job.paymentChannel) }
     var phoneNumber by remember { mutableStateOf(job.momoPhoneNumber) }
@@ -76,6 +80,12 @@ fun EscrowAndProofSheet(
     var disputeReasonText by remember { mutableStateOf("") }
     var selectedDisputeReason by remember { mutableStateOf(DisputeReason.QUALITY_ISSUE) }
     var disputeError by remember { mutableStateOf("") }
+
+    // RATE-002: Rating state (client reviews worker after escrow release)
+    var showRatingDialog by remember { mutableStateOf(false) }
+    var selectedStars by remember { mutableStateOf(0) }
+    var reviewText by remember { mutableStateOf("") }
+    var ratingError by remember { mutableStateOf("") }
 
     var beforePhoto by remember { mutableStateOf(job.beforePhotoUrl ?: "img_before_leak") }
     var afterPhoto by remember { mutableStateOf(job.afterPhotoUrl ?: "") }
@@ -1196,21 +1206,48 @@ fun EscrowAndProofSheet(
                 }
 
                 "RELEASED_TO_WORKER" -> {
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = IndustrialEmeraldLight,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, IndustrialEmerald),
-                        modifier = Modifier.fillMaxWidth()
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = IndustrialEmeraldLight,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, IndustrialEmerald),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(imageVector = Icons.Default.Verified, contentDescription = "Released", tint = IndustrialEmeraldDark)
-                            Column {
-                                Text(text = "✅ Escrow Released & Payout Dispatched!", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = IndustrialEmeraldDark)
-                                Text(text = "Funds sent to ${job.assignedProviderName ?: "Worker"} via Mobile Money.", fontSize = 11.sp, color = IndustrialEmeraldDark)
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Verified, contentDescription = "Released", tint = IndustrialEmeraldDark)
+                                Column {
+                                    Text(text = "✅ Escrow Released & Payout Dispatched!", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = IndustrialEmeraldDark)
+                                    Text(text = "Funds sent to ${job.assignedProviderName ?: "Worker"} via Mobile Money.", fontSize = 11.sp, color = IndustrialEmeraldDark)
+                                }
+                            }
+                        }
+
+                        // RATE-002: Client reviews the worker once payment is released.
+                        if (onSubmitRating != null && job.assignedProviderId != null && !ratingSubmissionSuccess) {
+                            OutlinedButton(
+                                onClick = {
+                                    selectedStars = 0
+                                    reviewText = ""
+                                    ratingError = ""
+                                    showRatingDialog = true
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Star, contentDescription = "Rate", tint = AmberUrgent, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Rate ${job.assignedProviderName ?: "Worker"}",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                         }
                     }
@@ -1505,6 +1542,141 @@ fun EscrowAndProofSheet(
                         disputeError = ""
                     },
                     enabled = !isSubmittingDispute
+                ) {
+                    Text(text = "Cancel", color = Slate600)
+                }
+            }
+        )
+    }
+    // RATE-002: Client rating dialog (1–5 stars + written review) for completed jobs.
+    // The "Rate Worker" button above only sets showRatingDialog = true; this block renders it.
+    if (showRatingDialog) {
+        // Auto-dismiss once the backend confirms a successful submission.
+        LaunchedEffect(ratingSubmissionSuccess) {
+            if (ratingSubmissionSuccess) {
+                showRatingDialog = false
+                selectedStars = 0
+                reviewText = ""
+                ratingError = ""
+            }
+        }
+        // H6: surface repository rejections (not authenticated / not authorized /
+        // already rated / job not found / no assigned worker) inside the dialog so a
+        // failed submission is never mistaken for a saved rating.
+        LaunchedEffect(ratingSubmissionError) {
+            if (ratingSubmissionError != null) {
+                ratingError = ratingSubmissionError
+            }
+        }
+        AlertDialog(
+            onDismissRequest = {
+                if (!isSubmittingRating) {
+                    showRatingDialog = false
+                    ratingError = ""
+                }
+            },
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = "Rate",
+                        tint = AmberUrgent
+                    )
+                    Text(
+                        text = "Rate ${job.assignedProviderName ?: "Worker"}",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "How was your experience? Your honest feedback keeps the community trustworthy.",
+                        fontSize = 11.sp,
+                        color = Slate600
+                    )
+
+                    // Star selector (1–5). At least one star is required.
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        (1..5).forEach { star ->
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = "$star star",
+                                tint = if (star <= selectedStars) AmberUrgent else Slate300,
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clickable(enabled = !isSubmittingRating) {
+                                        selectedStars = star
+                                        ratingError = ""
+                                    }
+                                    .padding(4.dp)
+                            )
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = reviewText,
+                        onValueChange = {
+                            reviewText = it
+                            ratingError = ""
+                        },
+                        label = { Text("Write a review (optional)", fontSize = 11.sp) },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        enabled = !isSubmittingRating,
+                        isError = ratingError.isNotEmpty(),
+                        supportingText = if (ratingError.isNotEmpty()) {
+                            { Text(ratingError, color = Color.Red, fontSize = 10.sp) }
+                        } else null
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        // RATE-002: a star selection is mandatory (review text is optional).
+                        if (selectedStars < 1) {
+                            ratingError = "Please select a star rating"
+                            return@Button
+                        }
+                        onSubmitRating?.invoke(selectedStars, reviewText)
+                    },
+                    shape = RoundedCornerShape(6.dp),
+                    enabled = !isSubmittingRating,
+                    colors = ButtonDefaults.buttonColors(containerColor = SignalBlue)
+                ) {
+                    if (isSubmittingRating) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                    }
+                    Text(
+                        text = if (isSubmittingRating) "Submitting..." else "Submit Rating",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        if (!isSubmittingRating) {
+                            showRatingDialog = false
+                            ratingError = ""
+                        }
+                    },
+                    enabled = !isSubmittingRating
                 ) {
                     Text(text = "Cancel", color = Slate600)
                 }

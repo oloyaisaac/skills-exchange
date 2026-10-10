@@ -30,9 +30,11 @@ import com.example.data.db.ServiceProviderEntity
 import com.example.ui.components.*
 import com.example.ui.theme.*
 import com.example.ui.viewmodel.SkillsExchangeViewModel
+import com.example.util.CurrencyRegion
 import com.example.util.LocationHelper
 import com.example.util.NetworkConnectivityObserver
 import com.example.util.SystemNotificationHelper
+import com.example.ui.components.escrowHeldTotal
 
 @Composable
 fun MainScreen(
@@ -528,6 +530,7 @@ fun MainScreen(
         // Find latest updated job state from repository
         val liveJob = jobs.find { it.id == escrowJobTarget!!.id } ?: escrowJobTarget!!
         val disputeState by viewModel.disputeSubmissionState.collectAsStateWithLifecycle()
+        val ratingState by viewModel.ratingSubmissionState.collectAsStateWithLifecycle()
         EscrowAndProofSheet(
             job = liveJob,
             onUpdateEscrowStatus = { newEscrowStatus ->
@@ -568,10 +571,32 @@ fun MainScreen(
             },
             isSubmittingDispute = disputeState is SkillsExchangeViewModel.DisputeSubmissionState.Submitting,
             disputeSubmissionSuccess = disputeState is SkillsExchangeViewModel.DisputeSubmissionState.Success,
+            onSubmitRating = { stars, review ->
+                // H6: never submit a synthetic sentinel as the rated worker. The release-gated
+                // "Rate Worker" button only appears when assignedProviderId != null (EscrowAndProofSheet),
+                // so null here is unreachable; fail closed to a visible error rather than writing
+                // "unknown_worker" as a toUserId the repository must then reject.
+                val workerId = liveJob.assignedProviderId
+                if (workerId.isNullOrBlank()) {
+                    viewModel.setRatingError("No worker is assigned to this job yet")
+                } else {
+                    viewModel.submitRating(
+                        jobId = liveJob.id,
+                        toUserId = workerId,
+                        rating = stars,
+                        review = review,
+                        isFromClient = true
+                    )
+                }
+            },
+            isSubmittingRating = ratingState is SkillsExchangeViewModel.RatingSubmissionState.Submitting,
+            ratingSubmissionSuccess = ratingState is SkillsExchangeViewModel.RatingSubmissionState.Success,
+            ratingSubmissionError = (ratingState as? SkillsExchangeViewModel.RatingSubmissionState.Error)?.message,
             onDismiss = {
                 isEscrowSheetOpen = false
                 escrowJobTarget = null
                 viewModel.resetDisputeSubmissionState()
+                viewModel.resetRatingSubmissionState()
             }
         )
     }
@@ -647,6 +672,13 @@ fun MainScreen(
         onOpenProfileSettings = { isProfileSettingsSheetOpen = true },
         onOpenHistory = { isJobHistorySheetOpen = true },
         onOpenDisputes = { isTrustSafetySheetOpen = true },
+        // AUDIT FIX (H4): feed the drawer the real escrow total instead of the "—"
+        // placeholder; computed from the same live job records as EscrowWalletSheet.
+        escrowHeldTotalLabel = CurrencyRegion.format(escrowHeldTotal(jobs)),
+        // AUDIT FIX (H3/G5): feed the drawer the real KYC state instead of the
+        // "Not verified" default, so the badge can never claim a false "Verified".
+        isKycVerified = myWorkerKyc?.status == "APPROVED",
+        kycStatusLabel = myWorkerKyc?.status?.replace('_', ' ') ?: "Not verified",
         onOpenIdentity = {
             isIdentitySheetOpen = true
             viewModel.refreshGuarantorVerificationStatus()

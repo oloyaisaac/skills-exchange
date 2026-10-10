@@ -1190,6 +1190,37 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    // --- H5 (SKILL-003 wiring): WORKER TRADE SKILLS ---
+    /** Picker visibility for the trade-skills section of ProfileSettingsSheet. */
+    val isSkillPickerOpen = MutableStateFlow(false)
+    /** Last skills-save error, shown inline in the sheet. Null = no error. */
+    val workerSkillsError = MutableStateFlow<String?>(null)
+
+    /**
+     * Persists the picker-confirmed skills on the signed-in user's OWN profile row
+     * (Room + Firestore mirror) via [repository.saveWorkerSkills], which fails
+     * closed on no-auth, wrong-row, or catalog-invalid input. Never touches KYC,
+     * activation, or training state — skills are catalog metadata, not credentials.
+     */
+    fun saveWorkerSkills(primarySkill: String, additionalSkills: List<String>) {
+        viewModelScope.launch {
+            val user = currentUserByUid.value
+            if (!isAuthenticated.value || user == null || user.id == DEMO_PROFILE_ID) {
+                workerSkillsError.value = "Sign in to save your trade skills."
+                return@launch
+            }
+            workerSkillsError.value = null
+            val ok = repository.saveWorkerSkills(primarySkill, additionalSkills)
+            if (ok) {
+                isSkillPickerOpen.value = false
+                profileSettingsSuccess.value = "Trade skills saved."
+            } else {
+                workerSkillsError.value =
+                    "Could not save those skills. Check they belong to one trade family and try again."
+            }
+        }
+    }
+
     // --- REG-004: WORKER PROFILE PHOTO ---
     fun selectPendingProfilePhoto(uri: Uri?) {
         if (uri == null) {
@@ -1980,38 +2011,28 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         viewModelScope.launch {
             ratingSubmissionState.value = RatingSubmissionState.Submitting
 
+            // RATE-003: identity, authorization and validity are ALL decided inside the repository's
+            // SECURED boundary (submitJobRating). The caller-supplied jobId/toUserId are never trusted
+            // to establish ownership; the actor is resolved from the authoritative Firebase UID; the job
+            // must be the caller's OWN released job with toUserId as its actually-assigned provider.
+            // This is what prevents rating an unrelated job, impersonating another user, and rating a
+            // job whose escrow has not been released. No rating is claimed unless the insert succeeds.
             try {
-                // C2-2 Fix #3 (F7): ratings are attributed to the authenticated Firebase UID.
-                val fromUserId = currentAuthenticatedUid() ?: run {
-                    ratingSubmissionState.value = RatingSubmissionState.Error("User not authenticated")
-                    return@launch
+                val result = repository.submitJobRating(jobId, toUserId, rating, review, isFromClient)
+                ratingSubmissionState.value = when (result) {
+                    is com.example.data.repository.SkillsExchangeRepository.RatingResult.Success ->
+                        RatingSubmissionState.Success
+                    is com.example.data.repository.SkillsExchangeRepository.RatingResult.NotAuthenticated ->
+                        RatingSubmissionState.Error("User not authenticated")
+                    is com.example.data.repository.SkillsExchangeRepository.RatingResult.InvalidRating ->
+                        RatingSubmissionState.Error("Rating must be between 1 and 5")
+                    is com.example.data.repository.SkillsExchangeRepository.RatingResult.JobNotFound ->
+                        RatingSubmissionState.Error("Job not found")
+                    is com.example.data.repository.SkillsExchangeRepository.RatingResult.NotAuthorized ->
+                        RatingSubmissionState.Error("You are not authorized to rate this job")
+                    is com.example.data.repository.SkillsExchangeRepository.RatingResult.AlreadyRated ->
+                        RatingSubmissionState.Error("You have already rated this job")
                 }
-
-                // Validate rating
-                if (rating < 1 || rating > 5) {
-                    ratingSubmissionState.value = RatingSubmissionState.Error("Rating must be between 1 and 5")
-                    return@launch
-                }
-
-                // Check for duplicate rating
-                if (repository.hasUserRatedJob(fromUserId, toUserId, jobId)) {
-                    ratingSubmissionState.value = RatingSubmissionState.Error("You have already rated this job")
-                    return@launch
-                }
-
-                val ratingEntity = com.example.data.db.RatingEntity(
-                    id = "rating_${System.currentTimeMillis()}",
-                    jobId = jobId,
-                    fromUserId = fromUserId,
-                    toUserId = toUserId,
-                    rating = rating,
-                    review = review,
-                    isFromClient = isFromClient,
-                    createdAt = System.currentTimeMillis()
-                )
-
-                repository.submitRating(ratingEntity)
-                ratingSubmissionState.value = RatingSubmissionState.Success
             } catch (e: Exception) {
                 ratingSubmissionState.value = RatingSubmissionState.Error(e.message ?: "Failed to submit rating")
             }
@@ -2023,13 +2044,23 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             emit(repository.getAverageRatingForUser(userId))
         }
     }
+    fun resetRatingSubmissionState() {
+        ratingSubmissionState.value = RatingSubmissionState.Idle
+    }
+
+    /**
+     * H6: surfaces a client-side pre-submission failure (e.g. no assigned worker) through the
+     * same [RatingSubmissionState] channel the sheet already observes, so the dialog shows a
+     * visible error instead of silently dropping the tap. Never writes any rating row.
+     */
+    fun setRatingError(message: String) {
+        ratingSubmissionState.value = RatingSubmissionState.Error(message)
+    }
+
+
 
     fun getUserRatings(userId: String): Flow<List<com.example.data.db.RatingEntity>> {
         return repository.getRatingsForUser(userId)
-    }
-
-    fun resetRatingSubmissionState() {
-        ratingSubmissionState.value = RatingSubmissionState.Idle
     }
 
     companion object {

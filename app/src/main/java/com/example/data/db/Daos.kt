@@ -318,6 +318,14 @@ interface UserProfileDao {
     @Query("UPDATE user_profiles SET walletBalance = :newBalance, updatedAtTimestamp = :timestamp WHERE id = :userId")
     suspend fun updateWalletBalance(userId: String, newBalance: Double, timestamp: Long = System.currentTimeMillis())
 
+    /**
+     * H5 (SKILL-003 wiring): persists the worker's validated trade skills on their OWN
+     * profile row only. Called exclusively with the authenticated UID's row — never
+     * another account's row. Skills are display/catalog metadata, not identity.
+     */
+    @Query("UPDATE user_profiles SET primarySkill = :primarySkill, additionalSkillsCsv = :additionalSkillsCsv, updatedAtTimestamp = :timestamp WHERE id = :userId")
+    suspend fun updateWorkerSkills(userId: String, primarySkill: String, additionalSkillsCsv: String, timestamp: Long = System.currentTimeMillis())
+
     @Query("DELETE FROM user_profiles")
     suspend fun clearAll()
 }

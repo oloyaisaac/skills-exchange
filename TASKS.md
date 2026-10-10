@@ -243,11 +243,11 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 | ID | Title | Status |
 |---|---|---|
 | H1 | Worker authorization fail-closed | ✅ Completed (2026-09-30) — `isWorkerAuthorized()` companion pure function; `isWorkerApprovedAndActivated` combines `isAuthenticated` + DB user; `canAccessWorkerFeatures()` delegates to same function; `FreelancerDashboardView` enforces at render boundary; 13/13 new security tests PASSED |
-| H2 | AuthModal legal-name handling (OnboardingScreen fix already made pending verification; AuthModal still pending) | ⏳ Pending Audit Fix |
-| H3 | National ID & Verification drawer | ⏳ Pending Audit Fix |
-| H4 | Fake wallet balance | ⏳ Pending Audit Fix |
-| H5 | ServiceCatalogPicker | ⏳ Pending Audit Fix |
-| H6 | Rating UI | ⏳ Pending Audit Fix |
+| H2 | AuthModal legal-name handling | ✅ Verified at unit level (2026-10-10): Google display name never seeds legal-name field; PROFILE_SETUP gates name+phone+district; `GoogleAuthModalCompletionSecurityTest` 9/9 PASSED; OnboardingScreen fix already made — device verification still pending |
+| H3 | National ID & Verification drawer | ✅ Verified at code+compile level (2026-10-10): drawer opens real `IdentityVerificationSheet` (UID-keyed profile + `myWorkerKyc`); per-field status rows, verified tick gated on real KYC state; `compileDebugKotlin` BUILD SUCCESSFUL — device walkthrough still pending |
+| H4 | Fake wallet balance | ✅ Fixed & compiled (2026-10-10): `MainScreen` now feeds the drawer the real escrow total + real KYC state (was placeholder defaults); `EscrowWalletSheet` already used live job records; `compileDebugKotlin` BUILD SUCCESSFUL — device walkthrough still pending |
+| H5 | ServiceCatalogPicker | ✅ Implemented, compiled & unit-tested (2026-10-10): picker had zero call sites — now wired full-stack (DAO targeted update → repository `saveWorkerSkills` fail-closed own-row via `validateWorkerSkills` → ViewModel state → ProfileSettingsSheet "TRADE SKILLS" section); `compileDebugKotlin` BUILD SUCCESSFUL; new `ServiceTaxonomyValidationTest` 11/11 PASSED — device walkthrough still pending |
+| H6 | Rating UI | ✅ Implemented + unit-tested (2026-10-10): release-gated "Rate Worker" button + dialog wired to `submitJobRating` secured boundary (authoritative-UID, owner-only, released-only, assigned-provider-only, 1–5, duplicate-blocked); synthetic `unknown_worker` fallback removed; backend rejections surface in-dialog; `RatingAuthorizationSecurityTest` 7/7 PASSED; `compileDebugKotlin` BUILD SUCCESSFUL — device walkthrough still pending |
 | H7 | Trust/Safety & SOS | ⏳ Pending Audit Fix |
 | H8 | Worker dashboard security | ✅ Completed (2026-09-30) — dual-layer enforcement: ViewModel gate + component-level `isAuthorized` guard in `FreelancerDashboardView` |
 

@@ -752,6 +752,40 @@ fun ProfileSettingsSheet(
                 Text("Save backup contact", fontWeight = FontWeight.Bold)
             }
 
+            // --- H5 (SKILL-003 wiring): Trade skills ---
+            // Previously ServiceCatalogPickerModal existed but had zero call sites,
+            // so workers could never set the primarySkill/additionalSkillsCsv stored
+            // on their own profile row.
+            SheetSectionLabel("TRADE SKILLS")
+            val skillsError by viewModel.workerSkillsError.collectAsStateWithLifecycle()
+            val isSkillPickerOpen by viewModel.isSkillPickerOpen.collectAsStateWithLifecycle()
+            SheetInfoBox(
+                "Primary: ${userProfile?.primarySkill?.ifBlank { "Not set" } ?: "Not set"}" +
+                    (userProfile?.additionalSkillsCsv?.takeIf { it.isNotBlank() }?.let { "\nAdditional: $it" } ?: "")
+            )
+            OutlinedButton(
+                onClick = { viewModel.isSkillPickerOpen.value = true },
+                enabled = !isUploadingPhoto,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text("Choose trade skills", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+            }
+            skillsError?.let {
+                Text(it, fontSize = 11.5.sp, color = RedDanger)
+            }
+            ServiceCatalogPickerModal(
+                isOpen = isSkillPickerOpen,
+                onDismiss = { viewModel.isSkillPickerOpen.value = false },
+                initialPrimarySkill = userProfile?.primarySkill,
+                initialAdditionalSkills = userProfile?.additionalSkillsCsv
+                    ?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList(),
+                onConfirmSkills = { primary, additional ->
+                    viewModel.saveWorkerSkills(primary, additional)
+                }
+            )
+
             successMessage?.let {
                 Text(
                     text = it,

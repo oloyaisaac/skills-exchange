@@ -426,6 +426,34 @@ class SkillsExchangeRepository(
     }
 
     /**
+     * H5 (SKILL-003 wiring): persists validated trade skills on the authenticated
+     * user's OWN profile row + Firestore mirror. Fails closed (returns false) when
+     * there is no authoritative uid, when no UID-bound row exists, or when the skill
+     * set fails `ServiceTaxonomyCatalog.validateWorkerSkills`. Skills are catalog
+     * metadata, never identity — the own-row gate mirrors `saveBackupContact`.
+     */
+    suspend fun saveWorkerSkills(primarySkill: String, additionalSkills: List<String>): Boolean {
+        val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+            ?: return false
+        if (!ServiceTaxonomyCatalog.validateWorkerSkills(primarySkill, additionalSkills).isValid) return false
+        val row = db.userProfileDao().getCurrentUserById(actorUid).first() ?: return false
+        if (row.id != actorUid) return false
+        db.userProfileDao().updateWorkerSkills(
+            userId = actorUid,
+            primarySkill = primarySkill,
+            additionalSkillsCsv = additionalSkills.joinToString(",")
+        )
+        saveUserIdentityToServer(
+            row.copy(
+                primarySkill = primarySkill,
+                additionalSkillsCsv = additionalSkills.joinToString(","),
+                updatedAtTimestamp = System.currentTimeMillis()
+            )
+        )
+        return true
+    }
+
+    /**
      * AUTH-002/AUTH-006: Mirror the identity record to Firestore (`users/{uid}`) so an
      * account can still be recognised on a later sign-in after logout, app-data clear,
      * reinstall, or when signing in on a different device.
@@ -1283,6 +1311,41 @@ class SkillsExchangeRepository(
             return row?.takeIf { it.id == uid && it.phoneNumber.isNotBlank() }
         }
 
+        /**
+         * RATE-003 rating **authorization** -- may [actorUid] rate [job], crediting [toUserId]?
+         *
+         * Pure, actor-explicit and fail-closed, mirroring [isJobTransitionAuthorized]. A client rates
+         * the worker who actually did their job, only after escrow was released -- the same
+         * `RELEASED_TO_WORKER` state under which the "Rate Worker" action appears in the UI:
+         *
+         *  1. The actor must own the job (`postedByUid`, the F4 ownership identity). A legacy job
+         *     with a null `postedByUid` belongs to nobody and may be rated by nobody.
+         *  2. The job must be in the terminal `RELEASED_TO_WORKER` escrow state (job-status rule):
+         *     you may not rate an in-progress, quoted, disputed or merely funded job.
+         *  3. The target ([toUserId]) must be exactly the provider actually assigned to THIS job, so
+         *     a caller cannot credit or defame an unrelated worker by passing an arbitrary id.
+         *
+         * Any missing/blank/synthetic actor uid, missing owner, wrong escrow state, or mismatched /
+         * absent provider all deny. The caller-supplied [toUserId] is never trusted to establish a
+         * relationship on its own; it is only accepted when it matches the real job row.
+         */
+        fun isRatingAuthorized(
+            actorUid: String?,
+            job: JobPostEntity,
+            toUserId: String
+        ): Boolean {
+            // F7/F4: only a real, authoritative uid is an identity; synthetic/blank/padded ids deny.
+            val uid = resolveAuthoritativeUid(actorUid) ?: return false
+            if (job.postedByUid == null || job.postedByUid != uid) return false
+
+            // Job-status rule: only a released (completed-and-paid) job may be rated.
+            if (job.escrowStatus != "RELEASED_TO_WORKER") return false
+
+            // The credited party must be the provider actually assigned to THIS job.
+            val provider = job.assignedProviderId ?: return false
+            return provider.isNotBlank() && provider == toUserId
+        }
+
         val initialProviders = listOf(
             ServiceProviderEntity(
                 id = "prov_1",
@@ -1776,6 +1839,81 @@ class SkillsExchangeRepository(
 
     suspend fun submitRating(rating: RatingEntity) {
         db.ratingDao().insertRating(rating)
+    }
+
+    /**
+     * Outcome of a secured rating submission. Discriminated so the UI can surface a precise,
+     * honest message and so tests can assert each failure path without a persisted side effect.
+     */
+    sealed class RatingResult {
+        object Success : RatingResult()
+        object NotAuthenticated : RatingResult()
+        object InvalidRating : RatingResult()
+        object JobNotFound : RatingResult()
+        object NotAuthorized : RatingResult()
+        object AlreadyRated : RatingResult()
+    }
+
+    /**
+     * The single SECURED boundary for submitting a job rating. Identity (who), authorization (may
+     * they) and structural validity are all decided here, in that order, and the caller is trusted
+     * for none of them — mirroring [transitionJobStatus]:
+     *
+     * 1. The actor is resolved from `FirebaseAuth.currentUser.uid` via [resolveAuthoritativeUid]; it
+     *    is NOT the caller-supplied `fromUserId`. No uid ⇒ [RatingResult.NotAuthenticated], no write.
+     *    This is what prevents impersonation: the rating is always attributed to the authenticated
+     *    user, never to a `fromUserId` the caller chose.
+     * 2. The rating value must be 1..5.
+     * 3. The REAL job row is loaded by id (the caller-supplied `jobId`/`toUserId` are never trusted
+     *    to establish ownership). A missing row ⇒ [RatingResult.JobNotFound].
+     * 4. [isRatingAuthorized] decides whether that actor may rate that job as that target —
+     *    owner-only, released-only, and the target must be the job's assigned provider. A failure
+     *    returns [RatingResult.NotAuthorized] and the database is untouched.
+     * 5. Duplicate prevention: an existing `(fromUserId, toUserId, jobId)` row ⇒
+     *    [RatingResult.AlreadyRated].
+     *
+     * Only after all five checks is the rating inserted with `fromUserId = actorUid`.
+     */
+    suspend fun submitJobRating(
+        jobId: String,
+        toUserId: String,
+        rating: Int,
+        review: String,
+        isFromClient: Boolean
+    ): RatingResult {
+        // 1. Authoritative identity (F6/F7 rule). Never the newest Room row, never a display name.
+        val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+            ?: return RatingResult.NotAuthenticated
+
+        // 2. Rating value.
+        if (rating < 1 || rating > 5) return RatingResult.InvalidRating
+
+        // 3. Load the REAL job; a caller cannot assert an ownership relationship of its choosing.
+        val job = db.jobPostDao().getJobById(jobId) ?: return RatingResult.JobNotFound
+
+        // 4. Authorization BEFORE any duplicate/persistence work, so an unauthorized caller can
+        //    neither rate an unrelated job nor learn anything about existing ratings.
+        if (!isRatingAuthorized(actorUid, job, toUserId)) return RatingResult.NotAuthorized
+
+        // 5. Duplicate prevention.
+        if (db.ratingDao().getRatingFromToJob(actorUid, toUserId, jobId) != null) {
+            return RatingResult.AlreadyRated
+        }
+
+        db.ratingDao().insertRating(
+            RatingEntity(
+                id = "rating_${System.currentTimeMillis()}",
+                jobId = jobId,
+                // Authoritative actor, resolved above — never caller-supplied.
+                fromUserId = actorUid,
+                toUserId = toUserId,
+                rating = rating,
+                review = review,
+                isFromClient = isFromClient,
+                createdAt = System.currentTimeMillis()
+            )
+        )
+        return RatingResult.Success
     }
 
     // ==================== NOTIF-001: Notification Methods ====================

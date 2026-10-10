@@ -1,6 +1,42 @@
 # CHANGELOG.md — Skills Exchange Development History
 
 All meaningful development changes are recorded here in reverse chronological order.
+### [2026-10-10] [H6] Rating UI — Hardened, wired & unit-tested (7/7)
+
+- **State found:** a prior session had left uncommitted H6 wiring in the tree (release-gated "Rate Worker" button + star dialog in `EscrowAndProofSheet`, `MainScreen.onSubmitRating` → `ViewModel.submitRating` → repository `submitJobRating` secured boundary with `isRatingAuthorized` owner-only / released-only / assigned-provider-only policy). That work was audited, kept, and hardened — not rewritten.
+- **Gaps closed (this session, minimal):** `MainScreen` passed `"unknown_worker"` as `toUserId` when `assignedProviderId` was null — now fails closed to a visible `setRatingError("No worker is assigned to this job yet")` (new `ViewModel.setRatingError`, no row written); `EscrowAndProofSheet` gained a `ratingSubmissionError: String?` param fed from `RatingSubmissionState.Error.message`, surfaced inside the dialog via `LaunchedEffect` so backend rejections (not-authenticated / not-authorized / already-rated / job-not-found) are never mistaken for a saved rating. No schema, rules, or unrelated behavior changed.
+- **Tests added:** `app/src/test/java/com/example/data/RatingAuthorizationSecurityTest.kt` (7 pure-JVM tests, no Robolectric) — owner-authorized on own released job; stranger denied; null-owner legacy job unrateable; pre-release escrow states denied; unrelated-worker target denied; null assignment denies all; synthetic/presentation-text actors (`system`, `unknown`, `unknown_worker`, `user_default_me`, display names) denied.
+- **Verification (executed 2026-10-10):** `:app:testDebugUnitTest --tests RatingAuthorizationSecurityTest --tests ServiceTaxonomyValidationTest` → BUILD SUCCESSFUL, **7/0/0 + 11/0/0**; `:app:compileDebugKotlin` BUILD SUCCESSFUL. First attempt ran under Robolectric and failed 7/7 on `There is not enough space on the disk` (native-runtime extraction) — environment, not logic; converted to plain-JVM. Full suite not re-run (disk pressure); device walkthrough of rate→persist still pending.
+- `prd.json` untouched. No commit made.
+
+### [2026-10-10] [H5] ServiceCatalogPicker Wiring — Implemented, compiled &amp; unit-tested (11/11)
+
+- **Defect found:** `ServiceCatalogPickerModal` existed but had zero call sites, so workers could never set the `primarySkill` / `additionalSkillsCsv` persisted on their own profile row (the SKILL-002/003 engine was orphaned).
+- **Fix — full-stack own-row wiring (fail-closed):** `UserProfileDao.updateWorkerSkills()` (targeted `UPDATE ... WHERE id = :userId`); `SkillsExchangeRepository.saveWorkerSkills()` resolves the authoritative UID, rejects unknown/catalog-invalid skill sets via `ServiceTaxonomyCatalog.validateWorkerSkills`, requires the UID-bound row (`row.id != actorUid` → false), then updates Room + Firestore mirror; `SkillsExchangeViewModel.saveWorkerSkills()` + `isSkillPickerOpen` / `workerSkillsError`; `ProfileSettingsSheet` renders a "TRADE SKILLS" section (current primary/additional summary + "Choose trade skills" button + inline error) hosting the picker. Skills are catalog metadata, never identity — never touches KYC/activation/training.
+- **Tests added:** `app/src/test/java/com/example/data/db/ServiceTaxonomyValidationTest.kt` (11 pure-JVM tests) — same-family valid, id-resolution, 2-additional valid, >2 rejected, unknown primary rejected, incompatible family rejected, compatible cross-family (Electrical+Computing, Housekeeping+Gardening) allowed, unknown additional rejected, `findService` by id/name, 125-service catalog size.
+- **Verification (executed 2026-10-10):** `:app:compileDebugKotlin` BUILD SUCCESSFUL; `:app:testDebugUnitTest --tests ServiceTaxonomyValidationTest` → **tests=11 failures=0 errors=0 skipped=0**. Device walkthrough of picker→save still pending.
+- `prd.json` untouched. No commit made.
+
+
+### [2026-10-10] [H4] Wallet Drawer Label Wired to Real Escrow Total — Implemented & compiled
+
+- **Defect found during H4 verification:** `EscrowWalletSheet` itself computed real figures from live job records, but `MainScreen` never passed `escrowHeldTotalLabel` / `isKycVerified` / `kycStatusLabel` to the drawer — so the drawer rendered the `"—"` / `"Not verified"` / `false` placeholder defaults for every user (H4 + H3/G5 residue).
+- **Fix (`MainScreen.kt` only, +10 lines):** drawer now receives `escrowHeldTotalLabel = CurrencyRegion.format(escrowHeldTotal(jobs))`, `isKycVerified = myWorkerKyc?.status == "APPROVED"`, `kycStatusLabel = myWorkerKyc?.status ?: "Not verified"` (+2 imports). No hardcoded balance anywhere in source (only history comments). Fail-closed: empty jobs → UGX 0; null KYC → unverified.
+- **Verification (executed 2026-10-10):** `:app:compileDebugKotlin` BUILD SUCCESSFUL (fresh, 2 executed tasks; warnings all pre-existing). Device walkthrough still pending.
+- `prd.json` untouched. No commit made.
+### [2026-10-10] [H3] National ID & Verification Drawer — Verified (code + compile)
+
+- **Finding:** audit items H3 (drawer wiring) + G5 (false "Verified" badge for any authenticated user).
+- **State found in code (no new implementation needed):** drawer "National ID & Verification" opens `IdentityVerificationSheet` with the real `currentUserByUid` profile + `myWorkerKyc` row (UID-keyed, fail-closed to null); the sheet renders per-field status rows (phone / account mode / National ID KYC / guarantor step / worker activation) with green only on the true positive state, plus guarantor entry + admin feedback for worker mode. The drawer verified tick (`isKycVerified`) and status pill are caller-supplied real KYC state, not hardcoded. No unconditional "Verified".
+- **Verification (executed 2026-10-10):** `:app:compileDebugKotlin` BUILD SUCCESSFUL. Device walkthrough of the drawer → sheet → guarantor flow still pending.
+- Files changed: none (docs only). `prd.json` untouched.
+### [2026-10-10] [H2][C3] AuthModal Legal-Name Handling + Google Phone Capture — Verified (unit)
+
+- **Finding:** audit items H2 (AuthModal legal-name handling) and auth finding #2/#3 (Google display name misuse, missing phone capture in Google branch).
+- **State found in code (no new implementation needed):** `AuthModal.kt` Google launcher does NOT seed the legal-name field from the Google display name (field starts empty, supporting text states the Google name is not used); PROFILE_SETUP collects legal name + phone + district with `AuthModalValidation.isProfileSetupValid` gating "Complete Setup" (name non-blank, phone 9–15 digits, district non-blank).
+- **Verification (executed 2026-10-10):** `:app:compileDebugKotlin` BUILD SUCCESSFUL (fresh recompile, warnings only); `GoogleAuthModalCompletionSecurityTest` **9/9 passed, 0 failures, 0 errors** (fresh `--rerun-tasks` run, report timestamp 2026-10-10T06:56:42Z). Device verification (Google chooser → typed legal name → completion) still pending — no device run in this session.
+- **Also fixed:** removed a stray `b` token on line 109 of `storage.rules` (syntax defect committed in `dfeac17` between the two avatar blocks); single-line change, no policy change, left uncommitted. Storage deploy remains BLOCKED on console provisioning.
+- Files changed: `storage.rules` (1 line, uncommitted). No app source modified. `prd.json` untouched.
 ### [2026-10-08] [DEPLOY-01] [FIREBASE][SECURITY] Firestore & Storage Security Rules Deployment/Verification — Executed
 
 - **Scope:** DEPLOY-01 only. `prd.json` **not modified**. No application source code modified. No credentials stored or modified. No Cloud Functions deployed. No Hosting deployed.
