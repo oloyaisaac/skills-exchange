@@ -106,7 +106,7 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*')
       );
     }
-b
+
     // DEPLOY-01 Storage avatar-gap cover: same avatar policy under the per-user
     // prefix (public read for profile display, admin-or-owner write, owner
     // uploads constrained to images < 5MB, fail closed otherwise).
