@@ -255,8 +255,8 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 | ID | Title | Status |
 |---|---|---|
 | M1 | A4 Job History screen | ✅ Implemented & wired (verified 2026-10-10): drawer "Job History & Material Receipts" now opens real `JobHistorySheet` (`AccountCenterSheets.kt`) via `onOpenHistory` → `isJobHistorySheetOpen`; filters `jobs` to COMPLETED/RELEASED/`RELEASED_TO_WORKER` and shows material-receipt counts + escrow release totals from `viewModel.jobs` (real data, not placeholder); `compileDebugKotlin` BUILD SUCCESSFUL |
-| M2 | A7 AccountComplianceDialog wiring | ⏳ Pending Audit Fix |
-| M3 | A8 Community Hire (obsolete — Community/Board removed under COMM-002) | ⏳ Pending Audit Fix |
+| M2 | A7 AccountComplianceDialog wiring | ⏸️ DEFERRED (2026-10-10, user decision) — the namesake `AccountComplianceDialog` composable no longer exists (removed as the original A7 fix); the misnamed `AccountComplianceDialog.kt` holds 3 live composables (`AccountDeletionDialog`, `PrivacyAndTermsSheet`, `WorkerTrainingScreen`) + 3 orphaned ones (`GuarantorFormSheet`, `QualificationEvidenceSheet`, `ChangesRequiredView`) superseded by live components (`WorkerVerificationStatusView` handles KYC-007; REG-002 sheet handles guarantor). Deleting `GuarantorFormSheet` would contradict D-2026-09-26-1. Awaiting a wire-vs-delete decision |
+| M3 | A8 Community Hire (obsolete — Community/Board removed under COMM-002) | ⛔ OBSOLETE (verified 2026-10-10) — finding no longer applicable: Community/Board feature fully removed under COMM-002 (2026-09-23); repo-wide grep confirms no Community/Board screen or Hire button remains (only incidental "community" text in training/feedback/endorsement strings). No action possible |
 | M4 | B4 Worker Online toggle persistence | ⏳ Pending Audit Fix |
 | M5 | B6 Notification navigation | ⏳ Pending Audit Fix |
 | M6 | B8 Map empty state | ⏳ Pending Audit Fix |

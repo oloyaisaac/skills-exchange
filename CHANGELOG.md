@@ -1,6 +1,12 @@
 # CHANGELOG.md — Skills Exchange Development History
 
 All meaningful development changes are recorded here in reverse chronological order.
+### [2026-10-10] [M2/M3] AccountComplianceDialog deferred; Community Hire confirmed obsolete
+
+- **M2 / A7 — DEFERRED (user decision).** Investigated the "AccountComplianceDialog wiring" finding: the namesake `AccountComplianceDialog` composable no longer exists (it was already removed as the original A7 fix — DECISIONS D-2026-09-26 era, "import removed from MainScreen, never used"). The misnamed `AccountComplianceDialog.kt` now holds 6 composables — 3 live/wired (`AccountDeletionDialog` → MainScreen:788, `PrivacyAndTermsSheet` → MainScreen:783, `WorkerTrainingScreen` → MainScreen:352) and 3 orphaned (`GuarantorFormSheet`, `QualificationEvidenceSheet`, `ChangesRequiredView`). The orphans are superseded by live components (`WorkerVerificationStatusView` implements the KYC-007 "Changes Required" flow; the REG-002 "National ID & Verification" sheet hosts the guarantor step). Deleting `GuarantorFormSheet` would contradict **D-2026-09-26-1** ("left untouched… stays dead code until the registration wizard is built"). Presented wire-vs-delete options to the user, who chose to **defer**. No code change.
+- **M3 / A8 — OBSOLETE (verified).** The Community/Board "Hire" button finding is moot: the entire Community/Board feature was removed under COMM-002 (2026-09-23). Repo-wide grep confirms no Community/Board screen or Hire button remains (only incidental "community" text in training/feedback/endorsement strings and a `neighborhood_posts` migration comment). No action possible.
+- Net code impact: **none** (both are doc/state syncs). `prd.json` untouched.
+
 ### [2026-10-10] [M1] Job History & Material Receipts — verified & doc-synced (code already present)
 
 - **Finding (A4, MEDIUM):** Drawer "Job History & Material Receipts" — no history screen.
