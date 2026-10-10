@@ -254,7 +254,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 ### Medium (M1–M12 from the audit — all pending)
 | ID | Title | Status |
 |---|---|---|
-| M1 | A4 Job History screen | ⏳ Pending Audit Fix |
+| M1 | A4 Job History screen | ✅ Implemented & wired (verified 2026-10-10): drawer "Job History & Material Receipts" now opens real `JobHistorySheet` (`AccountCenterSheets.kt`) via `onOpenHistory` → `isJobHistorySheetOpen`; filters `jobs` to COMPLETED/RELEASED/`RELEASED_TO_WORKER` and shows material-receipt counts + escrow release totals from `viewModel.jobs` (real data, not placeholder); `compileDebugKotlin` BUILD SUCCESSFUL |
 | M2 | A7 AccountComplianceDialog wiring | ⏳ Pending Audit Fix |
 | M3 | A8 Community Hire (obsolete — Community/Board removed under COMM-002) | ⏳ Pending Audit Fix |
 | M4 | B4 Worker Online toggle persistence | ⏳ Pending Audit Fix |

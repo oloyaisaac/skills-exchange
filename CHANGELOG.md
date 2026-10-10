@@ -1,6 +1,16 @@
 # CHANGELOG.md — Skills Exchange Development History
 
 All meaningful development changes are recorded here in reverse chronological order.
+### [2026-10-10] [M1] Job History & Material Receipts — verified & doc-synced (code already present)
+
+- **Finding (A4, MEDIUM):** Drawer "Job History & Material Receipts" — no history screen.
+- **Verification (executed 2026-10-10):** the code already implemented and wired this finding; this session verified end-to-end and synced the stale docs.
+  - Drawer item `NavigationDrawer.kt` (title "Job History & Material Receipts") → `onOpenHistory()` → `MainScreen` sets `isJobHistorySheetOpen = true` → `JobHistorySheet(isOpen, jobs = jobs, onDismiss)` in `AccountCenterSheets.kt`.
+  - `JobHistorySheet` filters `jobs` to `status` in {COMPLETED, RELEASED} or `escrowStatus == RELEASED_TO_WORKER`, renders each contract via `SheetMoneyRow` (title / status / district / grandTotal) plus a `SheetInfoBox` with material-receipt attachment count and materials subtotal when `materialReceiptsCsv` is non-blank. Real data from `viewModel.jobs` — no placeholder/hardcoded balance.
+  - `compileDebugKotlin` BUILD SUCCESSFUL (HEAD `a1b64c3` + these doc edits; source unchanged from `072de5f` where the code landed).
+- **No functional code changed** — `JobHistorySheet` was committed earlier (H-series commit `ecb5d5e`); docs (TASKS.md M1, AGENT_STATE.md A4) were stale at "Pending". Device walkthrough still pending.
+- `prd.json` untouched.
+
 ### [2026-10-10] [H7] Trust/Safety & SOS — Implemented, wired, compiled & unit-tested (5/5)
 
 - **State found:** a prior session had left uncommitted H7 wiring in the tree — `ViewModel.clearSosAlert`/`setDisputeError`, the `DisputeSubmissionState` flow + `submitDispute`, `EscrowAndProofSheet` `onClearSosAlert`/STAND DOWN button + dispute-error surfacing, and `MainScreen.onSubmitDispute` fail-closed guard. An intermediate read suggested the repository boundary was missing; on a fresh, cache-free read it was present and complete. The work was audited, kept, and verified end-to-end — not rewritten.
