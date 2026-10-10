@@ -1148,6 +1148,15 @@ class SkillsExchangeRepository(
         return db.pendingActionDao().getPendingActions()
     }
 
+    /**
+     * STEP 0 (offline queue data-loss fix): one-time snapshot read of the pending queue.
+     * Flush logic must use this instead of collecting the [getPendingActions] Flow, which
+     * never completes and re-fires on every emission while a flush is already running.
+     */
+    suspend fun getPendingActionsSnapshot(): List<PendingActionEntity> {
+        return db.pendingActionDao().getPendingActionsList()
+    }
+
     suspend fun enqueueAction(actionType: String, payloadJson: String) {
         val action = PendingActionEntity(
             id = "action_${System.currentTimeMillis()}",

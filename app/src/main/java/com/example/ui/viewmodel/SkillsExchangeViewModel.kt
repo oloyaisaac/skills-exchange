@@ -31,6 +31,7 @@ import com.example.util.ProfileValidators
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 
 data class FilterState(
     val district: String = "Current Location",
@@ -147,6 +148,14 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     val isNotificationDrawerOpen = MutableStateFlow(false)
     // Pending actions queue for offline actions
     val pendingActions = MutableStateFlow<List<com.example.data.db.PendingActionEntity>>(emptyList())
+
+    /**
+     * STEP 0 (offline queue data-loss fix): single-flight guard for [flushPendingActions].
+     * Reconnect events must never run overlapping flushes against the same Room queue.
+     * `tryLock` semantics are used at the call site so a second trigger is skipped,
+     * never queued behind an in-flight flush.
+     */
+    private val flushMutex = Mutex()
 
     // C2-2 Fix #3 (F7): the legacy `currentUser` StateFlow (newest Room row) has been REMOVED.
     // "Most recently updated profile row" is device state, not an identity: on a device that ever
@@ -1696,15 +1705,33 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    /**
+     * STEP 0 (offline queue data-loss fix): preserve every queued item.
+     *
+     * The previous implementation collected the endless [repository.getPendingActions] Flow
+     * and called `markActionCompleted` (Room DELETE) for each row without executing the
+     * action or obtaining any server confirmation — queued work was silently discarded on
+     * every reconnect. Actual execution + server-confirmed completion arrive in a later
+     * step, so this method takes a one-time snapshot and deletes NOTHING. A [Mutex]
+     * single-flight guard ([flushMutex]) skips overlapping reconnect triggers.
+     */
     fun flushPendingActions() {
         viewModelScope.launch {
-            val pending = repository.getPendingActions()
-            // In a real implementation, each action would be processed based on its type
-            // For now, we mark them as completed
-            pending.collect { actions ->
-                actions.forEach { action ->
-                    repository.markActionCompleted(action.id)
+            if (!flushMutex.tryLock()) return@launch
+            try {
+                // One-shot snapshot: Flow.collect never completes and must not drive a flush.
+                val snapshot = repository.getPendingActionsSnapshot()
+                // STEP 0 intentionally performs no execution and no deletion. Each item is
+                // preserved until a later step can execute it and confirm it server-side.
+                // Logging the retained count keeps reconnect behavior observable in logcat.
+                if (snapshot.isNotEmpty()) {
+                    android.util.Log.d(
+                        "SkillsExchangeViewModel",
+                        "flushPendingActions (STEP 0): preserving ${snapshot.size} pending action(s); execution not yet implemented"
+                    )
                 }
+            } finally {
+                flushMutex.unlock()
             }
         }
     }
