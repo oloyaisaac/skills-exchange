@@ -962,6 +962,26 @@ device attached) and the rules were **not deployed**.
 
 ---
 
+### [2026-10-10] DEC-026 Worker Online Toggle Is a Persisted Device Preference — SessionManager DataStore (B4)
+
+**Context**: Audit finding B4 (Medium). The worker's online/availability toggle ("🟢 ONLINE & ACCEPTING JOBS" vs "⚪ OFFLINE (PAUSED)") was held only in an in-memory `MutableStateFlow(true)` (`SkillsExchangeViewModel.isWorkerOnline`). `toggleWorkerOnline()` flipped the flow in memory and nothing wrote it anywhere, so a worker who deliberately paused came back **online** on every restart — silently re-entering the job queue against their intent. The data model had **no** `isOnline`/`isAvailable` field on `UserProfileEntity`, and `FirebaseService` had no method to set one.
+
+**Decision**:
+- Persist the flag in the existing **SessionManager DataStore** (`skills_exchange_session`) as a `worker_online` boolean key that **defaults to online (`true`)** — a fresh install or a first launch still appears available.
+- `SessionManager` gains `setWorkerOnline(Boolean)` / `getWorkerOnline()`; `SkillsExchangeViewModel.restoreSession()` seeds `isWorkerOnline` from the stored value after role-mode restore, and `toggleWorkerOnline()` writes the new value through `viewModelScope.launch { … }` (the toggle fn stays non-suspend for its UI callers).
+- **DataStore, not a Room column** for this fix, and **not Firestore**.
+
+**Rationale**: The finding is about the choice not surviving a restart — a device-local preference. The SessionManager DataStore is exactly the mechanism the app already uses for lightweight session flags (`is_authenticated`, `user_phone`, `user_role`, `onboarding_completed`, …), so it needs **no schema migration, no Room version bump, and no migration test** — the lowest-risk way to close a Medium finding. A Room column would force a v21→v22 migration and add an authority surface for what is, today, only read by one toggle. Server-shared presence (a Firestore `isOnline` that clients query to filter workers) is a much larger feature — cross-device sync, security rules, and a presence/heartbeat model — and is deliberately **out of scope** for this finding.
+
+**Consequences**:
+- The online state is **per-device and local only**; it is not synced across devices and is not visible to clients searching for workers. Correct for the reported bug (don't lose *my* paused choice), but it is not a presence system.
+- The flag is stored unconditionally, not keyed per-uid. Because it is only ever *written* after `canAccessWorkerFeatures()` passes and only *read* into the single worker toggle, there is no cross-account leak in practice; a stricter per-uid key can be added if multi-account device sharing becomes real.
+- `restoreSession()` seeds the value even for a signed-in non-worker; harmless because the toggle UI is gated behind worker features.
+
+**Verification**: New `app/src/test/java/com/example/data/WorkerOnlinePersistenceTest.kt` (Robolectric) — default true; offline persists; toggling back online persists; and the value survives a **new `SessionManager` instance** (restart). **4/4 pass**, `failures=0`, `errors=0`; `:app:compileDebugKotlin` **BUILD SUCCESSFUL**.
+
+---
+
 ## D-2026-10-04-2 — Job-status `changedBy` is derived in the repository, not supplied by the caller
 
 **Decision** (C2-2 Fix #6, audit finding **F6**):

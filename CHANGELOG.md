@@ -1,6 +1,16 @@
 # CHANGELOG.md — Skills Exchange Development History
 
 All meaningful development changes are recorded here in reverse chronological order.
+### [2026-10-10] [M4] Worker Online toggle persistence (B4)
+
+- **Problem:** The worker's online/availability toggle lived only in an in-memory `MutableStateFlow(true)` (`SkillsExchangeViewModel.isWorkerOnline`). `toggleWorkerOnline()` flipped it in memory and nothing persisted it, so a worker who paused (went offline) silently came back **online** on every app restart — losing the "don't send me jobs" intent.
+- **Fix:** Persist the flag in the existing **SessionManager DataStore** (`worker_online` boolean key, defaults to `true`):
+  - `SessionManager.kt` — added `KEY_WORKER_ONLINE`, `setWorkerOnline(Boolean)`, `getWorkerOnline()` (default `true`).
+  - `SkillsExchangeViewModel.kt` — `restoreSession()` now sets `isWorkerOnline.value = sessionManager.getWorkerOnline()` after role-mode restore; `toggleWorkerOnline()` writes the new value via `viewModelScope.launch { sessionManager.setWorkerOnline(newOnline) }`.
+- **Why DataStore, not Room:** No schema migration required, no Room version bump, and it matches how other lightweight session flags (`isAuthenticated`, `userPhone`, `user_role`, etc.) are already persisted. Server-shared presence (Firestore) is out of scope for this finding.
+- **Verification:** New `WorkerOnlinePersistenceTest` (Robolectric) — default true; offline persists; back-online persists; value survives a new SessionManager instance (restart). **4/4 pass**; `:app:compileDebugKotlin` **BUILD SUCCESSFUL**.
+- Files touched: `SessionManager.kt`, `SkillsExchangeViewModel.kt`, `WorkerOnlinePersistenceTest.kt` (new).
+
 ### [2026-10-10] [M2/M3] AccountComplianceDialog deferred; Community Hire confirmed obsolete
 
 - **M2 / A7 — DEFERRED (user decision).** Investigated the "AccountComplianceDialog wiring" finding: the namesake `AccountComplianceDialog` composable no longer exists (it was already removed as the original A7 fix — DECISIONS D-2026-09-26 era, "import removed from MainScreen, never used"). The misnamed `AccountComplianceDialog.kt` now holds 6 composables — 3 live/wired (`AccountDeletionDialog` → MainScreen:788, `PrivacyAndTermsSheet` → MainScreen:783, `WorkerTrainingScreen` → MainScreen:352) and 3 orphaned (`GuarantorFormSheet`, `QualificationEvidenceSheet`, `ChangesRequiredView`). The orphans are superseded by live components (`WorkerVerificationStatusView` implements the KYC-007 "Changes Required" flow; the REG-002 "National ID & Verification" sheet hosts the guarantor step). Deleting `GuarantorFormSheet` would contradict **D-2026-09-26-1** ("left untouched… stays dead code until the registration wizard is built"). Presented wire-vs-delete options to the user, who chose to **defer**. No code change.

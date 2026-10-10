@@ -28,6 +28,7 @@ class SessionManager(private val context: Context) {
         private val KEY_DEVICE_ID = stringPreferencesKey("device_id")
         private val KEY_USER_ROLE = stringPreferencesKey("user_role")
         private val KEY_ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
+        private val KEY_WORKER_ONLINE = booleanPreferencesKey("worker_online")
     }
 
     val isAuthenticated: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -104,6 +105,19 @@ class SessionManager(private val context: Context) {
 
     suspend fun getIsOnboardingCompleted(): Boolean {
         return context.dataStore.data.first()[KEY_ONBOARDING_COMPLETED] ?: false
+    }
+
+    // B4: worker online/availability preference. Defaults to online (true) so a fresh install or a
+    // user who has never toggled still appears available; a paused/offline choice persists across
+    // restarts.
+    suspend fun setWorkerOnline(online: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_WORKER_ONLINE] = online
+        }
+    }
+
+    suspend fun getWorkerOnline(): Boolean {
+        return context.dataStore.data.first()[KEY_WORKER_ONLINE] ?: true
     }
 
     suspend fun saveFcmToken(token: String) {

@@ -326,6 +326,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 authState.value = AuthState.SignedIn
                 userRoleMode.value =
                     if (restoredProfile.currentActiveMode == "WORKER") "Offer Skills" else "Hire a Neighbor"
+                // B4: restore the persisted worker online/availability choice (defaults online).
+                isWorkerOnline.value = sessionManager.getWorkerOnline()
 
                 if (!cachedIdentityTrusted) {
                     // The cached identity was stale: rewrite it with the AUTHORITATIVE Firebase UID
@@ -551,7 +553,11 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             authError.value = "Worker verification and activation required to go online."
             return
         }
-        isWorkerOnline.update { !it }
+        val newOnline = !isWorkerOnline.value
+        isWorkerOnline.value = newOnline
+        // B4: persist the availability choice so a paused/offline state survives an app restart
+        // instead of silently resetting to online (in-memory only) on every launch.
+        viewModelScope.launch { sessionManager.setWorkerOnline(newOnline) }
     }
 
     fun setMobileTab(tab: String) {
