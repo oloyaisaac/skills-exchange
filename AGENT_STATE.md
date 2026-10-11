@@ -1,6 +1,7 @@
 # AGENT_STATE.md — Skills Exchange Project State
 
 ## Last Updated
+2026-10-10 — **M6 (B8 Map empty state) FIXED & tested.** The Map tab showed a blank grey map with only a tiny "0 Nearby Specialists" chip when no providers matched — no explanation or next step. Added `MapEmptyProvidersOverlay` (internal composable in `InteractiveMapView.kt`, matching the existing `MapUnavailableFallback` style) that overlays the map when `providers.isEmpty()`, showing "No providers nearby" + guidance (widen radius / adjust filters / switch to List). GPS/permission status is already surfaced by the existing `GpsLocationBanner`, so the fix focuses on the empty-providers case. Regression test `MapEmptyProvidersOverlayTest` (Robolectric + Compose, NATIVE graphics) 1/1 pass; `:app:compileDebugKotlin` + `:app:testDebugUnitTest` BUILD SUCCESSFUL (bounded heap — see DECISIONS env caveat). **Next:** M7 (B9 Distance filtering).
 2026-10-10 — **M5 (B6 Notification navigation) FIXED & tested.** The notification tap previously only marked all read and closed the drawer — it never navigated. Added a pure, unit-testable type→target map (`util/NotificationRouting.kt`: `VERIFICATION_DECISION`→IDENTITY, `PAYMENT_STATUS`→WALLET, `DISPUTE_UPDATE`/`SOS_EVENT`→TRUST_SAFETY, `NEW_QUOTE`→QUOTE_COMPARISON, else NONE) and a `handleNotificationClick` in `MainScreen` that opens the matching local sheet (`IdentityVerificationSheet` / `EscrowWalletSheet` / `TrustSafetySheet` / quote-comparison — the last only when the job still resolves by `jobId`); unresolvable/unknown types (e.g. `TRAINING_REQUIREMENT`) fall back to the old mark-read-only behaviour. Regression test `NotificationRoutingTest` 7/7 pass; `:app:compileDebugKotlin` + `:app:testDebugUnitTest` BUILD SUCCESSFUL (bounded `-Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=384m` to dodge the known 4 GB-daemon OOM on this 3.9 GB box — see DECISIONS environment caveat). **Next:** M6 (B8 Map empty state).
 
 2026-10-10 — **M4 (B4 Worker Online toggle persistence) FIXED & tested.** The worker online/availability toggle was in-memory only (`MutableStateFlow(true)`) and reset to online on every launch. Fixed by persisting to the existing SessionManager DataStore (`worker_online` boolean key, default online): restored in `restoreSession()` and written on each `toggleWorkerOnline()`. Chose DataStore over a Room column because it needs no schema migration and matches how other session flags are stored. Regression test `WorkerOnlinePersistenceTest` (Robolectric) 4/4 pass; `:app:compileDebugKotlin` BUILD SUCCESSFUL. **Next:** M5 (B6 Notification navigation).
@@ -801,7 +802,7 @@ Auditing and fixing disconnected features identified during the systematic featu
 - B5 — Theme selector — not persisted — LOW — Pending Audit Fix
 - B6 — Notification click — marks all read but doesn't navigate — MEDIUM — ✅ Fixed 2026-10-10 (M5)
 - B7 — Report User — report action exists but no review destination/list — LOW — Pending Audit Fix
-- B8 — Map tab — no useful empty state when no providers/GPS — MEDIUM — Pending Audit Fix
+- B8 — Map tab — no useful empty state when no providers/GPS — MEDIUM — ✅ Fixed 2026-10-10 (M6)
 - B9 — Worker distance/radius filtering — static distance data — MEDIUM — Pending Audit Fix
 
 ### G. Security / authorization (NOT fixed by this task)

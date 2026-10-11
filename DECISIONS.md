@@ -1001,6 +1001,26 @@ device attached) and the rules were **not deployed**.
 
 ---
 
+### [2026-10-10] DEC-028 Map Empty State Is an Overlay in the Map Component, Not a New Screen (B8)
+
+**Context**: Audit finding B8 (Medium). The Map tab rendered a blank grey map (plus a small "0 Nearby Specialists" chip) whenever the filtered provider list was empty, with no explanation or next step. The finding also cited "GPS", but GPS/permission status is already surfaced by the existing `GpsLocationBanner` at the top of the List view, and `InteractiveMapView` takes no location input (its camera is currently hardcoded to `(0.0, 0.0)`).
+
+**Decision**:
+- Added `MapEmptyProvidersOverlay` — an `internal` composable inside `InteractiveMapView.kt`, styled to match the existing `MapUnavailableFallback` (icon + title + guidance on the light map background) — rendered **over the map** when `providers.isEmpty()`.
+- Kept GPS handling out of the map card; the existing `GpsLocationBanner` already communicates permission / "Use GPS" / live-neighborhood, so duplicating it on the map would be redundant.
+- Made the composable `internal` (not `private`) so it can be rendered directly in a Robolectric + Compose test without a live Google Map (the full `InteractiveMapView` early-returns to the API-key fallback under Robolectric, so it can't be tested end-to-end there).
+
+**Rationale**: The defect is "nothing to show here" with no messaging — the smallest correct fix is an informational overlay on the existing map, not a new destination or a rewrite of the map's location model. Matching `MapUnavailableFallback` keeps the two map fallback states visually consistent, and the overlay (rather than replacing the map) preserves spatial context.
+
+**Consequences**:
+- The empty state is informational only (no button). A future enhancement could add a "Browse List" action that calls `viewModel.setMobileTab("List")`, which would require threading a callback into `InteractiveMapView`.
+- The map still centers on `(0.0, 0.0)` rather than the user's location — a separate, pre-existing gap (out of scope for B8).
+- The overlay only keys off `providers.isEmpty()`; it does not distinguish "no providers in the world" from "none within the radius/filters", so the guidance text covers both.
+
+**Verification**: New `app/src/test/java/com/example/MapEmptyProvidersOverlayTest.kt` (Robolectric + Compose, NATIVE graphics) — asserts the title "No providers nearby" and the guidance text render when the overlay is shown. **1/1 pass**, `failures=0`, `errors=0`; `:app:compileDebugKotlin` and `:app:testDebugUnitTest` **BUILD SUCCESSFUL**.
+
+---
+
 ## D-2026-10-04-2 — Job-status `changedBy` is derived in the repository, not supplied by the caller
 
 **Decision** (C2-2 Fix #6, audit finding **F6**):

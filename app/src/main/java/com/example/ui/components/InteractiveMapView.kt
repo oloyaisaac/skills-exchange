@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -100,6 +101,57 @@ private fun MapUnavailableFallback(modifier: Modifier = Modifier) {
             Text(
                 text = "A Google Maps API key has not been configured.\n" +
                        "Add MAPS_API_KEY to your .env file to enable the map.",
+                fontSize = 12.sp,
+                color = Slate500,
+                textAlign = TextAlign.Center,
+                lineHeight = 18.sp
+            )
+        }
+    }
+}
+
+/**
+ * M6 / B8 fix: a useful empty state for the map tab.
+ *
+ * Shown overlaid on the map when the filtered provider list is empty, so the
+ * user gets an explanation and a next step instead of an unexplained blank grey
+ * map. GPS/permission status is already surfaced separately by
+ * [GpsLocationBanner]; this card covers the "nothing to show here" case. Kept
+ * `internal` so it can be rendered directly in a Robolectric + Compose test
+ * without a live Google Map.
+ */
+@Composable
+internal fun MapEmptyProvidersOverlay(
+    radiusMiles: Double,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color(0xFFEBF1F5).copy(alpha = 0.92f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(32.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.SearchOff,
+                contentDescription = "No providers nearby",
+                tint = Slate400,
+                modifier = Modifier.size(48.dp)
+            )
+            Text(
+                text = "No providers nearby",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp,
+                color = Slate700,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "No specialists match within ${radiusMiles.toInt()} mi right now.\n" +
+                    "Try widening your radius, adjusting filters, or switching to the List view.",
                 fontSize = 12.sp,
                 color = Slate500,
                 textAlign = TextAlign.Center,
@@ -341,6 +393,13 @@ fun InteractiveMapView(
                     fontWeight = FontWeight.SemiBold
                 )
             }
+        }
+
+        // M6 / B8: show a useful empty state over the blank map when no
+        // providers match the current filters/location, instead of leaving the
+        // user on an unexplained grey map.
+        if (providers.isEmpty()) {
+            MapEmptyProvidersOverlay(radiusMiles = radiusMiles)
         }
     }
 }

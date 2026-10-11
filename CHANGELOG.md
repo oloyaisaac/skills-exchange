@@ -1,6 +1,13 @@
 # CHANGELOG.md — Skills Exchange Development History
 
 All meaningful development changes are recorded here in reverse chronological order.
+### [2026-10-10] [M6] Map empty state (B8)
+
+- **Problem:** When no providers matched the current filters/location, the Map tab showed a blank grey map with only a tiny "0 Nearby Specialists" chip — no explanation and no next step (finding B8: "no useful empty state when no providers/GPS").
+- **Fix:** Added `MapEmptyProvidersOverlay` (internal composable in `InteractiveMapView.kt`, styled to match the existing `MapUnavailableFallback`) that overlays the map when `providers.isEmpty()`, showing "No providers nearby" plus guidance (widen the radius, adjust filters, or switch to the List view). GPS/permission status is already surfaced separately by `GpsLocationBanner`, so the fix targets the empty-providers case.
+- **Verification:** New `MapEmptyProvidersOverlayTest` (Robolectric + Compose, NATIVE graphics) **1/1 pass**; `:app:compileDebugKotlin` + `:app:testDebugUnitTest` BUILD SUCCESSFUL (bounded daemon heap). Decision **DEC-028**.
+
+### [2026-10-10] [M5] Notification tap navigation (B6)
 ### [2026-10-10] [M5] Notification tap navigation (B6)
 
 - **Problem:** Tapping an in-app notification in the `NotificationDrawer` only called `markAllNotificationsRead()` and closed the drawer — it never navigated to the verification, payment, dispute, SOS, or job the notification referred to (finding B6: "marks all read but doesn't navigate").
