@@ -26,6 +26,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.example.data.db.ServiceProviderEntity
 import com.example.ui.theme.*
 import com.example.util.CurrencyRegion
+import com.example.util.MapsApiKeyGuard
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
@@ -59,12 +60,10 @@ private fun isMapsApiKeyPresent(context: android.content.Context): Boolean {
             android.content.pm.PackageManager.GET_META_DATA
         )
         val key = appInfo.metaData?.getString("com.google.android.geo.API_KEY")
-        // Treat blank, null, un-substituted placeholder, or default placeholder as absent.
-        !key.isNullOrBlank() &&
-            !key.startsWith("\${") &&
-            key != "DEFAULT_MAPS_API_KEY" &&
-            key != "MY_MAPS_API_KEY" &&
-            key != "YOUR_KEY_HERE"
+        // The "is this a real key?" decision lives in MapsApiKeyGuard so it is
+        // unit-testable; this function only performs the Android-dependent read.
+        // Anything unexpected (no meta-data, SecurityException, ...) fails closed.
+        MapsApiKeyGuard.isUsableKey(key)
     } catch (_: Exception) {
         false
     }

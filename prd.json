@@ -3230,7 +3230,7 @@
                         "phase":  17,
                         "title":  "First-Time Worker Registration Fee (Future)",
                         "priority":  "P2",
-                        "status":  "pending",
+                        "status":  "completed",
                         "description":  "First-time worker registration requires UGX 20,000 registration fee. Worker registration UI must clearly communicate that the applicant should prepare/pay UGX 20,000 for registration. The exact internal breakdown/purpose of the UGX 20,000 has NOT yet been specified. Do not invent a breakdown. Do not implement payment processing now.",
                         "problem":  "Worker registration fee not yet documented.",
                         "goal":  "Document the UGX 20,000 registration fee requirement as a future requirement without implementation.",
@@ -3255,7 +3255,8 @@
 
                                   ],
                         "rollback":  "Edit PRD documentation",
-                        "notes":  "FUTURE / PLANNED / NOT IMPLEMENTED. Open question: What exactly does the UGX 20,000 cover? What payment mechanism will be used?",
+                        "notes":  "COMPLETED 2026-10-11 (documentation-only story; no source code changed and no payment processing implemented, per story scope). Requirement is recorded in requirement_file.md 13.2: a first-time worker registration requires a UGX 20,000 registration fee, and the worker registration UI must clearly communicate that the applicant should prepare/pay UGX 20,000. Verified against the acceptance criterion \u0022Registration UI requirement notes UGX 20,000 fee communication\u0022. No internal breakdown of the UGX 20,000 was invented. Open questions retained in requirement_file.md: what exactly the UGX 20,000 covers, and which payment mechanism will be used.",
+                        "completed_at":  "2026-10-11T15:24:11+03:00",
                         "depends_on":  [
 
                                        ]
@@ -3411,7 +3412,7 @@
                         "phase":  17,
                         "title":  "Worker Location Using Device GPS (Future)",
                         "priority":  "P2",
-                        "status":  "pending",
+                        "status":  "completed",
                         "description":  "Remove the old concept of manually relying on outdated district/location fields such as \u0027Sunside/Sun-side district.\u0027 The intended future behavior is: worker enables location/GPS permission, the app obtains the worker\u0027s device location, and the worker\u0027s location can be used for relevant Skills Exchange functionality. The implementation must respect Android location permissions and device accuracy limitations. Do not claim that GPS is always perfectly exact. Do not implement this now.",
                         "problem":  "Location management relies on manual district fields; GPS-based location not yet specified as future requirement.",
                         "goal":  "Document the GPS-based worker location requirement as a future requirement without implementation.",
@@ -3438,7 +3439,8 @@
 
                                   ],
                         "rollback":  "Edit PRD documentation",
-                        "notes":  "FUTURE / PLANNED / NOT IMPLEMENTED. Existing LOC-001..004 implementation uses GPS for clients and district/location fields for workers; this requirement proposes future GPS-based worker location.",
+                        "notes":  "COMPLETED 2026-10-11 (documentation-only story; no source code changed, per story scope). Requirement is recorded in requirement_file.md 13.6 and verified against all three acceptance criteria: (1) requirements specify GPS permission enablement for workers, (2) requirements acknowledge Android location permissions and device accuracy limitations and do not claim GPS is always perfectly exact, (3) the old manual district/location concept (Sunside/Sun-side district) is noted for removal. No implementation performed: LOC-001..004 still use GPS for clients and manual district/location fields for workers, intentionally unchanged.",
+                        "completed_at":  "2026-10-11T15:24:11+03:00",
                         "depends_on":  [
 
                                        ]
@@ -3448,7 +3450,7 @@
                         "phase":  17,
                         "title":  "Google Maps Usage Minimization (Future)",
                         "priority":  "P2",
-                        "status":  "pending",
+                        "status":  "completed",
                         "description":  "The general map should not be permanently displayed throughout the normal app experience. Maps should be used only when relevant to an active client-worker interaction, particularly when: a client accepts/hires a worker, there is an active job, and location/map information is actually needed for that job. This requirement is intended to minimize unnecessary Google Maps usage/cost. Do not implement this now.",
                         "problem":  "Map usage strategy not yet documented.",
                         "goal":  "Document the maps-usage-minimization requirement as a future requirement without implementation.",
@@ -3474,7 +3476,8 @@
 
                                   ],
                         "rollback":  "Edit PRD documentation",
-                        "notes":  "FUTURE / PLANNED / NOT IMPLEMENTED. Existing MAP-001 implemented Google Maps SDK; this requirement guides when maps should be displayed.",
+                        "notes":  "COMPLETED 2026-10-11 (documentation-only story; no source code changed, per story scope). Requirement is recorded in requirement_file.md 13.7 and verified against both acceptance criteria: (1) requirements specify that maps are shown only during an active client-worker interaction (client accepts/hires a worker, an active job, location/map information actually needed for that job), and (2) requirements note the goal of minimizing unnecessary Google Maps usage/cost. No implementation performed.",
+                        "completed_at":  "2026-10-11T15:24:11+03:00",
                         "depends_on":  [
 
                                        ]
@@ -3562,7 +3565,7 @@
                         "phase":  17,
                         "title":  "Liability Disclaimer (Future)",
                         "priority":  "P2",
-                        "status":  "pending",
+                        "status":  "completed",
                         "description":  "Skills Exchange should include a short liability disclaimer communicating that Skills Exchange is not responsible for work performed by workers or damages caused by workers/clients, subject to applicable law. The requirement should eventually appear appropriately in: Terms \u0026 Conditions, relevant registration/onboarding areas where appropriate, and potentially relevant job acceptance/transaction flows where appropriate. IMPORTANT: Do not invent legal guarantees or claim that the disclaimer eliminates legal responsibility. The final legal wording should be reviewed for applicable Ugandan legal requirements before public launch. Do not implement this now.",
                         "problem":  "Liability disclaimer requirement not yet documented.",
                         "goal":  "Document the liability disclaimer requirement as a future requirement without implementation.",
@@ -3589,7 +3592,8 @@
 
                                   ],
                         "rollback":  "Edit PRD documentation",
-                        "notes":  "FUTURE / PLANNED / NOT IMPLEMENTED. Open question: What exact legal wording should be used after Ugandan legal review?",
+                        "notes":  "COMPLETED 2026-10-11 (documentation-only story; no legal wording was finalized or invented, per story scope). Requirement is recorded in requirement_file.md 13.10 and verified against all three acceptance criteria: (1) requirements specify a short liability disclaimer stating Skills Exchange is not responsible for work performed by workers or damages caused by workers/clients, subject to applicable law, (2) requirements note placement in Terms & Conditions, relevant registration/onboarding areas, and potentially relevant job acceptance/transaction flows, (3) requirements emphasize the final wording must be reviewed against applicable Ugandan legal requirements before public launch. No legal guarantees are claimed. Open question retained: the exact legal wording after Ugandan legal review.",
+                        "completed_at":  "2026-10-11T15:24:11+03:00",
                         "depends_on":  [
 
                                        ]
@@ -3599,7 +3603,7 @@
                         "phase":  17,
                         "title":  "Privacy Policy / Terms \u0026 Conditions / User Consent (Future)",
                         "priority":  "P2",
-                        "status":  "pending",
+                        "status":  "completed",
                         "description":  "The project will eventually need proper: Privacy Policy, Terms \u0026 Conditions, and user consent/acceptance tracking. The legal/product requirements should cover relevant areas such as: data collection and use, location data, worker KYC/NIN information, mobile money/payment/escrow information, user rights, account deletion, marketplace rules, worker verification, jobs, messaging, ratings, disputes, prohibited activities, account termination, and liability. Do not invent legal requirements that have not been decided. Do not implement these pages or consent tracking now.",
                         "problem":  "Privacy policy, T\u0026C, and consent tracking requirements not yet documented.",
                         "goal":  "Document the privacy policy/T\u0026C/consent requirements as future requirements without implementation.",
@@ -3625,7 +3629,8 @@
 
                                   ],
                         "rollback":  "Edit PRD documentation",
-                        "notes":  "FUTURE / PLANNED / NOT IMPLEMENTED. Do not invent legal requirements that have not been decided.",
+                        "notes":  "COMPLETED 2026-10-11 (documentation-only story; no pages or consent tracking implemented and no legal requirements invented, per story scope). Requirement is recorded in requirement_file.md 13.11 and verified against both acceptance criteria: (1) requirements list the coverage areas - data collection and use, location data, worker KYC/NIN information, mobile money/payment/escrow information, user rights, account deletion, marketplace rules, worker verification, jobs, messaging, ratings, disputes, prohibited activities, account termination and liability - and (2) requirements note that user consent/acceptance tracking is a future need. Building the actual Privacy Policy, Terms & Conditions pages and consent tracking remains future work.",
+                        "completed_at":  "2026-10-11T15:24:11+03:00",
                         "depends_on":  [
 
                                        ]
@@ -3635,7 +3640,7 @@
                         "phase":  17,
                         "title":  "Preserve Existing Authentication/Onboarding Requirements (Future Note)",
                         "priority":  "P0",
-                        "status":  "pending",
+                        "status":  "completed",
                         "description":  "Do NOT replace or undo the existing authentication/onboarding requirements. The existing intended flow remains: NEW USER: Role Selection → Authentication → Role-specific onboarding → Main App. EXISTING USER: Restore session → Main App. Worker activation/KYC/approval gates must remain intact. These new requirements are additions to the existing project, not replacements. Do not implement this now (this is a preservation note, not an implementation task).",
                         "problem":  "Need to ensure future requirements do not conflict with or replace existing auth/onboarding flow.",
                         "goal":  "Document the preservation requirement for existing authentication/onboarding as a future note without implementation.",
@@ -3662,7 +3667,8 @@
 
                                   ],
                         "rollback":  "Edit PRD documentation",
-                        "notes":  "FUTURE / PLANNED / NOT IMPLEMENTED. This is a preservation note to prevent future regressions.",
+                        "notes":  "COMPLETED 2026-10-11 (preservation note only; no code was changed and no existing auth/onboarding requirement was replaced or undone, per story scope). Requirement is recorded in requirement_file.md 13.12 and verified against all three acceptance criteria. Additionally confirmed by source inspection that the documented flow is the real one: OnboardingScreen.kt declares OnboardingStep.ROLE_SELECTION, NEW_USER_ROLE_SELECTION, AUTHENTICATION and PROFILE_SETUP (role selection -> authentication -> role-specific onboarding -> Main App), SkillsExchangeViewModel.restoreSession() restores an existing session straight to the main app (with the 7-day expiry from AUTH-008), and setUserRoleMode() still refuses \u0022Offer Skills\u0022 unless canAccessWorkerFeatures() passes, so the worker activation/KYC/approval gate is intact. The new Phase 17 requirements are additions, not replacements.",
+                        "completed_at":  "2026-10-11T15:24:11+03:00",
                         "depends_on":  [
 
                                        ]
@@ -3672,7 +3678,7 @@
                         "phase":  17,
                         "title":  "Google Maps Fallback for Active-Job Screen (Future)",
                         "priority":  "P2",
-                        "status":  "pending",
+                        "status":  "completed",
                         "description":  "When an active job begins the app may attempt to display worker/client location on a map. Google Maps must NOT be a hard dependency for the Skills Exchange job lifecycle. If Maps is unavailable for ANY reason (missing API key, billing not enabled, SDK init failure, network failure, location/map load failure, invalid config, or any other Maps-related failure) the app must NOT crash, freeze, or show an infinite loading screen. Instead the active-job screen must fall back gracefully to a clear message such as \u0027Map location is currently unavailable.\u0027 and provide appropriate actions (e.g. Contact Worker, Continue Without Map). Maps must not appear during ordinary worker browsing or normal app navigation — only when a job is active. Worker GPS location collection must remain independent from Google Maps. The Contact Worker action must reuse the project\u0027s existing masked-communication / Firestore-chat mechanism (COMM-001) and must NOT expose a worker\u0027s private phone number. Treat Google Maps as a visualization layer only: accepting a job, starting a job, updating job status, worker acceptance, client/worker communication, arrival PIN, job completion, notifications, reviews, payment/escrow, and dispute flow must all remain fully functional even when Maps is unavailable. Do not implement this now.",
                         "problem":  "Active-job map view crashes when Google Maps SDK cannot initialize (no API key, billing disabled, network failure, etc.), leaving the user stuck. Maps is also currently shown during normal browsing, not just active jobs.",
                         "goal":  "Document the Google Maps fallback requirement for the active-job screen as a future requirement without implementation.",
@@ -3740,7 +3746,8 @@
                                       "Room database migration may be needed if new job-state fields are required"
                                   ],
                         "rollback":  "Remove active-job screen changes; revert InteractiveMapView guard if added; the rest of the app is unaffected",
-                        "notes":  "FUTURE / PLANNED / NOT IMPLEMENTED. Depends on MAP-002 (maps-usage-minimization strategy) being understood first. Do not implement until explicitly instructed. This requirement supersedes the naive MAP-001 approach and must be reconciled with the D1 device crash (API key not found at InteractiveMapView.kt:98). The Contact Worker action must reuse COMM-001 (Firestore real-time chat + phone masking) rather than creating a second communication system.",
+                        "notes":  "COMPLETED 2026-10-11 (documentation-only story; no source code changed, per the story instruction \u0022Do not implement this now\u0022). The requirement already existed in prd.json, TASKS.md, CHANGELOG.md and DECISIONS.md but was MISSING from requirement_file.md; that gap is now closed as requirement_file.md 13.8, and all 13 acceptance criteria are recorded there as FUTURE REQUIREMENTS. The implementation-side criteria (graceful fallback UI reading \u0022Map location is currently unavailable.\u0022, a Contact Worker action reusing the COMM-001 masked Firestore chat, a Continue Without Map action, try/catch around Maps SDK initialization, location-permission-denial handling, a feature flag/configuration abstraction, and secure API-key management via manifestPlaceholders/.env) remain UNIMPLEMENTED by design and are NOT satisfied by this story. Worker GPS location collection remains independent from Google Maps. Open questions recorded in requirement_file.md: how to reconcile the unguarded map.onCreate() crash from MAP-001 (device defect D1, IllegalStateException at InteractiveMapView.kt:98) with the active-job screen design, and whether the COMM-001 masked chat is already reachable from the active-job context.",
+                        "completed_at":  "2026-10-11T15:24:11+03:00",
                         "depends_on":  [
                                            "MAP-002"
                                        ]
@@ -3833,11 +3840,18 @@
                               "AUTH-011",
                               "REG-002",
                               "REG-003",
-                              "REG-004"
+                              "REG-004",
+                              "REG-001",
+                              "LOC-005",
+                              "MAP-002",
+                              "MAP-003",
+                              "LEGAL-001",
+                              "LEGAL-002",
+                              "AUTH-012"
                           ],
     "blocked_stories":  [
 
                         ],
-    "last_updated":  "2026-09-30T17:47:00+03:00"
+    "last_updated":  "2026-10-11T15:24:11+03:00"
 
 }

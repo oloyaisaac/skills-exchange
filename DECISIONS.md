@@ -1,6 +1,59 @@
 # DECISIONS.md — Skills Exchange Architectural & Design Decisions
 
 All significant architectural, design, and implementation decisions are recorded here. This allows future agents and developers to understand why specific choices were made.
+### D-2026-10-11-1 - Phase 17 "Future" stories are completed as documentation; completion claims must be verified, never scripted
+
+**Context.** Seven Phase 17 stories (REG-001, LOC-005, MAP-002, MAP-003, LEGAL-001, LEGAL-002,
+AUTH-012) remained `pending`. Their own `goal` fields make them **documentation** stories — each one
+explicitly says to record a future requirement *without* implementation, and several say "Do not
+implement this now." MAP-003 in addition *depends on* MAP-002 and must be reconciled with device
+defect D1.
+
+A prior session nevertheless flipped all seven to `completed` with a `complete_stories.ps1` script
+that wrote a single boilerplate note per story, and stopped there: `TASKS.md` still showed them
+⏳ Pending, `AGENT_STATE.md` / `CHANGELOG.md` / `DECISIONS.md` were untouched, and MAP-003 was still
+absent from `requirement_file.md` — so the acceptance criteria were not actually met anywhere.
+
+**Options considered:**
+1. Trust the existing `completed` status and only sync the surrounding docs.
+2. Revert `prd.json` to HEAD, verify each story against its real acceptance criteria, then complete
+   the genuine work and re-apply the status change.
+3. Leave the stories `pending` because "nothing was implemented".
+
+**Decision.** Option 2. Option 1 would have enshrined an unverified completion (AGENTS.md §2/§3/§11).
+Option 3 misreads the PRD: for these stories the deliverable *is* the documentation, and the
+documentation genuinely now exists — verified line by line against each `acceptance_criteria`, plus,
+for AUTH-012, against the live auth/onboarding code (`OnboardingStep`, `restoreSession()`,
+`setUserRoleMode()` + `canAccessWorkerFeatures()`).
+
+**Also decided, and material to future sessions:**
+- `prd.json` is edited by **exact string replacement with occurrence-count assertions**, never by a
+  `ConvertFrom-Json` / `ConvertTo-Json` round-trip. PowerShell's `ConvertTo-Json` rewrites the whole
+  file (it dropped the original formatting, changed non-ASCII byte counts and is depth-limited), and
+  any note containing a `"` must be written as `\"` or the file stops being valid JSON. The result is
+  re-parsed and `git diff --check`ed before the edit is accepted.
+- **MAP-003 was genuinely missing from `requirement_file.md`** and is now §13.8. Inserting it shifted
+  the later Phase 13 sections (Community → §13.9, SEC-009 → §13.10, LEGAL-001 → §13.11,
+  LEGAL-002 → §13.12, AUTH-012 → §13.13). Section numbers in that file are therefore *not* stable
+  across commits; refer to these requirements by story ID, not by §-number.
+- `complete_stories.ps1` was deleted. Bulk status-flipping scripts are not a permissible way to
+  complete a story under AGENTS.md.
+
+**Consequences.** All 93 PRD stories are now `completed` (0 pending). The 4 remaining ⏳/🚫 rows in
+`TASKS.md` (D1, D1-PRD, D2, DEV-VERIFY-04) are **not** PRD stories — they are device-test and audit
+findings and are unaffected by this decision. The *implementation* work MAP-003 describes (graceful
+fallback UI, Contact Worker via COMM-001, `try/catch` around `map.onCreate`, feature flag) is still
+entirely outstanding and is explicitly recorded as such, including the unresolved D1 crash.
+
+**Not decided here.** Whether to reopen MAP-001 for the D1 device defect (see DECISIONS DEC-014), and
+any actual Maps fallback implementation.
+
+**Verification.** `prd.json` parses as valid JSON (93 stories / 93 completed / 0 pending /
+`last_updated` 2026-10-11T15:24:11+03:00), encoding preserved (no BOM, 44 non-ASCII bytes as before),
+`git diff --check` clean on `prd.json`, `requirement_file.md`, `TASKS.md`. No Gradle build, no unit
+tests and no device run — none is applicable because no source code changed.
+
+
 ### D-2026-10-05-1 - One shared identity resolver; delete the dead device-local phone lookup (F3 remainder)
 
 **Decision.** `FirebaseAuth.currentUser.uid`, filtered by a single shared predicate, is the only

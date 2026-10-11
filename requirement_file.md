@@ -566,8 +566,65 @@ Maps should be used only when relevant to an active client-worker interaction, p
 This requirement is intended to minimize unnecessary Google Maps usage/cost.
 
 ---
+### 13.8 Google Maps Fallback for the Active-Job Screen (MAP-003)
 
-### 13.8 Community Feature Removal (COMM-002)
+**Status: FUTURE / PLANNED / NOT IMPLEMENTED** (documentation only — do not implement now).
+
+Google Maps must **NOT** be a hard dependency for the Skills Exchange job lifecycle. Maps may only
+appear on the **active-job screen** — that is, only after a client has accepted/hired a worker and a
+job is active. Maps must not appear during ordinary worker browsing or normal app navigation.
+
+If Maps is unavailable for **ANY** reason — missing API key, billing not enabled, SDK initialization
+failure, network failure, location/map load failure, invalid configuration, location permission
+denied, or any other Maps-related failure — the app must **NOT** crash, freeze, or show an infinite
+loading screen. Instead the active-job screen must fall back gracefully to a clear message such as
+**"Map location is currently unavailable."** and must provide appropriate actions:
+
+- **Contact Worker** — reusing the project's existing **COMM-001** masked-communication /
+  Firestore real-time chat mechanism. This must **not** expose a worker's private phone number, and
+  no second communication system may be created if COMM-001 already exists.
+- **Continue Without Map**.
+
+Worker GPS location collection must remain **independent** from Google Maps.
+
+Treat Google Maps as a **visualization layer only**. All of the following must remain fully
+functional even when Maps is unavailable: accepting a job, starting a job, updating job status,
+worker acceptance, client/worker communication, arrival PIN, job completion, notifications, reviews,
+payment/escrow, and the dispute flow.
+
+**Acceptance criteria to be satisfied when this is eventually implemented:**
+
+1. Maps are NOT shown during ordinary worker browsing or normal app navigation.
+2. Maps are only attempted when a job is active (client has accepted/hired a worker).
+3. When Maps fails for any reason the app does NOT crash, freeze, or show an infinite loading screen.
+4. Fallback UI displays a clear message (e.g. "Map location is currently unavailable.").
+5. Fallback UI provides a Contact Worker action that reuses the existing COMM-001
+   masked-chat/phone-masking mechanism.
+6. Fallback UI provides a Continue Without Map action.
+7. Worker GPS location collection is independent from the Google Maps SDK.
+8. All existing job lifecycle features (acceptance, start, status, arrival PIN, completion, payment,
+   dispute) work without Maps.
+9. API key is managed via secure configuration (manifestPlaceholders / .env), never hardcoded in
+   source.
+10. Maps initialization is wrapped in a try/catch or equivalent so any SDK exception produces the
+    fallback, not a crash.
+11. Location permission denial produces the fallback, not a crash or infinite loading.
+12. A feature flag or configuration abstraction allows Maps to be enabled/disabled without
+    redesigning the active-job system.
+13. No new communication system is created if COMM-001 masked-chat already exists.
+
+**IMPORTANT:** This is a future requirement. Nothing above has been implemented. MAP-003 depends on
+MAP-002 (the maps-usage-minimization strategy) being understood first.
+
+**Open Questions:**
+- MAP-001 already has an unguarded `map.onCreate()` that crashes without an API key (device defect
+  D1: `IllegalStateException: API key not found` at `InteractiveMapView.kt:98`). How should that
+  crash be reconciled with the active-job screen design?
+- Is the COMM-001 masked-chat mechanism already reachable from the active-job context?
+
+---
+
+### 13.9 Community Feature Removal (COMM-002)
 
 The Community feature should eventually be removed permanently.
 
@@ -587,7 +644,7 @@ When implementation begins, the agent must audit and safely remove all relevant:
 
 ---
 
-### 13.9 Worker Dashboard Security / Access Control (SEC-009)
+### 13.10 Worker Dashboard Security / Access Control (SEC-009)
 
 A normal Client must NOT be able to access the Worker dashboard.
 
@@ -602,7 +659,7 @@ Existing worker KYC, training, approval, and activation requirements must be pre
 
 ---
 
-### 13.10 Liability Disclaimer (LEGAL-001)
+### 13.11 Liability Disclaimer (LEGAL-001)
 
 Skills Exchange should include a short liability disclaimer communicating that Skills Exchange is not responsible for work performed by workers or damages caused by workers/clients, subject to applicable law.
 
@@ -620,7 +677,7 @@ The requirement should eventually appear appropriately in:
 
 ---
 
-### 13.11 Privacy Policy / Terms & Conditions / User Consent (LEGAL-002)
+### 13.12 Privacy Policy / Terms & Conditions / User Consent (LEGAL-002)
 
 The project will eventually need proper:
 - Privacy Policy
@@ -650,7 +707,7 @@ The legal/product requirements should cover relevant areas such as:
 
 ---
 
-### 13.12 Preserve Current Authentication/Onboarding Requirements (AUTH-012)
+### 13.13 Preserve Current Authentication/Onboarding Requirements (AUTH-012)
 
 **Do NOT replace or undo the existing authentication/onboarding requirements.**
 
@@ -679,6 +736,8 @@ The following questions remain unresolved and should be answered before implemen
 3. **What exact payment mechanism will be used for the UGX 20,000 registration fee?**
 4. **How exactly will the 5% commission and 5% app fee be calculated/charged in edge cases such as refunds, cancellations, partial payments, or disputes?**
 5. **What exact legal wording should be used after Ugandan legal review?**
+6. **MAP-003:** How should the unguarded `map.onCreate()` crash from MAP-001 (device defect D1) be reconciled with the active-job screen design?
+7. **MAP-003:** Is the COMM-001 masked-chat mechanism already reachable from the active-job context?
 
 ---
 
