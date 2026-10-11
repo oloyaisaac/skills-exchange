@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.db.JobPostEntity
+import com.example.data.db.NotificationEntity
 import com.example.data.db.ServiceProviderEntity
 import com.example.ui.components.*
 import com.example.ui.theme.*
@@ -33,6 +34,8 @@ import com.example.ui.viewmodel.SkillsExchangeViewModel
 import com.example.util.CurrencyRegion
 import com.example.util.LocationHelper
 import com.example.util.NetworkConnectivityObserver
+import com.example.util.NotificationRouting
+import com.example.util.NotificationTarget
 import com.example.util.SystemNotificationHelper
 import com.example.ui.components.escrowHeldTotal
 
@@ -658,14 +661,32 @@ fun MainScreen(
         )
     }
 
+    // AUDIT FIX (M5 / B6): a notification tap now navigates to the content it
+    // refers to (resolved from its type + jobId) instead of only marking
+    // everything read. Unresolvable targets fall back to mark-read-only.
+    fun handleNotificationClick(notification: NotificationEntity) {
+        viewModel.markAllNotificationsRead()
+        viewModel.setNotificationDrawerOpen(false)
+        val job = jobs.firstOrNull { it.id == notification.jobId }
+        when (NotificationRouting.targetFor(notification.type)) {
+            NotificationTarget.IDENTITY -> isIdentitySheetOpen = true
+            NotificationTarget.WALLET -> isWalletSheetOpen = true
+            NotificationTarget.TRUST_SAFETY -> isTrustSafetySheetOpen = true
+            NotificationTarget.QUOTE_COMPARISON -> if (job != null) {
+                quoteComparisonJob = job
+                isQuoteComparisonOpen = true
+            }
+            NotificationTarget.NONE -> Unit
+        }
+    }
+
     if (isNotificationDrawerOpen) {
         NotificationDrawer(
             notifications = notifications,
             onDismiss = { viewModel.setNotificationDrawerOpen(false) },
             onRequestPermissionDialog = { isPermissionRationaleOpen = true },
             onNotificationClick = { notification ->
-                viewModel.markAllNotificationsRead()
-                viewModel.setNotificationDrawerOpen(false)
+                handleNotificationClick(notification)
             }
         )
     }

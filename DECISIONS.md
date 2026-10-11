@@ -982,6 +982,25 @@ device attached) and the rules were **not deployed**.
 
 ---
 
+### [2026-10-10] DEC-027 Notification Tap Navigates via a Pure Type→Target Map — MainScreen Side Effects (B6)
+
+**Context**: Audit finding B6 (Medium). Tapping an in-app notification in `NotificationDrawer` only called `viewModel.markAllNotificationsRead()` and closed the drawer — it never navigated to the job/verification/payment the notification was about (`MainScreen.kt` `onNotificationClick`). Each `NotificationEntity` already carries a `type` (raw string) and a `jobId`.
+
+**Decision**:
+- Introduced a **pure, Android-free** mapping `util/NotificationRouting.kt`: `NotificationRouting.targetFor(type)` returns a `NotificationTarget` enum — `VERIFICATION_DECISION`→IDENTITY, `PAYMENT_STATUS`→WALLET, `DISPUTE_UPDATE`/`SOS_EVENT`→TRUST_SAFETY, `NEW_QUOTE`→QUOTE_COMPARISON, everything else (incl. `TRAINING_REQUIREMENT`)→NONE. These are exactly the `type` strings `SkillsExchangeRepository` writes.
+- `MainScreen` gained a local `handleNotificationClick(notification)` that keeps the old mark-read + close-drawer, then opens the destination sheet for the mapped target. Destinations are the **local `remember` sheet states** already in `MainScreen`: `isIdentitySheetOpen`, `isWalletSheetOpen`, `isTrustSafetySheetOpen`, and (for NEW_QUOTE) the quote-comparison sheet — the last **only when `jobs.firstOrNull { it.id == notification.jobId }` still resolves**.
+
+**Rationale**: Navigation in this app is **state-driven, not NavController-driven** — the destination sheets are composable-local `remember` state, so the side effects must live in `MainScreen`. Splitting the *decision* (pure map) from the *effect* (MainScreen) keeps the routing logic unit-testable without a Compose/Android harness, which is what makes a regression test possible on this resource-limited machine. Falling back to mark-read-only for `NONE`/unresolvable keeps the exact prior behaviour for types with no safe destination (e.g. `TRAINING_REQUIREMENT` is only reachable via an inline gated view, not a sheet), so the fix strictly adds navigation and never regresses the old path.
+
+**Consequences**:
+- New/deleted notification types must be added to `NotificationRouting.targetFor` or they silently fall back to mark-read-only (safe default, but worth remembering).
+- `NEW_QUOTE` only navigates when the job still exists locally; a quote on a job pruned from the local DB opens nothing (mark-read), which is the correct degradation.
+- The `type` strings are duplicated between the repository and the routing map (both raw literals), mirroring how the repo already hardcodes them; a shared constant would be a follow-up cleanup, deliberately not done here to keep the change minimal.
+
+**Verification**: New `app/src/test/java/com/example/NotificationRoutingTest.kt` (plain JUnit) — 7 cases covering every repo-written type, `TRAINING_REQUIREMENT`→NONE, and unknown/empty→NONE. **7/7 pass**, `failures=0`, `errors=0`; `:app:compileDebugKotlin` and `:app:testDebugUnitTest` **BUILD SUCCESSFUL**.
+
+---
+
 ## D-2026-10-04-2 — Job-status `changedBy` is derived in the repository, not supplied by the caller
 
 **Decision** (C2-2 Fix #6, audit finding **F6**):

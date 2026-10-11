@@ -1,6 +1,15 @@
 # CHANGELOG.md — Skills Exchange Development History
 
 All meaningful development changes are recorded here in reverse chronological order.
+### [2026-10-10] [M5] Notification tap navigation (B6)
+
+- **Problem:** Tapping an in-app notification in the `NotificationDrawer` only called `markAllNotificationsRead()` and closed the drawer — it never navigated to the verification, payment, dispute, SOS, or job the notification referred to (finding B6: "marks all read but doesn't navigate").
+- **Fix:**
+  - New pure type→target map `util/NotificationRouting.kt` (`NotificationRouting.targetFor(type): NotificationTarget`) covering the types `SkillsExchangeRepository` writes: `VERIFICATION_DECISION`→IDENTITY, `PAYMENT_STATUS`→WALLET, `DISPUTE_UPDATE`/`SOS_EVENT`→TRUST_SAFETY, `NEW_QUOTE`→QUOTE_COMPARISON, else NONE.
+  - `MainScreen.handleNotificationClick` keeps the old mark-read + close-drawer, then opens the matching local sheet (`IdentityVerificationSheet` / `EscrowWalletSheet` / `TrustSafetySheet` / quote-comparison — the last only when the job still resolves by `jobId`). Unresolvable/unknown types (e.g. `TRAINING_REQUIREMENT`) fall back to mark-read-only.
+- **Verification:** New `NotificationRoutingTest` (plain JUnit) **7/7 pass**; `:app:compileDebugKotlin` + `:app:testDebugUnitTest` BUILD SUCCESSFUL (bounded daemon heap to avoid the known 4 GB OOM on this 3.9 GB machine). Decision **DEC-027**.
+
+### [2026-10-10] [M4] Worker Online toggle persistence (B4)
 ### [2026-10-10] [M4] Worker Online toggle persistence (B4)
 
 - **Problem:** The worker's online/availability toggle lived only in an in-memory `MutableStateFlow(true)` (`SkillsExchangeViewModel.isWorkerOnline`). `toggleWorkerOnline()` flipped it in memory and nothing persisted it, so a worker who paused (went offline) silently came back **online** on every app restart — losing the "don't send me jobs" intent.
