@@ -1021,6 +1021,22 @@ device attached) and the rules were **not deployed**.
 
 ---
 
+
+
+### [2026-10-10] DEC-029 Worker Distance Filtering Uses Real Haversine Distance (B9)
+
+**Context**: Audit finding B9 (Medium). The Provider discovery radius filter and the displayed "X mi away" used a static, seeded `distanceMiles` that never reflected the user's actual GPS location, so a moving user saw the same providers/thresholds.
+
+**Decision**:
+- New pure-Kotlin `util/DistanceUtil.kt` with `haversineMiles(...)` (great-circle distance in miles) and `effectiveDistanceMiles(...)`.
+- `SkillsExchangeViewModel` now decorates each projected provider with the real distance from the user's GPS to the provider before the existing category/distance/rate/verified/activated/query filtering and display, so filter and UI stay consistent with no UI change.
+- `effectiveDistanceMiles` returns the stored `distanceMiles` when the user's GPS is unknown (GPS off/unavailable), so the filter degrades gracefully instead of breaking.
+
+**Rationale**: The stored `distanceMiles` was valid only for the seeded/mock location, not the user's actual position, so it misled radius filtering and the "X mi away" display. Computing the real straight-line distance keeps filter and UI consistent with no UI change.
+
+**Verification**: New `app/src/test/java/com/example/DistanceUtilTest.kt` (plain JUnit) — 5 tests / 0 failures / 0 errors (same-coords zero, SF-to-LA ≈347 mi, symmetric, real-location beats stored fallback, stored-value fallback when GPS null). `:app:testDebugUnitTest --tests com.example.DistanceUtilTest` BUILD SUCCESSFUL (EXIT=0); `:app:compileDebugKotlin` unchanged. Decision **DEC-029**.
+
+
 ## D-2026-10-04-2 — Job-status `changedBy` is derived in the repository, not supplied by the caller
 
 **Decision** (C2-2 Fix #6, audit finding **F6**):

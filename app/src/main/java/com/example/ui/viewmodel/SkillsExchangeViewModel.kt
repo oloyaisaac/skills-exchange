@@ -27,6 +27,7 @@ import com.example.data.remote.TranscribedVoiceJob
 import com.example.data.repository.SkillsExchangeRepository
 import com.example.util.AudioRecorderHelper
 import com.example.util.CurrencyRegion
+import com.example.util.DistanceUtil
 import com.example.util.ProfileValidators
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.*
@@ -452,21 +453,38 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     val providers: StateFlow<List<ServiceProviderEntity>> = combine(
         repository.providers,
-        filterState
-    ) { allProviders, filter ->
-        allProviders.filter { provider ->
-            val matchCategory = filter.category == null || provider.category.equals(filter.category, ignoreCase = true)
-            val matchDistance = provider.distanceMiles <= filter.radiusMiles
-            val matchRate = provider.hourlyRate >= filter.minRate && provider.hourlyRate <= filter.maxRate
-            val matchVerified = !filter.onlyVerified || (provider.isVerifiedResident && provider.isBackgroundChecked)
-            val matchActivated = provider.isActivated && provider.kycStatus == "APPROVED"
-            val matchQuery = filter.searchQuery.isBlank() ||
-                    provider.name.contains(filter.searchQuery, ignoreCase = true) ||
-                    provider.tagline.contains(filter.searchQuery, ignoreCase = true) ||
-                    provider.skillsCsv.contains(filter.searchQuery, ignoreCase = true)
+        filterState,
+        gpsLocationState
+    ) { allProviders, filter, gps ->
+        allProviders
+            .map { provider ->
+                // B9 fix: compute the real straight-line distance from the user's
+                // current GPS location to the provider's coordinates, instead of
+                // trusting the static seeded `distanceMiles`. Falls back to the stored
+                // value when the user's location is unknown (GPS off/unavailable).
+                provider.copy(
+                    distanceMiles = DistanceUtil.effectiveDistanceMiles(
+                        providerLatitude = provider.latitude,
+                        providerLongitude = provider.longitude,
+                        userLatitude = gps.latitude,
+                        userLongitude = gps.longitude,
+                        fallbackMiles = provider.distanceMiles
+                    )
+                )
+            }
+            .filter { provider ->
+                val matchCategory = filter.category == null || provider.category.equals(filter.category, ignoreCase = true)
+                val matchDistance = provider.distanceMiles <= filter.radiusMiles
+                val matchRate = provider.hourlyRate >= filter.minRate && provider.hourlyRate <= filter.maxRate
+                val matchVerified = !filter.onlyVerified || (provider.isVerifiedResident && provider.isBackgroundChecked)
+                val matchActivated = provider.isActivated && provider.kycStatus == "APPROVED"
+                val matchQuery = filter.searchQuery.isBlank() ||
+                        provider.name.contains(filter.searchQuery, ignoreCase = true) ||
+                        provider.tagline.contains(filter.searchQuery, ignoreCase = true) ||
+                        provider.skillsCsv.contains(filter.searchQuery, ignoreCase = true)
 
-            matchCategory && matchDistance && matchRate && matchVerified && matchActivated && matchQuery
-        }
+                matchCategory && matchDistance && matchRate && matchVerified && matchActivated && matchQuery
+            }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val jobs: StateFlow<List<JobPostEntity>> = combine(

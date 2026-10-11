@@ -1,231 +1,232 @@
-# AGENT_STATE.md — Skills Exchange Project State
+﻿# AGENT_STATE.md â€” Skills Exchange Project State
 
 ## Last Updated
-2026-10-10 — **M6 (B8 Map empty state) FIXED & tested.** The Map tab showed a blank grey map with only a tiny "0 Nearby Specialists" chip when no providers matched — no explanation or next step. Added `MapEmptyProvidersOverlay` (internal composable in `InteractiveMapView.kt`, matching the existing `MapUnavailableFallback` style) that overlays the map when `providers.isEmpty()`, showing "No providers nearby" + guidance (widen radius / adjust filters / switch to List). GPS/permission status is already surfaced by the existing `GpsLocationBanner`, so the fix focuses on the empty-providers case. Regression test `MapEmptyProvidersOverlayTest` (Robolectric + Compose, NATIVE graphics) 1/1 pass; `:app:compileDebugKotlin` + `:app:testDebugUnitTest` BUILD SUCCESSFUL (bounded heap — see DECISIONS env caveat). **Next:** M7 (B9 Distance filtering).
-2026-10-10 — **M5 (B6 Notification navigation) FIXED & tested.** The notification tap previously only marked all read and closed the drawer — it never navigated. Added a pure, unit-testable type→target map (`util/NotificationRouting.kt`: `VERIFICATION_DECISION`→IDENTITY, `PAYMENT_STATUS`→WALLET, `DISPUTE_UPDATE`/`SOS_EVENT`→TRUST_SAFETY, `NEW_QUOTE`→QUOTE_COMPARISON, else NONE) and a `handleNotificationClick` in `MainScreen` that opens the matching local sheet (`IdentityVerificationSheet` / `EscrowWalletSheet` / `TrustSafetySheet` / quote-comparison — the last only when the job still resolves by `jobId`); unresolvable/unknown types (e.g. `TRAINING_REQUIREMENT`) fall back to the old mark-read-only behaviour. Regression test `NotificationRoutingTest` 7/7 pass; `:app:compileDebugKotlin` + `:app:testDebugUnitTest` BUILD SUCCESSFUL (bounded `-Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=384m` to dodge the known 4 GB-daemon OOM on this 3.9 GB box — see DECISIONS environment caveat). **Next:** M6 (B8 Map empty state).
+2026-10-10 â€” **M7 (B9 Distance filtering) FIXED & tested.** Provider list previously filtered and displayed providers by a static, seeded `distanceMiles` that never reflected the user's real GPS location, so a moving user saw the same providers/thresholds. Fixed by new `util/DistanceUtil.kt` (`haversineMiles`, `effectiveDistanceMiles`) and wiring `SkillsExchangeViewModel` to compute the real straight-line distance from the user's GPS to each provider before filtering and display, so filter and UI stay consistent with no UI change; `effectiveDistanceMiles` falls back to the stored `distanceMiles` when GPS is unavailable. Regression test `DistanceUtilTest.kt` 5/5 PASS (0 failures); `:app:testDebugUnitTest --tests com.example.DistanceUtilTest` BUILD SUCCESSFUL (EXIT=0); `:app:compileDebugKotlin` unchanged. Decision **DEC-029**. **Next:** none (see B9 finding in audit register, marked completed).
+2026-10-10 â€” **M6 (B8 Map empty state) FIXED & tested.** The Map tab showed a blank grey map with only a tiny "0 Nearby Specialists" chip when no providers matched â€” no explanation or next step. Added `MapEmptyProvidersOverlay` (internal composable in `InteractiveMapView.kt`, matching the existing `MapUnavailableFallback` style) that overlays the map when `providers.isEmpty()`, showing "No providers nearby" + guidance (widen radius / adjust filters / switch to List). GPS/permission status is already surfaced by the existing `GpsLocationBanner`, so the fix focuses on the empty-providers case. Regression test `MapEmptyProvidersOverlayTest` (Robolectric + Compose, NATIVE graphics) 1/1 pass; `:app:compileDebugKotlin` + `:app:testDebugUnitTest` BUILD SUCCESSFUL (bounded heap â€” see DECISIONS env caveat). **Next:** M7 (B9 Distance filtering).
+2026-10-10 â€” **M5 (B6 Notification navigation) FIXED & tested.** The notification tap previously only marked all read and closed the drawer â€” it never navigated. Added a pure, unit-testable typeâ†’target map (`util/NotificationRouting.kt`: `VERIFICATION_DECISION`â†’IDENTITY, `PAYMENT_STATUS`â†’WALLET, `DISPUTE_UPDATE`/`SOS_EVENT`â†’TRUST_SAFETY, `NEW_QUOTE`â†’QUOTE_COMPARISON, else NONE) and a `handleNotificationClick` in `MainScreen` that opens the matching local sheet (`IdentityVerificationSheet` / `EscrowWalletSheet` / `TrustSafetySheet` / quote-comparison â€” the last only when the job still resolves by `jobId`); unresolvable/unknown types (e.g. `TRAINING_REQUIREMENT`) fall back to the old mark-read-only behaviour. Regression test `NotificationRoutingTest` 7/7 pass; `:app:compileDebugKotlin` + `:app:testDebugUnitTest` BUILD SUCCESSFUL (bounded `-Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=384m` to dodge the known 4 GB-daemon OOM on this 3.9 GB box â€” see DECISIONS environment caveat). **Next:** M6 (B8 Map empty state).
 
-2026-10-10 — **M4 (B4 Worker Online toggle persistence) FIXED & tested.** The worker online/availability toggle was in-memory only (`MutableStateFlow(true)`) and reset to online on every launch. Fixed by persisting to the existing SessionManager DataStore (`worker_online` boolean key, default online): restored in `restoreSession()` and written on each `toggleWorkerOnline()`. Chose DataStore over a Room column because it needs no schema migration and matches how other session flags are stored. Regression test `WorkerOnlinePersistenceTest` (Robolectric) 4/4 pass; `:app:compileDebugKotlin` BUILD SUCCESSFUL. **Next:** M5 (B6 Notification navigation).
+2026-10-10 â€” **M4 (B4 Worker Online toggle persistence) FIXED & tested.** The worker online/availability toggle was in-memory only (`MutableStateFlow(true)`) and reset to online on every launch. Fixed by persisting to the existing SessionManager DataStore (`worker_online` boolean key, default online): restored in `restoreSession()` and written on each `toggleWorkerOnline()`. Chose DataStore over a Room column because it needs no schema migration and matches how other session flags are stored. Regression test `WorkerOnlinePersistenceTest` (Robolectric) 4/4 pass; `:app:compileDebugKotlin` BUILD SUCCESSFUL. **Next:** M5 (B6 Notification navigation).
 
-2026-10-10 — **M2 DEFERRED (user decision) & M3 OBSOLETE (verified).** M2/A7: the namesake `AccountComplianceDialog` composable is already gone (removed as the original A7 fix); the misnamed file holds 3 live composables (`AccountDeletionDialog`, `PrivacyAndTermsSheet`, `WorkerTrainingScreen`) + 3 orphaned ones (`GuarantorFormSheet`, `QualificationEvidenceSheet`, `ChangesRequiredView`) superseded by live components (`WorkerVerificationStatusView` for KYC-007; REG-002 sheet for guarantor). Deleting `GuarantorFormSheet` would contradict **D-2026-09-26-1**. User chose to defer — awaiting a wire-vs-delete decision. M3/A8: Community/Board "Hire" finding is obsolete (feature removed under COMM-002; repo-wide grep confirms no screen/button remains). Doc-only sync, no code change, `prd.json` untouched. **Next:** M4 (B4 Worker Online toggle persistence).
+2026-10-10 â€” **M2 DEFERRED (user decision) & M3 OBSOLETE (verified).** M2/A7: the namesake `AccountComplianceDialog` composable is already gone (removed as the original A7 fix); the misnamed file holds 3 live composables (`AccountDeletionDialog`, `PrivacyAndTermsSheet`, `WorkerTrainingScreen`) + 3 orphaned ones (`GuarantorFormSheet`, `QualificationEvidenceSheet`, `ChangesRequiredView`) superseded by live components (`WorkerVerificationStatusView` for KYC-007; REG-002 sheet for guarantor). Deleting `GuarantorFormSheet` would contradict **D-2026-09-26-1**. User chose to defer â€” awaiting a wire-vs-delete decision. M3/A8: Community/Board "Hire" finding is obsolete (feature removed under COMM-002; repo-wide grep confirms no screen/button remains). Doc-only sync, no code change, `prd.json` untouched. **Next:** M4 (B4 Worker Online toggle persistence).
 
-2026-10-10 — **M1 (A4 Job History screen) VERIFIED & doc-synced.** The drawer "Job History & Material Receipts" item already had a real, data-driven `JobHistorySheet` (`AccountCenterSheets.kt`) wired via `onOpenHistory` → `isJobHistorySheetOpen` and fed `viewModel.jobs`; it filters COMPLETED/RELEASED contracts and shows receipt counts + escrow totals. No code change needed this session — the finding was a stale-docs issue (code committed earlier in the H-series commit, docs still said "Pending"). `compileDebugKotlin` BUILD SUCCESSFUL (HEAD). TASKS.md M1 row + AGENT_STATE A4 line → ✅, CHANGELOG entry added. `prd.json` untouched. M1 is a verification/doc-sync only. **Next:** M2 (A7 AccountComplianceDialog) — the namesake `AccountComplianceDialog` composable no longer exists; the file holds 6 composables of which 3 are live (`AccountDeletionDialog` MainScreen:788, `PrivacyAndTermsSheet` MainScreen:783, `WorkerTrainingScreen` MainScreen:352) and 3 are orphaned (`GuarantorFormSheet`, `QualificationEvidenceSheet`, `ChangesRequiredView`) — decide wire-vs-delete before editing.
+2026-10-10 â€” **M1 (A4 Job History screen) VERIFIED & doc-synced.** The drawer "Job History & Material Receipts" item already had a real, data-driven `JobHistorySheet` (`AccountCenterSheets.kt`) wired via `onOpenHistory` â†’ `isJobHistorySheetOpen` and fed `viewModel.jobs`; it filters COMPLETED/RELEASED contracts and shows receipt counts + escrow totals. No code change needed this session â€” the finding was a stale-docs issue (code committed earlier in the H-series commit, docs still said "Pending"). `compileDebugKotlin` BUILD SUCCESSFUL (HEAD). TASKS.md M1 row + AGENT_STATE A4 line â†’ âœ…, CHANGELOG entry added. `prd.json` untouched. M1 is a verification/doc-sync only. **Next:** M2 (A7 AccountComplianceDialog) â€” the namesake `AccountComplianceDialog` composable no longer exists; the file holds 6 composables of which 3 are live (`AccountDeletionDialog` MainScreen:788, `PrivacyAndTermsSheet` MainScreen:783, `WorkerTrainingScreen` MainScreen:352) and 3 are orphaned (`GuarantorFormSheet`, `QualificationEvidenceSheet`, `ChangesRequiredView`) â€” decide wire-vs-delete before editing.
 
-2026-10-10 — **H7 (Trust/Safety & SOS) IMPLEMENTED, wired, compiled & unit-tested (5/5). State found:** prior session's uncommitted wiring kept and verified end-to-end — `ViewModel.clearSosAlert`/`setDisputeError`, `DisputeSubmissionState`/`submitDispute`, `EscrowAndProofSheet` STAND DOWN button + dispute-error surfacing, `MainScreen.onSubmitDispute` fail-closed guard. **Confirmed complete this session:** repo secured boundary `clearEmergencySos(jobId): SosClearResult` + pure policy `isSosClearAuthorized` (owner-only via `postedByUid`, raised-only, F7 identity) + `SosClearState` flow wired through `MainScreen` (`isClearingSos`/`sosClearError`) into the sheet. Added `SosClearAuthorizationSecurityTest` (5 pure-JVM tests, 5/0/0). `:app:compileDebugKotlin` BUILD SUCCESSFUL; `RatingAuthorizationSecurityTest` 7/0/0 re-confirmed (no H6 regression). Env note: an initial compile hit `The paging file is too small`/OOM and reader `ENOSPC` — environmental (C: 0 GB free + 9 stale JDK-25 daemons), cleared with `gradlew --stop --no-daemon` + temp cleanup. Docs updated (uncommitted). `prd.json` untouched. No commit made. H1–H8 all now done. Next eligible: Medium M1–M12 (all Pending) — e.g. M1 (A4 Job History screen) or M2 (A7 AccountComplianceDialog wiring).
+2026-10-10 â€” **H7 (Trust/Safety & SOS) IMPLEMENTED, wired, compiled & unit-tested (5/5). State found:** prior session's uncommitted wiring kept and verified end-to-end â€” `ViewModel.clearSosAlert`/`setDisputeError`, `DisputeSubmissionState`/`submitDispute`, `EscrowAndProofSheet` STAND DOWN button + dispute-error surfacing, `MainScreen.onSubmitDispute` fail-closed guard. **Confirmed complete this session:** repo secured boundary `clearEmergencySos(jobId): SosClearResult` + pure policy `isSosClearAuthorized` (owner-only via `postedByUid`, raised-only, F7 identity) + `SosClearState` flow wired through `MainScreen` (`isClearingSos`/`sosClearError`) into the sheet. Added `SosClearAuthorizationSecurityTest` (5 pure-JVM tests, 5/0/0). `:app:compileDebugKotlin` BUILD SUCCESSFUL; `RatingAuthorizationSecurityTest` 7/0/0 re-confirmed (no H6 regression). Env note: an initial compile hit `The paging file is too small`/OOM and reader `ENOSPC` â€” environmental (C: 0 GB free + 9 stale JDK-25 daemons), cleared with `gradlew --stop --no-daemon` + temp cleanup. Docs updated (uncommitted). `prd.json` untouched. No commit made. H1â€“H8 all now done. Next eligible: Medium M1â€“M12 (all Pending) â€” e.g. M1 (A4 Job History screen) or M2 (A7 AccountComplianceDialog wiring).
 
 **DEPLOY-01 Summary:**
 - **Target Project:** `skills-exchange-f9189` (matched `.firebaserc`, `app/google-services.json`, and authenticated account `isaacvendeta1@gmail.com`).
-- **Firestore Rules Deployment:** ✅ **SUCCESS** (`firebase deploy --only firestore:rules --non-interactive` compiled and released rules to `cloud.firestore`). C2-1 (users/{uid} owner read), SEC-001 (provider owner write), REG-002 (guarantor isolation), F4 (postedByUid job authorship), F5 (senderId chat identity), and job status transition authorization rules are now active on the live backend.
-- **Storage Rules Deployment:** 🚫 **BLOCKED** by missing backend resource (`Error: Firebase Storage has not been set up on project 'skills-exchange-f9189'`). Also, `firebase.json` has no `storage` stanza, and `storage.rules` lines 61-62/66-67 reference `request.resource.data` (which does not exist in Cloud Storage rules and cannot be evaluated on read requests).
+- **Firestore Rules Deployment:** âœ… **SUCCESS** (`firebase deploy --only firestore:rules --non-interactive` compiled and released rules to `cloud.firestore`). C2-1 (users/{uid} owner read), SEC-001 (provider owner write), REG-002 (guarantor isolation), F4 (postedByUid job authorship), F5 (senderId chat identity), and job status transition authorization rules are now active on the live backend.
+- **Storage Rules Deployment:** ðŸš« **BLOCKED** by missing backend resource (`Error: Firebase Storage has not been set up on project 'skills-exchange-f9189'`). Also, `firebase.json` has no `storage` stanza, and `storage.rules` lines 61-62/66-67 reference `request.resource.data` (which does not exist in Cloud Storage rules and cannot be evaluated on read requests).
 - **Tests Executed:** `FirestoreUsersReadPrivacyTest` (4/4 passed), full unit test suite (23 suites / 180 tests / 0 failures).
 - **Open Items Remaining:** Enable Cloud Storage in Firebase Console and correct `storage.rules` metadata syntax before Storage rules can be deployed.
 
 ## Last Updated
-2026-10-06 — **C2 job-status AUTHORIZATION (the finding discovered during F6) IMPLEMENTED AND VERIFIED at the unit level. The F1–F7 identity fixes were not redone. `C2` remains ⏳ Pending Audit Fix — remaining open C2 items are: device/emulator verification (no adb device attached), MoMo number cleanup, UI wiring. `prd.json` was NOT modified.** *(This block supersedes the 2026-10-05 Fix #7 block immediately below it, which is retained as history.)*
+2026-10-06 â€” **C2 job-status AUTHORIZATION (the finding discovered during F6) IMPLEMENTED AND VERIFIED at the unit level. The F1â€“F7 identity fixes were not redone. `C2` remains â³ Pending Audit Fix â€” remaining open C2 items are: device/emulator verification (no adb device attached), MoMo number cleanup, UI wiring. `prd.json` was NOT modified.** *(This block supersedes the 2026-10-05 Fix #7 block immediately below it, which is retained as history.)*
 
-**What changed — production:**
-- `data/repository/SkillsExchangeRepository.kt` — **one central authorization check.** `isJobTransitionAuthorized(actorUid, job, target)` (pure, actor-explicit policy) + `canCurrentUserTransitionJob(job, toStatus)` (production entry: resolves the actor via the EXISTING `resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)`, fails closed on no uid / null job / unknown target). `transitionJobStatus()` now runs: resolve uid → load the REAL job row → authorize (BEFORE the structural check) → `JobStatus.isValidTransition` against the STORED status → update → audit row with `changedBy = actorUid`. The caller-supplied `fromStatus` is never trusted. F6 attribution is unchanged — no caller-supplied actor anywhere.
-- **Authorization matrix:** owner-only (`postedByUid == actorUid`) for setup lifecycle (`POSTED`/`QUOTING`/`WORKER_SELECTED`/`ACCEPTED`), `CANCELLED`, `DISPUTED`, `PAYMENT_RELEASED` (only from `COMPLETED`). Worker-progress states, `DRAFT`, `EXPIRED` and dispute resolutions fail closed for EVERYONE client-side: `assignedProviderId` is a `ServiceProviderEntity` FK (no UID column exists) and admin is only the server-side Firestore custom claim — enabling either client-side is a schema/product decision, recorded in DECISIONS.md **D-2026-10-05-2** (referenced from the code). Legacy jobs with NULL `postedByUid` are drivable by nobody.
-- `data/db/Daos.kt` — new `JobPostDao.getJobById(jobId)` so the boundary loads the real row instead of trusting a caller-constructed job.
-- **Adjacent status writers gated:** `hireProviderForJob()` owner-gated, returns `Boolean`; `updateEscrowStatus()`'s mapped-status write owner-gated (its display-string vocabulary `"In Progress"`/`"Review"`/`"Completed"` deliberately bypasses the state machine — reported as an open correctness item, not changed); legacy `updateJobStatus(jobId, newStatus)` is now a thin authorized delegate (it previously wrote `job_posts.status` with NO identity/ownership/state-machine/audit check). ViewModel: `hireProviderForSelectedJob` skips refresh on rejection; `submitDispute` still files the dispute record but a failed status move produces no false signal; `updateJobStatus()` notification only fires on success (F6 behaviour preserved).
-- `firestore.rules` — `/jobs/{jobId}` update Cases 1/3/4/5 now name their actor (owner; assigned worker + KYC for proof). **SOURCE ONLY — NOT deployed** (same status as the F4/F5 rules changes).
+**What changed â€” production:**
+- `data/repository/SkillsExchangeRepository.kt` â€” **one central authorization check.** `isJobTransitionAuthorized(actorUid, job, target)` (pure, actor-explicit policy) + `canCurrentUserTransitionJob(job, toStatus)` (production entry: resolves the actor via the EXISTING `resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)`, fails closed on no uid / null job / unknown target). `transitionJobStatus()` now runs: resolve uid â†’ load the REAL job row â†’ authorize (BEFORE the structural check) â†’ `JobStatus.isValidTransition` against the STORED status â†’ update â†’ audit row with `changedBy = actorUid`. The caller-supplied `fromStatus` is never trusted. F6 attribution is unchanged â€” no caller-supplied actor anywhere.
+- **Authorization matrix:** owner-only (`postedByUid == actorUid`) for setup lifecycle (`POSTED`/`QUOTING`/`WORKER_SELECTED`/`ACCEPTED`), `CANCELLED`, `DISPUTED`, `PAYMENT_RELEASED` (only from `COMPLETED`). Worker-progress states, `DRAFT`, `EXPIRED` and dispute resolutions fail closed for EVERYONE client-side: `assignedProviderId` is a `ServiceProviderEntity` FK (no UID column exists) and admin is only the server-side Firestore custom claim â€” enabling either client-side is a schema/product decision, recorded in DECISIONS.md **D-2026-10-05-2** (referenced from the code). Legacy jobs with NULL `postedByUid` are drivable by nobody.
+- `data/db/Daos.kt` â€” new `JobPostDao.getJobById(jobId)` so the boundary loads the real row instead of trusting a caller-constructed job.
+- **Adjacent status writers gated:** `hireProviderForJob()` owner-gated, returns `Boolean`; `updateEscrowStatus()`'s mapped-status write owner-gated (its display-string vocabulary `"In Progress"`/`"Review"`/`"Completed"` deliberately bypasses the state machine â€” reported as an open correctness item, not changed); legacy `updateJobStatus(jobId, newStatus)` is now a thin authorized delegate (it previously wrote `job_posts.status` with NO identity/ownership/state-machine/audit check). ViewModel: `hireProviderForSelectedJob` skips refresh on rejection; `submitDispute` still files the dispute record but a failed status move produces no false signal; `updateJobStatus()` notification only fires on success (F6 behaviour preserved).
+- `firestore.rules` â€” `/jobs/{jobId}` update Cases 1/3/4/5 now name their actor (owner; assigned worker + KYC for proof). **SOURCE ONLY â€” NOT deployed** (same status as the F4/F5 rules changes).
 
-**Tests:** new `app/src/test/java/com/example/data/JobStatusAuthorizationSecurityTest.kt` (Robolectric, 9 cases A–J): owner authorized; wrong client denied via policy AND via the real boundary (no mutation, no audit row); worker transitions fail closed (provider FK ≠ uid); strangers/null/blank denied; structurally-legal edge denied to wrong actor (the original defect as a test); no Firebase user ⇒ nothing happens; synthetic/presentation/demo identities rejected; NULL-owner job undrivable; illegal edge still rejected (state machine untouched, F6 preserved); newer-Room-row trap cannot influence authorization.
+**Tests:** new `app/src/test/java/com/example/data/JobStatusAuthorizationSecurityTest.kt` (Robolectric, 9 cases Aâ€“J): owner authorized; wrong client denied via policy AND via the real boundary (no mutation, no audit row); worker transitions fail closed (provider FK â‰  uid); strangers/null/blank denied; structurally-legal edge denied to wrong actor (the original defect as a test); no Firebase user â‡’ nothing happens; synthetic/presentation/demo identities rejected; NULL-owner job undrivable; illegal edge still rejected (state machine untouched, F6 preserved); newer-Room-row trap cannot influence authorization.
 
-**Verification (executed this session):** focused `JobStatusAuthorizationSecurityTest` **9 tests / 0 failures / 0 errors / 0 skipped** (fresh XML). Full `:app:testDebugUnitTest` (results dir deleted first) → **22 suites / 171 tests / 0 failures / 0 errors / 0 skipped** (baseline 21/162: +1 suite, +9 tests, zero regressions). `:app:compileDebugKotlin` BUILD SUCCESSFUL as part of the test run. `git --no-pager diff --check` clean. No APK build, no device run.
+**Verification (executed this session):** focused `JobStatusAuthorizationSecurityTest` **9 tests / 0 failures / 0 errors / 0 skipped** (fresh XML). Full `:app:testDebugUnitTest` (results dir deleted first) â†’ **22 suites / 171 tests / 0 failures / 0 errors / 0 skipped** (baseline 21/162: +1 suite, +9 tests, zero regressions). `:app:compileDebugKotlin` BUILD SUCCESSFUL as part of the test run. `git --no-pager diff --check` clean. No APK build, no device run.
 
 **Cleanup this session:** the orphaned F6 KDoc (which still claimed per-role authorization was NOT addressed) was removed from above `canCurrentUserTransitionJob`, and `transitionJobStatus` received a KDoc documenting the 4-step secured boundary.
 
 **Open items (not fixed, deliberate):**
-- Worker/admin transitions remain client-side fail-closed pending a product decision (worker-UID column + readable admin claim) — D-2026-10-05-2.
+- Worker/admin transitions remain client-side fail-closed pending a product decision (worker-UID column + readable admin claim) â€” D-2026-10-05-2.
 - `updateEscrowStatus()` display-string status vocabulary mismatch (open correctness item).
-- Firestore rules NOT deployed; no device verification; MoMo number cleanup; UI wiring; `C2` therefore still ⏳ and `prd.json` untouched.
+- Firestore rules NOT deployed; no device verification; MoMo number cleanup; UI wiring; `C2` therefore still â³ and `prd.json` untouched.
 
-**Environment reminders (still true):** delete `app\build\test-results\testDebugUnitTest` before a run you intend to trust; run Gradle DETACHED (`Start-Process … -RedirectStandardOutput <log>`) and poll the log/XML — foreground polling kills in-flight builds; heap `-Dorg.gradle.jvmargs=-Xmx1400m -Dorg.gradle.parallel=false -Dkotlin.daemon.jvmargs=-Xmx1000m --max-workers=1` with `TMP`/`TEMP` on D: (the `gradle.properties` `-Xmx4g` default exceeds this machine's RAM); in PowerShell place `-D…` args after `--%` if invoking gradlew directly; check added diff lines for mojibake (`Î“Ã‡`, `â”œÃ³`) — expected count 0.
+**Environment reminders (still true):** delete `app\build\test-results\testDebugUnitTest` before a run you intend to trust; run Gradle DETACHED (`Start-Process â€¦ -RedirectStandardOutput <log>`) and poll the log/XML â€” foreground polling kills in-flight builds; heap `-Dorg.gradle.jvmargs=-Xmx1400m -Dorg.gradle.parallel=false -Dkotlin.daemon.jvmargs=-Xmx1000m --max-workers=1` with `TMP`/`TEMP` on D: (the `gradle.properties` `-Xmx4g` default exceeds this machine's RAM); in PowerShell place `-Dâ€¦` args after `--%` if invoking gradlew directly; check added diff lines for mojibake (`ÃŽâ€œÃƒâ€¡`, `Ã¢â€Å“ÃƒÂ³`) â€” expected count 0.
 
 ## Last Updated
-2026-10-05 (latest) — **C2-2 Fix #7 (finding F3 remainder: unbound device-local profile recovery) IMPLEMENTED AND VERIFIED at the unit/build level. All seven C2-2 fixes (#1–#7) are now implemented and unit-verified, but `C2` itself remains ⏳ Pending Audit Fix and must NOT be marked complete — the "no per-role authorization on a job status transition" finding is still open and unreported-as-fixed. `prd.json` was NOT modified. No device/emulator verification was possible (no adb device attached).** *(This block supersedes the 2026-10-04 Fix #6 block immediately below it, which is retained as history.)*
+2026-10-05 (latest) â€” **C2-2 Fix #7 (finding F3 remainder: unbound device-local profile recovery) IMPLEMENTED AND VERIFIED at the unit/build level. All seven C2-2 fixes (#1â€“#7) are now implemented and unit-verified, but `C2` itself remains â³ Pending Audit Fix and must NOT be marked complete â€” the "no per-role authorization on a job status transition" finding is still open and unreported-as-fixed. `prd.json` was NOT modified. No device/emulator verification was possible (no adb device attached).** *(This block supersedes the 2026-10-04 Fix #6 block immediately below it, which is retained as history.)*
 
-**What Fix #7 (F3 remainder) changed — production:**
-- `data/repository/SkillsExchangeRepository.kt` — **gap 1 (real).** `getCurrentUserByUid()` carried its own weaker rule (`isNotBlank() && != "user_default_me"`), a competing identity resolver that accepted whitespace-padded values, presentation text (`"John Doe"`, `"You (Nakawa)"`) and the synthetic sentinels (`"system"`, `"unknown"`, `"anonymous"`, `"guest"`, `"none"`). It backs `SkillsExchangeViewModel.currentUserByUid`, the app's only current-user source. Now delegates to the shared `resolveAuthoritativeUid`.
-- `ui/viewmodel/SkillsExchangeViewModel.kt` — **gap 2 (real).** `resolveSessionOwnerId()` used a bare `isNotBlank()`, so a placeholder could be persisted as the session owner and compared back in during restore. Both arguments now go through `resolveAuthoritativeUid`. Legitimate sign-in behaviour is unchanged (both args are Firebase-owned in practice).
+**What Fix #7 (F3 remainder) changed â€” production:**
+- `data/repository/SkillsExchangeRepository.kt` â€” **gap 1 (real).** `getCurrentUserByUid()` carried its own weaker rule (`isNotBlank() && != "user_default_me"`), a competing identity resolver that accepted whitespace-padded values, presentation text (`"John Doe"`, `"You (Nakawa)"`) and the synthetic sentinels (`"system"`, `"unknown"`, `"anonymous"`, `"guest"`, `"none"`). It backs `SkillsExchangeViewModel.currentUserByUid`, the app's only current-user source. Now delegates to the shared `resolveAuthoritativeUid`.
+- `ui/viewmodel/SkillsExchangeViewModel.kt` â€” **gap 2 (real).** `resolveSessionOwnerId()` used a bare `isNotBlank()`, so a placeholder could be persisted as the session owner and compared back in during restore. Both arguments now go through `resolveAuthoritativeUid`. Legitimate sign-in behaviour is unchanged (both args are Firebase-owned in practice).
 - **Deleted (dead, zero callers):** `SkillsExchangeRepository.getUserProfileByPhone()` and `UserProfileDao.getUserProfileByPhoneNumber()`. Selecting a local Room profile by a mutable field is exactly the unbound recovery path this finding targets.
 - **Kept + relabelled non-authoritative:** `UserProfileDao.getCurrentUser()` (newest row; zero production consumers, but it is the *trap* the security tests assert against) and `fetchUserIdentityByPhoneFromServer()` (zero callers; already denied by the tightened `users` read rule).
-- **Not touched:** `user_default_me` stays as the seeded/display placeholder and is excluded from authenticated identity; the unique `phoneNumber` index was not weakened; no DB schema/migration change; no Firestore rules, Cloud Functions, deployment, MoMo cleanup, UI redesign, worker authorization or job-status authorization change. Fixes #1–#6 are untouched.
+- **Not touched:** `user_default_me` stays as the seeded/display placeholder and is excluded from authenticated identity; the unique `phoneNumber` index was not weakened; no DB schema/migration change; no Firestore rules, Cloud Functions, deployment, MoMo cleanup, UI redesign, worker authorization or job-status authorization change. Fixes #1â€“#6 are untouched.
 
-**Verification (executed this session):** focused `DeviceLocalProfileRecoveryF3SecurityTest` **7 tests / 0 failures / 0 errors / 0 skipped** (cases A–G). Full `:app:testDebugUnitTest` → **21 suites / 162 tests / 0 failures / 0 errors / 0 skipped** (baseline was 20/155: +1 suite, +7 tests, zero regressions). `:app:compileDebugKotlin` BUILD SUCCESSFUL. `git --no-pager diff --check` clean. No APK build, no device run.
+**Verification (executed this session):** focused `DeviceLocalProfileRecoveryF3SecurityTest` **7 tests / 0 failures / 0 errors / 0 skipped** (cases Aâ€“G). Full `:app:testDebugUnitTest` â†’ **21 suites / 162 tests / 0 failures / 0 errors / 0 skipped** (baseline was 20/155: +1 suite, +7 tests, zero regressions). `:app:compileDebugKotlin` BUILD SUCCESSFUL. `git --no-pager diff --check` clean. No APK build, no device run.
 
-**⚠ Two environment traps that cost ~2h this session — read before running Gradle here:**
+**âš  Two environment traps that cost ~2h this session â€” read before running Gradle here:**
 1. **Delete the results directory before a run you intend to trust.** Otherwise Gradle legitimately reports `testDebugUnitTest UP-TO-DATE`, writes no new XML, and a stale XML from an earlier run is easy to misread as fresh evidence. `Remove-Item 'app\build\test-results\testDebugUnitTest' -Recurse -Force` first.
 2. **Run Gradle DETACHED and poll, do not run it in the terminal and poll.** Foreground polling commands kill the in-flight build (the tool closes the terminal), which is how an early attempt appeared to hang for ~45 min. Working pattern: `Start-Process -FilePath '.\gradlew.bat' -ArgumentList <args> -RedirectStandardOutput <log> -RedirectStandardError <log.err> -NoNewWindow -PassThru`, then poll the log and the result XML timestamps.
    - Heap: `-Dorg.gradle.jvmargs=-Xmx1400m -Dorg.gradle.parallel=false -Dkotlin.daemon.jvmargs=-Xmx1000m --max-workers=1` with `TMP`/`TEMP` on D:. The `gradle.properties` default `-Xmx4g` cannot start on this 3.88 GB machine.
    - **Avoid `--rerun`**: it forces a full recompile of all sources and thrashed for over an hour. Kill leftover daemons (`Get-Process java | Stop-Process -Force`) before a retry, and check `CPU=` is actually climbing before concluding a build is hung.
-3. **Never edit these Kotlin files with PowerShell `Get-Content -Raw` + `WriteAllText`.** It double-encodes their UTF-8 em-dashes/arrows into mojibake across many unrelated comment lines. It happened once here and required `git checkout` of three files plus re-applying every edit with the editor tool (all newly added text ASCII-only). Detect it by scanning the diff for `+`-lines containing `ΓÇ`, `├ó`, `Γå` or `≡ƒ` — the expected count is 0.
+3. **Never edit these Kotlin files with PowerShell `Get-Content -Raw` + `WriteAllText`.** It double-encodes their UTF-8 em-dashes/arrows into mojibake across many unrelated comment lines. It happened once here and required `git checkout` of three files plus re-applying every edit with the editor tool (all newly added text ASCII-only). Detect it by scanning the diff for `+`-lines containing `Î“Ã‡`, `â”œÃ³`, `Î“Ã¥` or `â‰¡Æ’` â€” the expected count is 0.
 
 
 ## Last Updated
-2026-10-04 (latest) — **C2-2 Fix #6 (finding F6: job-status `changedBy` attribution) IMPLEMENTED AND VERIFIED at the unit/build level. `C2` remains ⏳ Pending Audit Fix and must NOT be marked complete; the F3 remainder and the "no per-role authorization on a status transition" finding are still open. `prd.json` was NOT modified. No device/emulator verification was possible (no adb device attached).**
+2026-10-04 (latest) â€” **C2-2 Fix #6 (finding F6: job-status `changedBy` attribution) IMPLEMENTED AND VERIFIED at the unit/build level. `C2` remains â³ Pending Audit Fix and must NOT be marked complete; the F3 remainder and the "no per-role authorization on a status transition" finding are still open. `prd.json` was NOT modified. No device/emulator verification was possible (no adb device attached).**
 
-**What Fix #6 (F6) changed — production:**
-- `data/db/Entities.kt`: documentation only — `JobStatusAuditEntity.changedBy` is now documented as the authenticated Firebase actor UID. **No schema change and NO Room migration**: the column already existed as a non-null `String`, so `AppDatabase` stays at **v21** and `MIGRATION_20_21` is untouched.
+**What Fix #6 (F6) changed â€” production:**
+- `data/db/Entities.kt`: documentation only â€” `JobStatusAuditEntity.changedBy` is now documented as the authenticated Firebase actor UID. **No schema change and NO Room migration**: the column already existed as a non-null `String`, so `AppDatabase` stays at **v21** and `MIGRATION_20_21` is untouched.
 - `data/repository/SkillsExchangeRepository.kt`: the caller-supplied `changedBy` parameter was **removed** from `transitionJobStatus()`. The actor is now resolved at the data boundary through the **existing** `resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)` (no second identity helper) and written to `changedBy`. With no authoritative uid the method **returns `false` before updating the job status and before inserting an audit row**, so the transition fails closed and nothing is ever recorded against `"system"`, `"unknown"` or any other fabricated actor. The identity check runs **before** the `JobStatus.isValidTransition` check.
 - `ui/viewmodel/SkillsExchangeViewModel.kt`: `updateJobStatus()` no longer uses the legacy newest-row flow or the `"system"` fallback, and returns early so the follow-up `JOB_STATUS_CHANGE` notification is not emitted when the transition failed. No dangling `userId` local remains.
-- **No Firestore change:** the job-status audit trail is Room-only (`job_status_audit`); `firestore.rules` and `functions/src/index.ts` were NOT touched for F6. A `changedBy` sweep across the codebase confirms it exists only in the entity, repository, ViewModel and tests — there is no Firestore serialization path.
-- **Legacy `currentUser` flow:** with F5 and F6 both done, the legacy newest-Room-row `currentUser` flow now has **zero production consumers** — it survives only as documented legacy plus test references.
+- **No Firestore change:** the job-status audit trail is Room-only (`job_status_audit`); `firestore.rules` and `functions/src/index.ts` were NOT touched for F6. A `changedBy` sweep across the codebase confirms it exists only in the entity, repository, ViewModel and tests â€” there is no Firestore serialization path.
+- **Legacy `currentUser` flow:** with F5 and F6 both done, the legacy newest-Room-row `currentUser` flow now has **zero production consumers** â€” it survives only as documented legacy plus test references.
 
 **Tests:** new `app/src/test/java/com/example/data/JobStatusAttributionF6SecurityTest.kt` (Robolectric, 7 cases).
 
-**Verification (executed):** focused `JobStatusAttributionF6SecurityTest` **7/0/0/0**; full suite `:app:testDebugUnitTest` → **20 suites / 155 tests / 0 failures / 0 errors / 0 skipped** (baseline 19/148, so +1 suite / +7 tests, no regressions); `:app:compileDebugKotlin` BUILD SUCCESSFUL as part of the test run; `git --no-pager diff --check` clean. No APK build, no device run.
+**Verification (executed):** focused `JobStatusAttributionF6SecurityTest` **7/0/0/0**; full suite `:app:testDebugUnitTest` â†’ **20 suites / 155 tests / 0 failures / 0 errors / 0 skipped** (baseline 19/148, so +1 suite / +7 tests, no regressions); `:app:compileDebugKotlin` BUILD SUCCESSFUL as part of the test run; `git --no-pager diff --check` clean. No APK build, no device run.
 
-**Environment note (cost real time this session — read before running Gradle here):** the first focused run died with a JVM `OutOfMemoryError: Native memory allocation (malloc) failed`. The cause is **not** the code: `gradle.properties` sets `org.gradle.jvmargs=-Xmx4g`, but this machine has only **3.88 GB total RAM** with ~1 GB held by the IDE, so the daemon cannot start. Working invocation: `-Dorg.gradle.jvmargs=-Xmx1600m --max-workers=1 -Dorg.gradle.parallel=false` plus `TMP`/`TEMP` on D:. In PowerShell, `-D…` args to `gradlew.bat` must be passed after the `--%` stop-parsing token or they get mangled into a bogus task name. Several older `hs_err_pid*.log` crash logs in the repo are from this same chronic condition and predate F6.
+**Environment note (cost real time this session â€” read before running Gradle here):** the first focused run died with a JVM `OutOfMemoryError: Native memory allocation (malloc) failed`. The cause is **not** the code: `gradle.properties` sets `org.gradle.jvmargs=-Xmx4g`, but this machine has only **3.88 GB total RAM** with ~1 GB held by the IDE, so the daemon cannot start. Working invocation: `-Dorg.gradle.jvmargs=-Xmx1600m --max-workers=1 -Dorg.gradle.parallel=false` plus `TMP`/`TEMP` on D:. In PowerShell, `-Dâ€¦` args to `gradlew.bat` must be passed after the `--%` stop-parsing token or they get mangled into a bogus task name. Several older `hs_err_pid*.log` crash logs in the repo are from this same chronic condition and predate F6.
 
 **Remaining F6 / C2-2 concerns (NOT fixed, deliberately):**
-- **No per-role authorization on status transitions.** `JobStatus.isValidTransition()` is still the *only* gate — any signed-in user can move any job to any legal next state regardless of role or ownership. This is a **separate finding**, identified and reported, and intentionally left unfixed; F6 only made the recorded actor correct and weakens no existing check.
+- **No per-role authorization on status transitions.** `JobStatus.isValidTransition()` is still the *only* gate â€” any signed-in user can move any job to any legal next state regardless of role or ownership. This is a **separate finding**, identified and reported, and intentionally left unfixed; F6 only made the recorded actor correct and weakens no existing check.
 - Historical audit rows are **never rewritten**: legacy `"system"` / `"unknown"` values remain as recorded, because guessing a replacement actor would be fabrication.
 - F4/F5 Firestore rules and the F4 Cloud Function change remain **undeployed** (still true from prior sessions).
 
-Previous update 2026-10-04 — **C2-2 Fix #5 (finding F5: chat sender identity) IMPLEMENTED AND VERIFIED at the unit/build level**; its detail block is preserved below.
+Previous update 2026-10-04 â€” **C2-2 Fix #5 (finding F5: chat sender identity) IMPLEMENTED AND VERIFIED at the unit/build level**; its detail block is preserved below.
 
-**What Fix #5 (F5) changed — production:**
-- **Audit finding beyond the reported one:** `ChatMessageEntity` had **no `senderId` column at all** — Room persisted only `senderName` (display) and `isFromUser` (a client-supplied boolean). Authorship was therefore not stored locally and could not be enforced; the Firestore read path additionally **discarded** the `senderId` it received. Both were fixed.
+**What Fix #5 (F5) changed â€” production:**
+- **Audit finding beyond the reported one:** `ChatMessageEntity` had **no `senderId` column at all** â€” Room persisted only `senderName` (display) and `isFromUser` (a client-supplied boolean). Authorship was therefore not stored locally and could not be enforced; the Firestore read path additionally **discarded** the `senderId` it received. Both were fixed.
 - `data/db/Entities.kt`: `ChatMessageEntity.senderId: String?` (authenticated author) added, `senderName` documented DISPLAY-ONLY, plus `Index(["senderId"])`.
-- `data/db/AppDatabase.kt`: **version 20 → 21**, new `MIGRATION_20_21` = `ALTER TABLE chat_messages ADD COLUMN senderId TEXT` (nullable, **no default**) + the index, registered in `addMigrations`. Additive only. Pre-F5 messages and system/notification rows keep `senderId = NULL` = **unknown author**; never back-filled from `senderName`.
+- `data/db/AppDatabase.kt`: **version 20 â†’ 21**, new `MIGRATION_20_21` = `ALTER TABLE chat_messages ADD COLUMN senderId TEXT` (nullable, **no default**) + the index, registered in `addMigrations`. Additive only. Pre-F5 messages and system/notification rows keep `senderId = NULL` = **unknown author**; never back-filled from `senderName`.
 - `data/db/Daos.kt`: `getMessagesAuthoredBy(uid)` authorship query.
-- `data/repository/SkillsExchangeRepository.kt`: `sendChatMessage()` returns `Boolean`, resolves the author via the **existing** `resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)` (no second identity helper; the Room profile is consulted for nothing) and **returns false, persisting and sending nothing**, when there is no authoritative uid — the `"unknown"` fallback is deleted. New `isMessageAuthoredByCurrentUser(message)` (uid-to-uid, false when unauthenticated or `senderId` is null). `getRealtimeChatMessages` now preserves `senderId` through deserialization.
-- `ui/viewmodel/SkillsExchangeViewModel.kt`: comment only — the repository now fails closed.
+- `data/repository/SkillsExchangeRepository.kt`: `sendChatMessage()` returns `Boolean`, resolves the author via the **existing** `resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)` (no second identity helper; the Room profile is consulted for nothing) and **returns false, persisting and sending nothing**, when there is no authoritative uid â€” the `"unknown"` fallback is deleted. New `isMessageAuthoredByCurrentUser(message)` (uid-to-uid, false when unauthenticated or `senderId` is null). `getRealtimeChatMessages` now preserves `senderId` through deserialization.
+- `ui/viewmodel/SkillsExchangeViewModel.kt`: comment only â€” the repository now fails closed.
 - `firestore.rules` (minimal, F5-only): the `jobs/{jobId}/messages` subcollection previously had **no rule at all** (Firestore denies by default). Added `create` requiring `senderId == request.auth.uid`, `update` requiring the original author AND an unchanged `senderId`, `delete` denied. **NOT DEPLOYED.**
-- ~~**Consequence worth noting:** with the F5 change, `repository.currentUser` (the legacy newest-row flow) now has exactly **one** remaining production consumer — the ViewModel's `updateJobStatus` `changedBy` (finding **F6**).~~ **(SUPERSEDED 2026-10-04 by Fix #6/F6: that last consumer is now gone, so the legacy newest-row `currentUser` flow has ZERO production consumers.)**
+- ~~**Consequence worth noting:** with the F5 change, `repository.currentUser` (the legacy newest-row flow) now has exactly **one** remaining production consumer â€” the ViewModel's `updateJobStatus` `changedBy` (finding **F6**).~~ **(SUPERSEDED 2026-10-04 by Fix #6/F6: that last consumer is now gone, so the legacy newest-row `currentUser` flow has ZERO production consumers.)**
 
-**Tests:** new `app/src/test/java/com/example/data/ChatSenderIdentityF5SecurityTest.kt` (Robolectric, 8 cases A–F). `GuarantorVerificationPersistenceTest` schema assertions moved to v21 — each migration's own start/end versions stay pinned and all MIGRATION_18_19 checks remain intact — plus a new `migration twenty to twenty one is additive and registered` case.
+**Tests:** new `app/src/test/java/com/example/data/ChatSenderIdentityF5SecurityTest.kt` (Robolectric, 8 cases Aâ€“F). `GuarantorVerificationPersistenceTest` schema assertions moved to v21 â€” each migration's own start/end versions stay pinned and all MIGRATION_18_19 checks remain intact â€” plus a new `migration twenty to twenty one is additive and registered` case.
 
-**Verification (executed):** focused `ChatSenderIdentityF5SecurityTest` **8/0/0/0**; full suite `:app:testDebugUnitTest` → **19 suites / 148 tests / 0 failures / 0 errors / 0 skipped**; `:app:compileDebugKotlin` BUILD SUCCESSFUL; `git --no-pager diff --check` clean. No APK build, no device run. Environment: C: held ~0.8 GB free; Robolectric was run with `TMP`/`TEMP` on D: (documented workaround) and **no disk-space failure occurred** this session.
+**Verification (executed):** focused `ChatSenderIdentityF5SecurityTest` **8/0/0/0**; full suite `:app:testDebugUnitTest` â†’ **19 suites / 148 tests / 0 failures / 0 errors / 0 skipped**; `:app:compileDebugKotlin` BUILD SUCCESSFUL; `git --no-pager diff --check` clean. No APK build, no device run. Environment: C: held ~0.8 GB free; Robolectric was run with `TMP`/`TEMP` on D: (documented workaround) and **no disk-space failure occurred** this session.
 
-**Remaining F5 concerns:** `isMessageAuthoredByCurrentUser` and `getMessagesAuthoredBy` are new API and are **not yet wired into any UI** — there is currently no edit/delete/moderate affordance that uses them (so no live ownership bug today, but also no enforcement at the UI layer yet); `isFromUser` is still a client-supplied boolean that drives bubble alignment only and must never be treated as ownership; the Firestore rules are **not deployed**, so server-side authorship enforcement is not live until `firebase deploy --only firestore:rules` runs.
+**Remaining F5 concerns:** `isMessageAuthoredByCurrentUser` and `getMessagesAuthoredBy` are new API and are **not yet wired into any UI** â€” there is currently no edit/delete/moderate affordance that uses them (so no live ownership bug today, but also no enforcement at the UI layer yet); `isFromUser` is still a client-supplied boolean that drives bubble alignment only and must never be treated as ownership; the Firestore rules are **not deployed**, so server-side authorship enforcement is not live until `firebase deploy --only firestore:rules` runs.
 
-Previous update 2026-10-04 — **C2-2 Fix #4 (finding F4: job authorship / `postedByUid`) IMPLEMENTED AND VERIFIED**; its detail block is preserved below.
+Previous update 2026-10-04 â€” **C2-2 Fix #4 (finding F4: job authorship / `postedByUid`) IMPLEMENTED AND VERIFIED**; its detail block is preserved below.
 
-**What Fix #4 (F4) changed — production:**
+**What Fix #4 (F4) changed â€” production:**
 - `data/db/Entities.kt`: `JobPostEntity.postedByUid: String?` (authoritative, immutable owner) added next to `postedByResident` (documented DISPLAY-ONLY), plus `Index(["postedByUid"])`.
-- `data/db/AppDatabase.kt`: **version 19 → 20**, new `MIGRATION_19_20` = `ALTER TABLE job_posts ADD COLUMN postedByUid TEXT` (nullable, **no default**) + the index, registered in `addMigrations`. Additive only — no job row deleted, reset or rewritten. Pre-F4 rows keep `postedByUid = NULL` = **unknown owner**; they are never back-filled from `postedByResident` or from the newest Room profile.
+- `data/db/AppDatabase.kt`: **version 19 â†’ 20**, new `MIGRATION_19_20` = `ALTER TABLE job_posts ADD COLUMN postedByUid TEXT` (nullable, **no default**) + the index, registered in `addMigrations`. Additive only â€” no job row deleted, reset or rewritten. Pre-F4 rows keep `postedByUid = NULL` = **unknown owner**; they are never back-filled from `postedByResident` or from the newest Room profile.
 - `data/db/Daos.kt`: `getJobsPostedBy(uid)` and `getJobsWithUnknownOwner()` ownership queries.
 - `data/repository/SkillsExchangeRepository.kt`: `addJobPost()` now returns `String?` and **fails closed** (returns null, persists nothing) when `resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)` is null. New `getMyJobs()` and `isJobOwnedByCurrentUser(job)` (uid-vs-uid, false for a NULL/absent owner, no display-string or newest-row fallback). `resolveAuthoritativeUid` hardened to also reject whitespace/bracket-bearing presentation text and the `unknown`/`system`/`anonymous`/`guest`/`none` sentinels.
 - `ui/viewmodel/SkillsExchangeViewModel.kt`: `postJob` returns early when `addJobPost` yields null (no sheet close, no selection, no Firestore sync). Same `resolveAuthoritativeUid` hardening applied.
 - `data/remote/FirebaseService.kt`: `postedByUid` added to the `syncJobToFirestore` payload.
 - `firestore.rules` (minimal, F4-only): `create` requires `request.resource.data.postedByUid == request.auth.uid`; `update` requires `request.resource.data.postedByUid == resource.data.postedByUid` so ownership is immutable. **NOT DEPLOYED.**
-- `functions/src/index.ts`: `releaseEscrowToWorker` ownership check fixed — it compared `postedByResident`/`postedBy` (a display string, and a field the client never wrote) against `callerUid`; it now reads `postedByUid` and fails closed. **NOT DEPLOYED.**
+- `functions/src/index.ts`: `releaseEscrowToWorker` ownership check fixed â€” it compared `postedByResident`/`postedBy` (a display string, and a field the client never wrote) against `callerUid`; it now reads `postedByUid` and fails closed. **NOT DEPLOYED.**
 
-**Tests:** new `app/src/test/java/com/example/data/JobAuthorshipF4SecurityTest.kt` (Robolectric, 7 cases A–F) incl. the uid_A/uid_B-newer-row trap, fail-closed creation, and the unknown-owner legacy job. `GuarantorVerificationPersistenceTest` schema assertion moved 19 → 20 (all MIGRATION_18_19 assertions intact) and a `migration nineteen to twenty is additive and registered` case added.
+**Tests:** new `app/src/test/java/com/example/data/JobAuthorshipF4SecurityTest.kt` (Robolectric, 7 cases Aâ€“F) incl. the uid_A/uid_B-newer-row trap, fail-closed creation, and the unknown-owner legacy job. `GuarantorVerificationPersistenceTest` schema assertion moved 19 â†’ 20 (all MIGRATION_18_19 assertions intact) and a `migration nineteen to twenty is additive and registered` case added.
 
-**Verification (executed):** focused `JobAuthorshipF4SecurityTest` **7/0/0/0**; full suite `:app:testDebugUnitTest` → **18 suites / 139 tests / 0 failures / 0 errors / 0 skipped**; `:app:compileDebugKotlin` BUILD SUCCESSFUL; `git --no-pager diff --check` clean. No APK build, no device run. Environment: C: is chronically near-full — run Robolectric with `TMP`/`TEMP` pointed at D: (see the incident note below).
+**Verification (executed):** focused `JobAuthorshipF4SecurityTest` **7/0/0/0**; full suite `:app:testDebugUnitTest` â†’ **18 suites / 139 tests / 0 failures / 0 errors / 0 skipped**; `:app:compileDebugKotlin` BUILD SUCCESSFUL; `git --no-pager diff --check` clean. No APK build, no device run. Environment: C: is chronically near-full â€” run Robolectric with `TMP`/`TEMP` pointed at D: (see the incident note below).
 
-**Remaining F4 concerns:** `momoPhoneNumber = "+256 772 198 420"` is still hardcoded in `addJobPost` (separate payment finding, deliberately untouched); legacy Firestore job documents with no `postedByUid` will be **denied** by the new `create` rule and fail the Cloud Function's owner check (fail-closed by design — needs a decision on re-homing historical jobs); `getMyJobs()`/`isJobOwnedByCurrentUser` are new API and are not yet wired into a UI screen.
+**Remaining F4 concerns:** `momoPhoneNumber = "+256 772 198 420"` is still hardcoded in `addJobPost` (separate payment finding, deliberately untouched); legacy Firestore job documents with no `postedByUid` will be **denied** by the new `create` rule and fail the Cloud Function's owner check (fail-closed by design â€” needs a decision on re-homing historical jobs); `getMyJobs()`/`isJobOwnedByCurrentUser` are new API and are not yet wired into a UI screen.
 
-Previous update 2026-10-04 — **C2-2 Fix #3 (finding F7: legacy newest-row identity-consumer sweep) IMPLEMENTED AND VERIFIED** (committed as `89faab3`); its detail block is preserved below.
+Previous update 2026-10-04 â€” **C2-2 Fix #3 (finding F7: legacy newest-row identity-consumer sweep) IMPLEMENTED AND VERIFIED** (committed as `89faab3`); its detail block is preserved below.
 
 **Current story:** C2-2 audit fixes. **Fix #1** (UID-keyed `getCurrentUserById` / `getCurrentUserByUid` / `currentUserByUid`, commit `db694a2`) and **Fix #2 (F2)** are intact and were NOT weakened. **Fix #3 (F7)** is complete and verified.
 
-**What Fix #3 (F7) changed — production:**
+**What Fix #3 (F7) changed â€” production:**
 - `ui/viewmodel/SkillsExchangeViewModel.kt`:
-  - New companion pure rule `resolveAuthoritativeUid(firebaseUid): String?` (trims; blank/whitespace/`user_default_me` ⇒ `null`) plus the public accessor `currentAuthenticatedUid()`. Identity at every security-sensitive call site is now `FirebaseAuth.currentUser.uid` ONLY.
-  - The legacy public `currentUser` StateFlow (newest Room row) was **deleted** — zero production consumers remain, so the compiler now blocks re-introduction.
-  - `currentUserByUid` switched `WhileSubscribed(5000)` → `SharingStarted.Eagerly` so the synchronous `.value` reads in the authorization gates can never observe the `null` initial value.
+  - New companion pure rule `resolveAuthoritativeUid(firebaseUid): String?` (trims; blank/whitespace/`user_default_me` â‡’ `null`) plus the public accessor `currentAuthenticatedUid()`. Identity at every security-sensitive call site is now `FirebaseAuth.currentUser.uid` ONLY.
+  - The legacy public `currentUser` StateFlow (newest Room row) was **deleted** â€” zero production consumers remain, so the compiler now blocks re-introduction.
+  - `currentUserByUid` switched `WhileSubscribed(5000)` â†’ `SharingStarted.Eagerly` so the synchronous `.value` reads in the authorization gates can never observe the `null` initial value.
   - Migrated to the UID-keyed path: `isWorkerApprovedAndActivated`, `canAccessWorkerFeatures()`, `setUserRoleMode` (the Room mode write), `updateWorkerLocation`, `permanentlyDeleteUserAccountAndData`, `saveBackupContact`, `uploadPendingProfilePhoto`, `uploadQualificationEvidence`, all four guarantor operations (open / save draft / submit / status refresh), `startTraining` / `completeTrainingModule` / `completeTraining`, `submitRecurringProposal`, `submitQuote`, notification + unread-count collections, `submitDispute`, `getUserDisputes`, `reportUser`, `markAllNotificationsRead`, `submitRating`, `logoutUser`'s pre-wipe identity mirror, and `triggerSosAlert`'s GPS fallback.
-  - Deliberately NOT migrated: `updateJobStatus`'s `changedBy` (finding **F6**) — it now reads the newest row *explicitly* via `repository.currentUser.first()?.id ?: "system"` with an inline note, so the sweep could not silently swallow F6.
-- `data/repository/SkillsExchangeRepository.kt`: new private `authenticatedProfileOnce()` (Firebase UID → `getCurrentUserById`) and companion pure helpers `resolveAuthoritativeUid(...)` / `resolveSosContactProfile(firebaseUid, row)`. `triggerSosAlert` notification attribution and `triggerEmergencySos` (SOS SMS name/phone) now use that UID-keyed profile only; the fabricated `"Worker"` / `"+256 700 000 000"` fallback is gone and no SMS is dispatched without an authenticated profile (the in-app SOS flag is still raised). `currentUser` kept but re-documented as LEGACY / NON-AUTHORITATIVE — its only remaining production consumers are `sendChatMessage`'s `senderId` (finding **F5**) and the ViewModel's `updateJobStatus` `changedBy` (finding **F6**), both deliberately out of F7 scope.
-- `ui/screens/MainScreen.kt`: `viewModel.currentUser` → `viewModel.currentUserByUid` (drawer / worker dashboard / wallet / identity / guarantor profile).
-- `ui/components/AccountComplianceDialog.kt`: guarantor `workerId` → `viewModel.currentAuthenticatedUid() ?: return@Button`.
+  - Deliberately NOT migrated: `updateJobStatus`'s `changedBy` (finding **F6**) â€” it now reads the newest row *explicitly* via `repository.currentUser.first()?.id ?: "system"` with an inline note, so the sweep could not silently swallow F6.
+- `data/repository/SkillsExchangeRepository.kt`: new private `authenticatedProfileOnce()` (Firebase UID â†’ `getCurrentUserById`) and companion pure helpers `resolveAuthoritativeUid(...)` / `resolveSosContactProfile(firebaseUid, row)`. `triggerSosAlert` notification attribution and `triggerEmergencySos` (SOS SMS name/phone) now use that UID-keyed profile only; the fabricated `"Worker"` / `"+256 700 000 000"` fallback is gone and no SMS is dispatched without an authenticated profile (the in-app SOS flag is still raised). `currentUser` kept but re-documented as LEGACY / NON-AUTHORITATIVE â€” its only remaining production consumers are `sendChatMessage`'s `senderId` (finding **F5**) and the ViewModel's `updateJobStatus` `changedBy` (finding **F6**), both deliberately out of F7 scope.
+- `ui/screens/MainScreen.kt`: `viewModel.currentUser` â†’ `viewModel.currentUserByUid` (drawer / worker dashboard / wallet / identity / guarantor profile).
+- `ui/components/AccountComplianceDialog.kt`: guarantor `workerId` â†’ `viewModel.currentAuthenticatedUid() ?: return@Button`.
 
-**What Fix #2 changed — `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt`:**
+**What Fix #2 changed â€” `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt`:**
 - New nested type `sealed class RestoreIdentity { object None; data class Authoritative(uid: String, cachedUidTrusted: Boolean) }` (declared next to `AuthState`; it is **nested**, so tests import `com.example.ui.viewmodel.SkillsExchangeViewModel.RestoreIdentity`).
 - New companion pure functions:
-  - `decideRestoreIdentity(cachedUid, firebaseUid): RestoreIdentity` — the Firebase UID is the ONLY identity; blank/whitespace/`user_default_me` Firebase ids ⇒ `None`; `cachedUidTrusted` is true only when the cached UID is non-blank, not the placeholder and equal to the Firebase UID.
-  - `resolveRestoredProfile(authenticatedUid, row): UserProfileEntity?` — the row is returned only when `row.id == authenticatedUid`, otherwise `null` (no newest-row fallback, no placeholder, no substitution).
-- `restoreSession()` rewrite: cached value renamed `userId` → `cachedUserId`; identity cross-checked against `firebaseService.getCurrentUser()?.uid`; **fail closed** (`clearSession()`, `isAuthenticated = false`, `currentUserPhone = null`, `AuthState.SignedOut`, return) when Firebase has no usable UID; `clearSession()` when the cached identity is stale; profile resolved UID-first (`getCurrentUserByUid` → `fetchUserIdentityFromServer` + `saveUserProfile` → fail-closed `resolveAuthenticatedProfile`), reusing cached descriptive fields only when the cached UID matched; `isAuthenticated` / `currentUserPhone` / `authState` / `userRoleMode` all come from that UID-keyed profile; the DataStore session is rewritten only when the cache was stale (so a matching cache keeps its AUTH-008 7-day expiry).
+  - `decideRestoreIdentity(cachedUid, firebaseUid): RestoreIdentity` â€” the Firebase UID is the ONLY identity; blank/whitespace/`user_default_me` Firebase ids â‡’ `None`; `cachedUidTrusted` is true only when the cached UID is non-blank, not the placeholder and equal to the Firebase UID.
+  - `resolveRestoredProfile(authenticatedUid, row): UserProfileEntity?` â€” the row is returned only when `row.id == authenticatedUid`, otherwise `null` (no newest-row fallback, no placeholder, no substitution).
+- `restoreSession()` rewrite: cached value renamed `userId` â†’ `cachedUserId`; identity cross-checked against `firebaseService.getCurrentUser()?.uid`; **fail closed** (`clearSession()`, `isAuthenticated = false`, `currentUserPhone = null`, `AuthState.SignedOut`, return) when Firebase has no usable UID; `clearSession()` when the cached identity is stale; profile resolved UID-first (`getCurrentUserByUid` â†’ `fetchUserIdentityFromServer` + `saveUserProfile` â†’ fail-closed `resolveAuthenticatedProfile`), reusing cached descriptive fields only when the cached UID matched; `isAuthenticated` / `currentUserPhone` / `authState` / `userRoleMode` all come from that UID-keyed profile; the DataStore session is rewritten only when the cache was stale (so a matching cache keeps its AUTH-008 7-day expiry).
 - `init` block: post-restore role sync now uses `repository.getCurrentUserByUid(firebaseService.getCurrentUser()?.uid)` instead of `repository.currentUser.first()`, which would have undone the UID-keyed restore.
 
-**Tests added:** `app/src/test/java/com/example/ui/viewmodel/RestoreSessionIdentitySecurityTest.kt` (new, pure JUnit, 5 cases A–E) and 2 repository-boundary cases in `UserProfilePersistenceTest.kt` → `CurrentUserByUidRepositoryTest` (`stale cached uid never wins over the authenticated firebase uid`; `a database holding only the demo placeholder yields no identity`). Distinct phone numbers per seeded profile (UNIQUE `phoneNumber` index; inserts use `REPLACE`).
+**Tests added:** `app/src/test/java/com/example/ui/viewmodel/RestoreSessionIdentitySecurityTest.kt` (new, pure JUnit, 5 cases Aâ€“E) and 2 repository-boundary cases in `UserProfilePersistenceTest.kt` â†’ `CurrentUserByUidRepositoryTest` (`stale cached uid never wins over the authenticated firebase uid`; `a database holding only the demo placeholder yields no identity`). Distinct phone numbers per seeded profile (UNIQUE `phoneNumber` index; inserts use `REPLACE`).
 
 **Verification (all executed this session):**
-- `:app:compileDebugUnitTestKotlin` → BUILD SUCCESSFUL.
-- Focused run → `RestoreSessionIdentitySecurityTest` 5/0/0/0, `CurrentUserByUidRepositoryTest` 5/0/0/0, `UserProfilePersistenceTest` 10/0/0/0, `PhoneAuthIdentitySecurityTest` 9/0/0/0, `WorkerAuthorizationSecurityTest` 13/0/0/0 (tests/failures/errors/skipped).
-- Full suite `:app:testDebugUnitTest` → BUILD SUCCESSFUL, **16 suites / 126 tests / 0 failures / 0 errors / 0 skipped**.
-- `:app:assembleDebug` → BUILD SUCCESSFUL. `git --no-pager diff --check` → clean.
-- Diff scope: `SkillsExchangeViewModel.kt`, `UserProfilePersistenceTest.kt` (modified), `RestoreSessionIdentitySecurityTest.kt` (new). `prd.json` intentionally untouched (C1–C3 are tracked in `TASKS.md`; `C2` status unchanged).
+- `:app:compileDebugUnitTestKotlin` â†’ BUILD SUCCESSFUL.
+- Focused run â†’ `RestoreSessionIdentitySecurityTest` 5/0/0/0, `CurrentUserByUidRepositoryTest` 5/0/0/0, `UserProfilePersistenceTest` 10/0/0/0, `PhoneAuthIdentitySecurityTest` 9/0/0/0, `WorkerAuthorizationSecurityTest` 13/0/0/0 (tests/failures/errors/skipped).
+- Full suite `:app:testDebugUnitTest` â†’ BUILD SUCCESSFUL, **16 suites / 126 tests / 0 failures / 0 errors / 0 skipped**.
+- `:app:assembleDebug` â†’ BUILD SUCCESSFUL. `git --no-pager diff --check` â†’ clean.
+- Diff scope: `SkillsExchangeViewModel.kt`, `UserProfilePersistenceTest.kt` (modified), `RestoreSessionIdentitySecurityTest.kt` (new). `prd.json` intentionally untouched (C1â€“C3 are tracked in `TASKS.md`; `C2` status unchanged).
 
-**ENVIRONMENT INCIDENT 2026-10-04 (NOT a code regression — read before re-running the suite):**
+**ENVIRONMENT INCIDENT 2026-10-04 (NOT a code regression â€” read before re-running the suite):**
 A later re-run of `:app:testDebugUnitTest` reported **41 failures across 7 suites**, and it was NOT a defect. Every failure was
 `java.nio.file.FileSystemException ... There is not enough space on the disk` (Windows error 92) raised from
-`org.robolectric.util.TempDirectory.createIfNotExists` — i.e. Robolectric could not create its per-test temp dir. The C: drive had only
+`org.robolectric.util.TempDirectory.createIfNotExists` â€” i.e. Robolectric could not create its per-test temp dir. The C: drive had only
 **0.57 GB free** (D: had 120 GB). The only production edits in that window were KDoc/comment text, so no logic change was involved.
 Resolution: cleared stale `robolectric-*` temp dirs and Temp files older than 14 days, stopped the Gradle daemons, and re-ran with
-`TMP`/`TEMP` pointed at `D:\gradle-home\tmp-f7` → **BUILD SUCCESSFUL, 17 suites / 131 tests / 0 failures / 0 errors / 0 skipped**.
-`:app:compileDebugKotlin` → **BUILD SUCCESSFUL**. Temp logs and the temp dir were deleted afterwards.
+`TMP`/`TEMP` pointed at `D:\gradle-home\tmp-f7` â†’ **BUILD SUCCESSFUL, 17 suites / 131 tests / 0 failures / 0 errors / 0 skipped**.
+`:app:compileDebugKotlin` â†’ **BUILD SUCCESSFUL**. Temp logs and the temp dir were deleted afterwards.
 **Rule for future sessions:** if Robolectric tests fail en masse with `FileSystemException`/error 92, check `Get-PSDrive C` free space
-FIRST — do not treat it as a code regression, and do not start editing production code on that evidence. C: is chronically near-full on
+FIRST â€” do not treat it as a code regression, and do not start editing production code on that evidence. C: is chronically near-full on
 this machine; consider directing `TMP`/`TEMP` to D: (which has ample space) for any Robolectric run.
 
 **Next actions (ordered):**
-1. C2-2 **F7** — sweep remaining legacy newest-row `getCurrentUser()` / `repository.currentUser` identity consumers (the `init`-block and `restoreSession()` call sites are already converted; display-only consumers in UI/ViewModel remain) and confirm each is display-only or converted to `getCurrentUserByUid` / `currentUserByUid`.
-2. C2-2 remaining findings — wire `currentUserByUid` to the UI consumer(s); address the device-local, non-authoritative `getUserProfileByPhone`; remove/neutralise the seeded `user_default_me` row once no path depends on it (F3–F6 as enumerated in the audit).
-3. Then re-run the full suite + `assembleDebug`, and perform the pending **device** verification (main matrix A–F from the C1–C3 audit plus: sign in as account B on a device whose DataStore still caches account A's UID ⇒ B's profile must appear and A must never be adopted; sign out ⇒ no resurrection).
+1. C2-2 **F7** â€” sweep remaining legacy newest-row `getCurrentUser()` / `repository.currentUser` identity consumers (the `init`-block and `restoreSession()` call sites are already converted; display-only consumers in UI/ViewModel remain) and confirm each is display-only or converted to `getCurrentUserByUid` / `currentUserByUid`.
+2. C2-2 remaining findings â€” wire `currentUserByUid` to the UI consumer(s); address the device-local, non-authoritative `getUserProfileByPhone`; remove/neutralise the seeded `user_default_me` row once no path depends on it (F3â€“F6 as enumerated in the audit).
+3. Then re-run the full suite + `assembleDebug`, and perform the pending **device** verification (main matrix Aâ€“F from the C1â€“C3 audit plus: sign in as account B on a device whose DataStore still caches account A's UID â‡’ B's profile must appear and A must never be adopted; sign out â‡’ no resurrection).
 4. Only then sync `prd.json` / mark `C2` complete.
 
-Previous update 2026-09-30T20:10:00+03:00 — **C2-1 (Phone Authentication Identity Security) IMPLEMENTED — ⚠️ NOT VERIFIED. `C2` is deliberately still ⏳ and must not be marked complete.**
+Previous update 2026-09-30T20:10:00+03:00 â€” **C2-1 (Phone Authentication Identity Security) IMPLEMENTED â€” âš ï¸ NOT VERIFIED. `C2` is deliberately still â³ and must not be marked complete.**
 
-**What was done (source-only; no build, test, deploy or device run happened — see BLOCKER):**
+**What was done (source-only; no build, test, deploy or device run happened â€” see BLOCKER):**
 - `FirebaseService.kt`: the phone-auth placeholder is gone. `sendPhoneVerificationCode` used to return a fabricated `"<timestamp>_<phoneHash>"` id; `verifyPhoneCode` accepted ANY six-digit code and then called `signInAnonymously()`. Both now use real Firebase Phone Auth: `PhoneAuthProvider.verifyPhoneNumber(PhoneAuthOptions)` (Activity-bound, 60s timeout, `suspendCancellableCoroutine` over `onCodeSent` / `onVerificationCompleted` / `onVerificationFailed`) and `PhoneAuthProvider.getCredential(...)` + `auth.signInWithCredential(...)`. Input is normalised to E.164 by the new `toE164PhoneNumber` (default country `+256`); unusable input fails closed.
-- The pending verification (`verificationId`, Play-Services auto credential, requested number) is instance-private and cleared on sign-out, account deletion, resend, coroutine cancellation, success and failure. The new pure gate `phoneVerificationGateFailureReason(...)` refuses every code when no Firebase verification is pending — an arbitrary six-digit string can no longer authenticate. The resulting identity must be non-anonymous, phone-backed, and match the number the code was requested for.
+- The pending verification (`verificationId`, Play-Services auto credential, requested number) is instance-private and cleared on sign-out, account deletion, resend, coroutine cancellation, success and failure. The new pure gate `phoneVerificationGateFailureReason(...)` refuses every code when no Firebase verification is pending â€” an arbitrary six-digit string can no longer authenticate. The resulting identity must be non-anonymous, phone-backed, and match the number the code was requested for.
 - Activity plumbing: `FirebaseService.attachPhoneAuthActivity/detachPhoneAuthActivity` (WeakReference) called from `MainActivity.onCreate/onDestroy`.
 - Privilege copying removed from `loginUser`: it no longer adopts a Room row by phone number, no longer falls back to the newest row on the device, and no longer mints an anonymous UID when Firebase has no user. The new companion policy `resolveAuthenticatedProfile(...)` reuses a record only when its id == the authenticated Firebase UID; otherwise it builds a fail-closed profile (`UNVERIFIED`/`NOT_APPLIED`, `isWorkerActivated = false`, `trainingCompleted = false`) with **none** of the other record's fields copied. `verifyOtp` now keys the persisted session to the verified Firebase UID (`resolveSessionOwnerId`), not to a Room row id.
-- `firestore.rules`: `match /users/{userId}` read changed from `allow read: if isAuthenticated();` to `allow read: if isDocOwner(userId) || isAdmin();` (admin capability preserved; server paths use the Admin SDK). Consequence: the client by-phone query `fetchUserIdentityByPhone` is now denied by the rules and returns null — it is documented in code as NON-authoritative and is no longer an ownership path (AUTH-006 uid-keyed recovery is unaffected).
+- `firestore.rules`: `match /users/{userId}` read changed from `allow read: if isAuthenticated();` to `allow read: if isDocOwner(userId) || isAdmin();` (admin capability preserved; server paths use the Admin SDK). Consequence: the client by-phone query `fetchUserIdentityByPhone` is now denied by the rules and returns null â€” it is documented in code as NON-authoritative and is no longer an ownership path (AUTH-006 uid-keyed recovery is unaffected).
 - New tests (not yet executed): `app/src/test/java/com/example/data/remote/PhoneAuthVerificationSecurityTest.kt` (pure), `.../PhoneAuthServiceFailClosedTest.kt` (Robolectric), `.../FirestoreUsersReadPrivacyTest.kt` (rules-source invariants), `app/src/test/java/com/example/ui/viewmodel/PhoneAuthIdentitySecurityTest.kt` (pure).
 
-**BLOCKER (why nothing is verified):** every `run_commands` call this session returned exit 1 with no observable output and no side effects — three independent probes (`Set-Content`, `Out-File`, `cmd /c "dir > file"`) never created their target files, so `gradlew` never ran. Therefore there was **no `:app:compileDebugKotlin`, no `:app:testDebugUnitTest`, no `:app:assembleDebug`, no `firebase deploy --only firestore:rules`, and no device/emulator verification.** `prd.json` and `TASKS.md` were intentionally left untouched: `C2` stays ⏳ PENDING and is not in `completed_stories`.
+**BLOCKER (why nothing is verified):** every `run_commands` call this session returned exit 1 with no observable output and no side effects â€” three independent probes (`Set-Content`, `Out-File`, `cmd /c "dir > file"`) never created their target files, so `gradlew` never ran. Therefore there was **no `:app:compileDebugKotlin`, no `:app:testDebugUnitTest`, no `:app:assembleDebug`, no `firebase deploy --only firestore:rules`, and no device/emulator verification.** `prd.json` and `TASKS.md` were intentionally left untouched: `C2` stays â³ PENDING and is not in `completed_stories`.
 
-**ENVIRONMENT DIAGNOSIS 2026-09-30 (command execution is broken at the runner/PTY level — NOT the project, NOT the JDK, NOT Gradle):**
+**ENVIRONMENT DIAGNOSIS 2026-09-30 (command execution is broken at the runner/PTY level â€” NOT the project, NOT the JDK, NOT Gradle):**
 
 Diagnostic run of 12 distinct payloads produced **one identical signature for all of them**: `"[Command completion could not be observed...]"` + `error: Command exited with code 1`, with zero stdout/stderr and zero filesystem side effects. Payloads: `echo DIAG_OK`; `cmd /c echo CMD_OK`; `Write-Output PS_WRITE_OK`; `cd /d "D:\skills exchange"; echo ...`; `C:\Windows\System32\cmd.exe /c ver`; `powershell.exe -NoProfile -Command "Write-Output ..."`; `nosuchcommand_zzz_diag_c2`; `.\gradlew.bat --version --console=plain`; `powershell -NoProfile -Command "exit 0"`; `bash -lc "echo ..."`; `Start-Process cmd -ArgumentList '/c','ver' -NoNewWindow -Wait`; `Out-File` probe.
 
 Decisive proofs that the child process is never observed at all:
-1. `echo` — which cannot fail — returns exit 1.
+1. `echo` â€” which cannot fail â€” returns exit 1.
 2. A **deliberately invalid** command produces byte-identical output to a valid one (a real shell would print "not recognized").
-3. `powershell -NoProfile -Command "exit 0"` — a payload that cannot exit nonzero — is **reported as exit 1**. The reported code therefore comes from the runner, not the payload.
+3. `powershell -NoProfile -Command "exit 0"` â€” a payload that cannot exit nonzero â€” is **reported as exit 1**. The reported code therefore comes from the runner, not the payload.
 
-Ruled out (each verified): **cwd** — `read_files`/`search_codebase` prove `D:\skills exchange` exists and is fully readable, and the agent-side `editor` tool writes successfully, so the filesystem is fine; **PowerShell vs cmd** — both fail identically, as does a nested `powershell.exe` and an absolute `cmd.exe` path; **Gradle wrapper** — `echo` fails long before Gradle, and no `_gradle_version.txt` was ever produced, so the wrapper was never reached; **file permissions** — the process never spawns, so permissions never apply; **quoting/syntax** — the simplest payload fails like the most complex. Conclusion: the `run_commands` terminal backend has no working PTY this session (stale/dead terminal), so **verification is impossible until it is restored**.
+Ruled out (each verified): **cwd** â€” `read_files`/`search_codebase` prove `D:\skills exchange` exists and is fully readable, and the agent-side `editor` tool writes successfully, so the filesystem is fine; **PowerShell vs cmd** â€” both fail identically, as does a nested `powershell.exe` and an absolute `cmd.exe` path; **Gradle wrapper** â€” `echo` fails long before Gradle, and no `_gradle_version.txt` was ever produced, so the wrapper was never reached; **file permissions** â€” the process never spawns, so permissions never apply; **quoting/syntax** â€” the simplest payload fails like the most complex. Conclusion: the `run_commands` terminal backend has no working PTY this session (stale/dead terminal), so **verification is impossible until it is restored**.
 
 **Smallest corrective actions (in order):**
-1. Kill/close the Cline integrated terminal and let it respawn, or reload the VS Code window — a fresh PTY is the most likely fix.
+1. Kill/close the Cline integrated terminal and let it respawn, or reload the VS Code window â€” a fresh PTY is the most likely fix.
 2. If it persists, start a **new agent session** (the terminal is per-session) and re-run the checks.
-3. Fallback needing no agent terminal: run these in any ordinary PowerShell window (or Android Studio's Terminal / Gradle tool window) and paste the output back —
+3. Fallback needing no agent terminal: run these in any ordinary PowerShell window (or Android Studio's Terminal / Gradle tool window) and paste the output back â€”
    `.\gradlew.bat :app:compileDebugKotlin --console=plain`
    `.\gradlew.bat :app:testDebugUnitTest --console=plain`
    `.\gradlew.bat :app:assembleDebug --console=plain`
 4. Do **not** diagnose this as a missing JDK: `D:\kilo_downloads\jdk17\jdk17.0.20_10\release` confirms Amazon Corretto `17.0.20.1+10-LTS` exists and `gradle.properties:38` pins it.
 
-Environment facts confirmed **by reading files** (no execution needed): project `D:\skills exchange`; Gradle wrapper **9.5.0** (`gradle/wrapper/gradle-wrapper.properties:3`); Gradle JVM = Corretto 17.0.20.1+10-LTS via `org.gradle.java.home`; toolchain JDK 11 at `D:/skills exchange/jdk11/jdk-11.0.22+7`; Gradle home `D:/gradle-home`; Android SDK `C:\Users\mine\AppData\Local\Android\Sdk` (`local.properties`). A stale `app\build\outputs\apk\debug\app-debug.apk` exists from an **older** build — it predates C2-1 and is **not** evidence that the C2-1 code compiles, so it must never be cited as C2-1 verification. Leftover untracked debris from earlier sessions (`diag-vm-*.txt`, `_cmdprobe.txt`, `_p2.txt`, `_gradle_version.txt`) is documented here as never-created or stale.
+Environment facts confirmed **by reading files** (no execution needed): project `D:\skills exchange`; Gradle wrapper **9.5.0** (`gradle/wrapper/gradle-wrapper.properties:3`); Gradle JVM = Corretto 17.0.20.1+10-LTS via `org.gradle.java.home`; toolchain JDK 11 at `D:/skills exchange/jdk11/jdk-11.0.22+7`; Gradle home `D:/gradle-home`; Android SDK `C:\Users\mine\AppData\Local\Android\Sdk` (`local.properties`). A stale `app\build\outputs\apk\debug\app-debug.apk` exists from an **older** build â€” it predates C2-1 and is **not** evidence that the C2-1 code compiles, so it must never be cited as C2-1 verification. Leftover untracked debris from earlier sessions (`diag-vm-*.txt`, `_cmdprobe.txt`, `_p2.txt`, `_gradle_version.txt`) is documented here as never-created or stale.
 
 **Next action (in this order, with a working shell):**
-1. `:app:compileDebugKotlin` — expect this to be the first real check of the new Firebase Phone Auth API usage.
-2. `:app:testDebugUnitTest` — the four new suites; `PhoneAuthServiceFailClosedTest` is Robolectric (`@Config(sdk = [36])`) and constructs `FirebaseService(null)`, so confirm its diagnostics if it errors.
+1. `:app:compileDebugKotlin` â€” expect this to be the first real check of the new Firebase Phone Auth API usage.
+2. `:app:testDebugUnitTest` â€” the four new suites; `PhoneAuthServiceFailClosedTest` is Robolectric (`@Config(sdk = [36])`) and constructs `FirebaseService(null)`, so confirm its diagnostics if it errors.
 3. `:app:assembleDebug`.
-4. `firebase deploy --only firestore:rules` — the `users` read rule is NOT live until deployed.
+4. `firebase deploy --only firestore:rules` â€” the `users` read rule is NOT live until deployed.
 5. Device (Samsung SM-A025F): real SMS code end-to-end; confirm the resulting Firebase UID owns the Room profile and `users/{uid}`, that a phone-match cannot inherit worker state, and that the Firebase project has Phone sign-in enabled plus the app's SHA-1/SHA-256 registered (Play-Integrity/reCAPTCHA requirement).
 6. Only then sync `TASKS.md` / `prd.json`.
 
-Previous update 2026-09-30T17:47:00+03:00 — **SEC-009 / G1 / G3 / H1 / H8 / M8 — Worker Dashboard Fail-Closed Authorization IMPLEMENTED, UNIT-TESTED, DOCUMENTED.**
+Previous update 2026-09-30T17:47:00+03:00 â€” **SEC-009 / G1 / G3 / H1 / H8 / M8 â€” Worker Dashboard Fail-Closed Authorization IMPLEMENTED, UNIT-TESTED, DOCUMENTED.**
 
 **What was done:**
-- Centralised a pure `isWorkerAuthorized(isAuthenticated, user)` companion function in `SkillsExchangeViewModel.kt` — the single authoritative source. Requires `initialRole == "WORKER"`, `workerKycStatus == "APPROVED"`, `trainingCompleted == true`, `isWorkerActivated == true`; defaults to `false` for every other state (null, loading, unknown, pending, deactivated).
+- Centralised a pure `isWorkerAuthorized(isAuthenticated, user)` companion function in `SkillsExchangeViewModel.kt` â€” the single authoritative source. Requires `initialRole == "WORKER"`, `workerKycStatus == "APPROVED"`, `trainingCompleted == true`, `isWorkerActivated == true`; defaults to `false` for every other state (null, loading, unknown, pending, deactivated).
 - `isWorkerApprovedAndActivated: StateFlow<Boolean>` now combines `isAuthenticated` + `currentUserProfile` through `isWorkerAuthorized()`.
-- `canAccessWorkerFeatures()` delegates to `isWorkerAuthorized()` — `setUserRoleMode("Offer Skills")` therefore silently denies unqualified users (G3 / M8 closed).
-- `FreelancerDashboardView.kt` accepts `isAuthorized: Boolean` and renders a hard-coded locked UI guard if `false` — component boundary cannot be bypassed by state injection.
+- `canAccessWorkerFeatures()` delegates to `isWorkerAuthorized()` â€” `setUserRoleMode("Offer Skills")` therefore silently denies unqualified users (G3 / M8 closed).
+- `FreelancerDashboardView.kt` accepts `isAuthorized: Boolean` and renders a hard-coded locked UI guard if `false` â€” component boundary cannot be bypassed by state injection.
 - `MainScreen.kt` passes `isWorkerApprovedAndActivated.collectAsState()` to `FreelancerDashboardView` as `isAuthorized`.
-- `WorkerAuthorizationSecurityTest.kt` — 13 test cases (unauthenticated, client mode, various KYC/pending/deactivated states, fully qualified worker, null/error profiles) — all PASSED.
+- `WorkerAuthorizationSecurityTest.kt` â€” 13 test cases (unauthenticated, client mode, various KYC/pending/deactivated states, fully qualified worker, null/error profiles) â€” all PASSED.
 - Existing full unit-test suite PASSED (all UP-TO-DATE, no regressions).
-- Real-device install was **not possible**: Samsung SM-A025F `/data` partition at 98% (≈22.5 GB / 23 GB used) — `adb install` returned `INSTALL_FAILED_INSUFFICIENT_STORAGE`. This is a hardware/storage constraint, not a code defect. Clear device storage and re-run `adb install` to complete on-device verification.
+- Real-device install was **not possible**: Samsung SM-A025F `/data` partition at 98% (â‰ˆ22.5 GB / 23 GB used) â€” `adb install` returned `INSTALL_FAILED_INSUFFICIENT_STORAGE`. This is a hardware/storage constraint, not a code defect. Clear device storage and re-run `adb install` to complete on-device verification.
 
 **Files changed:** `SkillsExchangeViewModel.kt`, `FreelancerDashboardView.kt`, `MainScreen.kt` (modified); `WorkerAuthorizationSecurityTest.kt` (new).
 **Stories closed:** G1 (fail-open initializer), G3 (UI-state dependency), H1 (fail-closed worker auth), H8 (worker dashboard security), M8 (setUserRoleMode gate).
-**PRD story:** SEC-009 → `completed`.
+**PRD story:** SEC-009 â†’ `completed`.
 **Next action:** After device storage is cleared, install APK and perform on-device golden path for G1/H1 (attempt \"Offer Skills\" tab as a non-worker; confirm it is blocked). Then proceed to next unfinished eligible PRD story.
 
 The real-device crash on Samsung SM-A025F (`IllegalStateException: API key not found` at `InteractiveMapView.kt:98`) has been resolved and verified:
@@ -233,74 +234,74 @@ The real-device crash on Samsung SM-A025F (`IllegalStateException: API key not f
 2. Configuration & Secrets Wiring: Configured `MAPS_API_KEY=DEFAULT_MAPS_API_KEY` in `.env`, `.env.example`, and `manifestPlaceholders["MAPS_API_KEY"] = "DEFAULT_MAPS_API_KEY"` in `app/build.gradle.kts`. Wired `<meta-data android:name="com.google.android.geo.API_KEY" android:value="${MAPS_API_KEY}" />` into `app/src/main/AndroidManifest.xml`. This prevents secrets-gradle-plugin 2.0.1 empty-value syntax errors in `BuildConfig.java`.
 3. Verification:
    - `:app:compileDebugJavaWithJavac`: PASSED.
-   - `:app:testDebugUnitTest`: PASSED — **75 tests across 9 suites, 0 failures / 0 errors**.
+   - `:app:testDebugUnitTest`: PASSED â€” **75 tests across 9 suites, 0 failures / 0 errors**.
    - `:app:assembleDebug`: PASSED in 7m 59s (`app-debug.apk` 35,259,265 bytes).
 Updated files: `InteractiveMapView.kt`, `app/build.gradle.kts`, `AndroidManifest.xml`, `.env`, `.env.example`, `DECISIONS.md` (DEC-021), `CHANGELOG.md`, `TASKS.md`, `AGENT_STATE.md`.
 
-2026-09-30T14:36:00+03:00 — **DOCUMENTATION-ONLY: MAP-003 (Google Maps Fallback for Active-Job Screen) added as ⏳ Pending future requirement.** No source code was changed, no Firebase configuration was changed, no Maps API key was added, no Maps dependency was added, no implementation was performed. Updated files: `prd.json` (new story MAP-003, status `pending`, phase 17, `depends_on: ["MAP-002"]`; `last_updated` refreshed; total now 93 stories — 85 completed / 1 in-progress / 7 pending), `TASKS.md` (new MAP-003 row, pending count 6→7, total 92→93), `CHANGELOG.md` (new [2026-09-30] entry), `DECISIONS.md` (DEC-020), `AGENT_STATE.md` (this entry). Existing unfinished tasks unchanged. Next action: continue with whatever unfinished requirement the user explicitly instructs next — do NOT start implementing MAP-003.
+2026-09-30T14:36:00+03:00 â€” **DOCUMENTATION-ONLY: MAP-003 (Google Maps Fallback for Active-Job Screen) added as â³ Pending future requirement.** No source code was changed, no Firebase configuration was changed, no Maps API key was added, no Maps dependency was added, no implementation was performed. Updated files: `prd.json` (new story MAP-003, status `pending`, phase 17, `depends_on: ["MAP-002"]`; `last_updated` refreshed; total now 93 stories â€” 85 completed / 1 in-progress / 7 pending), `TASKS.md` (new MAP-003 row, pending count 6â†’7, total 92â†’93), `CHANGELOG.md` (new [2026-09-30] entry), `DECISIONS.md` (DEC-020), `AGENT_STATE.md` (this entry). Existing unfinished tasks unchanged. Next action: continue with whatever unfinished requirement the user explicitly instructs next â€” do NOT start implementing MAP-003.
 
-2026-09-29T18:45:00+03:00 — **REAL-DEVICE VERIFICATION RUN on Samsung SM-A025F (Android 12 / API 31). Consolidated report: `_device_test/DEVICE_TEST_REPORT.md`. No source file was changed, nothing committed, `prd.json` untouched.** The freshly built debug APK (35,254,412 B) was installed **in place** — its signing cert matched the installed package, so no uninstall and app data survived — after `INSTALL_FAILED_INSUFFICIENT_STORAGE` was diagnosed as a 99 %-full `/data` partition (**not** a signature conflict) and ~551 MB was reclaimed non-destructively with `pm trim-caches`. Proven on hardware: cold start (6,305 ms, no ANR, Firebase initialised), **Room `MIGRATION_18_19` executing on a real device** (the pulled DB reads `user_version = 19`, matching `AppDatabase version = 19`, with `guarantors.nationalIdNumber` / `phoneNumber` present — the first time that migration has been evidenced outside unit tests), client-mode home with live GPS filtering, drawer, correct guest gating of National ID & Verification (CLIENT ONBOARDING sheet, no crash), Job Status, theme switching and the providers list. **Two real defects found — see `## Real-Device Verification (SM-A025F) — 2026-09-29` below:** **D1 (critical)** Map View tap kills the process 3/3 (`IllegalStateException: API key not found`, `InteractiveMapView.kt:98`; the manifest has no `com.google.android.geo.API_KEY` `<meta-data>` at all and `map.onCreate(null)` is unguarded) — **MAP-001 is still `completed` on `verified_by: code_inspection` while its own acceptance criterion fails on hardware; reopening it is recommended but was not done unilaterally**; **D2** the guest tap on the worker-mode card is refused but **silent** (the message it sets via `authError` is rendered only inside `AuthModal`/`OnboardingScreen`, which are closed at that moment — `MainScreen` has no visible channel for it).
+2026-09-29T18:45:00+03:00 â€” **REAL-DEVICE VERIFICATION RUN on Samsung SM-A025F (Android 12 / API 31). Consolidated report: `_device_test/DEVICE_TEST_REPORT.md`. No source file was changed, nothing committed, `prd.json` untouched.** The freshly built debug APK (35,254,412 B) was installed **in place** â€” its signing cert matched the installed package, so no uninstall and app data survived â€” after `INSTALL_FAILED_INSUFFICIENT_STORAGE` was diagnosed as a 99 %-full `/data` partition (**not** a signature conflict) and ~551 MB was reclaimed non-destructively with `pm trim-caches`. Proven on hardware: cold start (6,305 ms, no ANR, Firebase initialised), **Room `MIGRATION_18_19` executing on a real device** (the pulled DB reads `user_version = 19`, matching `AppDatabase version = 19`, with `guarantors.nationalIdNumber` / `phoneNumber` present â€” the first time that migration has been evidenced outside unit tests), client-mode home with live GPS filtering, drawer, correct guest gating of National ID & Verification (CLIENT ONBOARDING sheet, no crash), Job Status, theme switching and the providers list. **Two real defects found â€” see `## Real-Device Verification (SM-A025F) â€” 2026-09-29` below:** **D1 (critical)** Map View tap kills the process 3/3 (`IllegalStateException: API key not found`, `InteractiveMapView.kt:98`; the manifest has no `com.google.android.geo.API_KEY` `<meta-data>` at all and `map.onCreate(null)` is unguarded) â€” **MAP-001 is still `completed` on `verified_by: code_inspection` while its own acceptance criterion fails on hardware; reopening it is recommended but was not done unilaterally**; **D2** the guest tap on the worker-mode card is refused but **silent** (the message it sets via `authError` is rendered only inside `AuthModal`/`OnboardingScreen`, which are closed at that moment â€” `MainScreen` has no visible channel for it).
 
 
-2026-09-29T12:00:00+03:00 — **ADMIN-005 (post-REG-002 gap G2: admin guarantor review path) IMPLEMENTED AND VERIFIED in isolation.** REG-002 shipped only the *worker* half of guarantor verification; no administrator could read or decide a `guarantor_submissions` document, and `getPendingVerificationQueue` returned every worker's **unmasked** `nationalIdNumber`. This session added the missing path: `functions/src/guarantorReview.ts` (dependency-free security core) plus `getGuarantorSubmission` and `reviewGuarantorSubmission` callables in `functions/src/index.ts`, a rewritten queue that emits `nationalIdNumberMasked`, and a private-photo signer (15 min default, 60 min cap) that only ever mints `users/{workerId}/guarantors/**`. Verification was **real this time**: `npm run build` (tsc) exit 0 with `lib/index.js` + `lib/guarantorReview.js` emitted, and `node --test test/guarantorReview.test.mjs` **32 tests / 32 pass / 0 fail**. The earlier "`npx tsc` exits 0" evidence recorded before this session was **invalid** (`npx tsc` was resolving to the placeholder `tsc` npm package; `node_modules/typescript` had no `bin/tsc`), and `functions/package.json` never declared `@types/express` / `@types/node` even though its `build` script needs them — both fixed. NOT deployed, no live Firestore/Storage round-trip, and gaps **G1, G3, G4, G5, G6, G7, G12 remain untouched**. REG-002's own PRD status is untouched (still `completed`); no PRD story was added for this work because the gap is post-PRD.
-2026-09-27T04:30:00+03:00 — REG-002 (Worker Registration Guarantor Verification) **BUILD-VERIFIED AND COMPLETED**. The 2026-09-26 "no JDK on this machine" blocker was **false**: `gradle.properties` pins the build JVM (`org.gradle.java.home=D:/kilo_downloads/jdk17/jdk17.0.20_10`, Amazon Corretto `17.0.20.1`, present on disk) and the Gradle home (`systemProp.org.gradle.user.home=D:/gradle-home`), so `.\gradlew.bat <task>` works with no environment setup; `jdk11/jdk-11.0.22+7/bin/java.exe` exists as well and Android Studio's JBR is OpenJDK `25.0.2`. The first real compile of the guarantor feature then found **two genuine errors**: `SkillsExchangeViewModel.kt` had `var` Compose state with no `androidx.compose.runtime.getValue/mutableStateOf/setValue` imports, and `GuarantorValidators.validateNationalIdNumber` used `value.distinct()` on a `String` (now `value.toSet().size`, same rule). After both fixes: `:app:compileDebugKotlin` PASSED (warnings only), `:app:testDebugUnitTest` PASSED **57 tests / 8 suites / 0 failures / 0 errors** (GuarantorValidatorsTest **18/18**), `:app:assembleDebug` PASSED in 3m 35s → `app/build/outputs/apk/debug/app-debug.apk` (35,254,412 bytes). Room's KSP pass validated the entities, DAO queries and the new `phoneNumber` index. PRD: REG-002 `completed` and added to `completed_stories` (**86 completed / 0 in progress / 6 pending** of 92). Remaining: the on-device golden path and `firebase deploy --only firestore:rules,storage`.
-Previous update 2026-09-26T12:00:00+03:00 — REG-002 (Worker Registration Guarantor Verification) IMPLEMENTED at the UI + repository layer, **NOT compiled/tested at the time**. Completed the missing half of `GuarantorVerificationSheet.kt` (GuarantorDraft state + mappers, GuarantorDraftCard, photo pickers, group photo card, choice dropdown, status chip) and corrected the API mismatches a previous session had assumed: repository uses `WorkerKycDao.updateGuarantorStep(... guarantorStatus ...)`, and both sheet and repository consume `GuarantorValidators.validateGuarantorSet(...)` as a single `String?` blocker. Wired the sheet into `MainScreen` behind the drawer's National ID & Verification sheet, which gained a guarantor status row, admin feedback and an entry button. Added `GuarantorValidatorsTest` (pure JVM). BLOCKER RECORDED AT THE TIME — **and later proved wrong**: "this machine has no JDK (`jdk11/` and `jdk17/` are empty, `java` not on PATH), so `:app:compileDebugKotlin` / `:app:testDebugUnitTest` could not be run"; REG-002 therefore stayed `in_progress` and out of `completed_stories` until the build was actually run on 2026-09-27. A follow-up static audit in the same session cross-checked every layer's call signatures (UI→ViewModel→repository→DAO→FirebaseService), the Room v19 migration against the entity columns/defaults, and the client payloads against the `guarantors` / `guarantor_submissions` Firestore rules and the guarantor Storage rules; it fixed one real defect — `GuarantorEntity` never declared the `phoneNumber` index that `MIGRATION_18_19` creates.
-Previous update 2026-09-23T21:20:00+03:00 — REG-003 (Worker Backup Contact) + REG-004 (Worker Profile Photo) IMPLEMENTED & VERIFIED. Added `backupContactName`/`backupContactPhone` to `UserProfileEntity` (Room + Firestore `users/{uid}`) with a shared `ProfileValidators.validateBackupContact` validator, and a new `ProfileSettingsSheet` (drawer → "Profile Photo & Backup Contact") that also handles gallery selection, preview, cancel, upload (Firebase Storage `avatars/{uid}/`), loading state, error handling and photo replacement. `AppDatabase` v17→v18 with `MIGRATION_17_18`. Verification: `:app:compileDebugKotlin` PASSED; `:app:testDebugUnitTest` PASSED **39/39, 0 failures** (ProfileValidatorsTest 15, ProfileContactPhotoPersistenceTest 5 added); `:app:assembleDebug` PASSED (5m). PRD: REG-003/REG-004 completed (85 completed / 7 pending / 92 total). Device verification of the gallery picker, upload and migration still required.
-Previous update 2026-09-23T14:40:00+03:00 — COMM-002 Community Feature Removal IMPLEMENTED & VERIFIED. Audited and completed a prior session's uncommitted removal work (NeighborhoodFeedView.kt deleted; Board tab/branch, neighborhoodPosts, NeighborhoodPostEntity/Dao removed; AppDatabase v16→v17 with MIGRATION_16_17 dropping neighborhood_posts). Verification: :app:compileDebugKotlin PASSED; :app:testDebugUnitTest PASSED 19/19 after repairing 2 pre-existing AuthViewModelTest assertions that still expected pre-SEC-009 defaults (unrelated to COMM-002; app/src/test was untouched by the removal). TASKS.md synced: COMM-002 Completed, counts now 83 completed / 9 pending / 92 total (includes repair of a pre-existing gap: AUTH-011 was status=completed but missing from completed_stories[] and from TASKS.md).
-Previous update 2026-09-23T12:05:00+03:00 — SEC-009 and PAY-005 confirmed implemented. Unit tests re-verified this session: UserProfilePersistenceTest 7/7 PASSED (BUILD SUCCESSFUL in 1m 54s, GRADLE_USER_HOME=D:\gradle-home, JAVA_HOME=JDK17, timestamp 2026-09-23T09:01:22Z). TASKS.md synced: PAY-005 updated to Completed, count corrected to 81 completed / 10 pending. Session audit produced.
+2026-09-29T12:00:00+03:00 â€” **ADMIN-005 (post-REG-002 gap G2: admin guarantor review path) IMPLEMENTED AND VERIFIED in isolation.** REG-002 shipped only the *worker* half of guarantor verification; no administrator could read or decide a `guarantor_submissions` document, and `getPendingVerificationQueue` returned every worker's **unmasked** `nationalIdNumber`. This session added the missing path: `functions/src/guarantorReview.ts` (dependency-free security core) plus `getGuarantorSubmission` and `reviewGuarantorSubmission` callables in `functions/src/index.ts`, a rewritten queue that emits `nationalIdNumberMasked`, and a private-photo signer (15 min default, 60 min cap) that only ever mints `users/{workerId}/guarantors/**`. Verification was **real this time**: `npm run build` (tsc) exit 0 with `lib/index.js` + `lib/guarantorReview.js` emitted, and `node --test test/guarantorReview.test.mjs` **32 tests / 32 pass / 0 fail**. The earlier "`npx tsc` exits 0" evidence recorded before this session was **invalid** (`npx tsc` was resolving to the placeholder `tsc` npm package; `node_modules/typescript` had no `bin/tsc`), and `functions/package.json` never declared `@types/express` / `@types/node` even though its `build` script needs them â€” both fixed. NOT deployed, no live Firestore/Storage round-trip, and gaps **G1, G3, G4, G5, G6, G7, G12 remain untouched**. REG-002's own PRD status is untouched (still `completed`); no PRD story was added for this work because the gap is post-PRD.
+2026-09-27T04:30:00+03:00 â€” REG-002 (Worker Registration Guarantor Verification) **BUILD-VERIFIED AND COMPLETED**. The 2026-09-26 "no JDK on this machine" blocker was **false**: `gradle.properties` pins the build JVM (`org.gradle.java.home=D:/kilo_downloads/jdk17/jdk17.0.20_10`, Amazon Corretto `17.0.20.1`, present on disk) and the Gradle home (`systemProp.org.gradle.user.home=D:/gradle-home`), so `.\gradlew.bat <task>` works with no environment setup; `jdk11/jdk-11.0.22+7/bin/java.exe` exists as well and Android Studio's JBR is OpenJDK `25.0.2`. The first real compile of the guarantor feature then found **two genuine errors**: `SkillsExchangeViewModel.kt` had `var` Compose state with no `androidx.compose.runtime.getValue/mutableStateOf/setValue` imports, and `GuarantorValidators.validateNationalIdNumber` used `value.distinct()` on a `String` (now `value.toSet().size`, same rule). After both fixes: `:app:compileDebugKotlin` PASSED (warnings only), `:app:testDebugUnitTest` PASSED **57 tests / 8 suites / 0 failures / 0 errors** (GuarantorValidatorsTest **18/18**), `:app:assembleDebug` PASSED in 3m 35s â†’ `app/build/outputs/apk/debug/app-debug.apk` (35,254,412 bytes). Room's KSP pass validated the entities, DAO queries and the new `phoneNumber` index. PRD: REG-002 `completed` and added to `completed_stories` (**86 completed / 0 in progress / 6 pending** of 92). Remaining: the on-device golden path and `firebase deploy --only firestore:rules,storage`.
+Previous update 2026-09-26T12:00:00+03:00 â€” REG-002 (Worker Registration Guarantor Verification) IMPLEMENTED at the UI + repository layer, **NOT compiled/tested at the time**. Completed the missing half of `GuarantorVerificationSheet.kt` (GuarantorDraft state + mappers, GuarantorDraftCard, photo pickers, group photo card, choice dropdown, status chip) and corrected the API mismatches a previous session had assumed: repository uses `WorkerKycDao.updateGuarantorStep(... guarantorStatus ...)`, and both sheet and repository consume `GuarantorValidators.validateGuarantorSet(...)` as a single `String?` blocker. Wired the sheet into `MainScreen` behind the drawer's National ID & Verification sheet, which gained a guarantor status row, admin feedback and an entry button. Added `GuarantorValidatorsTest` (pure JVM). BLOCKER RECORDED AT THE TIME â€” **and later proved wrong**: "this machine has no JDK (`jdk11/` and `jdk17/` are empty, `java` not on PATH), so `:app:compileDebugKotlin` / `:app:testDebugUnitTest` could not be run"; REG-002 therefore stayed `in_progress` and out of `completed_stories` until the build was actually run on 2026-09-27. A follow-up static audit in the same session cross-checked every layer's call signatures (UIâ†’ViewModelâ†’repositoryâ†’DAOâ†’FirebaseService), the Room v19 migration against the entity columns/defaults, and the client payloads against the `guarantors` / `guarantor_submissions` Firestore rules and the guarantor Storage rules; it fixed one real defect â€” `GuarantorEntity` never declared the `phoneNumber` index that `MIGRATION_18_19` creates.
+Previous update 2026-09-23T21:20:00+03:00 â€” REG-003 (Worker Backup Contact) + REG-004 (Worker Profile Photo) IMPLEMENTED & VERIFIED. Added `backupContactName`/`backupContactPhone` to `UserProfileEntity` (Room + Firestore `users/{uid}`) with a shared `ProfileValidators.validateBackupContact` validator, and a new `ProfileSettingsSheet` (drawer â†’ "Profile Photo & Backup Contact") that also handles gallery selection, preview, cancel, upload (Firebase Storage `avatars/{uid}/`), loading state, error handling and photo replacement. `AppDatabase` v17â†’v18 with `MIGRATION_17_18`. Verification: `:app:compileDebugKotlin` PASSED; `:app:testDebugUnitTest` PASSED **39/39, 0 failures** (ProfileValidatorsTest 15, ProfileContactPhotoPersistenceTest 5 added); `:app:assembleDebug` PASSED (5m). PRD: REG-003/REG-004 completed (85 completed / 7 pending / 92 total). Device verification of the gallery picker, upload and migration still required.
+Previous update 2026-09-23T14:40:00+03:00 â€” COMM-002 Community Feature Removal IMPLEMENTED & VERIFIED. Audited and completed a prior session's uncommitted removal work (NeighborhoodFeedView.kt deleted; Board tab/branch, neighborhoodPosts, NeighborhoodPostEntity/Dao removed; AppDatabase v16â†’v17 with MIGRATION_16_17 dropping neighborhood_posts). Verification: :app:compileDebugKotlin PASSED; :app:testDebugUnitTest PASSED 19/19 after repairing 2 pre-existing AuthViewModelTest assertions that still expected pre-SEC-009 defaults (unrelated to COMM-002; app/src/test was untouched by the removal). TASKS.md synced: COMM-002 Completed, counts now 83 completed / 9 pending / 92 total (includes repair of a pre-existing gap: AUTH-011 was status=completed but missing from completed_stories[] and from TASKS.md).
+Previous update 2026-09-23T12:05:00+03:00 â€” SEC-009 and PAY-005 confirmed implemented. Unit tests re-verified this session: UserProfilePersistenceTest 7/7 PASSED (BUILD SUCCESSFUL in 1m 54s, GRADLE_USER_HOME=D:\gradle-home, JAVA_HOME=JDK17, timestamp 2026-09-23T09:01:22Z). TASKS.md synced: PAY-005 updated to Completed, count corrected to 81 completed / 10 pending. Session audit produced.
 
-## REG-002: Worker Registration Guarantor Verification — BUILD-VERIFIED & COMPLETED (2026-09-27)
+## REG-002: Worker Registration Guarantor Verification â€” BUILD-VERIFIED & COMPLETED (2026-09-27)
 
-**Status: ✅ Completed — compiled, unit-tested and packaged on 2026-09-27 (86 completed / 0 in progress / 6 pending). Only the on-device golden path and the Firebase rules deploy remain.**
+**Status: âœ… Completed â€” compiled, unit-tested and packaged on 2026-09-27 (86 completed / 0 in progress / 6 pending). Only the on-device golden path and the Firebase rules deploy remain.**
 
-### Build environment correction — the 2026-09-26 "no JDK" blocker was FALSE (read this before concluding you cannot build)
+### Build environment correction â€” the 2026-09-26 "no JDK" blocker was FALSE (read this before concluding you cannot build)
 
 `gradle.properties` already pins everything the build needs, so `.\gradlew.bat <task> --console=plain` works with **no** environment variables:
 
 | Reference | Reality |
 |---|---|
-| `org.gradle.java.home = D:/kilo_downloads/jdk17/jdk17.0.20_10` | EXISTS — Amazon Corretto `17.0.20.1`. This is the JVM the Gradle daemon actually runs on and it overrides `JAVA_HOME`, which is why `java` not being on `PATH` never mattered |
-| `systemProp.org.gradle.user.home = D:/gradle-home` | EXISTS — dependency cache is warm, builds are incremental |
-| `org.gradle.java.installations.paths = D:/skills exchange/jdk11/jdk-11.0.22+7` | EXISTS — `bin\java.exe` is present (JDK 11 toolchain). The 2026-09-26 claim that it has no `bin` was wrong |
-| repo-root `jdk17/` | genuinely EMPTY — and irrelevant, nothing referenced it |
-| `C:\Program Files\Android\Android Studio\jbr` | EXISTS — OpenJDK `25.0.2`, a usable fallback JVM; Gradle 9.5.0 / AGP 9.3.2 tolerate it for the Java toolchain DSL |
+| `org.gradle.java.home = D:/kilo_downloads/jdk17/jdk17.0.20_10` | EXISTS â€” Amazon Corretto `17.0.20.1`. This is the JVM the Gradle daemon actually runs on and it overrides `JAVA_HOME`, which is why `java` not being on `PATH` never mattered |
+| `systemProp.org.gradle.user.home = D:/gradle-home` | EXISTS â€” dependency cache is warm, builds are incremental |
+| `org.gradle.java.installations.paths = D:/skills exchange/jdk11/jdk-11.0.22+7` | EXISTS â€” `bin\java.exe` is present (JDK 11 toolchain). The 2026-09-26 claim that it has no `bin` was wrong |
+| repo-root `jdk17/` | genuinely EMPTY â€” and irrelevant, nothing referenced it |
+| `C:\Program Files\Android\Android Studio\jbr` | EXISTS â€” OpenJDK `25.0.2`, a usable fallback JVM; Gradle 9.5.0 / AGP 9.3.2 tolerate it for the Java toolchain DSL |
 
 Practical note for the next session: the daemon prints nothing for minutes at a time while compiling Kotlin and packaging. Poll `app\build\tmp\kotlin-classes\debug` and `app\build\outputs\apk\debug` timestamps instead of assuming a hang, and re-run only after the previous invocation has finished.
 
-### Build verification — 2026-09-27
+### Build verification â€” 2026-09-27
 
 | Step | Result | Evidence / fix |
 |---|---|---|
-| `:app:compileDebugKotlin` (1st attempt) | ❌ FAILED — 2 real errors, both REG-002 code | `SkillsExchangeViewModel.kt Unresolved reference 'getValue'` plus "does not call getValue/setValue" for the three `var` state properties; `GuarantorValidators.kt Unresolved reference 'distinct'` — a `String` has no `distinct()` |
-| Fixes | ✅ | [SkillsExchangeViewModel.kt](file:///d:/skills%20exchange/app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt) now imports `androidx.compose.runtime.getValue`, `mutableStateOf` and `setValue` (`kotlinx.coroutines.flow.*` covers neither property-delegate operators nor `mutableStateOf`); [GuarantorValidators.kt](file:///d:/skills%20exchange/app/src/main/java/com/example/util/GuarantorValidators.kt) `validateNationalIdNumber()` now uses `value.toSet().size <= 1` — the identical rule (reject a NIN of one repeated character), plain stdlib. No test asserts that branch directly (the two NIN tests cover length and the accept path) |
-| `:app:compileDebugKotlin` (re-run) | ✅ PASSED | "BUILD SUCCESSFUL in 45s", warnings only |
-| `:app:testDebugUnitTest` | ✅ PASSED | **57 tests / 8 suites / 0 failures / 0 errors / 0 skipped**; `GuarantorValidatorsTest` **18/18** (per `build/test-results/testDebugUnitTest/TEST-com.example.util.GuarantorValidatorsTest.xml`); `testReleaseUnitTest` passed too |
-| `:app:assembleDebug` | ✅ PASSED | BUILD SUCCESSFUL in 3m 35s → `app/build/outputs/apk/debug/app-debug.apk` (35,254,412 bytes) |
-| Room schema | ✅ validated | KSP processed the entities, DAO queries, `MIGRATION_18_19` and the new `Index(["phoneNumber"])` with no schema errors |
-| `git diff --check` | ✅ clean | no whitespace errors |
+| `:app:compileDebugKotlin` (1st attempt) | âŒ FAILED â€” 2 real errors, both REG-002 code | `SkillsExchangeViewModel.kt Unresolved reference 'getValue'` plus "does not call getValue/setValue" for the three `var` state properties; `GuarantorValidators.kt Unresolved reference 'distinct'` â€” a `String` has no `distinct()` |
+| Fixes | âœ… | [SkillsExchangeViewModel.kt](file:///d:/skills%20exchange/app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt) now imports `androidx.compose.runtime.getValue`, `mutableStateOf` and `setValue` (`kotlinx.coroutines.flow.*` covers neither property-delegate operators nor `mutableStateOf`); [GuarantorValidators.kt](file:///d:/skills%20exchange/app/src/main/java/com/example/util/GuarantorValidators.kt) `validateNationalIdNumber()` now uses `value.toSet().size <= 1` â€” the identical rule (reject a NIN of one repeated character), plain stdlib. No test asserts that branch directly (the two NIN tests cover length and the accept path) |
+| `:app:compileDebugKotlin` (re-run) | âœ… PASSED | "BUILD SUCCESSFUL in 45s", warnings only |
+| `:app:testDebugUnitTest` | âœ… PASSED | **57 tests / 8 suites / 0 failures / 0 errors / 0 skipped**; `GuarantorValidatorsTest` **18/18** (per `build/test-results/testDebugUnitTest/TEST-com.example.util.GuarantorValidatorsTest.xml`); `testReleaseUnitTest` passed too |
+| `:app:assembleDebug` | âœ… PASSED | BUILD SUCCESSFUL in 3m 35s â†’ `app/build/outputs/apk/debug/app-debug.apk` (35,254,412 bytes) |
+| Room schema | âœ… validated | KSP processed the entities, DAO queries, `MIGRATION_18_19` and the new `Index(["phoneNumber"])` with no schema errors |
+| `git diff --check` | âœ… clean | no whitespace errors |
 
-**Recorded lesson:** the 2026-09-26 static audit was genuinely thorough yet still missed two compile errors, and both are the categories signature checks cannot see — imports that `by mutableStateOf` requires implicitly, and a stdlib call that does not resolve on `String`. If a JDK exists (it does), the build must run before a story is called complete.
+**Recorded lesson:** the 2026-09-26 static audit was genuinely thorough yet still missed two compile errors, and both are the categories signature checks cannot see â€” imports that `by mutableStateOf` requires implicitly, and a stdlib call that does not resolve on `String`. If a JDK exists (it does), the build must run before a story is called complete.
 
 ### What was wrong at the start of this session
 A previous session had written the REG-002 data layer (entities, DAO, validators, Firebase
 mirrors, ViewModel actions) and a **partially written** `GuarantorVerificationSheet.kt` that:
-- called `WorkerKycDao.updateGuarantorReview(status = ...)` — **no such DAO method exists**; the
+- called `WorkerKycDao.updateGuarantorReview(status = ...)` â€” **no such DAO method exists**; the
   real one is `updateGuarantorStep(userId, guarantorStatus, groupPhotoStoragePath, submittedAt, feedback)`;
 - consumed `GuarantorValidators.validateGuarantorSet(...)` as if it returned an `Outcome` object
-  with an `issues` map — it actually returns the **first blocking message as `String?`**;
+  with an `issues` map â€” it actually returns the **first blocking message as `String?`**;
 - referenced `GuarantorInput` and `KeyboardOptions` without importing them, and ended in
   duplicated/truncated lines;
 - never defined `GuarantorDraft`, its mappers, `GuarantorDraftCard`, `GroupPhotoCard` or
   `GuarantorChoiceField`, so the file could not compile.
 
 ### What was changed
-1. **`SkillsExchangeRepository.kt`** — the guarantor draft/submit/refresh paths now call
+1. **`SkillsExchangeRepository.kt`** â€” the guarantor draft/submit/refresh paths now call
    `updateGuarantorStep` with `guarantorStatus`, use `GuarantorInput` from `com.example.util`,
    and treat the validator result as a single blocker string. Photos go through
    `resolveVerificationPhoto` (idempotent: an existing `users/{uid}/guarantors/...` path is
    reused, a `content://` URI is uploaded once) and `SUBMITTED` is recorded only after the
    remote write succeeded.
-2. **`GuarantorVerificationSheet.kt`** — completed the file:
+2. **`GuarantorVerificationSheet.kt`** â€” completed the file:
    - `GuarantorDraft` plus `GuarantorEntity.toDraft()`, `List<GuarantorEntity>.toDrafts(workerId)`
      (always renders the required two cards so a partially saved form resumes),
      `GuarantorDraft.toInput()` and `GuarantorDraft.toEntity(workerKycId, position)`;
@@ -308,7 +309,7 @@ mirrors, ViewModel actions) and a **partially written** `GuarantorVerificationSh
      (`GuarantorChoiceField`), NIN (masked entry, capped at `MAX_NIN_LENGTH`), the two photo
      slots, and the consent checkbox;
    - `GuarantorPhotoField` / `GroupPhotoCard`: `ActivityResultContracts.GetContent` picker with
-     attached / replace / remove states and a removal confirmation dialog — only the resulting
+     attached / replace / remove states and a removal confirmation dialog â€” only the resulting
      path or content URI is kept, never a signed URL;
    - `VerificationStatusChip(label, positive)` for the "n of 2 guarantors ready" and group-photo
      summary, and local `SpaceXS/SM/MD` values (the app has no shared spacing tokens; components
@@ -316,18 +317,18 @@ mirrors, ViewModel actions) and a **partially written** `GuarantorVerificationSh
    - Submit is gated on `blocker == null` from `GuarantorValidators.validateGuarantorSet`; the
      sheet passes an empty `workerPrimaryPhone` and the repository re-validates with the real
      number, so a worker guaranteeing themselves is still rejected before anything is filed.
-3. **Wiring** — `MainScreen.kt` renders the sheet when `viewModel.guarantorVerificationOpen`,
-   and `IdentityVerificationSheet` (drawer → National ID & Verification) gained a "Guarantor
+3. **Wiring** â€” `MainScreen.kt` renders the sheet when `viewModel.guarantorVerificationOpen`,
+   and `IdentityVerificationSheet` (drawer â†’ National ID & Verification) gained a "Guarantor
    verification" status row, admin review feedback, and an entry button that calls
    `viewModel.openGuarantorVerification(groupPhotoStoragePath)`. Both open paths also call
    `viewModel.refreshGuarantorVerificationStatus()` so the state shown is the synced one.
-4. **Tests** — new pure-JVM `app/src/test/java/com/example/util/GuarantorValidatorsTest.kt`
+4. **Tests** â€” new pure-JVM `app/src/test/java/com/example/util/GuarantorValidatorsTest.kt`
    covering: two complete guarantors + group photo accepted; one or three guarantors rejected;
    the worker's own phone rejected; the same person / same number rejected; each missing
    photograph rejected; missing consent rejected; NIN structural bounds; unauthenticated and
    non-worker submission blockers; the photo-slot whitelist; deterministic `guarantorId`; and
    identifier masking / log scrubbing.
-5. **Room schema alignment (found by that session's static cross-check, then confirmed by the 2026-09-27 KSP schema pass)** — `MIGRATION_18_19` creates `index_guarantors_phoneNumber ON guarantors(phoneNumber)`
+5. **Room schema alignment (found by that session's static cross-check, then confirmed by the 2026-09-27 KSP schema pass)** â€” `MIGRATION_18_19` creates `index_guarantors_phoneNumber ON guarantors(phoneNumber)`
    for duplicate-guarantor lookups, but `GuarantorEntity` only declared `Index(["workerKycId"])`.
    The entity now declares `Index(value = ["workerKycId"]), Index(value = ["phoneNumber"])`
    ([Entities.kt](file:///d:/skills%20exchange/app/src/main/java/com/example/data/db/Entities.kt))
@@ -336,37 +337,37 @@ mirrors, ViewModel actions) and a **partially written** `GuarantorVerificationSh
    undeclared, the physical database would carry an index Room does not know about, which surfaces
    as a schema-mismatch/`TableInfo` failure in Room's migration validation and future migrations.
 
-### Static cross-checks performed in that session (they did NOT substitute for the build — see the verification table above)
-- **UI → ViewModel**: `GuarantorVerificationSheet`'s nine parameters match the `MainScreen.kt`
-  call site one-for-one (lines 698–709), and every member it reads — `guarantorVerificationOpen`,
+### Static cross-checks performed in that session (they did NOT substitute for the build â€” see the verification table above)
+- **UI â†’ ViewModel**: `GuarantorVerificationSheet`'s nine parameters match the `MainScreen.kt`
+  call site one-for-one (lines 698â€“709), and every member it reads â€” `guarantorVerificationOpen`,
   `guarantorDrafts`, `guarantorGroupPhotoSource`, `guarantorSubmissionPending`,
   `guarantorSubmissionError`, `guarantorSubmissionMessage`, `openGuarantorVerification`,
   `onGuarantorDraftsChanged`, `saveGuarantorDraft`, `submitGuarantorVerification`,
-  `closeGuarantorVerification` — exists in `SkillsExchangeViewModel` with `private set` state.
+  `closeGuarantorVerification` â€” exists in `SkillsExchangeViewModel` with `private set` state.
   `IdentityVerificationSheet` gained `onManageGuarantors: () -> Unit = {}` (defaulted, so no other
   call site broke), and `MainScreen` resolves the sheet through its existing
   `import com.example.ui.components.*`.
-- **ViewModel → repository → DAO → FirebaseService**: every call resolves with matching named
-  arguments — `getGuarantorsOnce`, `saveGuarantorDraft`, `submitGuarantorVerification`,
+- **ViewModel â†’ repository â†’ DAO â†’ FirebaseService**: every call resolves with matching named
+  arguments â€” `getGuarantorsOnce`, `saveGuarantorDraft`, `submitGuarantorVerification`,
   `refreshGuarantorVerificationStatus`, `updateGuarantorStep(userId, guarantorStatus,
   groupPhotoStoragePath, submittedAt, feedback = "")`, `updateNinStatusForWorker`,
   `uploadGuarantorPhoto(workerId, slot, photoUri)`, `fetchGuarantorSubmission(workerId)`; the
   `Uri` / `GuarantorInput` / `GuarantorValidators` imports are present in the three files that use
   them, and every icon/composable symbol used by the sheet is imported (no
   `ExposedDropdownMenu`-style unimported references).
-- **Entity ↔ `MIGRATION_18_19`**: all seven new `guarantors` columns and four new `worker_kyc`
+- **Entity â†” `MIGRATION_18_19`**: all seven new `guarantors` columns and four new `worker_kyc`
   columns are `NOT NULL` with SQL defaults equal to the Kotlin defaults (`''`, `0`, `0`,
   `'PENDING'`, `'NOT_STARTED'`), so existing rows migrate without NULL-into-non-null crashes;
   `AppDatabase` is at **version 19** with `MIGRATION_18_19` registered in `addMigrations`.
-- **Client ↔ security rules (payload-level)**: the `guarantors` create rule (workerKycId == uid,
-  `fullName` ≥ 3, `nationalIdNumber` ≥ 5, `consentProvided == true`, both photo paths matching
+- **Client â†” security rules (payload-level)**: the `guarantors` create rule (workerKycId == uid,
+  `fullName` â‰¥ 3, `nationalIdNumber` â‰¥ 5, `consentProvided == true`, both photo paths matching
   `isPrivatePhotoPath`, `ninVerificationStatus == 'PENDING'`) is exactly what
   `FirebaseService.submitGuarantorVerification` writes, and the update branch deliberately omits
   `ninVerificationStatus`; the `guarantor_submissions` create rule (`workerId == docId`,
   `guarantorCount == 2`, `consentConfirmed == true`, `status == 'PENDING_REVIEW'`, private group
   photo path) matches `fileGuarantorSubmission`, which re-creates rather than updates so status
   returns to PENDING_REVIEW without the client writing it. Storage `users/{uid}/guarantors/**` is
-  owner/admin read, owner write only under 8 MB with an `image/*` content type — the shape
+  owner/admin read, owner write only under 8 MB with an `image/*` content type â€” the shape
   `uploadGuarantorPhoto` produces (path returned, never a signed URL).
 - **Device-only unknowns left for the verification run**: gallery picks must report an `image/*`
   MIME type or the Storage write rule rejects the upload (the app then fails closed with a
@@ -376,33 +377,33 @@ mirrors, ViewModel actions) and a **partially written** `GuarantorVerificationSh
 
 ### Deliberate non-changes
 - `GuarantorFormSheet` in `AccountComplianceDialog.kt` (KYC-003, no NIN/photos) is left in place
-  and still unreferenced — removing it is out of scope; the REG-002 sheet is the live path.
+  and still unreferenced â€” removing it is out of scope; the REG-002 sheet is the live path.
 - The client can only ever write `ninVerificationStatus = "PENDING"`; admin results arrive only
   through `refreshGuarantorVerificationStatus` reading the worker's own submission document.
 
 ### Next action for the next session
 Run the build/tests listed in Known Blockers with a working JDK, fix compiler findings, then
 device-verify: fill both guarantors, attach the three photographs, save draft, kill the app,
-reopen and confirm it resumed, submit, and confirm the status moves SUBMITTED → admin decision.
+reopen and confirm it resumed, submit, and confirm the status moves SUBMITTED â†’ admin decision.
 
 ---
 
 
 ## REG-003 / REG-004: Worker Backup Contact & Profile Photo (COMPLETED & VERIFIED)
 
-**Status: COMPLETED & VERIFIED (2026-09-23) — device verification still pending**
+**Status: COMPLETED & VERIFIED (2026-09-23) â€” device verification still pending**
 
-- **Audit result**: REG-003 `NOT IMPLEMENTED` (no backup/emergency/secondary contact field existed anywhere; the only other phone field is the KYC-003 *guarantor* phone, which is a different concept). REG-004 `PARTIALLY COMPLETED` (`UserProfileEntity.avatarUrl` existed as a seeded stock-photo default only — no picker, no upload, no Storage write, no client-facing use). `firebase-storage` was a declared but unused dependency; Coil was declared in `libs.versions.toml` but commented out in `app/build.gradle.kts`.
+- **Audit result**: REG-003 `NOT IMPLEMENTED` (no backup/emergency/secondary contact field existed anywhere; the only other phone field is the KYC-003 *guarantor* phone, which is a different concept). REG-004 `PARTIALLY COMPLETED` (`UserProfileEntity.avatarUrl` existed as a seeded stock-photo default only â€” no picker, no upload, no Storage write, no client-facing use). `firebase-storage` was a declared but unused dependency; Coil was declared in `libs.versions.toml` but commented out in `app/build.gradle.kts`.
 - **REG-003 files**: `app/src/main/java/com/example/data/db/Entities.kt` (2 new optional fields on `UserProfileEntity`), `app/src/main/java/com/example/util/ProfileValidators.kt` (new shared validator), `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt` (`saveBackupContact` + `backupContactError`/`profileSettingsSuccess` state), `app/src/main/java/com/example/ui/components/AccountCenterSheets.kt` (`ProfileSettingsSheet`), `app/src/main/java/com/example/ui/components/NavigationDrawer.kt` (drawer entry), `app/src/main/java/com/example/ui/screens/MainScreen.kt` (sheet host), `app/src/main/java/com/example/data/remote/FirebaseService.kt` (Firestore read/write).
-- **REG-004 files**: same UI/ViewModel/Firestore files plus `FirebaseService.uploadProfilePhoto(userId, uri)` (new) and `app/build.gradle.kts` (`libs.coil.compose` uncommented). `storage.rules` needed **no change** — `avatars/{userId}/{allPaths=**}` already allowed public read + owner-only write.
+- **REG-004 files**: same UI/ViewModel/Firestore files plus `FirebaseService.uploadProfilePhoto(userId, uri)` (new) and `app/build.gradle.kts` (`libs.coil.compose` uncommented). `storage.rules` needed **no change** â€” `avatars/{userId}/{allPaths=**}` already allowed public read + owner-only write.
 - **Data fields**: `UserProfileEntity.backupContactName`, `.backupContactPhone` (String, default `""`, optional); `UserProfileEntity.avatarUrl` default changed from a stock-photo URL to `""`; Firestore `users/{uid}` gains `avatarUrl`, `backupContactName`, `backupContactPhone` (all optional, additive; older documents restore as empty).
-- **DECISION 1 — backup contact updates are IMMEDIATE**, not queued for review: they follow the same save path as other profile metadata (district, active mode). The KYC review queue covers identity documents only. **DECISION 2 — the backup contact is explicitly NOT a guarantor**: the `guarantors` table, `GuarantorEntity` and the KYC-003 two-guarantor flow were not touched. **DECISION 3 — photo storage**: only the Firebase Storage download URL is persisted (no image bytes in Room/Firestore). **DECISION 4 — photo visibility**: the worker sees it in the drawer header and the sheet; it is not gated on KYC/activation (profile metadata semantics); a blank/invalid/failed-to-load URL falls back to initials; private documents (National ID, guarantors, certificates) are never exposed through this field. Client-facing discovery cards still show initials because `service_providers` has no FK to `user_profiles` (recorded follow-up).
-- **Migration**: `AppDatabase` 17 → 18, `MIGRATION_17_18` = two `ALTER TABLE user_profiles ADD COLUMN ... TEXT NOT NULL DEFAULT ''` statements (non-destructive; registered in `addMigrations`). `avatarUrl` needed no column migration (column already existed). `exportSchema = false` per existing convention.
+- **DECISION 1 â€” backup contact updates are IMMEDIATE**, not queued for review: they follow the same save path as other profile metadata (district, active mode). The KYC review queue covers identity documents only. **DECISION 2 â€” the backup contact is explicitly NOT a guarantor**: the `guarantors` table, `GuarantorEntity` and the KYC-003 two-guarantor flow were not touched. **DECISION 3 â€” photo storage**: only the Firebase Storage download URL is persisted (no image bytes in Room/Firestore). **DECISION 4 â€” photo visibility**: the worker sees it in the drawer header and the sheet; it is not gated on KYC/activation (profile metadata semantics); a blank/invalid/failed-to-load URL falls back to initials; private documents (National ID, guarantors, certificates) are never exposed through this field. Client-facing discovery cards still show initials because `service_providers` has no FK to `user_profiles` (recorded follow-up).
+- **Migration**: `AppDatabase` 17 â†’ 18, `MIGRATION_17_18` = two `ALTER TABLE user_profiles ADD COLUMN ... TEXT NOT NULL DEFAULT ''` statements (non-destructive; registered in `addMigrations`). `avatarUrl` needed no column migration (column already existed). `exportSchema = false` per existing convention.
 - **Security**: no gate weakened. Owner-only Firestore writes (`isDocOwner`), UID-scoped Storage writes (`isOwner`), uploads use only the signed-in user's own id and fail closed for the demo placeholder id, signed-out users are routed to auth before the sheet opens, and the five-layer worker gate is unchanged (new test asserts backup contact + photo cannot satisfy it).
 - **Verification**: `:app:compileDebugKotlin` PASSED; `:app:testDebugUnitTest` PASSED **39/39, 0 failures, 0 errors** (XML verified 2026-09-23T21:09:42+03:00: ProfileValidatorsTest 15, ProfileContactPhotoPersistenceTest 5, UserProfilePersistenceTest 7, AuthViewModelTest 9, example/screenshot 3); `:app:assembleDebug` PASSED (BUILD SUCCESSFUL in 5m). Environment: `JAVA_HOME=D:\kilo_downloads\jdk17\jdk17.0.20_10`, `GRADLE_USER_HOME=D:\gradle-home`, `--offline`, `--max-workers=1`, `--no-parallel`, `--no-configuration-cache`.
-- **Failure found & fixed during development**: the new `ProfileValidatorsTest` "too long" case used `+256 772 198 42099` (14 digits — actually *valid* under the project's 9–15 rule), so the assertion failed. The **test expectation was corrected** (now a 16-digit number); the validator and all production code were left unchanged — no test was made to pass by weakening production behaviour.
-- **Environment observation (NOT fixed, out of scope)**: the first `:app:assembleDebug` run lost the Gradle daemon to a native-memory allocation failure during `:app:mergeExtDexDebug` (`hs_err_pid11432.log` — "insufficient memory for the Java Runtime Environment … G1 virtual space … failed to map 471859200 bytes"). Re-running the identical command succeeded. Heap/memory settings were deliberately not modified.
-- **Next action for the next agent**: none required for REG-003/REG-004. The only remaining stories are the deliberately out-of-scope batch — `REG-001`, `REG-002`, `LOC-005`, `MAP-002`, `LEGAL-001`, `LEGAL-002`, `AUTH-012` — plus the device/manual checks listed below. Do not start them without an explicit instruction.
+- **Failure found & fixed during development**: the new `ProfileValidatorsTest` "too long" case used `+256 772 198 42099` (14 digits â€” actually *valid* under the project's 9â€“15 rule), so the assertion failed. The **test expectation was corrected** (now a 16-digit number); the validator and all production code were left unchanged â€” no test was made to pass by weakening production behaviour.
+- **Environment observation (NOT fixed, out of scope)**: the first `:app:assembleDebug` run lost the Gradle daemon to a native-memory allocation failure during `:app:mergeExtDexDebug` (`hs_err_pid11432.log` â€” "insufficient memory for the Java Runtime Environment â€¦ G1 virtual space â€¦ failed to map 471859200 bytes"). Re-running the identical command succeeded. Heap/memory settings were deliberately not modified.
+- **Next action for the next agent**: none required for REG-003/REG-004. The only remaining stories are the deliberately out-of-scope batch â€” `REG-001`, `REG-002`, `LOC-005`, `MAP-002`, `LEGAL-001`, `LEGAL-002`, `AUTH-012` â€” plus the device/manual checks listed below. Do not start them without an explicit instruction.
 
 
 
@@ -411,11 +412,11 @@ reopen and confirm it resumed, submit, and confirm the status moves SUBMITTED �
 **Status: COMPLETED & VERIFIED (2026-09-23)**
 - **Context**: A prior session had already applied the Community removal as *uncommitted working-tree changes* (7 modified/deleted source files) but never verified them or updated any records. This session produced the dependency audit, verified the removal end-to-end, repaired a pre-existing test failure, and synchronized all records.
 - **Audit**: The feature existed as the "Board" tab / `NeighborhoodFeedView` / `neighborhoodPosts` (no literal `Community*` classes existed). Reference locations: MainScreen tab+branch, ViewModel flow, Repository seed data, `NeighborhoodPostEntity`/`NeighborhoodPostDao`, `neighborhood_posts` table, `DynamicFeed` icon import, plus PRD/requirement/audit documentation references.
-- **Removed**: `NeighborhoodFeedView.kt` (deleted); MainScreen Board tab/branch/import/comment; `neighborhoodPosts` flow; Repository neighborhood-post seed data; `NeighborhoodPostEntity`; `NeighborhoodPostDao`; AppDatabase entity/DAO registrations; DB version 16→17 with `MIGRATION_16_17` = `DROP TABLE IF EXISTS neighborhood_posts` (registered in `addMigrations`).
+- **Removed**: `NeighborhoodFeedView.kt` (deleted); MainScreen Board tab/branch/import/comment; `neighborhoodPosts` flow; Repository neighborhood-post seed data; `NeighborhoodPostEntity`; `NeighborhoodPostDao`; AppDatabase entity/DAO registrations; DB version 16â†’17 with `MIGRATION_16_17` = `DROP TABLE IF EXISTS neighborhood_posts` (registered in `addMigrations`).
 - **Deliberately kept (dependency / false positive)**: `ServiceProviderEntity.neighborhood` and provider `neighborhood` Firestore field (location data used by marketplace filtering and Cloud Functions district queries); "COMMUNITY SKILL ENDORSEMENTS" label (endorsements feature, ProviderDetailSheet); "community guidelines" training copy (worker training). Firestore/storage rules and `firestore.rules` contained no community collections.
-- **Pre-existing test failure found & repaired (NOT caused by COMM-002)**: `AuthViewModelTest` 2/19 asserted pre-SEC-009 `UserProfileEntity` defaults. `git diff app/src/test` was empty before repair — the removal never touched tests; the mismatch came from commit c3ba767 (SEC-009) which flipped defaults to fail-closed but was only verified with `UserProfilePersistenceTest`. Assertions corrected to `NOT_APPLIED` / `false` / `false` with SEC-009 comments; no production code changed.
+- **Pre-existing test failure found & repaired (NOT caused by COMM-002)**: `AuthViewModelTest` 2/19 asserted pre-SEC-009 `UserProfileEntity` defaults. `git diff app/src/test` was empty before repair â€” the removal never touched tests; the mismatch came from commit c3ba767 (SEC-009) which flipped defaults to fail-closed but was only verified with `UserProfilePersistenceTest`. Assertions corrected to `NOT_APPLIED` / `false` / `false` with SEC-009 comments; no production code changed.
 - **Verification**: `:app:compileDebugKotlin` PASSED (offline); `:app:testDebugUnitTest` PASSED **19/19, 0 failures** (UserProfilePersistenceTest 7, AuthViewModelTest 9, ExampleRobolectricTest 1, ExampleUnitTest 1, GreetingScreenshotTest 1); `:app:assembleDebug` PASSED (BUILD SUCCESSFUL in 8m 12s). Environment: JAVA_HOME=D:\kilo_downloads\jdk17\jdk17.0.20_10, GRADLE_USER_HOME=D:\gradle-home, `--offline`, `--max-workers=1`, `--no-parallel`, `--no-configuration-cache`; no memory/Gradle/JDK project settings changed.
-- **PRD Status**: `COMM-002` marked `completed` in `prd.json`. Total completed stories: 83 (also repaired pre-existing gap: `AUTH-011` was `status: completed` but absent from `completed_stories[]` and from TASKS.md — added to both during this session).
+- **PRD Status**: `COMM-002` marked `completed` in `prd.json`. Total completed stories: 83 (also repaired pre-existing gap: `AUTH-011` was `status: completed` but absent from `completed_stories[]` and from TASKS.md â€” added to both during this session).
 - **Manual test still required**: install on a device holding a v16 database to observe `MIGRATION_16_17` succeed; confirm bottom navigation shows only List / Map / Jobs.
 
 
@@ -436,7 +437,7 @@ reopen and confirm it resumed, submit, and confirm the status moves SUBMITTED �
 - **PRD Status**: `SEC-009` marked `completed` in `prd.json`. Total completed stories: 80.
 
 ---
-## Device-reported UI follow-up — 2026-09-17 (PENDING)
+## Device-reported UI follow-up â€” 2026-09-17 (PENDING)
 
 This follow-up supersedes the earlier build/install success for the current source revision. User confirmed no Google display-name prefill and reported invisible typed legal-name text and missing Google chooser. Keep C1/C2/C3 PENDING.
 
@@ -449,22 +450,22 @@ This follow-up supersedes the earlier build/install success for the current sour
 - Next: user opens the authentication flow when ready; verify rendered Google button and capture the result immediately after pressing it, typed-name contrast, and blank-district disabled completion. Previous six passing persistence tests predate these UI edits. C1/C2/C3 remain PENDING. Only OnboardingScreen.kt and AuthModal.kt changed for this follow-up; no PRD, Phase-17, Community or other audit implementation; no commit.
 
 
-## Automated Verification Complete — 2026-09-17 (manual device matrix still open)
+## Automated Verification Complete â€” 2026-09-17 (manual device matrix still open)
 
-**Status: C1/C2/C3 automated verification PASSED. Manual on-device matrix A–F NOT TESTED. C1/C2/C3 therefore remain PENDING in TASKS.md — NOT marked completed.** This section supersedes all verification notes below it.
+**Status: C1/C2/C3 automated verification PASSED. Manual on-device matrix Aâ€“F NOT TESTED. C1/C2/C3 therefore remain PENDING in TASKS.md â€” NOT marked completed.** This section supersedes all verification notes below it.
 
-- Targeted test (STEP 2) PASSED: `:app:testDebugUnitTest --tests com.example.data.UserProfilePersistenceTest --offline --max-workers=1 --no-parallel --no-configuration-cache` run with `GRADLE_USER_HOME=D:\gradle-home` and `JAVA_HOME=D:\kilo_downloads\jdk17\jdk17.0.20_10`: **BUILD SUCCESSFUL in 3m 34s**. Fresh XML `app/build/test-results/testDebugUnitTest/TEST-com.example.data.UserProfilePersistenceTest.xml` (timestamp 2026-09-17T18:57:42Z): **tests=6 failures=0 errors=0 skipped=0** — covers Client and Worker role preservation, single current-user row on update, onboarding insert making the authenticated profile current, legacy demo row never shadowing the authenticated profile, and null current user when only the demo placeholder exists.
+- Targeted test (STEP 2) PASSED: `:app:testDebugUnitTest --tests com.example.data.UserProfilePersistenceTest --offline --max-workers=1 --no-parallel --no-configuration-cache` run with `GRADLE_USER_HOME=D:\gradle-home` and `JAVA_HOME=D:\kilo_downloads\jdk17\jdk17.0.20_10`: **BUILD SUCCESSFUL in 3m 34s**. Fresh XML `app/build/test-results/testDebugUnitTest/TEST-com.example.data.UserProfilePersistenceTest.xml` (timestamp 2026-09-17T18:57:42Z): **tests=6 failures=0 errors=0 skipped=0** â€” covers Client and Worker role preservation, single current-user row on update, onboarding insert making the authenticated profile current, legacy demo row never shadowing the authenticated profile, and null current user when only the demo placeholder exists.
 - Root cause of the earlier failures: the verification runs used `GRADLE_USER_HOME=d:\skills exchange\.gradle`, whose dependency cache lacked nine Robolectric-runtime JARs (nativeruntime-dist-compat 1.0.18, jakarta.inject-api 2.0.1, protobuf-javalite 3.25.5, perfmark-api 0.26.0, slf4j-api 2.0.17, tink-android 1.5.0, gson 2.10.1, com.google.android:annotations 4.1.1.4, animal-sniffer-annotations 1.23), and network downloads stalled. Hash-valid copies of all nine already existed in the `D:\gradle-home` cache. Copying the JARs into the project cache did NOT satisfy offline transform resolution; pointing `GRADLE_USER_HOME` at the existing complete `D:\gradle-home` cache DID. No dependency versions, repositories, Gradle/AGP/toolchain configuration, or application source were changed; `--offline` was used for the passing runs.
-- APK (STEP 3) PASSED: `:app:assembleDebug --offline` → **BUILD SUCCESSFUL in 2m 53s**; `app/build/outputs/apk/debug/app-debug.apk` (32,135,868 bytes, 2026-09-17 22:01:54).
-- Device (STEP 4): APK installed on Samsung SM-A025F (serial R9HR30HWJ5J) via `adb install -r` → **Success** (exit 0). No app data, Room database or Firebase account was cleared.
-- Manual matrix A–F: **NOT TESTED** — steps A (new Google user), B (existing-user recognition), C (missing local Room profile recovery), D (logout/relogin, same UID), E (role + worker KYC/activation/training gates) and F (typed phone persisted, blank phone rejected) require interactive Google account selection and typed name/phone input on the device, which cannot be fabricated by automation. The APK is installed and ready for the account owner to run these.
+- APK (STEP 3) PASSED: `:app:assembleDebug --offline` â†’ **BUILD SUCCESSFUL in 2m 53s**; `app/build/outputs/apk/debug/app-debug.apk` (32,135,868 bytes, 2026-09-17 22:01:54).
+- Device (STEP 4): APK installed on Samsung SM-A025F (serial R9HR30HWJ5J) via `adb install -r` â†’ **Success** (exit 0). No app data, Room database or Firebase account was cleared.
+- Manual matrix Aâ€“F: **NOT TESTED** â€” steps A (new Google user), B (existing-user recognition), C (missing local Room profile recovery), D (logout/relogin, same UID), E (role + worker KYC/activation/training gates) and F (typed phone persisted, blank phone rejected) require interactive Google account selection and typed name/phone input on the device, which cannot be fabricated by automation. The APK is installed and ready for the account owner to run these.
 - UID audit (STEP 5) re-run: no `user_${` expression remains in app sources; residual matches are comments, demo/test constants and the DAO exclusion clause listed in the audit record below. Anonymous Firebase sign-in remains in development OTP/login paths (Firebase-issued UID, not a synthetic string; linking/durability not verified).
 - Evidence retained: `c123_verify_compile_retry.log` (compile pass), `c123_verify_canonical_cache.log` (targeted test pass), `c123_verify_apk.log` (APK pass + device install), plus the failed-attempt logs `c123_verify.log`, `c123_verify_tests.log`, `c123_verify_tests_final.log`, `c123_verify_tests_offline.log`, `c123_verify_tests_retry.log`, `c123_verify_cached.log` and `c123_help.log`. The four originally requested scratch logs were removed earlier; the remaining logs from this verification round are kept as evidence. Durable machine-readable test evidence also lives in `app/build/test-results/testDebugUnitTest/`.
-- To close C1/C2/C3: run manual A–F with the account owner, record results, and only then update statuses. No H-items, Phase-17, or Community work; prd.json unchanged; no commit.
+- To close C1/C2/C3: run manual Aâ€“F with the account owner, record results, and only then update statuses. No H-items, Phase-17, or Community work; prd.json unchanged; no commit.
 
 
 
-## Verification Follow-up — 2026-09-17
+## Verification Follow-up â€” 2026-09-17
 
 **C1/C2/C3 remain UNVERIFIED / PENDING.** This supersedes the running-build notes below; it is a blocker record, not completion approval.
 
@@ -475,12 +476,12 @@ This follow-up supersedes the earlier build/install success for the current sour
 - UID search: no `user_${` expressions; `google_user` and `worker_default` matches are comments. `user_default_me` remains as an entity default, demo constant, DAO exclusion and repository exclusion, plus test commentary. Anonymous Firebase sign-in remains in the development OTP and login paths; a Firebase-issued anonymous UID is not a synthetic string, but durable relogin/linking and isolation are not verified. Earlier claims that only constants/DAO/test matches remain are incomplete.
 - Final dependency diagnosis: two sequential online retries reached `testDebugUnitTest` but stalled in HTTPS artifact `DownloadAction`; both were cancelled, with no fresh test XML. Stale September-16 generated test results were removed (their six passes were not evidence for this revision). An intermediate JAVA_HOME typo aborted at the wrapper and was corrected; `gradlew help` then passed. The final offline targeted run **FAILED in 1m 6s before test execution**: nine uncached JARs, including `org.robolectric:nativeruntime-dist-compat:1.0.18`, `jakarta.inject:jakarta.inject-api:2.0.1`, protobuf-javalite 3.25.5, perfmark-api 0.26.0, slf4j-api 2.0.17, tink-android 1.5.0, gson 2.10.1, Android annotations 4.1.1.4 and animal-sniffer-annotations 1.23. Exact native-runtime and Jakarta JAR HEAD requests returned HTTP 200; native-runtime is 159,128,857 bytes. This does not establish successful body download or the root cause of Gradle's network stall. No proxy environment variables were set; no mirror/dependency/configuration changes made. Existing app test launcher also requests JDK 25. Additional evidence: `d:\skills exchange\c123_verify_tests_retry.log`, `d:\skills exchange\c123_verify_tests_final.log`, `d:\skills exchange\c123_verify_tests_offline.log`, `d:\skills exchange\c123_help.log`.
 - Evidence retained: `d:\skills exchange\c123_verify.log`, `d:\skills exchange\c123_verify_compile_retry.log`, `d:\skills exchange\c123_verify_tests.log`. The four explicitly requested obsolete scratch logs were removed. No competing Gradle builds or live cache-lock deletion were performed; stalled task-owned wrapper/daemon processes were stopped before subsequent attempts.
-- Next: restore dependency connectivity, rerun the same targeted test, then build/install and execute A–F with account-owner participation and safe local-state handling. Do not start H-items/Phase-17 or mark C1–C3 completed. PRD unchanged; no commit made by this verification task.
+- Next: restore dependency connectivity, rerun the same targeted test, then build/install and execute Aâ€“F with account-owner participation and safe local-state handling. Do not start H-items/Phase-17 or mark C1â€“C3 completed. PRD unchanged; no commit made by this verification task.
 
 
-## C1/C2/C3 Implementation Status — 2026-09-17 (UNVERIFIED)
+## C1/C2/C3 Implementation Status â€” 2026-09-17 (UNVERIFIED)
 
-**Status: IMPLEMENTED — VERIFICATION PENDING. C1/C2/C3 NOT marked completed.**
+**Status: IMPLEMENTED â€” VERIFICATION PENDING. C1/C2/C3 NOT marked completed.**
 
 Source files changed (6):
 - `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt` (restoreSession Firebase recovery; loginUser blank-phone + fail-closed UID; no display-name/placeholder name fallback; UID-or-abort in evidence/training/quotes/proposals/reports)
@@ -492,22 +493,22 @@ Source files changed (6):
 
 Docs changed (3): CHANGELOG.md (new FIX entry), DECISIONS.md (DEC-019), TASKS.md (status note; rows unchanged). prd.json untouched. No commit. No H-items, Phase-17, or Community changes.
 
-Verification: `:app:compileDebugKotlin --offline` FAILED (foojay plugin not cached); online compile launched, still running (`c123_try4.log` shows task-graph calculation; JDK 25 toolchain download lock contention PID 8808/17716). No unit test, APK, or device run yet. Logs: `c123_compile_prev.log`, `c123_try4.log` (plus `c123_try3.log`, `c123_compile2.log` scratch logs at repo root — remove before commit).
+Verification: `:app:compileDebugKotlin --offline` FAILED (foojay plugin not cached); online compile launched, still running (`c123_try4.log` shows task-graph calculation; JDK 25 toolchain download lock contention PID 8808/17716). No unit test, APK, or device run yet. Logs: `c123_compile_prev.log`, `c123_try4.log` (plus `c123_try3.log`, `c123_compile2.log` scratch logs at repo root â€” remove before commit).
 
-Next: confirm compile success → run `UserProfilePersistenceTest` → `assembleDebug` → device install/test (new Google user, legal name, phone, completion, logout/re-login, missing-Room recovery, role preservation).
+Next: confirm compile success â†’ run `UserProfilePersistenceTest` â†’ `assembleDebug` â†’ device install/test (new Google user, legal name, phone, completion, logout/re-login, missing-Room recovery, role preservation).
 
 ---
 
 ---
 
 ## Current Project Status
-**Phase**: Post-Phase 17 Implementation — Feature Connection Audit & Bug Fixes
+**Phase**: Post-Phase 17 Implementation â€” Feature Connection Audit & Bug Fixes
 **Overall Status**: Phase 17 documents complete (12 new requirements, FUTURE/NOT IMPLEMENTED). All 79 Phase 1-16 stories complete. Post-launch audit in progress.
 
 ---
 
 ## Current PRD Story
-**Updated 2026-09-27**: REG-002 (Worker Registration Guarantor Verification) is **completed and build-verified** — 86 of 92 stories completed, 6 pending, all remaining ones FUTURE/deliberately-not-implemented. No story is `in_progress`.
+**Updated 2026-09-27**: REG-002 (Worker Registration Guarantor Verification) is **completed and build-verified** â€” 86 of 92 stories completed, 6 pending, all remaining ones FUTURE/deliberately-not-implemented. No story is `in_progress`.
 **(historical)** **All Phase 16 implementable stories are complete, including STAB-003 build verification.**
 "Status**: All implementation complete
 
@@ -520,73 +521,73 @@ All Phase 16 implementable stories are complete, including the STAB-003 automate
 
 ## Completed & Verified Work (78 Stories)
 
-### Phase 1 — Test & Baseline Stabilization
+### Phase 1 â€” Test & Baseline Stabilization
 - **STAB-001**: Fix Robolectric unit test assertion mismatch (Verified correct assertion "Skills Exchange")
 - **STAB-002**: Fix GreetingScreenshotTest theme and composable imports (Verified SkillsExchangeTheme)
 - **STAB-003**: Automated test execution blocked by environment JDK 25 / Gradle 8.9 foojay plugin conflict. Documented as environment blocker.
 
-### Phase 2 — Security, Storage & Webhooks
+### Phase 2 â€” Security, Storage & Webhooks
 - **SEC-001**: Harden Firestore security rules for provider and KYC collections (Verified document owner UID check in firestore.rules)
 - **SEC-002**: Add HMAC signature verification to MoMo webhook Cloud Function (Implemented in functions/src/index.ts)
 - **SEC-003**: Configure Firebase Storage security rules for private KYC documents (Created storage.rules for KYC, guarantor IDs, and certificates)
 
-### Phase 3 — Unified Account Architecture & Role Mode Switching
+### Phase 3 â€” Unified Account Architecture & Role Mode Switching
 - **ROLE-001**: Define Unified Account Data Model with Client/Worker role flags (Created UserProfileEntity, UserProfileDao, AppDatabase v5, repository)
 - **ROLE-002**: Implement Client and Worker mode switching logic (Added persistent setUserRoleMode and toggleUserRoleMode in ViewModel and Repository)
 - **ROLE-003**: Implement Worker Verification & Activation access gate (Created WorkerVerificationStatusView and gated FreelancerDashboardView in MainScreen.kt)
 
-### Phase 4 — Service Taxonomy & Skill Catalog System (125 Services)
+### Phase 4 â€” Service Taxonomy & Skill Catalog System (125 Services)
 - **SKILL-001**: Define Service Taxonomy Data Schema with 125 Skills (Created ServiceTaxonomyCatalog with 125 services across 5 hubs)
 - **SKILL-002**: Implement Related Skill Validation engine (Created validateWorkerSkills engine enforcing trade family compatibility)
 - **SKILL-003**: Implement Service Catalog UI selector for Worker onboarding (Created ServiceCatalogPickerModal with category tabs and live validation)
 
-### Phase 5 — Client Onboarding & Location Management
+### Phase 5 â€” Client Onboarding & Location Management
 - **LOC-001**: Implement Client Location Onboarding & GPS Detection (Implemented GPS permission request and location fetching in AuthModal.kt)
 - **LOC-002**: Implement Manual Location Correction & Geocoding fallback (Added EditLocationDialog in GpsLocationBanner.kt)
 - **LOC-003**: Implement Worker District & Location management (Added address, lat, lng to UserProfileEntity and ViewModel)
 - **LOC-004**: Enforce Public Location Privacy & District-Level Aggregation (Dynamic district job stats in ProviderDetailSheet, obfuscated reviewer identities)
 
-### Phase 6 — Worker KYC Verification & Guarantor Engine
+### Phase 6 â€” Worker KYC Verification & Guarantor Engine
 - **KYC-001**: Define Worker Identity & National ID data schema (Created WorkerKycEntity, WorkerKycDao, AppDatabase v7)
 - **KYC-002**: Implement Worker Document Upload pipeline to Firebase Storage (Added uploadKycDocument to FirebaseService, Firebase Storage dependency)
 - **KYC-003**: Define Two-Guarantor Data Model & Validation rules (Created GuarantorEntity, GuarantorDao, validateGuarantorCount)
 - **KYC-004**: Implement Guarantor Identity & National ID Upload UI (Built GuarantorFormSheet in AccountComplianceDialog.kt)
 - **KYC-005**: Implement Primary Skill Qualification Certificate & Video Evidence upload (Added uploadQualificationEvidence + QualificationEvidenceSheet)
 
-### Phase 7 — Verification Lifecycle, Changes-Required & 48h SLA Tracking
+### Phase 7 â€” Verification Lifecycle, Changes-Required & 48h SLA Tracking
 - **KYC-006**: Implement Verification State Machine & 48h SLA Timestamps (Added state transition methods + getKycSlaDeadline)
 - **KYC-007**: Implement Worker 'Changes Required' feedback view & resubmission workflow (Built ChangesRequiredView in AccountComplianceDialog.kt)
 
-### Phase 10 — Core Marketplace, Quotes & Job Types
+### Phase 10 â€” Core Marketplace, Quotes & Job Types
 - **JOB-001**: Implement One-Time & Recurring Job Type Data Model (Added jobType, recurringSchedule, recurringStartDate to JobPostEntity + Firestore sync)
 - **MARKET-001**: Implement Nearby Verified Worker Discovery (Added isActivated + kycStatus APPROVED filter in providers flow)
 
-### Phase 11 — Mobile Money Payments & Escrow Engine
+### Phase 11 â€” Mobile Money Payments & Escrow Engine
 - **PAY-001**: Integrate Mobile Money Collection Intent API (Replaced mock delay with Retrofit + MTN MoMo Collection API)
 - **PAY-002**: Implement Escrow Lock & Webhook Confirmation (Updated processMoMoWebhook to lock escrow and notify resident/worker)
 - **PAY-003**: Implement Escrow Release & Worker MoMo Payout (Added releaseEscrowToWorker Cloud Function for worker payout)
 - **PAY-004**: Implement Material Advance Escrow Partial Disbursement (Added approveMaterialAdvance repository method)
 
-### Phase 12 — Location Privacy, Google Maps & AI Services
+### Phase 12 â€” Location Privacy, Google Maps & AI Services
 - **MAP-001**: Integrate Google Maps SDK for Nearby Worker View (Replaced custom Canvas with Google Maps MapView composable)
 - **AI-001**: Repair Gemini Audio Transcription & Model Identifier (Fixed model URL from gemini-3.5-flash to gemini-2.0-flash & MPEG_4/AAC audio format)
 - **AI-002**: Repair Gemini Maps Grounding Model Identifier & Tools Payload (Fixed model URL to gemini-2.0-flash)
 
-### Phase 9 — Admin Operations Dashboard & Verification Queue
+### Phase 9 â€” Admin Operations Dashboard & Verification Queue
 - **ADMIN-001**: Architecture & Spec for Separate Administrative Web Dashboard (Cloud Functions: getPendingVerificationQueue, reviewWorkerApplication, setWorkerActivationStatus)
 - **ADMIN-002**: Admin Verification Review Queue & Document Viewer Cloud Function (Implemented in functions/src/index.ts)
 - **ADMIN-003**: Admin Verification Action API (Approve, Reject, Request Changes) (Implemented in functions/src/index.ts)
 - **ADMIN-004**: Admin Worker Activation & Suspension Controls (Implemented in functions/src/index.ts)
 
-### Phase 8 — Worker Training Tracking & Activation Gating
+### Phase 8 â€” Worker Training Tracking & Activation Gating
 - **TRAIN-001**: Define Worker Training Progress & Content Data Schema (Created WorkerTrainingEntity, WorkerTrainingDao, AppDatabase v9)
 - **TRAIN-002**: Implement Worker Rule Training UI & Completion Tracking (Created WorkerTrainingScreen with module completion tracking)
 - **TRAIN-003**: Implement Admin Activation Gate requiring Verification + Training (activateWorker enforces KYC + Training completion)
 
-### Phase 14 — Offline Synchronization & Reliability
+### Phase 14 â€” Offline Synchronization & Reliability
 - **OFF-001**: Implement Offline Action Queue & Sync Manager (PendingActionEntity, auto-sync on network reconnect)
 
-### Phase 16 — Production Readiness & Security Hardening
+### Phase 16 â€” Production Readiness & Security Hardening
 - **SEC-004**: Fix releaseEscrowToWorker Authorization Vulnerability (Added job ownership verification)
 - **SEC-005**: Fix Firestore Rules KYC Path Mismatch (Updated isWorkerKycApproved helper)
 - **SEC-006**: Add Missing Firestore Rules for Collections (Rules for all collections)
@@ -600,7 +601,7 @@ All Phase 16 implementable stories are complete, including the STAB-003 automate
 - **RATE-001**: Implement Rating Entity and Persistence (RatingEntity, DAO)
 - **RATE-002**: Implement Rating Submission UI (ViewModel methods, validation)
 - **RATE-003**: Implement Rating Aggregation (Average calculation)
-- **DB-001**: Add Proper Room Migrations (Migration 11→12, data preservation)
+- **DB-001**: Add Proper Room Migrations (Migration 11â†’12, data preservation)
  - **AUTH-001**: Implement Phone Authentication with OTP (Multi-step auth flow)
  - **AUTH-002**: Implement Session Persistence (DataStore for auth state)
  - **AUTH-003**: Implement Logout Flow (Clears Firebase auth, Room data, and DataStore)
@@ -623,14 +624,14 @@ All Phase 16 implementable stories are complete, including the STAB-003 automate
 
 ## Work In Progress / Next Task
 
-### Next action — 2026-09-27 (REG-002 code is done; what is left is operational)
+### Next action â€” 2026-09-27 (REG-002 code is done; what is left is operational)
 1. **Deploy the server-side rules the client already depends on**: `firebase deploy --only firestore:rules,storage`. The `guarantors` / `guarantor_submissions` Firestore rules and the `users/{uid}/guarantors/**` Storage rules exist in the repo but are only enforced once deployed, so guarantor submission will fail closed against a project that still runs the old rules.
-2. **Walk the golden path on a device/emulator** with a worker account: drawer → National ID & Verification → Manage guarantors → fill two guarantors (name, phone, relationship, district, NIN, two photographs each, consent) + the group photograph → **Save draft** → force-kill the app → reopen and confirm the draft resumed with photos and consent intact → **Submit** → confirm `guarantor_submissions/{uid}` reaches `PENDING_REVIEW` and the `guarantors` rows exist → have an admin approve/reject and confirm the drawer shows the status and feedback. Also confirm the negative cases the validator guarantees: one repeated digit phone, the worker's own number, and a duplicate guarantor are all blocked with the right message.
-3. **Then pick the next PRD story**: no implementable story is pending — the remaining six (`REG-001`, `LOC-005`, `MAP-002`, `LEGAL-001`, `LEGAL-002`, `PAY-006`) are explicitly FUTURE / NOT IMPLEMENTED. Do not start them without a product decision; otherwise work the audit register (A6 / B1 / M6 / M11 below) or the device-reported UI follow-up.
+2. **Walk the golden path on a device/emulator** with a worker account: drawer â†’ National ID & Verification â†’ Manage guarantors â†’ fill two guarantors (name, phone, relationship, district, NIN, two photographs each, consent) + the group photograph â†’ **Save draft** â†’ force-kill the app â†’ reopen and confirm the draft resumed with photos and consent intact â†’ **Submit** â†’ confirm `guarantor_submissions/{uid}` reaches `PENDING_REVIEW` and the `guarantors` rows exist â†’ have an admin approve/reject and confirm the drawer shows the status and feedback. Also confirm the negative cases the validator guarantees: one repeated digit phone, the worker's own number, and a duplicate guarantor are all blocked with the right message.
+3. **Then pick the next PRD story**: no implementable story is pending â€” the remaining six (`REG-001`, `LOC-005`, `MAP-002`, `LEGAL-001`, `LEGAL-002`, `PAY-006`) are explicitly FUTURE / NOT IMPLEMENTED. Do not start them without a product decision; otherwise work the audit register (A6 / B1 / M6 / M11 below) or the device-reported UI follow-up.
 
 **(historical)** All Phase 16 implementable stories are complete. Phase 17 (documentation only) is complete.
 
-**Current work:** Feature Connection Audit (Phase 17 POST-LAUNCH task — post-audit fixes)
+**Current work:** Feature Connection Audit (Phase 17 POST-LAUNCH task â€” post-audit fixes)
 Auditing and fixing disconnected features identified during the systematic feature connection audit.
 
 ### Fixes in Progress (AUTH-002/AUTH-006 + Security)
@@ -643,23 +644,23 @@ Auditing and fixing disconnected features identified during the systematic featu
   - `setUserRoleMode()`: Added `canAccessWorkerFeatures()` gate to prevent unauthorized worker mode switch
   - `loginWithGoogle()`: Existing-user check now only requires `isOnboardingCompleted` (not blank name/district)
 - **OnboardingScreen.kt**: Removed automatic Google display name pre-population of legal name field
-- **AccountCenterSheets.kt**: New file with `EscrowWalletSheet`, `JobHistorySheet`, `VerificationStatusSheet`, `TrustAndSafetySheet` — real destinations replacing silent redirects
+- **AccountCenterSheets.kt**: New file with `EscrowWalletSheet`, `JobHistorySheet`, `VerificationStatusSheet`, `TrustAndSafetySheet` â€” real destinations replacing silent redirects
 - **NavigationDrawer.kt**: Removed hardcoded wallet balance (UGX 240), removed hardcoded phone placeholder, added `onOpenVerification` parameter
 - **MainScreen.kt**: Wired drawer menu items to new sheets with real data; removed `AccountComplianceDialog` import
 
 ### Pending Fixes (from audit)
-- A6 ServiceCatalogPicker orphaned — needs wiring into worker onboarding
-- B1 Rating UI missing — ViewModel/repository complete but no composable triggers rating
+- A6 ServiceCatalogPicker orphaned â€” needs wiring into worker onboarding
+- B1 Rating UI missing â€” ViewModel/repository complete but no composable triggers rating
 - M6 Notification click doesn't navigate to referenced job/chat
 - M11 Theme mode not persisted to DataStore
 
 ---
 
 ## Files Recently Modified
-- `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt` (2026-09-27 — added the missing `androidx.compose.runtime.getValue` / `mutableStateOf` / `setValue` imports; REG-002 compile fix)
-- `app/src/main/java/com/example/util/GuarantorValidators.kt` (2026-09-27 — `validateNationalIdNumber()` now uses `value.toSet().size <= 1` instead of the unresolvable `value.distinct()`; REG-002 compile fix)
-- `app/src/test/java/com/example/util/GuarantorValidatorsTest.kt` (2026-09-27 — run: 18/18 PASSED)
-- `AGENT_STATE.md` / `TASKS.md` / `CHANGELOG.md` / `DECISIONS.md` / `AGENTS.md` / `prd.json` (2026-09-27 — REG-002 marked completed, build environment corrected, false blocker retracted)
+- `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt` (2026-09-27 â€” added the missing `androidx.compose.runtime.getValue` / `mutableStateOf` / `setValue` imports; REG-002 compile fix)
+- `app/src/main/java/com/example/util/GuarantorValidators.kt` (2026-09-27 â€” `validateNationalIdNumber()` now uses `value.toSet().size <= 1` instead of the unresolvable `value.distinct()`; REG-002 compile fix)
+- `app/src/test/java/com/example/util/GuarantorValidatorsTest.kt` (2026-09-27 â€” run: 18/18 PASSED)
+- `AGENT_STATE.md` / `TASKS.md` / `CHANGELOG.md` / `DECISIONS.md` / `AGENTS.md` / `prd.json` (2026-09-27 â€” REG-002 marked completed, build environment corrected, false blocker retracted)
 - `app/proguard-rules.pro` (REL-001 ProGuard rules for Room, Firebase, Moshi, coroutines)
 - `app/src/main/java/com/example/ui/components/AccountComplianceDialog.kt` (TRAIN-002 WorkerTrainingScreen + KYC-004/005/007)
 - `app/src/main/java/com/example/ui/screens/MainScreen.kt` (TRAIN-002 training screen wiring + ROLE-003)
@@ -720,37 +721,37 @@ Auditing and fixing disconnected features identified during the systematic featu
 ## Tests Performed
 | Test | Command / Method | Result |
 |---|---|---|
-| REG-002 compile (2026-09-27) | `.\gradlew.bat :app:compileDebugKotlin --console=plain` | PASS after fixes — first attempt FAILED on 2 real errors (`SkillsExchangeViewModel.kt` missing Compose runtime `getValue`/`setValue`; `GuarantorValidators.kt:138 Unresolved reference 'distinct'`); re-run PASSED, warnings only |
-| REG-002 unit tests (2026-09-27) | `.\gradlew.bat :app:testDebugUnitTest --console=plain` | PASS — 57 tests / 8 suites, 0 failures / 0 errors / 0 skipped; `GuarantorValidatorsTest` 18/18 |
-| REG-002 package (2026-09-27) | `.\gradlew.bat :app:assembleDebug --console=plain` | PASS — BUILD SUCCESSFUL in 3m 35s → `app/build/outputs/apk/debug/app-debug.apk` (35,254,412 bytes) |
-| REG-002 Room schema (2026-09-27) | KSP schema processing during compile | PASS — entities, DAO queries, `MIGRATION_18_19` and the new `Index(["phoneNumber"])` validated |
-| REG-002 whitespace (2026-09-27) | `git diff --check` | PASS — no whitespace errors |
-| STAB-001 Code Inspection | Manual file inspection | PASS — asserts "Skills Exchange" |
-| STAB-002 Code Inspection | Manual file inspection | PASS — uses SkillsExchangeTheme |
-| AI-001 Model ID & Audio format | Grep and code inspection | PASS — gemini-2.0-flash & MPEG_4/AAC |
-| AI-002 Model ID | Grep search | PASS — gemini-2.0-flash throughout |
-| SEC-001 Owner UID check | Code review firestore.rules | PASS — isDocOwner(userId) enforced |
-| SEC-002 HMAC Webhook check | Code review functions/src/index.ts | PASS — verifyHmacSignature timingSafeEqual |
-| SEC-003 Storage Isolation | Code review storage.rules | PASS — KYC/guarantor private doc rules |
-| ROLE-001/002/003 Model & UI | Code inspection Room entities/UI | PASS — UserProfileEntity, DAO, Gate Screen |
-| SKILL-001/002 Taxonomy & Engine | Code review ServiceTaxonomyCatalog | PASS — 125 items, family validation |
-| SAFE-001 Dynamic PIN | Code review addJobPost | PASS — Random (1000..9999) PIN per job |
-| LOC-004 Privacy & Aggregation | Code inspection ProviderDetailSheet | PASS — dynamic district stats, reviewer names hidden |
-| KYC-001 Schema & DAO | Code inspection Entities/Daos/AppDatabase | PASS — WorkerKycEntity, WorkerKycDao, DB v7 |
-| KYC-002 Upload Pipeline | Code inspection FirebaseService | PASS — uploadKycDocument, users/{uid}/kyc path, Storage dep added |
-| KYC-003 Guarantor Model | Code inspection Entities/Daos/Repository | PASS — GuarantorEntity, GuarantorDao, validateGuarantorCount |
-| KYC-004 Guarantor UI | Code inspection AccountComplianceDialog | PASS — GuarantorFormSheet 2-step form, photo pickers, validation |
-| KYC-005 Qualification Evidence | Code inspection FirebaseService/AccountComplianceDialog | PASS — uploadQualificationEvidence, QualificationEvidenceSheet |
-| KYC-006 State Machine | Code inspection Repository | PASS — submit/approve/reject/changes-required methods, 48h SLA deadline |
-| KYC-007 Changes Required UI | Code inspection AccountComplianceDialog | PASS — ChangesRequiredView with feedback, support links, update button |
-| JOB-001 Job Type Model | Code inspection Entities/FirebaseService | PASS — jobType, recurringSchedule, recurringStartDate fields added |
-| MARKET-001 Worker Discovery Filter | Code inspection ViewModel/Entities | PASS — isActivated + kycStatus APPROVED filter in providers flow |
-| PAY-001 MoMo Collection API | Code inspection MoMoPaymentService/MoMoCollectionApi | PASS — Retrofit + MTN MoMo Collection API integration |
-| PAY-002 Escrow Lock & Webhook | Code inspection functions/src/index.ts | PASS — processMoMoWebhook locks escrow, sends notifications |
-| PAY-003 Escrow Release & Payout | Code inspection functions/src/index.ts | PASS — releaseEscrowToWorker Cloud Function, worker payout |
-| PAY-004 Material Advance Disbursement | Code inspection Repository | PASS — approveMaterialAdvance method, 50% disbursement logic |
-| MAP-001 Google Maps SDK | Code inspection InteractiveMapView/build.gradle | PASS — Google Maps MapView composable, play-services-maps dep |
-| DB-001 Room Migrations | Code inspection AppDatabase.kt | PASS - Migration 11→12 added, data preserved |
+| REG-002 compile (2026-09-27) | `.\gradlew.bat :app:compileDebugKotlin --console=plain` | PASS after fixes â€” first attempt FAILED on 2 real errors (`SkillsExchangeViewModel.kt` missing Compose runtime `getValue`/`setValue`; `GuarantorValidators.kt:138 Unresolved reference 'distinct'`); re-run PASSED, warnings only |
+| REG-002 unit tests (2026-09-27) | `.\gradlew.bat :app:testDebugUnitTest --console=plain` | PASS â€” 57 tests / 8 suites, 0 failures / 0 errors / 0 skipped; `GuarantorValidatorsTest` 18/18 |
+| REG-002 package (2026-09-27) | `.\gradlew.bat :app:assembleDebug --console=plain` | PASS â€” BUILD SUCCESSFUL in 3m 35s â†’ `app/build/outputs/apk/debug/app-debug.apk` (35,254,412 bytes) |
+| REG-002 Room schema (2026-09-27) | KSP schema processing during compile | PASS â€” entities, DAO queries, `MIGRATION_18_19` and the new `Index(["phoneNumber"])` validated |
+| REG-002 whitespace (2026-09-27) | `git diff --check` | PASS â€” no whitespace errors |
+| STAB-001 Code Inspection | Manual file inspection | PASS â€” asserts "Skills Exchange" |
+| STAB-002 Code Inspection | Manual file inspection | PASS â€” uses SkillsExchangeTheme |
+| AI-001 Model ID & Audio format | Grep and code inspection | PASS â€” gemini-2.0-flash & MPEG_4/AAC |
+| AI-002 Model ID | Grep search | PASS â€” gemini-2.0-flash throughout |
+| SEC-001 Owner UID check | Code review firestore.rules | PASS â€” isDocOwner(userId) enforced |
+| SEC-002 HMAC Webhook check | Code review functions/src/index.ts | PASS â€” verifyHmacSignature timingSafeEqual |
+| SEC-003 Storage Isolation | Code review storage.rules | PASS â€” KYC/guarantor private doc rules |
+| ROLE-001/002/003 Model & UI | Code inspection Room entities/UI | PASS â€” UserProfileEntity, DAO, Gate Screen |
+| SKILL-001/002 Taxonomy & Engine | Code review ServiceTaxonomyCatalog | PASS â€” 125 items, family validation |
+| SAFE-001 Dynamic PIN | Code review addJobPost | PASS â€” Random (1000..9999) PIN per job |
+| LOC-004 Privacy & Aggregation | Code inspection ProviderDetailSheet | PASS â€” dynamic district stats, reviewer names hidden |
+| KYC-001 Schema & DAO | Code inspection Entities/Daos/AppDatabase | PASS â€” WorkerKycEntity, WorkerKycDao, DB v7 |
+| KYC-002 Upload Pipeline | Code inspection FirebaseService | PASS â€” uploadKycDocument, users/{uid}/kyc path, Storage dep added |
+| KYC-003 Guarantor Model | Code inspection Entities/Daos/Repository | PASS â€” GuarantorEntity, GuarantorDao, validateGuarantorCount |
+| KYC-004 Guarantor UI | Code inspection AccountComplianceDialog | PASS â€” GuarantorFormSheet 2-step form, photo pickers, validation |
+| KYC-005 Qualification Evidence | Code inspection FirebaseService/AccountComplianceDialog | PASS â€” uploadQualificationEvidence, QualificationEvidenceSheet |
+| KYC-006 State Machine | Code inspection Repository | PASS â€” submit/approve/reject/changes-required methods, 48h SLA deadline |
+| KYC-007 Changes Required UI | Code inspection AccountComplianceDialog | PASS â€” ChangesRequiredView with feedback, support links, update button |
+| JOB-001 Job Type Model | Code inspection Entities/FirebaseService | PASS â€” jobType, recurringSchedule, recurringStartDate fields added |
+| MARKET-001 Worker Discovery Filter | Code inspection ViewModel/Entities | PASS â€” isActivated + kycStatus APPROVED filter in providers flow |
+| PAY-001 MoMo Collection API | Code inspection MoMoPaymentService/MoMoCollectionApi | PASS â€” Retrofit + MTN MoMo Collection API integration |
+| PAY-002 Escrow Lock & Webhook | Code inspection functions/src/index.ts | PASS â€” processMoMoWebhook locks escrow, sends notifications |
+| PAY-003 Escrow Release & Payout | Code inspection functions/src/index.ts | PASS â€” releaseEscrowToWorker Cloud Function, worker payout |
+| PAY-004 Material Advance Disbursement | Code inspection Repository | PASS â€” approveMaterialAdvance method, 50% disbursement logic |
+| MAP-001 Google Maps SDK | Code inspection InteractiveMapView/build.gradle | PASS â€” Google Maps MapView composable, play-services-maps dep |
+| DB-001 Room Migrations | Code inspection AppDatabase.kt | PASS - Migration 11â†’12 added, data preserved |
 | RATE-001 Rating Entity | Code inspection Entities/Daos | PASS - RatingEntity with DAO methods |
 | NOTIF-001 Notification Entity | Code inspection Entities/Daos | PASS - NotificationEntity with DAO methods |
 | DISP-001 Dispute Entity | Code inspection Entities/Daos | PASS - DisputeEntity with enums and DAO |
@@ -768,86 +769,86 @@ Auditing and fixing disconnected features identified during the systematic featu
 |---|---|---|
 
 | REG-002 code is not committed yet | `git status` on 2026-09-27 lists 16 modified files plus **3 untracked** files - `GuarantorValidators.kt`, `GuarantorVerificationSheet.kt`, `GuarantorValidatorsTest.kt`. The 2026-09-27 session built and documented; it did not commit | `git add` those three files and commit, or the feature stays out of git history even though it builds |
-| Untested validator branch | The rewritten `validateNationalIdNumber()` rule (reject a NIN of one repeated character) has no direct test - the two NIN tests cover length and the accept path | One extra assertion in `GuarantorValidatorsTest` locking the rule in; behaviour today is unchanged || ~~REG-002 cannot be verified — no JDK~~ **CLOSED 2026-09-27** | That blocker was false: `gradle.properties` pins `org.gradle.java.home=D:/kilo_downloads/jdk17/jdk17.0.20_10` (Amazon Corretto 17.0.20.1) and `systemProp.org.gradle.user.home=D:/gradle-home`, so `gradlew.bat` builds with no environment setup; `jdk11/jdk-11.0.22+7/bin/java.exe` exists too and Android Studio's JBR is OpenJDK 25.0.2 | Nothing further — `:app:compileDebugKotlin`, `:app:testDebugUnitTest` (57 tests, 0 failures, GuarantorValidatorsTest 18/18) and `:app:assembleDebug` (app-debug.apk, 35,254,412 bytes) all PASSED on 2026-09-27 |
-| REG-002 device verification not possible | No emulator/device plus no live Firebase project available in this session, and `firestore.rules` / `storage.rules` changes are only enforced server-side | After the build passes: deploy rules (`firebase deploy --only firestore:rules,storage`), then walk the golden path on a device — two guarantors, three photographs, save draft, force-kill, resume, submit, and confirm `guarantor_submissions/{uid}` reaches `PENDING_REVIEW` and the drawer reflects the admin decision |
-| `npx tsc` is a decoy in `functions/` — it can report a **false pass** | On 2026-09-29 `functions/node_modules/typescript` contained only an **empty** `bin/` folder plus locale directories in `lib/` (no `tsc.js`), so `npx tsc ...` resolved to the unrelated placeholder `tsc` npm package: it prints "This is not the tsc command you are looking for" and **exits 0**. Several `@types/*` folders (`express-serve-static-core`, `body-parser`, `serve-static`, `glob`, `ms`) were empty as well, so even the real `tsc` first failed with TS2688 "Cannot find type definition file". The "`npx tsc` exits 0" baseline recorded earlier in this project was therefore not evidence of anything | Run the compiler by path and require **no output plus exit 0**: `node node_modules\typescript\bin\tsc --noEmit -p tsconfig.json` (or `npm run build`, which also emits `lib/`). `npm install` inside `functions/` restored the gutted packages on 2026-09-29, and `@types/express` + `@types/node` are now declared in `functions/package.json`. If command output ever contains "This is not the tsc command", stop and fix the toolchain before recording a result |
-| Admin guarantor review endpoints are **not deployed** | The new `getGuarantorSubmission` / `reviewGuarantorSubmission` callables exist only in source; `firebase deploy --only functions` was not run (no live project access in this session) and no emulator round-trip was performed | Deploy the functions, create an admin user carrying the `admin: true` custom claim, then walk the path: `getPendingVerificationQueue` (masked NIN, guarantor rows) → `getGuarantorSubmission` → `reviewGuarantorSubmission` → confirm `guarantor_submissions/{workerId}.status`, each guarantor's `ninVerificationStatus`, and the worker notification |
+| Untested validator branch | The rewritten `validateNationalIdNumber()` rule (reject a NIN of one repeated character) has no direct test - the two NIN tests cover length and the accept path | One extra assertion in `GuarantorValidatorsTest` locking the rule in; behaviour today is unchanged || ~~REG-002 cannot be verified â€” no JDK~~ **CLOSED 2026-09-27** | That blocker was false: `gradle.properties` pins `org.gradle.java.home=D:/kilo_downloads/jdk17/jdk17.0.20_10` (Amazon Corretto 17.0.20.1) and `systemProp.org.gradle.user.home=D:/gradle-home`, so `gradlew.bat` builds with no environment setup; `jdk11/jdk-11.0.22+7/bin/java.exe` exists too and Android Studio's JBR is OpenJDK 25.0.2 | Nothing further â€” `:app:compileDebugKotlin`, `:app:testDebugUnitTest` (57 tests, 0 failures, GuarantorValidatorsTest 18/18) and `:app:assembleDebug` (app-debug.apk, 35,254,412 bytes) all PASSED on 2026-09-27 |
+| REG-002 device verification not possible | No emulator/device plus no live Firebase project available in this session, and `firestore.rules` / `storage.rules` changes are only enforced server-side | After the build passes: deploy rules (`firebase deploy --only firestore:rules,storage`), then walk the golden path on a device â€” two guarantors, three photographs, save draft, force-kill, resume, submit, and confirm `guarantor_submissions/{uid}` reaches `PENDING_REVIEW` and the drawer reflects the admin decision |
+| `npx tsc` is a decoy in `functions/` â€” it can report a **false pass** | On 2026-09-29 `functions/node_modules/typescript` contained only an **empty** `bin/` folder plus locale directories in `lib/` (no `tsc.js`), so `npx tsc ...` resolved to the unrelated placeholder `tsc` npm package: it prints "This is not the tsc command you are looking for" and **exits 0**. Several `@types/*` folders (`express-serve-static-core`, `body-parser`, `serve-static`, `glob`, `ms`) were empty as well, so even the real `tsc` first failed with TS2688 "Cannot find type definition file". The "`npx tsc` exits 0" baseline recorded earlier in this project was therefore not evidence of anything | Run the compiler by path and require **no output plus exit 0**: `node node_modules\typescript\bin\tsc --noEmit -p tsconfig.json` (or `npm run build`, which also emits `lib/`). `npm install` inside `functions/` restored the gutted packages on 2026-09-29, and `@types/express` + `@types/node` are now declared in `functions/package.json`. If command output ever contains "This is not the tsc command", stop and fix the toolchain before recording a result |
+| Admin guarantor review endpoints are **not deployed** | The new `getGuarantorSubmission` / `reviewGuarantorSubmission` callables exist only in source; `firebase deploy --only functions` was not run (no live project access in this session) and no emulator round-trip was performed | Deploy the functions, create an admin user carrying the `admin: true` custom claim, then walk the path: `getPendingVerificationQueue` (masked NIN, guarantor rows) â†’ `getGuarantorSubmission` â†’ `reviewGuarantorSubmission` â†’ confirm `guarantor_submissions/{workerId}.status`, each guarantor's `ninVerificationStatus`, and the worker notification |
 | No `firestore.indexes.json` in the repository | The queue queries use `status in [...]` combined with `orderBy`, which needs a composite index that is not declared anywhere in source (it exists only in the console, if at all). The new `guarantor_submissions` query therefore deliberately omits `orderBy` and sorts in code | Optional follow-up only: add `firestore.indexes.json` with a composite index on `guarantor_submissions` (`status`, `submittedAt`) and restore the server-side sort. Nothing is blocked without it |
 
 ---
 
-## Feature Connection Audit — 2026-09-17 (PART 1/2)
+## Feature Connection Audit â€” 2026-09-17 (PART 1/2)
 
-**Status: AUDITED — FIXES PENDING**
+**Status: AUDITED â€” FIXES PENDING**
 
-> DOCUMENTATION ONLY — 2026-09-17. READ-ONLY audit. No source code changed, no fixes implemented, no commit. All findings below are NOT fixed unless a prior dated entry records a verified fix.
+> DOCUMENTATION ONLY â€” 2026-09-17. READ-ONLY audit. No source code changed, no fixes implemented, no commit. All findings below are NOT fixed unless a prior dated entry records a verified fix.
 
 **Scope:** 48 interactive controls examined. Record: 8 confirmed disconnected (A1-A8), 9 partially connected (B1-B9), security/authorization (G1-G7), placeholder/demo (D1-D11), navigation/UX (N1-N4), authentication (9 items), map (M1-M4), permission (P1-P2).
 
 ### A. Confirmed disconnected (NOT fixed)
-- A1 — Hamburger "Sign In / Register" — Google path leaves user stranded in the modal — HIGH — Pending Audit Fix
-- A2 — Drawer "National ID & Verification" — silent no-op when authenticated — HIGH — Pending Audit Fix
-- A3 — Drawer "MoMo & Escrow Wallet" — hardcoded fake balance + wrong destination — HIGH — Pending Audit Fix
-- A4 — Drawer "Job History & Material Receipts" — no history screen — MEDIUM — ✅ FIXED (verified 2026-10-10): the drawer item opens the real data-driven `JobHistorySheet` (`AccountCenterSheets.kt`) via `onOpenHistory`; it renders completed/released contracts (`status` COMPLETED/RELEASED or `escrowStatus == RELEASED_TO_WORKER`) with material-receipt counts and escrow totals from `viewModel.jobs`. `compileDebugKotlin` BUILD SUCCESSFUL — device walkthrough still pending
-- A5 — Drawer "Trust, Safety & Emergency SOS" — opens unrelated escrow sheet / can silently do nothing — HIGH — ✅ FIXED (2026-10-10, as part of H7): the item now opens the real data-driven `TrustSafetySheet` (renders live `isSosTriggered` jobs + the authenticated user's `myDisputes`, UID-keyed and fail-closed), not the unrelated escrow sheet; `compileDebugKotlin` BUILD SUCCESSFUL — device walkthrough still pending
-- A6 — ServiceCatalogPicker — implemented but zero call sites / orphaned — HIGH — Pending Audit Fix
-- A7 — AccountComplianceDialog — implemented but never invoked / orphaned — MEDIUM — Pending Audit Fix
-- A8 — Community/Board "Hire" button — silent failure — MEDIUM — OBSOLETE: Community/Board feature removed under COMM-002 (2026-09-23); finding no longer applicable
+- A1 â€” Hamburger "Sign In / Register" â€” Google path leaves user stranded in the modal â€” HIGH â€” Pending Audit Fix
+- A2 â€” Drawer "National ID & Verification" â€” silent no-op when authenticated â€” HIGH â€” Pending Audit Fix
+- A3 â€” Drawer "MoMo & Escrow Wallet" â€” hardcoded fake balance + wrong destination â€” HIGH â€” Pending Audit Fix
+- A4 â€” Drawer "Job History & Material Receipts" â€” no history screen â€” MEDIUM â€” âœ… FIXED (verified 2026-10-10): the drawer item opens the real data-driven `JobHistorySheet` (`AccountCenterSheets.kt`) via `onOpenHistory`; it renders completed/released contracts (`status` COMPLETED/RELEASED or `escrowStatus == RELEASED_TO_WORKER`) with material-receipt counts and escrow totals from `viewModel.jobs`. `compileDebugKotlin` BUILD SUCCESSFUL â€” device walkthrough still pending
+- A5 â€” Drawer "Trust, Safety & Emergency SOS" â€” opens unrelated escrow sheet / can silently do nothing â€” HIGH â€” âœ… FIXED (2026-10-10, as part of H7): the item now opens the real data-driven `TrustSafetySheet` (renders live `isSosTriggered` jobs + the authenticated user's `myDisputes`, UID-keyed and fail-closed), not the unrelated escrow sheet; `compileDebugKotlin` BUILD SUCCESSFUL â€” device walkthrough still pending
+- A6 â€” ServiceCatalogPicker â€” implemented but zero call sites / orphaned â€” HIGH â€” Pending Audit Fix
+- A7 â€” AccountComplianceDialog â€” implemented but never invoked / orphaned â€” MEDIUM â€” Pending Audit Fix
+- A8 â€” Community/Board "Hire" button â€” silent failure â€” MEDIUM â€” OBSOLETE: Community/Board feature removed under COMM-002 (2026-09-23); finding no longer applicable
 
 ### B. Partially connected (NOT fixed)
-- B1 — Rating UI (RATE-001/002/003) — repository/ViewModel exist but no UI trigger — HIGH — Pending Audit Fix
-- B2 — Existing-user recognition on Google sign-in — HIGH — Pending Audit Fix
-- B3 — Legal name field — Onboarding fixed, AuthModal still auto-fills Google display name — HIGH — Pending Audit Fix. Distinction: OnboardingScreen.kt fix already made pending runtime verification; AuthModal.kt issue still pending.
-- B4 — Worker Online toggle — in-memory only — MEDIUM — ✅ FIXED (2026-10-10): persisted via SessionManager DataStore (`worker_online`); restored in `restoreSession()` (defaults online) + written on toggle. Regression test `WorkerOnlinePersistenceTest` (4/4). Compile BUILD SUCCESSFUL
-- B5 — Theme selector — not persisted — LOW — Pending Audit Fix
-- B6 — Notification click — marks all read but doesn't navigate — MEDIUM — ✅ Fixed 2026-10-10 (M5)
-- B7 — Report User — report action exists but no review destination/list — LOW — Pending Audit Fix
-- B8 — Map tab — no useful empty state when no providers/GPS — MEDIUM — ✅ Fixed 2026-10-10 (M6)
-- B9 — Worker distance/radius filtering — static distance data — MEDIUM — Pending Audit Fix
+- B1 â€” Rating UI (RATE-001/002/003) â€” repository/ViewModel exist but no UI trigger â€” HIGH â€” Pending Audit Fix
+- B2 â€” Existing-user recognition on Google sign-in â€” HIGH â€” Pending Audit Fix
+- B3 â€” Legal name field â€” Onboarding fixed, AuthModal still auto-fills Google display name â€” HIGH â€” Pending Audit Fix. Distinction: OnboardingScreen.kt fix already made pending runtime verification; AuthModal.kt issue still pending.
+- B4 â€” Worker Online toggle â€” in-memory only â€” MEDIUM â€” âœ… FIXED (2026-10-10): persisted via SessionManager DataStore (`worker_online`); restored in `restoreSession()` (defaults online) + written on toggle. Regression test `WorkerOnlinePersistenceTest` (4/4). Compile BUILD SUCCESSFUL
+- B5 â€” Theme selector â€” not persisted â€” LOW â€” Pending Audit Fix
+- B6 â€” Notification click â€” marks all read but doesn't navigate â€” MEDIUM â€” âœ… Fixed 2026-10-10 (M5)
+- B7 â€” Report User â€” report action exists but no review destination/list â€” LOW â€” Pending Audit Fix
+- B8 â€” Map tab â€” no useful empty state when no providers/GPS â€” MEDIUM â€” âœ… Fixed 2026-10-10 (M6)
+- B9 - Worker distance/radius filtering - static distance data - MEDIUM - Completed & Verified 2026-10-10 (M7): replaced static seeded distanceMiles with real haversine distance (util/DistanceUtil.kt); effectiveDistanceMiles falls back to stored value when GPS unknown. DistanceUtilTest 5/5 PASS (0 failures); :app:testDebugUnitTest BUILD SUCCESSFUL (EXIT=0).
 
 ### G. Security / authorization (NOT fixed by this task)
-- G1 — isWorkerApprovedAndActivated initialises to true / fail-open — HIGH — Pending Audit Fix
-- G2 — setUserRoleMode() has no worker authorization gate — MEDIUM — Pending Audit Fix
-- G3 — Worker dashboard authorization depends on UI state rather than sufficient lower-layer enforcement — HIGH — Pending Audit Fix
-- G4 — WorkerVerificationStatusView "Start verification" opens post-job drawer instead of verification flow — MEDIUM — Pending Audit Fix
-- G5 — Drawer claims "National ID & Phone Verified" / "Verified" for any authenticated user — MEDIUM — Pending Audit Fix
-- G6 — Firestore/storage rules currently authenticate users but do not provide role/ownership checks — MEDIUM — Pending Audit Fix
-- G7 — Google WEB_CLIENT_ID hardcoded in source — LOW — Pending Audit Fix
+- G1 â€” isWorkerApprovedAndActivated initialises to true / fail-open â€” HIGH â€” Pending Audit Fix
+- G2 â€” setUserRoleMode() has no worker authorization gate â€” MEDIUM â€” Pending Audit Fix
+- G3 â€” Worker dashboard authorization depends on UI state rather than sufficient lower-layer enforcement â€” HIGH â€” Pending Audit Fix
+- G4 â€” WorkerVerificationStatusView "Start verification" opens post-job drawer instead of verification flow â€” MEDIUM â€” Pending Audit Fix
+- G5 â€” Drawer claims "National ID & Phone Verified" / "Verified" for any authenticated user â€” MEDIUM â€” Pending Audit Fix
+- G6 â€” Firestore/storage rules currently authenticate users but do not provide role/ownership checks â€” MEDIUM â€” Pending Audit Fix
+- G7 â€” Google WEB_CLIENT_ID hardcoded in source â€” LOW â€” Pending Audit Fix
 
 (AUDIT PART 2 FOLLOWS)
 
 ---
 
-(AUDIT PART 2 — placeholder/demo, navigation, auth, map, permissions, community map, order)
+(AUDIT PART 2 â€” placeholder/demo, navigation, auth, map, permissions, community map, order)
 
 ### D. Placeholder / demo (NOT fixed)
-- D1 — Hardcoded wallet balance CurrencyRegion.format(240.0)
-- D2 — Hardcoded phone fallback "+256 700 123 456"
-- D3 — Demo seed data from seedInitialDataIfNeeded()
-- D4 — Full-name fallback "Specialist" / "Neighbor"
-- D5 — Fallback user ID "user_default_me"
-- D6 — Synthetic UID "user_${System.currentTimeMillis()}"
-- D7 — Phone OTP is currently simulated rather than real Firebase Phone Auth
-- D8 — refreshToken remains TODO/simulated
-- D9 — provider.distanceMiles is seeded/static
-- D10 — MoMo payment uses delay() / simulated gateway behavior
-- D11 — Camera/media picker is absent for job photos
+- D1 â€” Hardcoded wallet balance CurrencyRegion.format(240.0)
+- D2 â€” Hardcoded phone fallback "+256 700 123 456"
+- D3 â€” Demo seed data from seedInitialDataIfNeeded()
+- D4 â€” Full-name fallback "Specialist" / "Neighbor"
+- D5 â€” Fallback user ID "user_default_me"
+- D6 â€” Synthetic UID "user_${System.currentTimeMillis()}"
+- D7 â€” Phone OTP is currently simulated rather than real Firebase Phone Auth
+- D8 â€” refreshToken remains TODO/simulated
+- D9 â€” provider.distanceMiles is seeded/static
+- D10 â€” MoMo payment uses delay() / simulated gateway behavior
+- D11 â€” Camera/media picker is absent for job photos
 
 ### N. Navigation / UX (NOT fixed)
-- N1 — No Navigation-Compose graph; navigation is state-driven
-- N2 — System Back does not close open drawers/sheets/modals (no BackHandler/back stack)
-- N3 — Some drawer items point to Jobs instead of their advertised destination
-- N4 — Notification click does not navigate to the referenced job/chat
+- N1 â€” No Navigation-Compose graph; navigation is state-driven
+- N2 â€” System Back does not close open drawers/sheets/modals (no BackHandler/back stack)
+- N3 â€” Some drawer items point to Jobs instead of their advertised destination
+- N4 â€” Notification click does not navigate to the referenced job/chat
 
 ### P. Permissions (NOT fixed)
-- P1 — Notification permission granted callback is empty
-- P2 — Camera/media permission/picker is not wired because job photo capture is not implemented
+- P1 â€” Notification permission granted callback is empty
+- P2 â€” Camera/media permission/picker is not wired because job photo capture is not implemented
 
 ### M. Map (NOT fixed)
-- M1 — Current Maps implementation loads on List/Map tabs
-- M2 — No map tied specifically to an accepted/active job
-- M3 — Map is not centred using device GPS
-- M4 — Provider distance is not currently GPS-derived
+- M1 â€” Current Maps implementation loads on List/Map tabs
+- M2 â€” No map tied specifically to an accepted/active job
+- M3 â€” Map is not centred using device GPS
+- M4 â€” Provider distance is not currently GPS-derived
 
 ### Authentication findings, 9 items (NOT fixed by this task)
 1. Existing Google users can be forced through onboarding.
@@ -861,16 +862,16 @@ Auditing and fixing disconnected features identified during the systematic featu
 9. Therefore existing-user recognition can fail after logout, app-data clearing, reinstall, or on another device.
 - Legal-name distinction: OnboardingScreen.kt fix already made, pending runtime verification. AuthModal.kt legal-name issue still pending.
 
-### Community removal map (references only — SUPERSEDED: feature removed under COMM-002 on 2026-09-23; list kept for history)
-- MainScreen.kt — Board tab/navigation; MainScreen.kt — Board branches
-- NeighborhoodFeedView.kt; SkillsExchangeViewModel.kt — neighborhoodPosts
-- SkillsExchangeRepository — neighborhood posts; NeighborhoodPostEntity; NeighborhoodPostDao
+### Community removal map (references only â€” SUPERSEDED: feature removed under COMM-002 on 2026-09-23; list kept for history)
+- MainScreen.kt â€” Board tab/navigation; MainScreen.kt â€” Board branches
+- NeighborhoodFeedView.kt; SkillsExchangeViewModel.kt â€” neighborhoodPosts
+- SkillsExchangeRepository â€” neighborhood posts; NeighborhoodPostEntity; NeighborhoodPostDao
 - AppDatabase neighborhoodPostDao/version/migration references; MainScreen DynamicFeed import
 - Firestore rules if applicable; Existing PRD/requirement documentation references
 
-### Recommended implementation order (from audit — NOT started, NOT completed)
-- Critical: C1 — Existing-user profile persistence; C2 — UID consistency; C3 — Google AuthModal completion path
-- High: H1 — Worker authorization fail-closed; H2 — AuthModal legal-name handling; H3 — National ID & Verification drawer; H4 — Fake wallet balance; H5 — ServiceCatalogPicker; H6 — Rating UI; H7 — Trust/Safety & SOS (✅ DONE 2026-10-10); H8 — Worker dashboard security
+### Recommended implementation order (from audit â€” NOT started, NOT completed)
+- Critical: C1 â€” Existing-user profile persistence; C2 â€” UID consistency; C3 â€” Google AuthModal completion path
+- High: H1 â€” Worker authorization fail-closed; H2 â€” AuthModal legal-name handling; H3 â€” National ID & Verification drawer; H4 â€” Fake wallet balance; H5 â€” ServiceCatalogPicker; H6 â€” Rating UI; H7 â€” Trust/Safety & SOS (âœ… DONE 2026-10-10); H8 â€” Worker dashboard security
 - Medium: M1 through M12 from the audit
 - Low: L1 through L5 from the audit
 
@@ -880,7 +881,7 @@ Auditing and fixing disconnected features identified during the systematic featu
 
 ```
 Current session:          Feature Connection Audit & Post-Audit Bug Fix
-Current PRD story:        None — all PRD stories complete; audit fixes are post-PRD
+Current PRD story:        None â€” all PRD stories complete; audit fixes are post-PRD
 Current task:             Feature Connection Audit + AUTH-002/AUTH-006/SEC-008/SEC-009 fixes
 Completed stories (79):   All PRD stories, including STAB-003
 Current PRD Phase 17:      Complete (12 future requirements documented, FUTURE/NOT IMPLEMENTED)
@@ -890,63 +891,63 @@ Files modified:           FirebaseService.kt, SkillsExchangeRepository.kt, Skill
                           OnboardingScreen.kt, NavigationDrawer.kt, MainScreen.kt, AccountCenterSheets.kt (new)
 Next action:              Install APK on device and test Google Sign-In existing-user recognition + legal name fix
                           Then wire ServiceCatalogPicker, rating UI, and remaining audit items
-Handoff status:           Ready for continuation — device currently disconnected
+Handoff status:           Ready for continuation â€” device currently disconnected
 ```
 
 > **SECURITY NOTE**: This file contains NO passwords, API keys, session tokens, cookies, or credentials of any kind.
 
 ---
 
-## ADMIN-005 / REG-002 gap G2 — Admin Guarantor Review Path (2026-09-29)
+## ADMIN-005 / REG-002 gap G2 â€” Admin Guarantor Review Path (2026-09-29)
 
-**Status: IMPLEMENTED — verified in isolation (real `tsc` type check + 32 unit tests). NOT deployed; no live Firestore/Storage round-trip.**
+**Status: IMPLEMENTED â€” verified in isolation (real `tsc` type check + 32 unit tests). NOT deployed; no live Firestore/Storage round-trip.**
 
 > "ADMIN-005" is a **post-PRD gap label** for this work, not a PRD story: Phase 9's `ADMIN-001..ADMIN-004` covered the KYC queue, KYC review and activation, and no PRD story ever covered reviewing a *guarantor* submission. `prd.json` was deliberately **not** modified (REG-002 stays `completed`; no story was added or marked done).
 
 ### What the gap was
-REG-002 delivered the worker half of guarantor verification — two guarantors, three private photographs, the 48h SLA, and admin-reserved fields (`status`, `reviewFeedback`, `reviewedAt`, `reviewedBy`, `ninVerificationStatus`) in `firestore.rules` — but nothing could ever exercise those fields:
+REG-002 delivered the worker half of guarantor verification â€” two guarantors, three private photographs, the 48h SLA, and admin-reserved fields (`status`, `reviewFeedback`, `reviewedAt`, `reviewedBy`, `ninVerificationStatus`) in `firestore.rules` â€” but nothing could ever exercise those fields:
 - `getPendingVerificationQueue` read only `worker_kyc`, so a worker whose *guarantor* submission was waiting was invisible; it also returned each worker's **full** `nationalIdNumber` to any admin caller.
 - No callable returned a submission's guarantors or their private photographs; no callable recorded a decision.
-- The private photographs live in the owner-only prefix `users/{uid}/guarantors/**`, which clients cannot read — so an admin needed server-minted access that did not exist.
+- The private photographs live in the owner-only prefix `users/{uid}/guarantors/**`, which clients cannot read â€” so an admin needed server-minted access that did not exist.
 
 ### What was added
 | File | Change |
 |---|---|
-| `functions/src/guarantorReview.ts` (new, ≈660 lines) | Dependency-free security core: vocabulary constants, `maskIdentifier`, `checkAdminCaller`, `authorizeAdmin`'s check, `readWorkerId`, `mapDecisionToStatus`, `normalizeNinStatus`, `validateGuarantorReviewInput`, `isPrivateGuarantorPhotoPath`, `resolvePhotoUrlTtlSeconds`, `buildGuarantorReviewFields`, `buildGuarantorNinUpdate`, `buildPhotoAccess`, `collectPrivatePhotoPaths`, `projectGuarantorForAdmin`, `projectSubmissionForAdmin`, `projectQueueRow`, `buildQueueRows` |
+| `functions/src/guarantorReview.ts` (new, â‰ˆ660 lines) | Dependency-free security core: vocabulary constants, `maskIdentifier`, `checkAdminCaller`, `authorizeAdmin`'s check, `readWorkerId`, `mapDecisionToStatus`, `normalizeNinStatus`, `validateGuarantorReviewInput`, `isPrivateGuarantorPhotoPath`, `resolvePhotoUrlTtlSeconds`, `buildGuarantorReviewFields`, `buildGuarantorNinUpdate`, `buildPhotoAccess`, `collectPrivatePhotoPaths`, `projectGuarantorForAdmin`, `projectSubmissionForAdmin`, `projectQueueRow`, `buildQueueRows` |
 | `functions/src/index.ts` | `isAdmin` delegates to `checkAdminCaller`; new `authorizeAdmin`; new callables `getGuarantorSubmission` and `reviewGuarantorSubmission`; `getPendingVerificationQueue` rewritten (merges KYC + guarantor work, emits `nationalIdNumberMasked`, adds `kycOnFile` / `guarantor*` / `ninVerificationStatus` / `guarantorsAwaitingReview`); `privatePhotoBucket()` + `mintPrivatePhotoUrls()` |
-| `functions/test/guarantorReview.test.mjs` (new, 32 tests) | Executed against the TypeScript source with `node --test` — no emulator, no build step, no Firebase project |
+| `functions/test/guarantorReview.test.mjs` (new, 32 tests) | Executed against the TypeScript source with `node --test` â€” no emulator, no build step, no Firebase project |
 | `functions/package.json` | `test` script; `@types/express` + `@types/node` declared in `devDependencies` (the `build` script needed them but they were never declared) |
 
 ### Verification performed (2026-09-29)
 | Check | Command | Result |
 |---|---|---|
-| Type check / compile of all of `functions/src` | `node node_modules\typescript\bin\tsc --noEmit -p tsconfig.json` | **PASS** — exit 0, no output |
-| Emit build (what `firebase deploy` compiles) | `npm run build` | **PASS** — exit 0; `lib/index.js`, `lib/guarantorReview.js` + maps |
-| Security-contract unit tests | `node --test test/guarantorReview.test.mjs` (or `npm test`) | **PASS — 32 tests, 32 pass, 0 fail** |
+| Type check / compile of all of `functions/src` | `node node_modules\typescript\bin\tsc --noEmit -p tsconfig.json` | **PASS** â€” exit 0, no output |
+| Emit build (what `firebase deploy` compiles) | `npm run build` | **PASS** â€” exit 0; `lib/index.js`, `lib/guarantorReview.js` + maps |
+| Security-contract unit tests | `node --test test/guarantorReview.test.mjs` (or `npm test`) | **PASS â€” 32 tests, 32 pass, 0 fail** |
 | Toolchain integrity | inspect `node_modules/typescript`, `node_modules/@types/*` | Gutted beforehand; `npm install` in `functions/` restored `typescript`, and reinstalling `@types/express-serve-static-core` / `body-parser` / `serve-static` / `glob` / `ms` cleared the TS2688 errors |
 
 ### Verification NOT performed (do not mistake for a pass)
-- No `firebase deploy --only functions`, no emulator, no live Firestore/Storage call, no device test, no admin UI (none exists yet — these two callables have no caller in the app).
+- No `firebase deploy --only functions`, no emulator, no live Firestore/Storage call, no device test, no admin UI (none exists yet â€” these two callables have no caller in the app).
 - No load/permission test against the real rules deployment; the authorization anchor (`admin === true` claim) and `firestore.rules` were only compared by inspection.
 - The KYC mirror inside `reviewGuarantorSubmission` is skipped when the worker has no `worker_kyc` document, because the app still never creates one (long-standing blocker, unchanged).
 
 ### Gaps from the same post-REG-002 review that this session did **not** touch
-**G1, G3, G4, G5, G6, G7, G12** — deliberately left exactly as they were; this session implemented only G2 and added no speculative fix for any other gap. Their numbering and detail live with that review; treat them as still open.
+**G1, G3, G4, G5, G6, G7, G12** â€” deliberately left exactly as they were; this session implemented only G2 and added no speculative fix for any other gap. Their numbering and detail live with that review; treat them as still open.
 
 ### Next action (for the next session)
 1. `firebase deploy --only functions` from the repository root, then verify the two new callables appear.
-2. Create/promote an admin user with the `admin: true` custom claim (Console → Authentication → user → custom claims) and call `getPendingVerificationQueue` — expect `nationalIdNumberMasked` only, plus `guarantorStatus` rows.
+2. Create/promote an admin user with the `admin: true` custom claim (Console â†’ Authentication â†’ user â†’ custom claims) and call `getPendingVerificationQueue` â€” expect `nationalIdNumberMasked` only, plus `guarantorStatus` rows.
 3. Call `getGuarantorSubmission` for a real submission (masked NIN first, then `includeFullNin: true`) and confirm the five signed photo URLs open and expire within 15 minutes.
 4. Call `reviewGuarantorSubmission` with `APPROVE` / `REJECT` / `CHANGES_REQUIRED`, then re-read the submission and each `guarantors/{id}` document to confirm the written fields and the notification.
-5. Only then consider the gap closed; nothing from steps 1–4 was executed here.
+5. Only then consider the gap closed; nothing from steps 1â€“4 was executed here.
 
-## Real-Device Verification (SM-A025F) — 2026-09-29
+## Real-Device Verification (SM-A025F) â€” 2026-09-29
 
 Full evidence and every screenshot/log reference: **`_device_test/DEVICE_TEST_REPORT.md`**. This
 section is the agent-facing summary; it does not repeat the report's detail.
 
 ### Environment
-Samsung **SM-A025F** (Galaxy A02, 3 GB RAM), **Android 12 / API 31**, 720×1600 @ 280 dpi, Google
+Samsung **SM-A025F** (Galaxy A02, 3 GB RAM), **Android 12 / API 31**, 720Ã—1600 @ 280 dpi, Google
 Play Services present. Package `com.aistudio.skillsexchange.nxptvq`, versionCode 1 / versionName 1.0,
 minSdk 24, targetSdk 36. Debug variant only.
 
@@ -957,10 +958,10 @@ minSdk 24, targetSdk 36. Debug variant only.
 | Update was in-place, data preserved | `firstInstallTime` unchanged (2026-09-16 20:20:52); `lastUpdateTime` 2026-09-29 17:02:25 |
 | **Room `MIGRATION_18_19` executed on hardware** | pulled DB `user_version = 19` == `AppDatabase version = 19`; `guarantors` has `nationalIdNumber` + `phoneNumber` |
 | App is otherwise stable | 0 `FATAL`/`ANR` in the launch and walkthrough logs apart from D1; post-crash relaunch lands on `MainActivity` with live GPS restored |
-| Guest gating works | National ID & Verification → CLIENT ONBOARDING sheet; mode card refuses |
+| Guest gating works | National ID & Verification â†’ CLIENT ONBOARDING sheet; mode card refuses |
 
-### Defect D1 — CRITICAL: Map View kills the process (3/3)
-`java.lang.IllegalStateException: API key not found …` thrown into
+### Defect D1 â€” CRITICAL: Map View kills the process (3/3)
+`java.lang.IllegalStateException: API key not found â€¦` thrown into
 `app/src/main/java/com/example/ui/components/InteractiveMapView.kt:98` (`map.onCreate(null)` in the
 `AndroidView` factory). PIDs 23654 / 25548 / 25768 in three separate captures.
 
@@ -968,37 +969,37 @@ Confirmed in source, not inferred: `app/src/main/AndroidManifest.xml` has **no `
 all** (so no `com.google.android.geo.API_KEY`); `.env` / `.env.example` define only
 `GEMINI_API_KEY`; nothing injects or validates a Maps key; `README.md` step 4 tells the developer
 to hand-edit the manifest while its `.env` block advertises a `MAPS_API_KEY` that no code reads.
-Related older audit rows still open: **B8** (no useful map empty state), **M1–M4**.
+Related older audit rows still open: **B8** (no useful map empty state), **M1â€“M4**.
 
 **PRD consequence:** `prd.json` **MAP-001** is `completed` with `verified_by: "code_inspection"`,
-yet its own acceptance criterion and verification step fail on a real device. Per AGENTS.md §2 a
-story must not stay `completed` without verified implementation — **recommend reopening MAP-001**.
+yet its own acceptance criterion and verification step fail on a real device. Per AGENTS.md Â§2 a
+story must not stay `completed` without verified implementation â€” **recommend reopening MAP-001**.
 Deliberately **not** done by this verification task; the next session should change `status` to
 `in_progress`, drop it from `completed_stories`, and record the reason.
 
-### Defect D2 — role gate refuses correctly but shows nothing on screen
+### Defect D2 â€” role gate refuses correctly but shows nothing on screen
 The guest tap on the mode card is refused by `toggleUserRoleMode()`
 (`SkillsExchangeViewModel.kt:354-359`), which sets
 `authError = "Worker verification and activation required to switch to worker mode."`. The string is
-**not** dead state — `AuthModal.kt:57/322/335` and `OnboardingScreen.kt:75/933-935` do render it —
+**not** dead state â€” `AuthModal.kt:57/322/335` and `OnboardingScreen.kt:75/933-935` do render it â€”
 but both live inside the auth/onboarding UI, and `MainScreen.kt:741` hosts `AuthModal` only
 `if (isAuthModalOpen)`, which the refusal path does not open. `SnackbarHost` appears in **zero**
 source files, so on `MainScreen` there is no channel that could show it: the user sees nothing while
 the drawer copy invites the tap. Distinct from audit rows **A8** (obsolete) and **G2** (the gate
-itself now exists — only the feedback is missing).
+itself now exists â€” only the feedback is missing).
 
 ### New blockers recorded
 | Blocker | Reason | Needed |
 |---|---|---|
-| Map View tab is unusable and crashes the app | No Maps API key anywhere + unguarded `MapView.onCreate` in `InteractiveMapView.kt:96-98` | Guard `onCreate` with a fallback panel; feed `MAPS_API_KEY` from `.env` through `manifestPlaceholders` into a manifest `<meta-data>`; add a blank `MAPS_API_KEY=` to `.env.example`; never commit a real key (§8) |
+| Map View tab is unusable and crashes the app | No Maps API key anywhere + unguarded `MapView.onCreate` in `InteractiveMapView.kt:96-98` | Guard `onCreate` with a fallback panel; feed `MAPS_API_KEY` from `.env` through `manifestPlaceholders` into a manifest `<meta-data>`; add a blank `MAPS_API_KEY=` to `.env.example`; never commit a real key (Â§8) |
 | MAP-001 status does not match reality | Marked `completed` on inspection only; fails its own acceptance criterion on hardware | Reopen and re-verify on device with a real key before re-completing |
 | Gated actions give no on-screen feedback | `toggleUserRoleMode()` sets `authError`, but it is rendered only inside `AuthModal`/`OnboardingScreen` (closed at that moment); `MainScreen` has no snackbar/banner and `SnackbarHost` exists in no source file | Add a `SnackbarHost` to `MainScreen`'s `Scaffold` (show + clear), or open the existing `AuthModal`/onboarding sheet on refusal |
-| Target device is chronically near-full | `/data` measured 97–99 % used; the first install failed for space | Check `df /data` before install; prefer `pm trim-caches` over deleting user data |
+| Target device is chronically near-full | `/data` measured 97â€“99 % used; the first install failed for space | Check `df /data` before install; prefer `pm trim-caches` over deleting user data |
 
 ### Still NOT verified by this run (do not mistake for a pass)
 Anything requiring an authenticated session (worker dashboard, chat, quotes, escrow/payment, the
 REG-002 guarantor submission end-to-end, ADMIN-005 callables), the release variant / R8 / signing,
-and every server-side rule — `firebase deploy --only firestore:rules,storage` and
+and every server-side rule â€” `firebase deploy --only firestore:rules,storage` and
 `firebase deploy --only functions` remain undone.
 
 ### Next action (for the next session)
