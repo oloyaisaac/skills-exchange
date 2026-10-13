@@ -1,4 +1,26 @@
 ﻿# AGENT_STATE.md â€” Skills Exchange Project State
+## ⚠ 2026-10-13 — IMPLEMENTATION-TRUTH AUDIT (read first)
+A source-code audit verified the completed PRD stories against their acceptance criteria. **Many "completed" stories are mocked, disconnected, or unverified end-to-end.** The `prd.json` schema only permits the status `completed`, so statuses were NOT bulk-flipped; instead every affected story's `notes` now carries an `AUDIT 2026-10-13:` annotation with the exact evidence. **Do not treat these as shipping features.**
+
+**Confirmed SIMULATED / DISCONNECTED (safety-critical):**
+- **PAY-001/002/003/004 — payments are NOT real.** `MoMoPaymentService.createMoMoCollection` POSTs to the MTN sandbox with an **empty API key**; the server `createMoMoCollection` callable never calls MTN — it only writes a `momo_transactions` doc and locally flips the job to `FUNDS_LOCKED_IN_ESCROW`. `releaseEscrowToWorker` writes a `momo_payouts` doc (`QUEUED`) with a **fabricated** `PAYOUT-<ts>` ref and makes **no** MoMo Transfer call; Android `disburseEscrowPayoutToWorker()` fabricates a payout and returns `DISBURSED` with **zero callers**. `approveMaterialAdvance` only edits the Room row. No money moves anywhere.
+- **SAFE-002 / MARKET-001 — SMS is fake.** `SmsNotificationService` methods only `Log.d` + `delay()` and return a fabricated `status="SENT"`. No SMS gateway is called. SOS raises the in-app flag but delivers no real alert.
+- **NOTIF-002/003 — push is fake.** `SkillsExchangeMessagingService.sendTokenToServer()` only logs the FCM token (never registers it); event triggers create **local Room** notifications only. No server-side FCM send.
+- **AI-001 — voice jobs are canned.** `GeminiAudioTranscriptionService` returns hard-coded fields ("Emergency Pipe Repair"/Plumbing/85.0) when `GEMINI_API_KEY` is the `MY_GEMINI_API_KEY` placeholder (current) or on any API error; the UI does not distinguish real vs canned output.
+- **OFF-001 — offline sync is a no-op.** Queue writes persist to Room, but `flushPendingActions()` explicitly "performs no execution and no deletion" — queued actions are never replayed to Firestore.
+- **KYC-002 — National-ID upload is disconnected.** `uploadKycDocument()` has zero callers; KYC submit stores URL strings without uploading bytes. (KYC-004 guarantor photos and KYC-005 certificate photos ARE real; KYC-005 video is only a stored link.)
+- **DISP-003/004 — disputes/reports are local-only.** Persist to Room; the app never calls `resolveDispute`/`getDisputesQueue`; no admin surface.
+- **ADMIN-001 — no admin web dashboard exists.** Only Cloud Functions + Android callers.
+
+**Confirmed FUNCTIONAL (corrected earlier over-claims):**
+- **AUTH-008** session/device security IS enforced — `restoreSession()` inlines the 7-day expiry + device-id-mismatch → `clearSession` on app entry. (`SessionManager.isSessionValid()` is dead code; logic is inline in the ViewModel.)
+- **SAFE-001** generates a unique random 4-digit PIN per job (`addJobPost` `(1000..9999).random()`); `4829` is only the seeded default. Missing: secure PIN delivery + expiry.
+- **MARKET-001** discovery/filtering is real (GPS distance + KYC filter); only the SMS leg is simulated.
+- **COMM-001** chat is real (Firestore `streamChatMessages`/`sendChatMessage` + phone masking), subject to rules being deployed.
+
+**First action for the next agent:** implement a real MoMo payment confirmation (PAY-001/002) or a real SMS/notification channel (SAFE-002/NOTIF-002) against a sandbox, then device-verify. Details: DECISIONS.md D-2026-10-13-1 and CHANGELOG.md 2026-10-13.
+
+
 
 ## Last Updated — ⚠ SUPERSEDED: the handoff entry at line 76 is the current one; the block below is retained as history. *(2026-10-12)*
 ## Last Updated

@@ -749,7 +749,7 @@
                 "Network upload failure handling"
             ],
             "rollback": "git checkout FirebaseService.kt",
-            "notes": "Enforces business rule #4 \u0026 #8."
+            "notes": "Enforces business rule #4 & #8. AUDIT 2026-10-13: FirebaseService.uploadKycDocument() writes to users/{uid}/kyc/{file}.jpg, but it has ZERO production callers - the KYC submit path (submitWorkerKycVerification) copies idDocumentUrl/selfieVerificationUrl strings onto the provider and syncs the provider without ever uploading bytes. Only the guarantor-photo and qualification-evidence upload helpers are actually wired. The National-ID byte-upload pipeline is disconnected from the app."
         },
         {
             "id": "KYC-003",
@@ -824,7 +824,7 @@
                 "UI form length"
             ],
             "rollback": "git checkout component file",
-            "notes": "Enforces business rule #7."
+            "notes": "Enforces business rule #7. AUDIT 2026-10-13: GuarantorFormSheet exists and its photo uploads ARE wired - uploadGuarantorPhoto() writes users/{uid}/guarantors/{slot}_{ts}.jpg (slots guarantor/with_worker/group), submitGuarantorVerification() files guarantors + guarantor_submissions to Firestore with real byte uploads. Guarantor ID upload path is functional end-to-end (not yet deployed/device-verified)."
         },
         {
             "id": "KYC-005",
@@ -860,7 +860,7 @@
                 "Video file size handling"
             ],
             "rollback": "git checkout affected files",
-            "notes": "Enforces business rule #6."
+            "notes": "Enforces business rule #6. AUDIT 2026-10-13: certificate photo upload is real (uploadQualificationEvidence -> users/{uid}/certificates/certificate_{ts}.jpg, wired from QualificationEvidenceSheet). The VIDEO branch does NOT upload a Storage object: it returns a synthetic path \"users/{uid}/certificates/video_{ts}\" after only checking the pasted URL is non-blank. Demonstration video is a stored link, not an uploaded file."
         },
         {
             "id": "KYC-006",
@@ -1077,7 +1077,7 @@
                 "Admin role authorization check requirement"
             ],
             "rollback": "git checkout functions/src/index.ts",
-            "notes": "Enforces business rule #1 \u0026 #21."
+            "notes": "Enforces business rule #1 & #21. AUDIT 2026-10-13: the callables (getPendingVerificationQueue, reviewWorkerApplication, setWorkerActivationStatus) exist in functions/src/index.ts and are invoked from the Android app via FirebaseService.getHttpsCallable(). There is NO separate admin web dashboard - no admin/ or web/ surface exists; admin review is driven through the Android app/Cloud Functions only. The PRD goal for ADMIN-001 was a spec for a web dashboard; only the CF spec/endpoints exist."
         },
         {
             "id": "ADMIN-002",
@@ -1325,7 +1325,7 @@
                 "Low risk"
             ],
             "rollback": "git checkout viewmodel file",
-            "notes": "Enforces business rule #17."
+            "notes": "Enforces business rule #17. AUDIT 2026-10-13: nearby-worker discovery/filtering is real (GPS distance + KYC filter in ViewModel). The SMS broadcast half is NOT real: triggerSmsAlertToOfflineWorkers -> notifyOfflineWorkersInRadius -> sendSmsAlert, which only Log.d + delay(300) + returns fabricated status=\"SENT\". No SMS is actually sent. Discovery criteria met; SMS-notification criterion is simulated only."
         },
         {
             "id": "MARKET-002",
@@ -1431,7 +1431,7 @@
                 "API sandbox key configuration"
             ],
             "rollback": "git checkout MoMoPaymentService.kt",
-            "notes": "Core payment engine."
+            "notes": "Core payment engine. AUDIT 2026-10-13: app-side MoMoPaymentService.createMoMoCollection POSTs to MTN sandbox requesttopay, but apiKey defaults to \"\" (empty Bearer) and no production subscription key is configured; the server createMoMoCollection callable does NOT call the MTN gateway at all - it only writes a Firestore momo_transactions doc and flips the job to FUNDS_LOCKED_IN_ESCROW locally. No verified provider collection. Needs real MTN credentials + server-side gateway call + confirmed webhook before funds can be treated as collected."
         },
         {
             "id": "PAY-002",
@@ -1466,7 +1466,7 @@
                 "Webhook retries"
             ],
             "rollback": "git checkout functions/src/index.ts",
-            "notes": "Escrow security."
+            "notes": "Escrow security. AUDIT 2026-10-13: processMoMoWebhook (HMAC-verified, SEC-002) updates escrow status from a gateway callback, but nothing in the app or CF actually reaches the MTN gateway, so no real webhook ever fires; escrow lock is also performed locally by the createMoMoCollection callable. End-to-end confirmed payment is unverified. Needs a live gateway integration so a genuine signed webhook drives the lock."
         },
         {
             "id": "PAY-003",
@@ -1501,7 +1501,7 @@
                 "Escrow pool balance"
             ],
             "rollback": "git checkout functions/src/index.ts",
-            "notes": "Completes payment lifecycle."
+            "notes": "Completes payment lifecycle. AUDIT 2026-10-13: releaseEscrowToWorker callable writes a momo_payouts doc with status QUEUED and a fabricated PAYOUT-<ts> ref but performs NO real MoMo Transfer API call. Android disburseEscrowPayoutToWorker() likewise fabricates a payoutId and returns status=\"DISBURSED\" with no network call and has zero production callers. No worker wallet is ever credited. Needs a server-side MoMo disbursement call with a verified transfer result before status may be RELEASED_TO_WORKER."
         },
         {
             "id": "PAY-004",
@@ -1536,7 +1536,7 @@
                 "Low risk"
             ],
             "rollback": "git checkout repository file",
-            "notes": "Field operational feature."
+            "notes": "Field operational feature. AUDIT 2026-10-13: approveMaterialAdvance() only computes 50% and updates the Room job row (materialAdvanceStatus=DISBURSED); it performs no MoMo disbursement and no receipt-upload enforcement. The 50% math exists but no funds move and the 60-min receipt gate is not implemented. Needs a real partial disbursement + receipt capture tied to the advance."
         },
         {
             "id": "MAP-001",
@@ -1610,7 +1610,7 @@
                 "Gemini API key requirement"
             ],
             "rollback": "git checkout affected AI files",
-            "notes": "Fixes critical defect AI-01."
+            "notes": "Fixes critical defect AI-01. AUDIT 2026-10-13: GeminiAudioTranscriptionService.transcribeAudio posts to gemini-2.0-flash, but when GEMINI_API_KEY is empty or the placeholder \"MY_GEMINI_API_KEY\" it returns HARD-CODED canned job fields (\"Emergency Pipe Repair\"/Plumbing/85.0), and the API-error/exception paths also return fixed canned jobs. The QuickRequestDrawer fills the form from this result with no UI distinction between real and canned output. With the current placeholder key, every \"AI\" job is fabricated. Needs a real key + an explicit \"transcription unavailable\" state in the UI."
         },
         {
             "id": "AI-002",
@@ -1719,7 +1719,7 @@
                 "Low risk"
             ],
             "rollback": "git checkout repository file",
-            "notes": "Doorstep physical security."
+            "notes": "Doorstep physical security. AUDIT 2026-10-13: PIN IS generated per job as a random 4-digit value in addJobPost() ((1000..9999).random()); the \"4829\" is only the entity/DB default for seeded rows, not used for new jobs. verifyDoorstepPin() is owner-gated and mutates status. Missing: no secure delivery of the PIN to the resident/worker (no push/SMS channel - SMS is simulated) and no expiry. Unique-per-job generation + verification are present."
         },
         {
             "id": "SAFE-002",
@@ -1755,7 +1755,7 @@
                 "SMS dispatch costs"
             ],
             "rollback": "git checkout repository file",
-            "notes": "Worker physical safety."
+            "notes": "Worker physical safety. AUDIT 2026-10-13: triggerEmergencySos() sets isSosTriggered and calls SmsNotificationService.dispatchEmergencySosAlert(), but that service is SIMULATED - it only Log.d + delay(200) and returns a fabricated status=\"SENT\". No SMS gateway request is made, so no real alert is delivered to anyone. The in-app flag works; the emergency SMS does not. Needs a real SMS gateway before SOS can be considered dispatched."
         },
         {
             "id": "OFF-001",
@@ -1792,7 +1792,7 @@
                 "Low risk"
             ],
             "rollback": "git checkout affected offline files",
-            "notes": "Offline reliability."
+            "notes": "Offline reliability. AUDIT 2026-10-13: queue WRITE works (PendingActionEntity + enqueueAction persist to Room, OfflineStatusBar renders), but the SYNC does not: flushPendingActions() explicitly \"performs no execution and no deletion\" (logs \"execution not yet implemented\"), so queued actions are never replayed to Firestore on reconnect. Acceptance criterion \"automatically synced to Firestore upon reconnect\" is NOT met. Needs a real flush that executes each queued payload against Firestore and deletes only after server confirmation."
         },
         {
             "id": "REL-001",
@@ -2104,6 +2104,7 @@
         },
         {
             "id": "AUTH-008",
+            "notes": "AUDIT 2026-10-13: 7-day session expiry and device-id change ARE enforced - restoreSession() (SkillsExchangeViewModel) inlines the age check (sessionAge > 7d -> clearSession) and device-id mismatch -> clearSession, called on app entry. NOTE: SessionManager.isSessionValid() is dead code (never called); the logic lives inline in the ViewModel. Session/device security is functionally present for the launch-time restore path; mid-session inactivity expiry and re-validation on protected operations are not implemented.",
             "phase": 16,
             "title": "Implement Session/Device Security",
             "priority": "P1",
@@ -2536,6 +2537,7 @@
         },
         {
             "id": "DISP-003",
+            "notes": "AUDIT 2026-10-13: resolveDispute + getDisputesQueue Cloud Functions exist (admin-gated), but the Android app does NOT call them (no getHttpsCallable(\"resolveDispute\")); disputes are created/persisted locally in Room (submitDispute -> createDispute). There is no admin UI that resolves a dispute against the backend. Admin dispute resolution is backend-only with no working end-to-end workflow.",
             "phase": 16,
             "title": "Implement Admin Dispute Resolution",
             "priority": "P0",
@@ -2572,6 +2574,7 @@
         },
         {
             "id": "DISP-004",
+            "notes": "AUDIT 2026-10-13: reportUser() persists a ReportEntity to Room only (reportDao.insertReport); it is NOT synced to Firestore and there is no admin queue that surfaces reports. Reporting is a local-only record with no backend or admin-review path.",
             "phase": 16,
             "title": "Implement User/Worker Reporting",
             "priority": "P1",
@@ -2689,6 +2692,7 @@
         },
         {
             "id": "NOTIF-002",
+            "notes": "AUDIT 2026-10-13: SkillsExchangeMessagingService receives FCM and shows a local notification, and token fetch/delete exist, but sendTokenToServer() only Log.d(\"FCM token to send to server\") - the token is never registered anywhere, and nothing server-side sends an FCM message. The app can receive a push only if some external process already knows the token; there is no working send path. Client-receipt plumbing exists; registration + server send do not.",
             "phase": 16,
             "title": "Implement FCM Push Notifications",
             "priority": "P0",
@@ -2727,6 +2731,7 @@
         },
         {
             "id": "NOTIF-003",
+            "notes": "AUDIT 2026-10-13: triggers create LOCAL Room notifications (repository.createNotification -> notificationDao) on quote/job/payment/verification/SOS events; these populate the in-app NotificationDrawer. They are not delivered as remote push (see NOTIF-002) - no FCM send is triggered by these events. In-app notification list works; remote delivery does not.",
             "phase": 16,
             "title": "Wire Notification Triggers to Events",
             "priority": "P1",

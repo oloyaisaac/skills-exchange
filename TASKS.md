@@ -279,6 +279,24 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 Full finding text (A1–A8, B1–B9, G1–G7, D1–D11, N1–N4, P1–P2, M1–M4, auth 1–9, community map) is preserved in AGENT_STATE.md 2026-09-17 section. Counts: 79 completed / 12 pending unchanged.
 
 ---
+## Implementation-Truth Audit — 2026-10-13 (confirmed gaps; linked to PRD story IDs)
+
+> Added by the 2026-10-13 source audit (AGENT_STATE banner + CHANGELOG 2026-10-13 + DECISIONS D-2026-10-13-1). `prd.json` statuses were NOT changed (schema only allows `completed`); the truth is recorded in each story's `notes` (`AUDIT 2026-10-13:`) and here. Safety blockers first.
+
+| ID | Priority | Title | Status | Notes |
+|---|---|---|---|---|
+| AUDIT-PAY | P0 | Real MoMo payment confirmation (PAY-001, PAY-002, PAY-003) | ⏳ Pending | **Safety blocker.** Collection/release never reach MTN (empty key; CF writes Firestore only; Android `disburseEscrowPayoutToWorker` fabricates `DISBURSED`, 0 callers). Add a server callable that calls the MoMo Collection + Disbursement APIs and a genuine HMAC-verified webhook that drives escrow lock/release; never mark funds collected/released without a verified provider result. Device-verify on sandbox. |
+| AUDIT-SMS | P0 | Real SMS delivery for SAFE-002 / MARKET-001 | ⏳ Pending | **Safety blocker.** `SmsNotificationService` is `Log.d`+`delay`+fake `SENT`; no gateway call. Integrate a real SMS gateway (Africa's Talking/Twilio) for SOS alerts and offline-worker dispatch; SOS currently delivers no real alert. |
+| AUDIT-PUSH | P1 | Real FCM registration + server send (NOTIF-002, NOTIF-003) | ⏳ Pending | `sendTokenToServer()` only logs; event triggers write local Room notifications only. Register the token server-side and add a Cloud Function send path so notifications reach other devices. |
+| AUDIT-AI | P1 | Real Gemini transcription + honest fallback (AI-001) | ⏳ Pending | Canned job fields returned under the `MY_GEMINI_API_KEY` placeholder / on API error, with no UI distinction. Configure a real key and surface an explicit "transcription unavailable" state instead of fabricated fields. |
+| AUDIT-OFFLINE | P1 | Implement offline queue flush (OFF-001) | ⏳ Pending | `flushPendingActions()` performs no execution/deletion. Implement a flush that replays each queued payload to Firestore and deletes only after server confirmation. |
+| AUDIT-KYC-UPLOAD | P1 | Wire National-ID byte upload (KYC-002) | ⏳ Pending | `uploadKycDocument()` has zero callers; KYC submit stores URL strings. Wire the capture UI to a real Storage upload (KYC-004/KYC-005 photo uploads already work). |
+| AUDIT-ADMIN-WEB | P1 | Build the separate admin web dashboard (ADMIN-001) | ⏳ Pending | Only Cloud Functions + Android callers exist; no web surface. Build admin.skillsexchange.app (verification queue, decisions, activation, dispute resolution). |
+| AUDIT-DISPUTE-REPORT | P2 | Backend dispute resolution + report review (DISP-003, DISP-004) | ⏳ Pending | Disputes/reports persist to Room only; `resolveDispute`/`getDisputesQueue` are never called from the app and no admin surface exists. Sync to Firestore + admin review. |
+| AUDIT-SAFE-PIN | P2 | Secure doorstep-PIN delivery + expiry (SAFE-001) | ⏳ Pending | Unique per-job random PIN generation + owner-gated verification ARE implemented; missing secure delivery (push/SMS — both currently simulated) and PIN expiry. |
+| AUDIT-PRD-SCHEMA | P2 | Add `in_progress`/`partial` status to prd.json schema | ⏳ Pending | Schema allows only `completed`; cannot express mocked/partial work. Proposed in DECISIONS D-2026-10-13-1; validate against tooling before adopting, then move the simulated stories to `partial`. |
+
+
 
 ## Real-Device Test — 2026-09-29 (Samsung SM-A025F, Android 12 / API 31)
 

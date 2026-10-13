@@ -1,6 +1,33 @@
 # DECISIONS.md — Skills Exchange Architectural & Design Decisions
 
 All significant architectural, design, and implementation decisions are recorded here. This allows future agents and developers to understand why specific choices were made.
+### D-2026-10-13-1 - Implementation-truth audit: payment/SMS/push/KYC paths are simulated; PRD status vocabulary is too narrow to express this
+
+**Context.** A source audit of the completed stories found that several are mocked or disconnected:
+MoMo collection/release never reach the MTN gateway (empty key server-side; fabricated `PAYOUT-` refs; `disburseEscrowPayoutToWorker` has zero callers), SMS (`SmsNotificationService`) is `Log.d`+`delay`+fake `SENT`, FCM tokens are never registered server-side (`sendTokenToServer` logs only) and event notifications are local-Room only, `GeminiAudioTranscriptionService` returns canned job fields under the placeholder key, the offline queue's `flushPendingActions()` explicitly does nothing, `uploadKycDocument()` has zero callers, and disputes/reports are Room-only with the `resolveDispute`/`getDisputesQueue` callables never invoked from the app. There is no separate admin web dashboard. Meanwhile AUTH-008, SAFE-001 (per-job random PIN), MARKET-001 discovery, and COMM-001 chat ARE functional.
+
+**Problem with expressing this in `prd.json`.** The schema only allows the single status value `completed` (all 93 stories) and `completed_stories[]` lists all 93. There is no `in_progress`, `partial`, or `blocked` value to represent "implemented but mocked/disconnected." Inventing a new status without checking tooling compatibility risks breaking consumers, so per the audit brief it was NOT introduced.
+
+**Options considered:**
+1. Bulk-flip the affected stories to a new `partial`/`in_progress` status.
+2. Leave `prd.json` statuses as `completed` and record the truth in each story's `notes` plus the tracking docs.
+3. Delete or downgrade the stories.
+
+**Decision.** Option 2 (chosen now) + a proposed schema change (deferred, needs owner sign-off):
+- Annotated each affected story's `notes` with an `AUDIT 2026-10-13:` block stating the exact evidence and remaining work. Statuses left `completed` to preserve schema/tooling compatibility; this is an honest limitation recorded here rather than a claim that the features work.
+- **Proposed (NOT applied):** add `in_progress` and `partial` to the permitted status set, move the simulated/disconnected stories to `partial`, and reconcile `completed_stories[]`. This must be validated against any tooling that reads `prd.json` (AGENTS.md §2) before adoption.
+
+**Unresolved architectural choices (deliberately not decided here):**
+- **Payments:** no trusted server-side payment confirmation exists. Need a real MTN MoMo Collection/Disbursement integration (server callable that calls the gateway, plus a genuine HMAC-verified webhook that drives escrow lock/release). Whether funds may be treated as collected before a verified webhook is an open product decision.
+- **Sensitive KYC storage:** National-ID byte upload (`uploadKycDocument`) is disconnected from the app; guarantor photos and certificates are real. The authoritative private path and the review access path (Admin SDK, per DEC-011) exist, but the National-ID capture UI→upload wiring is missing.
+- **Notification delivery:** no server-side FCM send path; only local Room notifications. Choosing FCM-vs-another channel and implementing token registration + server send is open.
+- **Backend authorization for disputes/reports:** the admin callables exist but no admin surface calls them; building the web dashboard (ADMIN-001) is the open work.
+
+**Consequences.** Future agents must read the `AUDIT 2026-10-13:` notes and the AGENT_STATE banner before trusting any "completed" payment/SMS/push/AI/offline/KYC-upload/dispute claim. Nothing was deployed, committed, or implemented in this audit.
+
+**Verification.** `prd.json` re-parses (93 stories, statuses unchanged); `git --no-pager diff --check` clean. No tests run (documentation-only change).
+
+
 ### D-2026-10-11-1 - Phase 17 "Future" stories are completed as documentation; completion claims must be verified, never scripted
 
 **Context.** Seven Phase 17 stories (REG-001, LOC-005, MAP-002, MAP-003, LEGAL-001, LEGAL-002,
