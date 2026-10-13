@@ -34,7 +34,7 @@ All meaningful development changes are recorded here in reverse chronological or
 - **Verification:** New `MapEmptyProvidersOverlayTest` (Robolectric + Compose, NATIVE graphics) **1/1 pass**; `:app:compileDebugKotlin` + `:app:testDebugUnitTest` BUILD SUCCESSFUL (bounded daemon heap). Decision **DEC-028**.
 
 ### [2026-10-10] [M5] Notification tap navigation (B6)
-### [2026-10-10] [M5] Notification tap navigation (B6)
+2026-10-10 — [M5] Notification tap navigation (B6) — *(duplicate heading kept for history; content is the block below)*
 
 - **Problem:** Tapping an in-app notification in the `NotificationDrawer` only called `markAllNotificationsRead()` and closed the drawer â€” it never navigated to the verification, payment, dispute, SOS, or job the notification referred to (finding B6: "marks all read but doesn't navigate").
 - **Fix:**
@@ -43,7 +43,7 @@ All meaningful development changes are recorded here in reverse chronological or
 - **Verification:** New `NotificationRoutingTest` (plain JUnit) **7/7 pass**; `:app:compileDebugKotlin` + `:app:testDebugUnitTest` BUILD SUCCESSFUL (bounded daemon heap to avoid the known 4 GB OOM on this 3.9 GB machine). Decision **DEC-027**.
 
 ### [2026-10-10] [M4] Worker Online toggle persistence (B4)
-### [2026-10-10] [M4] Worker Online toggle persistence (B4)
+2026-10-10 — [M4] Worker Online toggle persistence (B4) — *(duplicate heading kept for history; content is the block below)*
 
 - **Problem:** The worker's online/availability toggle lived only in an in-memory `MutableStateFlow(true)` (`SkillsExchangeViewModel.isWorkerOnline`). `toggleWorkerOnline()` flipped it in memory and nothing persisted it, so a worker who paused (went offline) silently came back **online** on every app restart â€” losing the "don't send me jobs" intent.
 - **Fix:** Persist the flag in the existing **SessionManager DataStore** (`worker_online` boolean key, defaults to `true`):
