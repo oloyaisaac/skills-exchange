@@ -21,6 +21,9 @@ import com.example.data.remote.GeminiAudioTranscriptionService
 import com.example.data.remote.GeminiMapsGroundingService
 import com.example.data.remote.GroundedPlaceResult
 import com.example.data.remote.MoMoPaymentIntent
+import com.example.data.remote.MoMoPaymentPhase
+import com.example.data.remote.MoMoPaymentUiState
+import com.example.data.remote.mapBackendStatusToPhase
 import com.example.data.remote.SmsNotificationService
 import com.example.data.remote.TranscribedVoiceJob
 import com.example.data.repository.SkillsExchangeRepository
@@ -29,6 +32,7 @@ import com.example.util.CurrencyRegion
 import com.example.util.DistanceUtil
 import com.example.util.ProfileValidators
 import com.google.firebase.auth.FirebaseUser
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -1398,15 +1402,27 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     // --- MODULE 3: MOBILE MONEY (MOMO) PAYMENT ENGINE ---
     /**
-     * PAY-001 (AUDIT-PAY Phase 2): route collection through the trusted backend callable.
+     * PAY-002: trusted payment UI state, sourced ONLY from the backend.
      *
-     * The previous implementation POSTed to the MTN sandbox from the device with an empty
-     * API key and then unconditionally flipped the job to ACCEPTED_FUNDED /
-     * FUNDS_LOCKED_IN_ESCROW — treating an unconfirmed request as funded money. That path
-     * is removed: this calls `FirebaseService.initiateMoMoCollection` (the
-     * `createMoMoCollection` callable, which reads the trusted job document and performs
-     * the sandbox RequestToPay server-side) and reports the backend status back. Escrow is
-     * NEVER flipped here; it locks only on the verified PAY-002 webhook path.
+     * `PENDING` after initiation means the RequestToPay was delivered (202) — money has
+     * NOT moved and escrow is NOT locked. `SUCCESSFUL` is published only when the
+     * `getMoMoCollectionStatus` callable reports the provider-verified state, at which
+     * point the backend has locked escrow. `FAILED` and `NEEDS_ATTENTION` likewise come
+     * from the backend (or from a failed initiation / unverifiable status). No local
+     * success or HTTP 202 is ever treated as proof of funds.
+     */
+    private val _momoPaymentState = MutableStateFlow<MoMoPaymentUiState?>(null)
+    val momoPaymentState: StateFlow<MoMoPaymentUiState?> = _momoPaymentState.asStateFlow()
+
+    /**
+     * PAY-001/PAY-002: route collection through the trusted backend callable, then let
+     * the backend — never the device — decide what the payment means.
+     *
+     * `FirebaseService.initiateMoMoCollection` (the `createMoMoCollection` callable)
+     * reads the trusted job document and performs the sandbox RequestToPay server-side;
+     * a 202 maps to PENDING. The app then polls `getMoMoCollectionStatus`, whose server
+     * side re-queries the MTN provider status API and locks escrow only on a verified
+     * SUCCESSFUL. Escrow is NEVER flipped on the device.
      */
     fun initiateMoMoEscrowPayment(
         jobId: String,
@@ -1419,6 +1435,12 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         viewModelScope.launch {
             val result = firebaseService.initiateMoMoCollection(jobId, amountUgx, phone)
             if (result.success) {
+                _momoPaymentState.value = MoMoPaymentUiState(
+                    phase = MoMoPaymentPhase.PENDING,
+                    transactionRef = result.transactionRef,
+                    message = result.message
+                        ?: "Payment request sent. Approve on your handset; funds are NOT yet in escrow."
+                )
                 onIntentCreated(
                     MoMoPaymentIntent(
                         transactionId = result.transactionRef ?: "PENDING",
@@ -1431,9 +1453,15 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                             ?: "Payment request sent. Approve on your handset; funds are NOT yet in escrow."
                     )
                 )
+                result.transactionRef?.let { pollTrustedMoMoCollectionStatus(it) }
             } else {
                 // Fail closed: nothing was collected, escrow untouched. Surface a FAILED intent
                 // so existing UI keeps rendering, plus the machine-readable error for new UI.
+                _momoPaymentState.value = MoMoPaymentUiState(
+                    phase = MoMoPaymentPhase.FAILED,
+                    transactionRef = result.transactionRef,
+                    message = result.message ?: "Payment request failed. Nothing was collected."
+                )
                 onIntentCreated(
                     MoMoPaymentIntent(
                         transactionId = result.transactionRef ?: "FAILED",
@@ -1448,6 +1476,43 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 onCollectionFailed(result.errorCode, result.message)
             }
         }
+    }
+
+    /**
+     * PAY-002: bounded polling of the TRUSTED backend for the provider-verified status.
+     *
+     * Stops as soon as a terminal/attention phase arrives. A failed status check never
+     * fabricates a result: the last backend-published state is kept and its message is
+     * updated to surface the check failure.
+     */
+    private suspend fun pollTrustedMoMoCollectionStatus(transactionRef: String) {
+        repeat(MOMO_STATUS_POLL_ATTEMPTS) {
+            delay(MOMO_STATUS_POLL_INTERVAL_MS)
+            val statusResult = firebaseService.getMoMoCollectionStatus(transactionRef)
+            if (statusResult.status == null) {
+                // Backend unreachable / permission / config failure: keep the last known
+                // state and surface that the check failed. NEVER treat as successful.
+                val current = _momoPaymentState.value ?: return
+                _momoPaymentState.value = current.copy(
+                    message = "Status check failed — payment NOT confirmed. " +
+                        (statusResult.message ?: "Please try again shortly.")
+                )
+                return
+            }
+            val phase = mapBackendStatusToPhase(statusResult.status)
+            _momoPaymentState.value = MoMoPaymentUiState(
+                phase = phase,
+                transactionRef = statusResult.transactionRef ?: transactionRef,
+                message = statusResult.message
+                    ?: "Payment status: ${statusResult.status}."
+            )
+            if (phase != MoMoPaymentPhase.PENDING) return
+        }
+    }
+
+    /** PAY-002: drop the payment state when the payment sheet closes. */
+    fun clearMoMoPaymentState() {
+        _momoPaymentState.value = null
     }
 
     // --- MODULE 4: SMS FALLBACK DISPATCH TO OFFLINE WORKERS ---
@@ -2205,6 +2270,14 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     companion object {
+        /**
+         * PAY-002: how often the app re-asks the trusted backend
+         * (`getMoMoCollectionStatus`) for the provider-verified payment status, and how
+         * long it waits between attempts while the status is still PENDING.
+         */
+        const val MOMO_STATUS_POLL_ATTEMPTS = 8
+        const val MOMO_STATUS_POLL_INTERVAL_MS = 5_000L
+
         /**
          * Legacy/seed placeholder profile id. It is never an authenticated account and must never
          * satisfy getCurrentUser() or the onboarding "existing account" lookup.

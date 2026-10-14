@@ -535,6 +535,8 @@ fun MainScreen(
         val disputeState by viewModel.disputeSubmissionState.collectAsStateWithLifecycle()
         val ratingState by viewModel.ratingSubmissionState.collectAsStateWithLifecycle()
         val sosClearState by viewModel.sosClearState.collectAsStateWithLifecycle()
+        // PAY-002: provider-verified payment state published by the trusted backend.
+        val momoPaymentState by viewModel.momoPaymentState.collectAsStateWithLifecycle()
         EscrowAndProofSheet(
             job = liveJob,
             onUpdateEscrowStatus = { newEscrowStatus ->
@@ -552,6 +554,17 @@ fun MainScreen(
             onUpdatePaymentChannel = { channel, phone ->
                 viewModel.updatePaymentChannel(liveJob.id, channel, phone)
             },
+            onInitiateMobileMoneyPayment = { phone ->
+                // PAY-002: trusted backend collection; escrow locks only on the
+                // backend's provider-verified SUCCESSFUL — never on this call.
+                viewModel.initiateMoMoEscrowPayment(
+                    jobId = liveJob.id,
+                    amountUgx = liveJob.grandTotal,
+                    phone = phone,
+                    onIntentCreated = { /* state surfaced via momoPaymentState */ }
+                )
+            },
+            mobileMoneyPaymentState = momoPaymentState,
             onVerifyDoorstepPin = { pin, expected, callback ->
                 viewModel.verifyDoorstepPin(liveJob.id, pin, expected, callback)
             },
@@ -618,6 +631,7 @@ fun MainScreen(
                 viewModel.resetDisputeSubmissionState()
                 viewModel.resetRatingSubmissionState()
                 viewModel.resetSosClearState()
+                viewModel.clearMoMoPaymentState()
             }
         )
     }

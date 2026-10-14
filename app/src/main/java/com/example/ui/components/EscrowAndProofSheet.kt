@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.db.JobPostEntity
 import com.example.data.db.DisputeReason
+import com.example.data.remote.MoMoPaymentPhase
+import com.example.data.remote.MoMoPaymentUiState
 import com.example.ui.theme.*
 import com.example.util.CurrencyRegion
 
@@ -45,6 +47,11 @@ fun EscrowAndProofSheet(
     onRequestEmergencyAddon: (amount: Double, reason: String) -> Unit,
     onRespondEmergencyAddon: (Boolean) -> Unit,
     onUpdatePaymentChannel: (channel: String, phone: String) -> Unit,
+    // PAY-002: the ONLY way money may be claimed as locked. Triggers the trusted
+    // `createMoMoCollection` callable server-side; [mobileMoneyPaymentState] then
+    // carries the backend's provider-verified result. The device never flips escrow.
+    onInitiateMobileMoneyPayment: (phone: String) -> Unit,
+    mobileMoneyPaymentState: MoMoPaymentUiState? = null,
     onDismiss: () -> Unit,
     onVerifyDoorstepPin: ((enteredPin: String, expectedPin: String, onResult: (Boolean) -> Unit) -> Unit)? = null,
     onRequestMaterialAdvance: ((amount: Double) -> Unit)? = null,
@@ -1276,7 +1283,9 @@ fun EscrowAndProofSheet(
         }
     }
 
-    // SIMULATED USSD PUSH & PIN ENTRY MODAL
+    // MOBILE MONEY PAYMENT MODAL (PAY-002: trusted backend flow)
+    // The modal no longer funds escrow locally: confirming initiates the server-side
+    // collection and the modal renders the backend's provider-verified state.
     if (showUssdPushModal) {
         AlertDialog(
             onDismissRequest = { showUssdPushModal = false },
@@ -1344,22 +1353,66 @@ fun EscrowAndProofSheet(
                     if (pinError.isNotBlank()) {
                         Text(text = pinError, fontSize = 11.sp, color = AmberUrgent)
                     }
+
+                    // PAY-002: provider-verified state from the trusted backend only.
+                    mobileMoneyPaymentState?.let { state ->
+                        val stateLabel = when (state.phase) {
+                            MoMoPaymentPhase.PENDING ->
+                                "⏳ Payment pending — approve the prompt on $phoneNumber. Funds are NOT in escrow yet."
+                            MoMoPaymentPhase.SUCCESSFUL ->
+                                "✅ ${state.message}"
+                            MoMoPaymentPhase.FAILED ->
+                                "❌ ${state.message}"
+                            MoMoPaymentPhase.NEEDS_ATTENTION ->
+                                "⚠️ ${state.message}"
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = when (state.phase) {
+                                MoMoPaymentPhase.SUCCESSFUL -> Color(0xFF14532D)
+                                MoMoPaymentPhase.FAILED -> Color(0xFF5B1A1A)
+                                MoMoPaymentPhase.NEEDS_ATTENTION -> Color(0xFF4A3A12)
+                                else -> Slate800
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = stateLabel,
+                                fontSize = 11.sp,
+                                color = Color.White,
+                                modifier = Modifier.padding(10.dp)
+                            )
+                        }
+                    }
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
                         if (pinCode.length == 4) {
-                            showUssdPushModal = false
-                            onUpdateEscrowStatus("FUNDS_LOCKED_IN_ESCROW")
+                            // PAY-002: initiate the TRUSTED server-side collection. Escrow
+                            // locks only after the backend confirms the provider reports
+                            // SUCCESSFUL — never from this click or a local 202.
+                            onInitiateMobileMoneyPayment(phoneNumber)
                         } else {
                             pinError = "Please enter a valid 4-digit PIN."
                         }
                     },
+                    enabled = mobileMoneyPaymentState?.phase != MoMoPaymentPhase.PENDING,
                     colors = ButtonDefaults.buttonColors(containerColor = MtnYellow, contentColor = MtnDark),
                     shape = RoundedCornerShape(6.dp)
                 ) {
-                    Text(text = "Confirm PIN & Lock Funds", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(
+                        text = when (mobileMoneyPaymentState?.phase) {
+                            MoMoPaymentPhase.PENDING -> "Waiting for confirmation…"
+                            MoMoPaymentPhase.SUCCESSFUL -> "Paid — Escrow Locked"
+                            MoMoPaymentPhase.FAILED -> "Retry Payment"
+                            MoMoPaymentPhase.NEEDS_ATTENTION -> "Check Status Again"
+                            null -> "Confirm PIN & Send Payment Request"
+                        },
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
+                    )
                 }
             },
             dismissButton = {

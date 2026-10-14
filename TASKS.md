@@ -1,7 +1,8 @@
 # TASKS.md — Skills Exchange Human-Readable Task Status
 
 Synchronized with `prd.json`. This is the human-readable view of the development backlog.
-Last synchronized: 2026-10-11T15:24:11+03:00 — Phase 17 documentation stories **REG-001, LOC-005, MAP-002, MAP-003, LEGAL-001, LEGAL-002, AUTH-012** completed (7 pending → 0). All seven are documentation-only stories; each was verified against its own acceptance criteria. MAP-003 was added to `requirement_file.md` (§13.8) where it had been missing, and the following sections were renumbered 13.8→13.9 … 13.12→13.13.
+Last synchronized: 2026-10-14T11:15:00+03:00 — **PAY-002 verified & complete** (trusted backend confirmation: provider status re-query, pull-to-verify webhook, idempotent escrow lock, backend-driven Android states). Functions `tsc --noEmit` clean + `node --test` 82/82; Android `testDebugUnitTest` 244/244 (baseline 235 + 9 new). PAY-001/PAY-002 of AUDIT-PAY done; PAY-003/PAY-004 remain disconnected. No deploy, commit, push, or real transaction performed.
+Previous sync: 2026-10-11T15:24:11+03:00 — Phase 17 documentation stories **REG-001, LOC-005, MAP-002, MAP-003, LEGAL-001, LEGAL-002, AUTH-012** completed (7 pending → 0). All seven are documentation-only stories; each was verified against its own acceptance criteria. MAP-003 was added to `requirement_file.md` (§13.8) where it had been missing, and the following sections were renumbered 13.8→13.9 … 13.12→13.13.
 
 Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Failed
 
@@ -118,10 +119,10 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | ID | Priority | Title | Status | Notes |
 |---|---|---|---|---|
-| PAY-001 | P1 | Integrate Mobile Money Collection Intent API | ✅ Completed | Retrofit + MTN MoMo Collection API integration |
-| PAY-002 | P1 | Implement Escrow Lock & Webhook Confirmation | ✅ Completed | processMoMoWebhook locks escrow + notifications |
-| PAY-003 | P1 | Implement Escrow Release & Worker MoMo Payout | ✅ Completed | releaseEscrowToWorker Cloud Function, worker payout |
-| PAY-004 | P2 | Implement Material Advance Escrow Partial Disbursement | ✅ Completed | approveMaterialAdvance method, 50% disbursement logic |
+| PAY-001 | P1 | Integrate Mobile Money Collection Intent API | ✅ Completed | Server-side only: `createMoMoCollection` callable in `functions/src/momoCollection.ts` performs the sandbox RequestToPay with backend credentials; 202 → `PENDING`. Verified 2026-10-14 (tsc clean, 82/82 node tests). |
+| PAY-002 | P1 | Implement Escrow Lock & Webhook Confirmation | ✅ Completed | Rebuilt 2026-10-14 as pull-to-verify (D-2026-10-14-1): `getMoMoCollectionStatus` callable + rewritten `processMoMoWebhook` (body = reference hint only, MTN has no callback auth) delegate to `momoConfirmation.ts`; escrow locks only on provider-verified SUCCESSFUL via idempotent `lockEscrowForConfirmedTransaction`; Android shows only backend states (`momoPaymentState`, local modal flip removed). Verified: functions tsc clean + node --test 82/82; Android 244/244 (incl. `MoMoPaymentUiStateTest`, `MoMoCredentialLeakSecurityTest`). Real MTN sandbox callback delivery NOT yet verified (no deploy). |
+| PAY-003 | P1 | Implement Escrow Release & Worker MoMo Payout | 🚫 Disconnected (per AUDIT-PAY) | `releaseEscrowToWorker` / `disburseEscrowPayoutToWorker` still fabricate `DISBURSED` with 0 callers — pending real disbursement API work; do not trust. |
+| PAY-004 | P2 | Implement Material Advance Escrow Partial Disbursement | 🚫 Disconnected (per AUDIT-PAY) | `approveMaterialAdvance` writes Room only — not backend-verified; pending. |
 
 ---
 
@@ -285,7 +286,8 @@ Full finding text (A1–A8, B1–B9, G1–G7, D1–D11, N1–N4, P1–P2, M1–M
 
 | ID | Priority | Title | Status | Notes |
 |---|---|---|---|---|
-| AUDIT-PAY | P0 | Real MoMo payment confirmation (PAY-001, PAY-002, PAY-003) | ⏳ Pending | **Safety blocker.** Collection/release never reach MTN (empty key; CF writes Firestore only; Android `disburseEscrowPayoutToWorker` fabricates `DISBURSED`, 0 callers). Add a server callable that calls the MoMo Collection + Disbursement APIs and a genuine HMAC-verified webhook that drives escrow lock/release; never mark funds collected/released without a verified provider result. Device-verify on sandbox. |
+| AUDIT-PAY | P0 | Real MoMo payment confirmation (PAY-001, PAY-002, PAY-003) | 🔁 In Progress | **Collection + confirmation (PAY-001/PAY-002) DONE 2026-10-14:** server callable creates the sandbox RequestToPay and a provider status re-query (`GET /collection/v1_0/requesttopay/{ref}`) drives PENDING/SUCCESSFUL/FAILED → idempotent escrow lock; webhook is pull-to-verify because MTN documents **no callback authentication** (the old "HMAC-verified" claim was invented — see DECISIONS D-2026-10-14-1). Functions 82/82 + Android 244/244 tests pass; no deploy/commit made. **STILL PENDING:** real MTN sandbox end-to-end verification (needs deploy + portal callback host), and PAY-003/PAY-004 payout: `disburseEscrowPayoutToWorker` fabricates `DISBURSED`, 0 callers. Never mark funds released without a verified provider result. |
+
 | AUDIT-SMS | P0 | Real SMS delivery for SAFE-002 / MARKET-001 | ⏳ Pending | **Safety blocker.** `SmsNotificationService` is `Log.d`+`delay`+fake `SENT`; no gateway call. Integrate a real SMS gateway (Africa's Talking/Twilio) for SOS alerts and offline-worker dispatch; SOS currently delivers no real alert. |
 | AUDIT-PUSH | P1 | Real FCM registration + server send (NOTIF-002, NOTIF-003) | ⏳ Pending | `sendTokenToServer()` only logs; event triggers write local Room notifications only. Register the token server-side and add a Cloud Function send path so notifications reach other devices. |
 | AUDIT-AI | P1 | Real Gemini transcription + honest fallback (AI-001) | ⏳ Pending | Canned job fields returned under the `MY_GEMINI_API_KEY` placeholder / on API error, with no UI distinction. Configure a real key and surface an explicit "transcription unavailable" state instead of fabricated fields. |

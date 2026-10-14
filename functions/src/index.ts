@@ -25,12 +25,23 @@ import type {
   CollectionTransactionRecord,
   RequestToPayPayload,
 } from "./momoCollection";
+import {
+  verifyAndConfirmCollection,
+  authorizeStatusQuery,
+  extractCallbackReferenceHint,
+  parseProviderStatusResponse,
+  FUNDED_ESCROW_STATUSES,
+} from "./momoConfirmation";
+import type {
+  ConfirmationDeps,
+  StoredCollectionRecord,
+  ProviderStatusQueryResult,
+} from "./momoConfirmation";
 import type { DocumentBody, MintedUrl } from "./guarantorReview";
 
 admin.initializeApp();
 const db = admin.firestore();
 
-const MOMO_WEBHOOK_SECRET = process.env.MOMO_WEBHOOK_SECRET;
 
 /**
  * ADMIN-005: lifetime of the short-lived download links handed to an administrator for
@@ -49,48 +60,23 @@ const PHOTO_URL_TTL_SECONDS = resolvePhotoUrlTtlSeconds(process.env.GUARANTOR_PH
 const STORAGE_BUCKET_NAME = process.env.GS_STORAGE_BUCKET || "";
 
 
-if (!MOMO_WEBHOOK_SECRET) {
-  console.error("FATAL: MOMO_WEBHOOK_SECRET environment variable is not set. Webhook verification will fail.");
-}
-
 /**
- * SEC-002: Helper to verify HMAC-SHA256 signature on incoming payment gateway webhooks.
+ * PAY-002 (D-2026-10-14-1): the previous SEC-002 HMAC webhook gate has been REMOVED.
+ *
+ * MTN MoMo's documented callback mechanism (X-Callback-Url on the initiation POST)
+ * delivers a plain POST with NO authentication of any kind — no HMAC, no signature
+ * header, no shared secret, no mTLS. The removed gate required a `x-momo-signature`
+ * (etc.) header HMAC-signed with `MOMO_WEBHOOK_SECRET`, a protocol MTN would never
+ * satisfy, so a real provider callback could only ever be rejected by it while an
+ * attacker-controlled body still went straight to the escrow flip below it.
+ *
+ * Replaced by pull-to-verify (the only mechanism the provider documentation
+ * establishes): the callback body is NEVER trusted; it is used solely as a hint to
+ * locate an already-stored transaction, and every state decision comes from the
+ * authenticated GET /collection/v1_0/requesttopay/{referenceId} re-query performed
+ * by `momoConfirmation.verifyAndConfirmCollection`.
  */
-function verifyHmacSignature(req: functions.https.Request): boolean {
-  if (!MOMO_WEBHOOK_SECRET) {
-    console.error("MOMO_WEBHOOK_SECRET not configured. Rejecting webhook.");
-    return false;
-  }
 
-  const signatureHeader = (
-    req.headers["x-momo-signature"] ||
-    req.headers["x-signature"] ||
-    req.headers["x-callback-signature"] ||
-    req.headers["x-hub-signature-256"]
-  ) as string | undefined;
-
-  if (!signatureHeader) {
-    return false;
-  }
-
-  const rawSignature = signatureHeader.replace(/^sha256=/, "").trim();
-  const rawBody = typeof req.body === "string" ? req.body : JSON.stringify(req.body);
-  const expectedSignature = crypto
-    .createHmac("sha256", MOMO_WEBHOOK_SECRET)
-    .update(rawBody)
-    .digest("hex");
-
-  try {
-    const signatureBuffer = Buffer.from(rawSignature, "hex");
-    const expectedBuffer = Buffer.from(expectedSignature, "hex");
-    if (signatureBuffer.length !== expectedBuffer.length) {
-      return false;
-    }
-    return crypto.timingSafeEqual(signatureBuffer, expectedBuffer);
-  } catch (error) {
-    return false;
-  }
-}
 
 /**
  * MODULE 3: MOBILE MONEY (MoMo) PAYMENT INFRASTRUCTURE — trusted sandbox Collection.
@@ -245,6 +231,275 @@ export const createMoMoCollection = functions.https.onCall(async (data, context)
   };
 });
 
+// ============================================================================
+// PAY-002: trusted confirmation of a MoMo collection (sandbox only).
+//
+// Status is obtained ONLY from the provider's authenticated status endpoint
+// (GET /collection/v1_0/requesttopay/{referenceId}) using the platform's own
+// credentials. Clients and callbacks are never authorities. Escrow locks only
+// after the provider itself reports SUCCESSFUL for the STORED transaction, and
+// only after the authoritative job record has been re-read and re-verified.
+// Worker payout (PAY-003) is deliberately NOT part of this path.
+// ============================================================================
+
+/**
+ * Load a stored collection record by platform reference. Accepts either the
+ * `momo_transactions` doc id (MOMO-<ts>) or the provider reference id (the UUID
+ * that was sent as X-Reference-Id and that MTN echoes in callbacks). No other
+ * lookup path exists.
+ */
+async function loadStoredTransactionByRef(ref: string): Promise<StoredCollectionRecord | null> {
+  const cleanRef = (ref || "").trim();
+  if (!cleanRef) return null;
+  const mapDoc = (id: string, data: FirebaseFirestore.DocumentData): StoredCollectionRecord => ({
+    transactionId: id,
+    providerReferenceId: String(data.providerReferenceId || ""),
+    jobId: String(data.jobId || ""),
+    clientUid: String(data.clientUid || ""),
+    amount: Number(data.amount),
+    currency: String(data.currency || ""),
+    status: String(data.status || ""),
+    escrowLockedAt: data.escrowLockedAt ?? null,
+  });
+  const docSnap = await db.collection("momo_transactions").doc(cleanRef).get();
+  if (docSnap.exists) {
+    return mapDoc(docSnap.id, docSnap.data() || {});
+  }
+  const byProviderRef = await db.collection("momo_transactions")
+    .where("providerReferenceId", "==", cleanRef)
+    .limit(1)
+    .get();
+  if (byProviderRef.empty) return null;
+  const snap = byProviderRef.docs[0];
+  return mapDoc(snap.id, snap.data() || {});
+}
+
+/**
+ * Authenticated provider status query — the ONLY source of payment truth in this
+ * module. Server-side only; credentials never leave the backend.
+ */
+async function queryMomoProviderStatus(
+  config: MomoConfig,
+  token: string,
+  providerReferenceId: string
+): Promise<ProviderStatusQueryResult> {
+  try {
+    const resp = await axios.get(
+      `${config.baseUrl}/collection/v1_0/requesttopay/${encodeURIComponent(providerReferenceId)}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Ocp-Apim-Subscription-Key": config.subscriptionKey,
+          "X-Target-Environment": "sandbox",
+        },
+        timeout: 20000,
+        validateStatus: () => true,
+      }
+    );
+    return parseProviderStatusResponse(resp.status, resp.data);
+  } catch (e: any) {
+    const timeout = e?.code === "ECONNABORTED" || /timeout/i.test(e?.message || "");
+    return timeout
+      ? { kind: "provider_timeout", error: e?.message || "Provider status query timed out." }
+      : { kind: "provider_error", error: e?.message || "Provider status query failed." };
+  }
+}
+
+/**
+ * Lock escrow for a CONFIRMED collection, inside a Firestore transaction.
+ *
+ * Re-reads the authoritative records and verifies, atomically:
+ *  - the stored transaction exists, is SUCCESSFUL and is not already escrow-locked
+ *    (idempotence: a duplicate confirmation can never double-lock or corrupt);
+ *  - the transaction's stored jobId resolves to a real job (binding check);
+ *  - the job's trusted amount equals the STORED transaction amount;
+ *  - the job's currency equals the stored transaction currency;
+ *  - the job's escrow is not already in a funded state.
+ * Only then is the job flipped to FUNDS_LOCKED_IN_ESCROW. No payout happens here.
+ */
+async function lockEscrowForConfirmedTransaction(
+  record: StoredCollectionRecord
+): Promise<{ locked: boolean; reason: string }> {
+  const outcome = await db.runTransaction(async (t) => {
+    const txRef = db.collection("momo_transactions").doc(record.transactionId);
+    const txSnap = await t.get(txRef);
+    if (!txSnap.exists) return { locked: false, reason: "transaction_missing" };
+    const tx = txSnap.data() || {};
+    if (String(tx.status || "").trim().toUpperCase() !== "SUCCESSFUL") {
+      return { locked: false, reason: "transaction_not_confirmed" };
+    }
+    if (tx.escrowLockedAt) {
+      return { locked: false, reason: "already_locked" };
+    }
+
+    const jobId = String(tx.jobId || "");
+    if (!jobId) return { locked: false, reason: "transaction_missing_job_binding" };
+    const jobRef = db.collection("jobs").doc(jobId);
+    const jobSnap = await t.get(jobRef);
+    if (!jobSnap.exists) return { locked: false, reason: "job_missing" };
+    const job = jobSnap.data() || {};
+
+    // The job's own trusted amount/currency is re-verified against the STORED
+    // transaction — never against anything a client or callback supplied.
+    const jobAmountRaw = job.grandTotal ?? job.budget ?? null;
+    const jobAmount = typeof jobAmountRaw === "number" ? jobAmountRaw : Number(jobAmountRaw);
+    if (!Number.isFinite(jobAmount) || jobAmount !== Number(tx.amount)) {
+      return { locked: false, reason: "amount_mismatch" };
+    }
+    const jobCurrency = String(job.currency || "UGX");
+    if (tx.currency && String(tx.currency) !== jobCurrency) {
+      return { locked: false, reason: "currency_mismatch" };
+    }
+
+    const escrowStatus = String(job.escrowStatus || "");
+    if (FUNDED_ESCROW_STATUSES.includes(escrowStatus)) {
+      return { locked: false, reason: "escrow_already_funded" };
+    }
+
+    const now = admin.firestore.FieldValue.serverTimestamp();
+    t.update(jobRef, {
+      escrowStatus: "FUNDS_LOCKED_IN_ESCROW",
+      escrowLockedByTransactionId: record.transactionId,
+      escrowLockedAt: now,
+      updatedAt: now,
+    });
+    t.update(txRef, { escrowLockedAt: now });
+    return { locked: true, reason: "locked" };
+  });
+
+  if (outcome.locked) {
+    await notifyEscrowLocked(record);
+  }
+  return outcome;
+}
+
+/** In-app notifications for a fresh escrow lock. Uses the authoritative uids only. */
+async function notifyEscrowLocked(record: StoredCollectionRecord): Promise<void> {
+  try {
+    const jobSnap = await db.collection("jobs").doc(record.jobId).get();
+    const job = jobSnap.data() || {};
+    const recipients: string[] = [];
+    if (typeof job.postedByUid === "string" && job.postedByUid) recipients.push(job.postedByUid);
+    const workerId = job.assignedProviderId || job.assignedWorkerId;
+    if (typeof workerId === "string" && workerId) recipients.push(workerId);
+    const now = admin.firestore.FieldValue.serverTimestamp();
+    for (const userId of recipients) {
+      await db.collection("notifications").add({
+        userId,
+        type: "ESCROW_LOCKED",
+        jobId: record.jobId,
+        message: `Payment confirmed. Funds of UGX ${record.amount} are now locked in escrow for job #${record.jobId}.`,
+        createdAt: now,
+        read: false,
+      });
+    }
+  } catch (error) {
+    // Notifications are best-effort; the escrow lock itself already succeeded.
+    console.error("notifyEscrowLocked failed:", error);
+  }
+}
+
+/** Real (Admin SDK + axios) dependency wiring for the pure confirmation core. */
+function buildConfirmationDeps(): ConfirmationDeps {
+  return {
+    now: () => Date.now(),
+    loadConfig: (env: Record<string, string | undefined>) => loadMomoConfig(env),
+    loadStoredTransaction: (ref: string) => loadStoredTransactionByRef(ref),
+    async acquireToken(config: MomoConfig) {
+      try {
+        const basic = Buffer.from(`${config.apiUser}:${config.apiKey}`).toString("base64");
+        const resp = await axios.post(
+          `${config.baseUrl}/collection/token/`,
+          {},
+          {
+            headers: {
+              "Authorization": `Basic ${basic}`,
+              "Ocp-Apim-Subscription-Key": config.subscriptionKey,
+            },
+            timeout: 15000,
+            validateStatus: () => true,
+          }
+        );
+        if (resp.status !== 200 || !resp.data?.access_token) {
+          return { ok: false as const, error: `Token exchange returned HTTP ${resp.status}.` };
+        }
+        return { ok: true as const, token: String(resp.data.access_token) };
+      } catch (e: any) {
+        return { ok: false as const, error: e?.message || "Token exchange failed." };
+      }
+    },
+    queryProviderStatus: (config, token, providerReferenceId) =>
+      queryMomoProviderStatus(config, token, providerReferenceId),
+    async updateTransaction(ref: string, patch: Record<string, unknown>) {
+      await db.collection("momo_transactions").doc(ref).update(patch);
+    },
+    lockEscrow: (record: StoredCollectionRecord) => lockEscrowForConfirmedTransaction(record),
+  };
+}
+
+/**
+ * PAY-002: trusted payment-status query.
+ *
+ * Callable-only (authenticated). The caller may pass just the transaction reference
+ * they received from `createMoMoCollection`; the STORED `clientUid` binding decides
+ * whether they are allowed to see it — a caller can never query or mutate another
+ * user's transaction. The status returned always comes from the provider re-query
+ * (or the stored terminal state), never from the client.
+ */
+export const getMoMoCollectionStatus = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Authentication required to query a payment status."
+    );
+  }
+  const callerUid = context.auth.uid;
+  const transactionRef = typeof data?.transactionRef === "string" ? data.transactionRef.trim() : "";
+  if (!transactionRef) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Missing required parameter: transactionRef."
+    );
+  }
+
+  const stored = await loadStoredTransactionByRef(transactionRef);
+  const authz = authorizeStatusQuery({ callerUid, stored });
+  if (!authz.ok) {
+    const httpsCode =
+      authz.code === "unauthenticated" ? "unauthenticated"
+      : authz.code === "not_found" ? "not-found"
+      : "permission-denied";
+    throw new functions.https.HttpsError(httpsCode, authz.message);
+  }
+
+  const outcome = await verifyAndConfirmCollection(
+    { transactionRef, env: process.env as Record<string, string | undefined> },
+    buildConfirmationDeps()
+  );
+
+  if (!outcome.ok) {
+    const code =
+      outcome.error.code === "unknown_reference" ? "not-found"
+      : outcome.error.code === "config_error" ? "failed-precondition"
+      : outcome.error.code === "token_error" ? "unavailable"
+      : "internal";
+    throw new functions.https.HttpsError(
+      code as "not-found" | "failed-precondition" | "unavailable" | "internal",
+      outcome.error.message
+    );
+  }
+
+  return {
+    status: outcome.status,
+    transactionRef: outcome.transactionRef,
+    escrowLocked: outcome.escrowLocked,
+    message: outcome.message,
+  };
+});
+
+
+
+
 /**
  * PAY-003: Escrow Release & Worker MoMo Payout
  * Callable function triggered when resident approves job completion.
@@ -353,81 +608,66 @@ export const releaseEscrowToWorker = functions.https.onCall(async (data, context
 });
 
 /**
- * MODULE 3: SERVERLESS WEBHOOK HANDLER
- * HTTP endpoint listening for asynchronous payment callbacks from MTN MoMo / Airtel Money / Flutterwave gateway.
+ * MODULE 3: PAY-002 — provider callback endpoint (pull-to-verify trigger).
+ *
+ * MTN delivers the asynchronous result of a collection to the `X-Callback-Url` that
+ * accompanied the RequestToPay. Per the provider's documentation the callback carries
+ * NO authentication (no HMAC, no signature header, no shared secret, no mTLS), so this
+ * endpoint treats the entire body as UNTRUSTED:
+ *   - the only field read is a reference hint (`referenceId`, or the legacy
+ *     `transactionRef` alias) used to locate an already-stored transaction;
+ *   - an unknown reference is rejected with 404 and no state is created;
+ *   - status, amount, jobId and any user value in the body are IGNORED — the stored
+ *     `momo_transactions` record is the only authority for them;
+ *   - the actual confirmation is performed by re-querying the provider's authenticated
+ *     status endpoint, exactly like the `getMoMoCollectionStatus` callable. A forged
+ *     callback can therefore do nothing except cause a legitimate re-check.
+ * Processing is idempotent and terminal states are immutable (replays are no-ops).
  */
 export const processMoMoWebhook = functions.https.onRequest(async (req, res) => {
   try {
-    // SEC-002: Verify HMAC header signature to ensure request authenticity
-    if (!verifyHmacSignature(req)) {
-      res.status(401).send({ error: "Unauthorized: Invalid or missing webhook signature." });
+    if (req.method !== "POST") {
+      res.status(405).send({ error: "Method not allowed." });
       return;
     }
 
-    const { transactionRef, status, jobId, payoutType } = req.body;
-
-    if (!transactionRef || !status || !jobId) {
-      res.status(400).send({ error: "Invalid webhook payload." });
+    const referenceHint = extractCallbackReferenceHint(req.body);
+    if (!referenceHint) {
+      res.status(400).send({ error: "Invalid webhook payload: no reference id." });
       return;
     }
 
-    if (status === "SUCCESSFUL" || status === "COMPLETED") {
-      const newJobState = payoutType === "ESCROW_RELEASE" ? "RELEASED" : "ACCEPTED_FUNDED";
-      const newEscrowState = payoutType === "ESCROW_RELEASE" ? "RELEASED_TO_WORKER" : "FUNDS_LOCKED_IN_ESCROW";
-
-      const jobRef = db.collection("jobs").doc(jobId);
-      await jobRef.update({
-        status: newJobState,
-        escrowStatus: newEscrowState,
-        lastPaymentWebhookAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-
-      const jobSnapshot = await jobRef.get();
-      const jobData = jobSnapshot.data();
-      const residentId = jobData?.postedByResident;
-      const providerId = jobData?.assignedProviderId;
-
-      if (residentId) {
-        await db.collection("notifications").add({
-          userId: residentId,
-          type: "ESCROW_LOCKED",
-          jobId,
-          message: `Payment confirmed. Funds are now locked in escrow for job #${jobId}.`,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          read: false
-        });
-      }
-
-      if (providerId) {
-        await db.collection("notifications").add({
-          userId: providerId,
-          type: "ESCROW_LOCKED",
-          jobId,
-          message: `Payment confirmed. Funds locked in escrow for job #${jobId}. You may proceed with work.`,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          read: false
-        });
-      }
-
-      await db.collection("momo_transactions").doc(transactionRef).update({
-        status: "SUCCESSFUL",
-        completedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-
-      res.status(200).send({ status: "ACKNOWLEDGED", jobId, newJobState });
-    } else {
-      await db.collection("momo_transactions").doc(transactionRef).update({
-        status: "FAILED",
-        failedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-
-      res.status(200).send({ status: "PAYMENT_FAILED_ACKNOWLEDGED" });
+    const stored = await loadStoredTransactionByRef(referenceHint);
+    if (!stored) {
+      // Unknown references are rejected outright — a callback can never create or
+      // adopt a transaction.
+      res.status(404).send({ error: "Unknown transaction reference." });
+      return;
     }
+
+    const outcome = await verifyAndConfirmCollection(
+      { transactionRef: stored.transactionId, env: process.env as Record<string, string | undefined> },
+      buildConfirmationDeps()
+    );
+
+    if (!outcome.ok) {
+      // Fail closed with an error status so the provider may retry; nothing was
+      // fabricated and escrow was not touched.
+      res.status(502).send({ error: "Confirmation unavailable.", code: outcome.error.code });
+      return;
+    }
+
+    res.status(200).send({
+      status: outcome.status,
+      transactionRef: outcome.transactionRef,
+      escrowLocked: outcome.escrowLocked,
+    });
   } catch (error: any) {
-    console.error("Error processing MoMo webhook:", error);
+    console.error("Error processing MoMo callback:", error);
     res.status(500).send({ error: error.message });
   }
 });
+
 
 /**
  * MODULE 4: SMS NOTIFICATION TRIGGER & RADIUS BROADCAST

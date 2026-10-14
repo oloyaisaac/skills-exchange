@@ -1,6 +1,26 @@
 # DECISIONS.md — Skills Exchange Architectural & Design Decisions
 
 All significant architectural, design, and implementation decisions are recorded here. This allows future agents and developers to understand why specific choices were made.
+
+### D-2026-10-14-1 - PAY-002: MTN callbacks are unsigned, so confirmation is pull-to-verify; the invented HMAC webhook gate is removed
+
+**Context.** PAY-001 (commit b740705) safely creates a sandbox collection and records HTTP 202 as `PENDING`. PAY-002 had to answer: how does the platform learn the provider ACTUALLY succeeded, and how may escrow then lock? The repo's legacy `processMoMoWebhook` (SEC-002, 2026-08-27) claimed "HMAC signature verification": it required a `x-momo-signature`-style header HMAC-signed with `MOMO_WEBHOOK_SECRET` and, on success, trusted the body's `status`/`jobId` and flipped escrow — while notifying `postedByResident` (a display string, not a uid).
+
+**Provider contract (verified 2026-10-14 against MTN MoMo API documentation, not guessed):**
+- Status of a RequestToPay: `GET /collection/v1_0/requesttopay/{referenceId}` with the platform's own Bearer token + `Ocp-Apim-Subscription-Key` + `X-Target-Environment`. HTTP 200 body carries `status` ∈ {`PENDING`,`SUCCESSFUL`,`FAILED`}, plus `amount`, `currency`, `externalId`, `financialTransactionId`; HTTP 404 = unknown reference. 202 on initiation means "accepted/delivered to the handset" and is explicitly not payment.
+- Callbacks: supplied per-request via the `X-Callback-Url` header on the initiation POST; MTN then POSTs the transaction result to that URL. **MTN documents NO callback authentication** — no HMAC, no signature header, no shared secret, no mTLS; only that the callback host must be registered on the developer portal. The SEC-002 HMAC protocol was therefore something MTN could never satisfy: a real callback could only ever be rejected by it, while the (unauthenticated) body underneath it went straight to an escrow flip keyed on attacker-supplied `jobId`.
+
+**Decision.**
+1. **Pull-to-verify.** The only authenticity mechanism the provider documentation establishes is the authenticated status re-query with the platform's own credentials. Both user-facing paths (`getMoMoCollectionStatus` callable, `processMoMoWebhook` HTTP) delegate to one pure core (`functions/src/momoConfirmation.ts::verifyAndConfirmCollection`) that re-queries the provider. The callback body is **never trusted**: only a reference hint (`referenceId`, legacy alias `transactionRef`) is read, purely to locate an already-stored transaction; unknown references → 404 with no state created; `status`, `amount`, `jobId` and any user value in the body are ignored. A forged callback can do nothing except cause a legitimate re-check.
+2. **The invented HMAC gate (`verifyHmacSignature`, `MOMO_WEBHOOK_SECRET`) was removed** and replaced with the pull-to-verify trigger. (The helper stayed unused-safe either way; `tsc` `noUnusedLocals` is off, but dead security theater is worse than none.) SEC-002's prd note is annotated accordingly rather than erased.
+3. **Explicit states:** `PENDING | SUCCESSFUL | FAILED | UNKNOWN | NEEDS_RECONCILIATION`. Malformed provider bodies → `UNKNOWN`; provider unreachable/timeouts → last known `PENDING` recorded with the check error (never `FAILED`, never success); amount/currency disagreement between provider body and STORED transaction → `NEEDS_RECONCILIATION` (no escrow). Terminal states are immutable on this path: replays and contradicting later reports are recorded no-ops.
+4. **Escrow locks only via an idempotent Firestore transaction** (`lockEscrowForConfirmedTransaction`) that re-reads the job, re-verifies tx↔job binding, amount, currency and non-funded escrow, and sets `escrowLockedAt` on the transaction so a duplicate confirmation can never double-lock. Worker payout (PAY-003) untouched.
+5. **Android displays only backend-published phases** (`MoMoPaymentUiState`/`mapBackendStatusToPhase`, fail-closed to `NEEDS_ATTENTION`); the sheet's modal no longer flips escrow locally — it triggers the trusted callable and renders the polled `getMoMoCollectionStatus` state.
+
+**Consequences / residual risk.** The endpoint is implemented but its end-to-end delivery (portal-registered callback host, real sandbox reference) is **not yet verified in the MTN sandbox** — no deploy was performed. Until then the callable's pull path is the primary confirmation mechanism; the callback is an optional accelerator. Cash-settlement mode in `EscrowAndProofSheet` still sets `FUNDS_LOCKED_IN_ESCROW` locally (a non-MoMo product path, deliberately untouched, flagged as a remaining disconnected path).
+
+**Verification.** `functions`: `tsc --noEmit` clean; `node --test` → 82/82 pass (25 confirmation-core tests + 25 collection tests + 32 guarantor tests), mocked provider only, no real MTN transactions. Android: compile + unit suite results recorded in CHANGELOG.md / AGENT_STATE.md.
+
 ### D-2026-10-13-1 - Implementation-truth audit: payment/SMS/push/KYC paths are simulated; PRD status vocabulary is too narrow to express this
 
 **Context.** A source audit of the completed stories found that several are mocked or disconnected:

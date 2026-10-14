@@ -276,7 +276,7 @@
                 "Secret key setup in Firebase environment"
             ],
             "rollback": "git checkout functions/src/index.ts",
-            "notes": "Critical security fix SEC-02."
+            "notes": "Critical security fix SEC-02. ANNOTATION 2026-10-14 (PAY-002, D-2026-10-14-1): this story's HMAC gate (verifyHmacSignature + MOMO_WEBHOOK_SECRET) was REMOVED because MTN MoMo documents NO callback authentication - no HMAC, signature header, shared secret or mTLS - so a genuine provider callback could never satisfy it, while the unauthenticated body beneath it was trusted (status/jobId -> escrow flip keyed on attacker-supplied jobId). Replaced by pull-to-verify: processMoMoWebhook now uses the callback only as a reference hint and all state changes flow through the authenticated server-side status re-query (GET /collection/v1_0/requesttopay/{ref}) in momoConfirmation.ts. Story kept completed as originally verified; the replacement mechanism is verified by functions/test/momoConfirmation.test.mjs."
         },
         {
             "id": "SEC-003",
@@ -1466,7 +1466,7 @@
                 "Webhook retries"
             ],
             "rollback": "git checkout functions/src/index.ts",
-            "notes": "Escrow security. AUDIT 2026-10-13: processMoMoWebhook (HMAC-verified, SEC-002) updates escrow status from a gateway callback, but nothing in the app or CF actually reaches the MTN gateway, so no real webhook ever fires; escrow lock is also performed locally by the createMoMoCollection callable. End-to-end confirmed payment is unverified. Needs a live gateway integration so a genuine signed webhook drives the lock."
+            "notes": "Escrow security. AUDIT 2026-10-13: processMoMoWebhook (HMAC-verified, SEC-002) updates escrow status from a gateway callback, but nothing in the app or CF actually reaches the MTN gateway, so no real webhook ever fires; escrow lock is also performed locally by the createMoMoCollection callable. End-to-end confirmed payment is unverified. Needs a live gateway integration so a genuine signed webhook drives the lock. REWORK 2026-10-14 (PAY-002, D-2026-10-14-1): reimplemented as pull-to-verify - processMoMoWebhook body used ONLY as a reference hint (unknown ref -> 404, status/amount/jobId/user ignored), all state changes via authenticated server-side GET /collection/v1_0/requesttopay/{ref} through new pure core functions/src/momoConfirmation.ts; new getMoMoCollectionStatus callable (auth + ownership gated) for the app; escrow locks ONLY on provider-verified SUCCESSFUL via idempotent Firestore transaction lockEscrowForConfirmedTransaction (tx-job binding, amount, currency, non-funded escrow re-checked; escrowLockedAt/escrowLockedByTransactionId recorded; terminal states immutable; notifies postedByUid/assignedProviderId); Android feeds only backend states via momoPaymentState (local modal escrow flip removed). Verified: functions tsc --noEmit clean, node --test 82/82 pass (mocked provider only), Android testDebugUnitTest 244/244 pass incl. MoMoPaymentUiStateTest + MoMoCredentialLeakSecurityTest. NOT yet verified: real MTN sandbox callback delivery (no deploy performed); endpoint implemented, awaiting sandbox verification."
         },
         {
             "id": "PAY-003",
@@ -3557,5 +3557,5 @@
         "AUTH-012"
     ],
     "blocked_stories": [],
-    "last_updated": "2026-10-11T15:24:11+03:00"
+    "last_updated": "2026-10-14T11:15:00+03:00"
 }

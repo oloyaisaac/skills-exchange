@@ -905,6 +905,56 @@ class FirebaseService(private val context: Context? = null) {
         }
     }
 
+    /**
+     * PAY-002: query the provider-verified status of a previously initiated collection.
+     *
+     * The app NEVER derives payment truth locally: this invokes the
+     * `getMoMoCollectionStatus` callable, whose server side re-queries the MTN
+     * provider status API with the platform's own credentials and only then reports
+     * PENDING / SUCCESSFUL / FAILED / UNKNOWN / NEEDS_RECONCILIATION. The backend
+     * enforces that a caller may only query transactions bound to their own uid.
+     * A non-null [MoMoCollectionStatusResult.errorCode] means the status could NOT be
+     * verified — treat the payment as needing attention, never as received.
+     */
+    suspend fun getMoMoCollectionStatus(transactionRef: String): MoMoCollectionStatusResult {
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val result = functions
+                .getHttpsCallable("getMoMoCollectionStatus")
+                .call(mapOf("transactionRef" to transactionRef))
+                .await()
+            @Suppress("UNCHECKED_CAST")
+            val data = result.data as? Map<String, Any> ?: emptyMap()
+            MoMoCollectionStatusResult(
+                status = data["status"] as? String,
+                transactionRef = data["transactionRef"] as? String ?: transactionRef,
+                escrowLocked = data["escrowLocked"] as? Boolean ?: false,
+                message = data["message"] as? String,
+                errorCode = null
+            )
+        } catch (e: com.google.firebase.functions.FirebaseFunctionsException) {
+            // Includes permission-denied (foreign transaction), not-found (unknown
+            // reference), failed-precondition (fail-closed config) and unavailable.
+            Log.e("FirebaseService", "getMoMoCollectionStatus failed: ${e.code} ${e.message}")
+            MoMoCollectionStatusResult(
+                status = null,
+                transactionRef = transactionRef,
+                escrowLocked = false,
+                message = e.message,
+                errorCode = e.code.name
+            )
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "getMoMoCollectionStatus error: ${e.message}")
+            MoMoCollectionStatusResult(
+                status = null,
+                transactionRef = transactionRef,
+                escrowLocked = false,
+                message = e.message,
+                errorCode = "UNKNOWN"
+            )
+        }
+    }
+
     // ==================== AUTH-002/AUTH-006: Durable user identity record ====================
 
     /**
