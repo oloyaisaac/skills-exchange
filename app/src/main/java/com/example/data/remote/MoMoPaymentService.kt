@@ -1,10 +1,6 @@
 package com.example.data.remote
 
 import android.util.Log
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Retrofit
-import retrofit2.converter.moshi.MoshiConverterFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -27,87 +23,46 @@ data class MoMoPayoutResponse(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-class MoMoPaymentService(
-    private val apiKey: String = "",
-    private val baseUrl: String = "https://sandbox.momodeveloper.mtn.com/"
-) {
-
-    private val logging = HttpLoggingInterceptor { message -> Log.d("MoMoPaymentService", message) }
-        .apply { setLevel(HttpLoggingInterceptor.Level.BODY) }
-
-    private val client = OkHttpClient.Builder()
-        .addInterceptor(logging)
-        .build()
-
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(baseUrl)
-        .client(client)
-        .addConverterFactory(MoshiConverterFactory.create())
-        .build()
-
-    private val api = retrofit.create(MoMoCollectionApi::class.java)
+/**
+ * PAY-001 (AUDIT-PAY Phase 2): device-side MTN gateway calls are REMOVED.
+ *
+ * The previous implementation POSTed to the MTN sandbox RequestToPay endpoint directly
+ * from the device with an empty API key and treated the attempt as funded. That path is
+ * a trust-boundary violation: gateway credentials must never ship in the APK, and the
+ * client must never declare payment success. All collection traffic now goes through the
+ * trusted `createMoMoCollection` callable (see `FirebaseService.initiateMoMoCollection`),
+ * which reads the trusted job document and performs the sandbox RequestToPay server-side.
+ *
+ * This class is retained only for the integer data types above and for the payout-status
+ * vocabulary they carry. Any call below fails closed and must not be treated as money
+ * movement.
+ */
+class MoMoPaymentService {
 
     /**
-     * PAY-001: Integrate Mobile Money Collection Intent API
-     * Triggers real HTTP POST to MTN MoMo Collection API (/collection/v1_0/requesttopay).
+     * Removed trust-boundary violation. Previously POSTed to MTN from the device with an
+     * empty key. Always throws — callers must use
+     * `FirebaseService.initiateMoMoCollection` instead.
      */
+    @Deprecated(
+        "Trust-boundary violation: device must never call the MTN gateway. " +
+            "Use FirebaseService.initiateMoMoCollection (createMoMoCollection callable)."
+    )
     suspend fun createMoMoCollection(
         jobId: String,
         amountUgx: Double,
         phoneNumber: String,
         provider: String = "MTN_MOMO",
-        apiKey: String = this.apiKey
+        apiKey: String = ""
     ): MoMoPaymentIntent = withContext(Dispatchers.IO) {
-        val txId = "MOMO-UG-${System.currentTimeMillis().toString().takeLast(8)}"
-        Log.d("MoMoPaymentService", "Initiating MoMo collection tx: $txId for Job $jobId on $phoneNumber ($provider)")
-
-        try {
-            val authHeader = "Bearer $apiKey"
-            val request = MoMoRequestToPayRequest(
-                amount = amountUgx.toInt().toString(),
-                externalId = jobId,
-                payer = MoMoPayer(partyId = phoneNumber),
-                payerMessage = "Skills Exchange payment for Job #$jobId"
-            )
-
-            val response = api.requestToPay(authHeader, request)
-            if (response.isSuccessful) {
-                val body = response.body()
-                val status = body?.status ?: "PENDING"
-                Log.d("MoMoPaymentService", "MoMo collection response: $status for tx $txId")
-                MoMoPaymentIntent(
-                    transactionId = txId,
-                    amount = amountUgx,
-                    currency = "UGX",
-                    momoNumber = phoneNumber,
-                    provider = provider,
-                    status = status,
-                    referenceMessage = "Payment request sent to $phoneNumber. Enter PIN to authorize UGX ${amountUgx.toInt()}."
-                )
-            } else {
-                Log.e("MoMoPaymentService", "MoMo collection failed: ${response.code()} ${response.message()}")
-                MoMoPaymentIntent(
-                    transactionId = txId,
-                    amount = amountUgx,
-                    currency = "UGX",
-                    momoNumber = phoneNumber,
-                    provider = provider,
-                    status = "FAILED",
-                    referenceMessage = "Payment request failed. Please try again."
-                )
-            }
-        } catch (e: Exception) {
-            Log.e("MoMoPaymentService", "MoMo collection error: ${e.message}")
-            MoMoPaymentIntent(
-                transactionId = txId,
-                amount = amountUgx,
-                currency = "UGX",
-                momoNumber = phoneNumber,
-                provider = provider,
-                status = "FAILED",
-                referenceMessage = "Network error. Please check your connection and try again."
-            )
-        }
+        Log.e(
+            "MoMoPaymentService",
+            "Blocked direct device gateway call for job $jobId. Route via createMoMoCollection callable."
+        )
+        throw UnsupportedOperationException(
+            "Direct device MoMo collection is disabled (trust boundary). " +
+                "Use FirebaseService.initiateMoMoCollection."
+        )
     }
 
     /**

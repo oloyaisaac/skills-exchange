@@ -1,6 +1,7 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as crypto from "crypto";
+import axios from "axios";
 import {
   checkAdminCaller,
   readWorkerId,
@@ -13,6 +14,17 @@ import {
   buildGuarantorNinUpdate,
   GUARANTOR_REVIEWABLE_STATUSES
 } from "./guarantorReview";
+import {
+  loadMomoConfig,
+  initiateCollection,
+} from "./momoCollection";
+import type {
+  MomoConfig,
+  JobRecord,
+  CollectionDeps,
+  CollectionTransactionRecord,
+  RequestToPayPayload,
+} from "./momoCollection";
 import type { DocumentBody, MintedUrl } from "./guarantorReview";
 
 admin.initializeApp();
@@ -81,9 +93,16 @@ function verifyHmacSignature(req: functions.https.Request): boolean {
 }
 
 /**
- * MODULE 3: MOBILE MONEY (MoMo) PAYMENT INFRASTRUCTURE ABSTRACTION
- * Serverless trigger when client accepts a job quote.
- * Generates payment collection intent payload for MTN MoMo / Airtel Money gateway.
+ * MODULE 3: MOBILE MONEY (MoMo) PAYMENT INFRASTRUCTURE — trusted sandbox Collection.
+ *
+ * AUDIT-PAY Phase 2 (PAY-001): this callable no longer fabricates a transaction or
+ * flips escrow. It delegates every trust decision to `momoCollection.initiateCollection`:
+ * the backend is the authority, 202 means PENDING (never success), and escrow stays
+ * untouched until the verified webhook confirmation path (PAY-002) exists.
+ *
+ * Backwards-compatible request shape: `{ jobId, amountUgx?, phoneNumber?, provider? }`.
+ * `amountUgx`/`phoneNumber` are hints only — the trusted `jobs/{id}` document wins, and a
+ * disagreeing client amount is rejected (amount_mismatch), never overridden.
  */
 export const createMoMoCollection = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
@@ -93,42 +112,136 @@ export const createMoMoCollection = functions.https.onCall(async (data, context)
     );
   }
 
-  const { jobId, amountUgx, phoneNumber, provider } = data;
-  if (!jobId || !amountUgx || !phoneNumber) {
+  const callerUid: string = context.auth.uid;
+  const jobId = typeof data?.jobId === "string" ? data.jobId.trim() : "";
+  if (!jobId) {
     throw new functions.https.HttpsError(
       "invalid-argument",
-      "Missing required parameters: jobId, amountUgx, phoneNumber."
+      "Missing required parameter: jobId."
     );
   }
 
-  const transactionRef = `MOMO-TX-${Date.now()}`;
-  const payload = {
-    transactionRef,
-    jobId,
-    amount: amountUgx,
-    currency: "UGX",
-    payerPhoneNumber: phoneNumber,
-    provider: provider || "MTN_MOMO",
-    status: "PENDING_AUTHORIZATION",
-    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  const requestedAmountUgx =
+    typeof data?.amountUgx === "number" && Number.isFinite(data.amountUgx)
+      ? data.amountUgx
+      : null;
+  const clientPhone =
+    typeof data?.phoneNumber === "string" && data.phoneNumber.trim()
+      ? data.phoneNumber
+      : typeof data?.phone === "string" && data.phone.trim()
+        ? data.phone
+        : null;
+
+  const deps: CollectionDeps = {
+    randomUuid: () => crypto.randomUUID(),
+    now: () => Date.now(),
+    async getJob(id: string): Promise<JobRecord | null> {
+      const snap = await db.collection("jobs").doc(id).get();
+      if (!snap.exists) return null;
+      return (snap.data() || {}) as JobRecord;
+    },
+    async findPendingCollection(id: string, clientUid: string) {
+      const snap = await db.collection("momo_transactions")
+        .where("jobId", "==", id)
+        .where("clientUid", "==", clientUid)
+        .where("status", "==", "PENDING")
+        .limit(1)
+        .get();
+      if (snap.empty) return null;
+      return { transactionId: snap.docs[0].id };
+    },
+    async acquireToken(config: MomoConfig) {
+      try {
+        const basic = Buffer.from(`${config.apiUser}:${config.apiKey}`).toString("base64");
+        const resp = await axios.post(
+          `${config.baseUrl}/collection/token/`,
+          {},
+          {
+            headers: {
+              "Authorization": `Basic ${basic}`,
+              "Ocp-Apim-Subscription-Key": config.subscriptionKey,
+            },
+            timeout: 15000,
+            validateStatus: () => true,
+          }
+        );
+        if (resp.status !== 200 || !resp.data?.access_token) {
+          return { ok: false as const, error: `Token exchange returned HTTP ${resp.status}.` };
+        }
+        return { ok: true as const, token: String(resp.data.access_token) };
+      } catch (e: any) {
+        return { ok: false as const, error: e?.message || "Token exchange failed." };
+      }
+    },
+    async requestToPay(config: MomoConfig, args: { token: string; referenceId: string; payload: RequestToPayPayload }) {
+      try {
+        const resp = await axios.post(
+          `${config.baseUrl}/collection/v1_0/requesttopay`,
+          args.payload,
+          {
+            headers: {
+              "Authorization": `Bearer ${args.token}`,
+              "X-Reference-Id": args.referenceId,
+              "X-Target-Environment": "sandbox",
+              "Ocp-Apim-Subscription-Key": config.subscriptionKey,
+              "Content-Type": "application/json",
+            },
+            timeout: 20000,
+            validateStatus: () => true,
+          }
+        );
+        return { statusCode: resp.status };
+      } catch (e: any) {
+        const timeout = e?.code === "ECONNABORTED" || /timeout/i.test(e?.message || "");
+        return { networkError: true as const, timeout, error: e?.message || "Provider request failed." };
+      }
+    },
+    async persistTransaction(record: CollectionTransactionRecord) {
+      await db.collection("momo_transactions").doc(record.transactionId).set({
+        ...record,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    },
   };
 
-  // Record payment collection intent in Firestore
-  await db.collection("momo_transactions").doc(transactionRef).set(payload);
+  const result = await initiateCollection(
+    {
+      jobId,
+      callerUid,
+      env: process.env as Record<string, string | undefined>,
+      requestedAmountUgx,
+      clientPhone,
+    },
+    deps
+  );
 
-  // Update job status to ACCEPTED_FUNDED and lock funds in escrow
-  await db.collection("jobs").doc(jobId).update({
-    status: "ACCEPTED_FUNDED",
-    escrowStatus: "FUNDS_LOCKED_IN_ESCROW",
-    paymentChannel: provider || "MTN_MOMO",
-    momoPhoneNumber: phoneNumber,
-    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-  });
+  if (!result.ok) {
+    const code = result.error.code;
+    const httpsCode =
+      code === "unauthenticated" ? "unauthenticated"
+      : code === "invalid_argument" ? "invalid-argument"
+      : code === "job_not_found" ? "not-found"
+      : code === "not_job_owner" || code === "invalid_job_state" || code === "already_funded" || code === "amount_mismatch" || code === "duplicate_request" ? "failed-precondition"
+      : code === "config_error" ? "failed-precondition"
+      : code === "provider_timeout" ? "deadline-exceeded"
+      : "unavailable";
+    throw new functions.https.HttpsError(
+      httpsCode as "unauthenticated" | "invalid-argument" | "not-found" | "failed-precondition" | "deadline-exceeded" | "unavailable",
+      result.error.message,
+      code === "duplicate_request" && "transactionId" in result.error
+        ? { transactionId: (result.error as { transactionId?: string }).transactionId }
+        : undefined
+    );
+  }
 
+  // NOTE: no job escrow write happens here, by design. The client must NOT treat
+  // PENDING as funded; escrow locks only on the verified PAY-002 webhook path.
   return {
     success: true,
-    transactionRef,
-    message: `Payment request of UGX ${amountUgx} sent to ${phoneNumber}. Please complete authorization on your handset.`
+    transactionRef: result.transactionId,
+    providerReferenceId: result.providerReferenceId,
+    status: result.status,
+    message: `Payment request sent. The payer must approve UGX on their handset; funds are NOT yet in escrow.`,
   };
 });
 

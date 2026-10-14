@@ -860,7 +860,7 @@
                 "Video file size handling"
             ],
             "rollback": "git checkout affected files",
-            "notes": "Enforces business rule #6. AUDIT 2026-10-13: certificate photo upload is real (uploadQualificationEvidence -> users/{uid}/certificates/certificate_{ts}.jpg, wired from QualificationEvidenceSheet). The VIDEO branch does NOT upload a Storage object: it returns a synthetic path \"users/{uid}/certificates/video_{ts}\" after only checking the pasted URL is non-blank. Demonstration video is a stored link, not an uploaded file."
+            "notes": "Enforces business rule #6. AUDIT 2026-10-13: certificate photo upload is real (uploadQualificationEvidence -> users/{uid}/certificates/certificate_{ts}.jpg, wired from QualificationEvidenceSheet). The VIDEO branch does NOT upload a Storage object: it returns a synthetic path \"users/{uid}/certificates/video_{ts}\" after only checking the pasted URL is non-blank. Demonstration video is a stored link, not an uploaded file. AUDIT-VALIDATION 2026-10-13: Story GOAL scopes the demonstration video as a LINK ('certificate photo upload OR video demonstration link') and the AC requires only a 'reference attached'; storing a pasted video link therefore SATISFIES this story's current acceptance criteria and is NOT a defect. A real Storage video object under users/{uid}/videos/ would be future scope beyond the current AC (do not reopen as broken)."
         },
         {
             "id": "KYC-006",
@@ -1719,7 +1719,7 @@
                 "Low risk"
             ],
             "rollback": "git checkout repository file",
-            "notes": "Doorstep physical security. AUDIT 2026-10-13: PIN IS generated per job as a random 4-digit value in addJobPost() ((1000..9999).random()); the \"4829\" is only the entity/DB default for seeded rows, not used for new jobs. verifyDoorstepPin() is owner-gated and mutates status. Missing: no secure delivery of the PIN to the resident/worker (no push/SMS channel - SMS is simulated) and no expiry. Unique-per-job generation + verification are present."
+            "notes": "Doorstep physical security. AUDIT 2026-10-13: PIN IS generated per job as a random 4-digit value in addJobPost() ((1000..9999).random()); the \"4829\" is only the entity/DB default for seeded rows, not used for new jobs. verifyDoorstepPin() is owner-gated and mutates status. Missing: no secure delivery of the PIN to the resident/worker (no push/SMS channel - SMS is simulated) and no expiry. Unique-per-job generation + verification are present. AUDIT-VALIDATION 2026-10-13: Findings are STATIC source evidence only (addJobPost random 4-digit PIN; owner-gated verifyDoorstepPin) - NOT verified on a device/emulator. The story AC ('every posted job generates a unique random 4-digit PIN required for doorstep arrival verification') is satisfied by generation + owner-gated verification; the delivery/expiry gaps noted are beyond this AC."
         },
         {
             "id": "SAFE-002",
@@ -2104,7 +2104,7 @@
         },
         {
             "id": "AUTH-008",
-            "notes": "AUDIT 2026-10-13: 7-day session expiry and device-id change ARE enforced - restoreSession() (SkillsExchangeViewModel) inlines the age check (sessionAge > 7d -> clearSession) and device-id mismatch -> clearSession, called on app entry. NOTE: SessionManager.isSessionValid() is dead code (never called); the logic lives inline in the ViewModel. Session/device security is functionally present for the launch-time restore path; mid-session inactivity expiry and re-validation on protected operations are not implemented.",
+            "notes": "AUDIT 2026-10-13: 7-day session expiry and device-id change ARE enforced - restoreSession() (SkillsExchangeViewModel) inlines the age check (sessionAge > 7d -> clearSession) and device-id mismatch -> clearSession, called on app entry. NOTE: SessionManager.isSessionValid() is dead code (never called); the logic lives inline in the ViewModel. Session/device security is functionally present for the launch-time restore path; mid-session inactivity expiry and re-validation on protected operations are not implemented. AUDIT-VALIDATION 2026-10-13: Findings are STATIC source evidence only (restoreSession inlines the 7-day age check and device-id mismatch check) - NOT verified on a device. The AC items (session expires after inactivity period; device ID recorded on login; invalidated on device change) are met for the launch-time restore path.",
             "phase": 16,
             "title": "Implement Session/Device Security",
             "priority": "P1",

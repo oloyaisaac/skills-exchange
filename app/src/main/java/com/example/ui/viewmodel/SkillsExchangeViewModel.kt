@@ -21,7 +21,6 @@ import com.example.data.remote.GeminiAudioTranscriptionService
 import com.example.data.remote.GeminiMapsGroundingService
 import com.example.data.remote.GroundedPlaceResult
 import com.example.data.remote.MoMoPaymentIntent
-import com.example.data.remote.MoMoPaymentService
 import com.example.data.remote.SmsNotificationService
 import com.example.data.remote.TranscribedVoiceJob
 import com.example.data.repository.SkillsExchangeRepository
@@ -71,7 +70,6 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     val geminiMapsService = GeminiMapsGroundingService()
     val geminiAudioService = GeminiAudioTranscriptionService()
     val audioRecorderHelper = AudioRecorderHelper(application)
-    val moMoPaymentService = MoMoPaymentService()
     val smsNotificationService = SmsNotificationService()
     private val networkObserver = com.example.util.NetworkConnectivityObserver(application)
 
@@ -1399,17 +1397,56 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     // --- MODULE 3: MOBILE MONEY (MOMO) PAYMENT ENGINE ---
+    /**
+     * PAY-001 (AUDIT-PAY Phase 2): route collection through the trusted backend callable.
+     *
+     * The previous implementation POSTed to the MTN sandbox from the device with an empty
+     * API key and then unconditionally flipped the job to ACCEPTED_FUNDED /
+     * FUNDS_LOCKED_IN_ESCROW — treating an unconfirmed request as funded money. That path
+     * is removed: this calls `FirebaseService.initiateMoMoCollection` (the
+     * `createMoMoCollection` callable, which reads the trusted job document and performs
+     * the sandbox RequestToPay server-side) and reports the backend status back. Escrow is
+     * NEVER flipped here; it locks only on the verified PAY-002 webhook path.
+     */
     fun initiateMoMoEscrowPayment(
         jobId: String,
         amountUgx: Double,
         phone: String,
         provider: String = "MTN_MOMO",
-        onIntentCreated: (MoMoPaymentIntent) -> Unit
+        onIntentCreated: (MoMoPaymentIntent) -> Unit,
+        onCollectionFailed: (code: String?, message: String?) -> Unit = { _, _ -> }
     ) {
         viewModelScope.launch {
-            val intent = moMoPaymentService.createMoMoCollection(jobId, amountUgx, phone, provider)
-            transitionJobState(jobId, "ACCEPTED_FUNDED", "FUNDS_LOCKED_IN_ESCROW")
-            onIntentCreated(intent)
+            val result = firebaseService.initiateMoMoCollection(jobId, amountUgx, phone)
+            if (result.success) {
+                onIntentCreated(
+                    MoMoPaymentIntent(
+                        transactionId = result.transactionRef ?: "PENDING",
+                        amount = amountUgx,
+                        currency = "UGX",
+                        momoNumber = phone,
+                        provider = provider,
+                        status = result.status ?: "PENDING",
+                        referenceMessage = result.message
+                            ?: "Payment request sent. Approve on your handset; funds are NOT yet in escrow."
+                    )
+                )
+            } else {
+                // Fail closed: nothing was collected, escrow untouched. Surface a FAILED intent
+                // so existing UI keeps rendering, plus the machine-readable error for new UI.
+                onIntentCreated(
+                    MoMoPaymentIntent(
+                        transactionId = result.transactionRef ?: "FAILED",
+                        amount = amountUgx,
+                        currency = "UGX",
+                        momoNumber = phone,
+                        provider = provider,
+                        status = "FAILED",
+                        referenceMessage = result.message ?: "Payment request failed. Nothing was collected."
+                    )
+                )
+                onCollectionFailed(result.errorCode, result.message)
+            }
         }
     }
 

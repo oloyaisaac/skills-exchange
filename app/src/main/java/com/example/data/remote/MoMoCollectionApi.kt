@@ -1,18 +1,20 @@
 package com.example.data.remote
 
-import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.Header
-import retrofit2.http.POST
+/**
+ * PAY-001 (AUDIT-PAY Phase 2): device-side MTN gateway Retrofit interface — RETIRED.
+ *
+ * The device must never call the MTN gateway directly (trust boundary: gateway
+ * credentials must never ship in the APK, and the client must never declare payment
+ * success). All collection traffic now goes through the trusted `createMoMoCollection`
+ * callable (see `FirebaseService.initiateMoMoCollection`), which performs the MTN
+ * sandbox RequestToPay server-side with the backend as the authority.
+ *
+ * This file's types are retained only so the historical request/response vocabulary
+ * stays documented for the server-side port in `functions/src/momoCollection.ts`
+ * (`buildRequestToPayPayload`). Nothing in the app constructs or calls them.
+ */
 
-interface MoMoCollectionApi {
-    @POST("collection/v1_0/requesttopay")
-    suspend fun requestToPay(
-        @Header("Authorization") authorization: String,
-        @Body request: MoMoRequestToPayRequest
-    ): Response<MoMoRequestToPayResponse>
-}
-
+/** Historical device-side request shape (retired — see `buildRequestToPayPayload`). */
 data class MoMoRequestToPayRequest(
     val amount: String,
     val currency: String = "UGX",
@@ -40,3 +42,4 @@ data class MoMoAmount(
     val value: String,
     val currency: String
 )
+

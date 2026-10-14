@@ -3,7 +3,7 @@
   "scripts": {
     "lint": "tslint --project tsconfig.json",
     "build": "tsc",
-    "test": "node --test test/guarantorReview.test.mjs",
+    "test": "node --test test/guarantorReview.test.mjs test/momoCollection.test.mjs",
     "serve": "npm run build && firebase serve --only functions",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",

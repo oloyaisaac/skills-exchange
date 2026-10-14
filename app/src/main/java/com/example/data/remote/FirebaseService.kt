@@ -850,6 +850,61 @@ class FirebaseService(private val context: Context? = null) {
         }
     }
 
+    /**
+     * PAY-001 (AUDIT-PAY Phase 2): request a trusted backend MoMo Collection.
+     *
+     * The app NEVER calls the MTN gateway directly: it invokes the `createMoMoCollection`
+     * callable, which reads the trusted `jobs/{id}` document server-side, performs the MTN
+     * sandbox RequestToPay, and returns PENDING — never success — without touching escrow.
+     * A non-null [MoMoCollectionResult.errorCode] means nothing was collected.
+     */
+    suspend fun initiateMoMoCollection(
+        jobId: String,
+        amountUgx: Double? = null,
+        phoneNumber: String? = null
+    ): MoMoCollectionResult {
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val payload = mutableMapOf<String, Any>("jobId" to jobId)
+            if (amountUgx != null) payload["amountUgx"] = amountUgx
+            if (!phoneNumber.isNullOrBlank()) payload["phoneNumber"] = phoneNumber
+            val result = functions
+                .getHttpsCallable("createMoMoCollection")
+                .call(payload)
+                .await()
+            @Suppress("UNCHECKED_CAST")
+            val data = result.data as? Map<String, Any> ?: emptyMap()
+            MoMoCollectionResult(
+                success = data["success"] as? Boolean ?: false,
+                status = data["status"] as? String,
+                transactionRef = data["transactionRef"] as? String,
+                providerReferenceId = data["providerReferenceId"] as? String,
+                message = data["message"] as? String,
+                errorCode = null
+            )
+        } catch (e: com.google.firebase.functions.FirebaseFunctionsException) {
+            Log.e("FirebaseService", "initiateMoMoCollection failed: ${e.code} ${e.message}")
+            MoMoCollectionResult(
+                success = false,
+                status = null,
+                transactionRef = null,
+                providerReferenceId = null,
+                message = e.message,
+                errorCode = e.code.name
+            )
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "initiateMoMoCollection error: ${e.message}")
+            MoMoCollectionResult(
+                success = false,
+                status = null,
+                transactionRef = null,
+                providerReferenceId = null,
+                message = e.message,
+                errorCode = "UNKNOWN"
+            )
+        }
+    }
+
     // ==================== AUTH-002/AUTH-006: Durable user identity record ====================
 
     /**
