@@ -37,6 +37,22 @@ import type {
   StoredCollectionRecord,
   ProviderStatusQueryResult,
 } from "./momoConfirmation";
+import {
+  loadPayoutConfig,
+  decidePayoutStatus,
+  buildPayoutRequestPayload,
+  initiatePayout,
+  payoutMessageFor,
+  PAYOUT_CURRENCY,
+  TERMINAL_PAYOUT_STATUSES,
+} from "./momoDisbursement";
+import type {
+  PayoutRecord,
+  PayoutStatus,
+  PayoutDeps,
+  JobRecordPayout,
+  ProviderPayoutStatusResult,
+} from "./momoDisbursement";
 import type { DocumentBody, MintedUrl } from "./guarantorReview";
 
 admin.initializeApp();
@@ -1306,3 +1322,314 @@ export const getDisputesQueue = functions.https.onCall(async (data, context) => 
 
   return { success: true, disputes };
 });
+
+// ==================== PAY-003: Escrow Release & Worker MoMo Payout ====================
+
+/**
+ * Build the real axios/Firestore wiring for the payout trust boundary and pass
+ * it to the pure `initiatePayout` core in `momoDisbursement.ts`. Mirrors
+ * `buildCollectionDeps`/`buildConfirmationDeps`: every security decision lives
+ * in the pure core; this function only performs the actual provider HTTP calls
+ * and Firestore reads/writes.
+ */
+function buildPayoutDeps(): PayoutDeps {
+  return {
+    randomUuid: () => crypto.randomUUID(),
+    now: () => Date.now(),
+    async getJob(id: string): Promise<JobRecordPayout | null> {
+      const snap = await db.collection("jobs").doc(id).get();
+      if (!snap.exists) return null;
+      return (snap.data() || {}) as JobRecordPayout;
+    },
+    async findPendingPayout(jobId: string, clientUid: string): Promise<PayoutRecord | null> {
+      const snap = await db.collection("payouts")
+        .where("jobId", "==", jobId)
+        .where("clientUid", "==", clientUid)
+        .limit(1)
+        .get();
+      if (snap.empty) return null;
+      const data = snap.docs[0].data();
+      return {
+        jobId: data.jobId,
+        workerId: data.workerId,
+        workerMomoNumber: data.workerMomoNumber,
+        amount: data.amount,
+        currency: data.currency,
+        provider: data.provider,
+        status: data.status as PayoutStatus,
+        payoutId: data.payoutId,
+        clientUid: data.clientUid,
+        releasedBy: data.releasedBy,
+        transactionId: data.transactionId,
+        providerReferenceId: data.providerReferenceId,
+      };
+    },
+
+    async acquireToken(config: MomoConfig) {
+      try {
+        const basic = Buffer.from(`${config.apiUser}:${config.apiKey}`).toString("base64");
+        const resp = await axios.post(
+          `${config.baseUrl}/disbursement/token/`,
+          {},
+          {
+            headers: {
+              "Authorization": `Basic ${basic}`,
+              "Ocp-Apim-Subscription-Key": config.subscriptionKey,
+            },
+            timeout: 15000,
+            validateStatus: () => true,
+          }
+        );
+        if (resp.status !== 200 || !resp.data?.access_token) {
+          return { ok: false as const, error: `Token exchange returned HTTP ${resp.status}.` };
+        }
+        return { ok: true as const, token: String(resp.data.access_token) };
+      } catch (e: any) {
+        return { ok: false as const, error: e?.message || "Token exchange failed." };
+      }
+    },
+    async requestPayout(config: MomoConfig, token: string, referenceId: string, payload: Record<string, unknown>) {
+      try {
+        const resp = await axios.post(
+          `${config.baseUrl}/disbursement/v1_0/transfer`,
+          payload,
+          {
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "X-Reference-Id": referenceId,
+              "X-Target-Environment": "sandbox",
+              "Ocp-Apim-Subscription-Key": config.subscriptionKey,
+              "Content-Type": "application/json",
+            },
+            timeout: 20000,
+            validateStatus: () => true,
+          }
+        );
+        return { statusCode: resp.status };
+      } catch (e: any) {
+        const timeout = e?.code === "ECONNABORTED" || /timeout/i.test(e?.message || "");
+        return { networkError: true as const, timeout, error: e?.message || "Provider request failed." };
+      }
+    },
+
+    async queryProviderPayoutStatus(config: MomoConfig, token: string, providerReferenceId: string): Promise<ProviderPayoutStatusResult> {
+      try {
+        const resp = await axios.get(
+          `${config.baseUrl}/disbursement/v1_0/transfer/${encodeURIComponent(providerReferenceId)}`,
+          {
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "X-Target-Environment": "sandbox",
+              "Ocp-Apim-Subscription-Key": config.subscriptionKey,
+            },
+            timeout: 15000,
+            validateStatus: () => true,
+          }
+        );
+        if (resp.status === 404) {
+          return { kind: "providerError", statusCode: 404, error: "Reference unknown to provider." };
+        }
+        if (resp.status !== 200 || !resp.data || typeof resp.data.status !== "string") {
+          return { kind: "providerError", statusCode: resp.status, error: `Provider status returned HTTP ${resp.status}.` };
+        }
+        return {
+          kind: "ok",
+          status: resp.data.status,
+          amount: typeof resp.data.amount === "number" ? resp.data.amount : undefined,
+          currency: typeof resp.data.currency === "string" ? resp.data.currency : undefined,
+          financialTransactionId: typeof resp.data.financialTransactionId === "string" ? resp.data.financialTransactionId : undefined,
+          referenceId: typeof resp.data.referenceId === "string" ? resp.data.referenceId : undefined,
+          statusCode: 200,
+        };
+      } catch (e: any) {
+        const timeout = e?.code === "ECONNABORTED" || /timeout/i.test(e?.message || "");
+        return { kind: timeout ? "providerTimeout" : "networkError", error: e?.message || "Provider status unavailable." };
+      }
+    },
+    async persistPayout(record: PayoutRecord) {
+      await db.collection("payouts").doc(record.payoutId).set({
+        ...record,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    },
+    async updatePayout(ref: string, patch: Record<string, unknown>) {
+      await db.collection("payouts").doc(ref).update(patch);
+    },
+  };
+}
+
+
+/**
+ * PAY-003: Create a worker payout (escrow release). Callable triggered when a
+ * resident approves job completion. The resident releases escrow; the worker
+ * receives the amount through the MTN Disbursement API (sandbox only). The
+ * device never touches the payout endpoint — all trust decisions are enforced
+ * server-side by the pure `initiatePayout` core.
+ */
+export const createMoMoPayout = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Authentication required to release escrow."
+    );
+  }
+
+  const { jobId, workerId, workerMomoNumber, amountUgx, provider } = data;
+  if (!jobId || !workerId || !workerMomoNumber || amountUgx === undefined) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Missing required parameters: jobId, workerId, workerMomoNumber, amountUgx."
+    );
+  }
+
+  const result = await initiatePayout(
+    {
+      jobId,
+      clientUid: context.auth.uid,
+      amountUgx,
+      workerMomoNumber,
+      provider: provider || "MTN_MOMO",
+      env: process.env as Record<string, string | undefined>,
+    },
+    buildPayoutDeps()
+  );
+
+  if (!result.ok) {
+    const codeMap: Record<string, string> = {
+      unauthenticated: "unauthenticated",
+      invalid_argument: "invalid-argument",
+      job_not_found: "not-found",
+      not_job_owner: "permission-denied",
+      invalid_job_state: "failed-precondition",
+      job_not_escrowed: "failed-precondition",
+      amount_mismatch: "failed-precondition",
+      worker_mismatch: "failed-precondition",
+      config_error: "failed-precondition",
+      duplicate_request: "already-exists",
+      already_pending: "failed-precondition",
+      provider_error: "unavailable",
+      provider_timeout: "deadline-exceeded",
+    };
+    const httpsCode = codeMap[result.error.code] || "internal";
+    throw new functions.https.HttpsError(httpsCode as any, result.error.message);
+  }
+
+  // Payout accepted (PENDING). Notify the worker.
+  await db.collection("notifications").add({
+    userId: workerId,
+    type: "PAYOUT_PENDING",
+    jobId,
+    message: `A payout of UGX ${amountUgx} has been initiated. You will receive payment soon.`,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    read: false,
+  });
+
+  return {
+    success: true,
+    payoutRef: result.payoutId,
+    message: `Payout pending. UGX ${amountUgx} will be delivered to ${workerMomoNumber} via the MTN Disbursement API (sandbox). Poll getMoMoPayoutStatus for the provider-verified result.`,
+  };
+});
+
+
+/**
+ * PAY-003: Query the provider-verified status of a previously initiated payout.
+ *
+ * Callable-only (authenticated). Re-queries the MTN provider status API with
+ * the platform's own credentials and reports PAYOUT_PENDING /
+ * PAYOUT_SUCCESSFUL / PAYOUT_FAILED / NEEDS_RECONCILIATION. The caller may
+ * only query payouts bound to their own uid (the stored `clientUid`) or a job
+ * they own (`postedByUid`).
+ */
+export const getMoMoPayoutStatus = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Authentication required to query payout status."
+    );
+  }
+
+  const { payoutRef } = data;
+  if (!payoutRef) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "payoutRef is required."
+    );
+  }
+
+  const deposit = await db.collection("payouts").doc(payoutRef).get();
+  if (!deposit.exists) {
+    throw new functions.https.HttpsError(
+      "not-found",
+      "Payout not found."
+    );
+  }
+  const ledger = deposit.data() as PayoutRecord;
+  const callerUid = context.auth.uid;
+
+  // Authorize: the caller must be the stored clientUid or the job's owner.
+  const jobDoc = await db.collection("jobs").doc(ledger.jobId).get();
+  const ownerUid = jobDoc.exists ? (jobDoc.data() as any)?.postedByUid : undefined;
+  if (ledger.clientUid !== callerUid && ownerUid !== callerUid) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "You may only query payouts bound to your own account."
+    );
+  }
+
+  // Idempotent fast-path: a terminal stored record returns its final state
+  // with no provider call and no write.
+  if (TERMINAL_PAYOUT_STATUSES.includes(ledger.status)) {
+    return {
+      payoutRef,
+      status: ledger.status,
+      statusText: ledger.status.replace("PAYOUT_", ""),
+      workerId: ledger.workerId,
+      momoNumber: ledger.workerMomoNumber,
+      amount: ledger.amount,
+      reason: ledger.reason || "already_terminal",
+      message: payoutMessageFor(ledger.status),
+    };
+  }
+
+  const config = loadPayoutConfig(process.env as Record<string, string | undefined>);
+  if ("error" in config) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      `Payout status unavailable: ${config.error}`
+    );
+  }
+
+  const deps = buildPayoutDeps();
+  const token = await deps.acquireToken(config);
+  if (!token.ok) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      `Payout status unavailable: ${token.error}`
+    );
+  }
+
+  const provider = await deps.queryProviderPayoutStatus(config, token.token, ledger.providerReferenceId);
+  const { newStatus, reason } = decidePayoutStatus({ stored: ledger, provider });
+
+  // Update the ledger only when the status actually changed.
+  if (newStatus !== ledger.status) {
+    const patch: Record<string, unknown> = { status: newStatus, reason, lastCheckedAt: Date.now() };
+    if (provider.kind === "ok" && provider.financialTransactionId) {
+      patch.providerFinancialTransactionId = provider.financialTransactionId;
+    }
+    await db.collection("payouts").doc(payoutRef).update(patch);
+  }
+
+  return {
+    payoutRef,
+    status: newStatus,
+    statusText: newStatus.replace("PAYOUT_", ""),
+    workerId: ledger.workerId,
+    momoNumber: ledger.workerMomoNumber,
+    amount: ledger.amount,
+    reason,
+    message: payoutMessageFor(newStatus),
+  };
+});
+
