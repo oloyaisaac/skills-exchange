@@ -1,5 +1,15 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-10-15] [AUDIT-A-CONSOLE] First Admin Verification Queue UI — Implemented & Verified (code+unit)
+
+- **Scope:** AUDIT-A-CONSOLE only (user-selected next step; all 93 `prd.json` stories remain `completed`, so `prd.json` is untouched). The `adminVerificationQueue` + `submitAdminDecision()` flow had zero Composable call sites — operators had no screen. No Cloud Functions, rules, schema, or unrelated UI changed. No deploy, no commit.
+- **New:** `app/src/main/java/com/example/ui/components/AdminQueueSheet.kt` — `AdminVerificationQueueSheet` bottom sheet rendering masked NIN (`nationalIdNumberMasked`) + private Storage *paths* (never URLs), submitted/SLA timestamps, guarantor state, prior feedback, per-row feedback field, Approve / Changes Required / Reject buttons with single-flight pending state, refresh + empty + locked-console states.
+- **New:** `app/src/main/java/com/example/util/AdminQueueDecisions.kt` — pure-JVM allow-list guard (`APPROVE|REJECT|CHANGES_REQUIRED`, feedback 10+ chars for reject/changes, locked-console + blank-id fail-closed), mirroring `reviewWorkerApplication` + `validateGuarantorReviewInput`.
+- **Wiring:** `NavigationDrawer` gains a locked-by-default "Admin Verification Queue" entry (pending-count subtitle, Operator/Locked badge); `MainScreen` collects `adminVerificationQueue` + `isAdminQueueLoading`, holds `isAdminQueueOpen`/`isAdminUnlocked` (locked default), renders the sheet; `SkillsExchangeViewModel` gains `isAdminQueueLoading` (overlap guard) + decision allow-list/feedback validation (backend callable stays the real authorizer).
+- **Tests:** new `app/src/test/java/com/example/util/AdminQueueDecisionsTest.kt` (pure JVM, 8 cases: approve-open, locked-blocked, blank-id, unknown-vocabulary, reject/changes feedback gates, happy-path reject, case-insensitive allow-list).
+- **Verification (executed):** `:app:compileDebugKotlin` BUILD SUCCESSFUL; focused `AdminQueueDecisionsTest` **8 tests / 0 failures / 0 errors / 0 skipped** (from test-results XML); full `:app:testDebugUnitTest` attempted — 92 pre-existing Robolectric failures from environment native-loader temp errors (`UnsatisfiedLinkError`/`FileSystemAlreadyExistsException`, unrelated to this change; daemon also crashed once on `--rerun-tasks`); `git diff --check` clean (one LF→CRLF warning on NavigationDrawer.kt only). No APK build, no device run, no `firebase deploy`.
+- **Remaining:** device walkthrough of the sheet with a real admin-claim account; `firebase deploy --only firestore:rules,functions` still pending (rules/functions are source-only); 11 audit gaps still open (next suggested: `AUDIT-C-CANCEL` or `AUDIT-W-QUOTE` per Phase 1 roadmap).
+
 ### [2026-10-15] [AUDIT] Multi-Perspective Platform Audit (Worker, Client, Administrator) & Documentation Synchronization
 
 - **Scope:** Documentation and architectural audit synchronization only. Direct source inspection of Kotlin Composables, Room entities, ViewModels, Repository logic, Cloud Functions, and Firebase Security Rules was conducted without reliance on stale markdown claims. No production code modified this session.

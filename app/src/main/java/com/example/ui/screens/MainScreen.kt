@@ -187,6 +187,11 @@ fun MainScreen(
     var isIdentitySheetOpen by remember { mutableStateOf(false) }
     // REG-003 / REG-004: worker profile photo + backup contact sheet.
     var isProfileSettingsSheetOpen by remember { mutableStateOf(false) }
+    // AUDIT-A-CONSOLE: first operator surface for the admin verification queue.
+    var isAdminQueueOpen by remember { mutableStateOf(false) }
+    var isAdminUnlocked by remember { mutableStateOf(false) }
+    val adminQueue by viewModel.adminVerificationQueue.collectAsStateWithLifecycle()
+    val isAdminQueueLoading by viewModel.isAdminQueueLoading.collectAsStateWithLifecycle()
 
     val notifications by viewModel.notifications.collectAsStateWithLifecycle(initialValue = emptyList())
     val unreadNotificationCount by viewModel.unreadNotificationCount.collectAsStateWithLifecycle(initialValue = 0)
@@ -736,6 +741,10 @@ fun MainScreen(
             isIdentitySheetOpen = true
             viewModel.refreshGuarantorVerificationStatus()
         },
+        // AUDIT-A-CONSOLE: operator queue entry (locked by default; backend claim authorizes).
+        isAdminUnlocked = isAdminUnlocked,
+        adminPendingCount = adminQueue.size,
+        onOpenAdminQueue = { isAdminQueueOpen = true },
         onOpenDataBackup = { isDataBackupOpen = true },
         onOpenPrivacyPolicy = { isPrivacyPolicyOpen = true },
         onOpenDeleteAccount = { isAccountDeletionOpen = true }
@@ -747,6 +756,23 @@ fun MainScreen(
         jobs = jobs,
         userProfile = currentUserProfile,
         onDismiss = { isWalletSheetOpen = false }
+    )
+
+    // AUDIT-A-CONSOLE: first operator surface — renders the existing admin queue flow.
+    // Locked by default; the backend `admin` custom claim remains the authorizer and the
+    // callable returns no rows without it. Long-press-free explicit unlock lives here so a
+    // field operator can enable it on a provisioned device without a client-side role flag.
+    AdminVerificationQueueSheet(
+        isOpen = isAdminQueueOpen,
+        queue = adminQueue,
+        isLoading = isAdminQueueLoading,
+        isAdminUnlocked = isAdminUnlocked,
+        onUnlockOperator = { isAdminUnlocked = true },
+        onRefresh = { viewModel.loadAdminVerificationQueue() },
+        onSubmitDecision = { userId, decision, feedback, onResult ->
+            viewModel.submitAdminDecision(userId, decision, feedback, onResult)
+        },
+        onDismiss = { isAdminQueueOpen = false }
     )
 
     // REG-003 / REG-004: profile photo upload & backup contact management.

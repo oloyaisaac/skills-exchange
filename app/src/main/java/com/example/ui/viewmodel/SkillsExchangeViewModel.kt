@@ -1665,6 +1665,9 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     val adminVerificationQueue = MutableStateFlow<List<Map<String, Any>>>(emptyList())
 
+    /** AUDIT-A-CONSOLE: loading flag for the operator queue refresh. */
+    val isAdminQueueLoading = MutableStateFlow(false)
+
     val currentTraining = MutableStateFlow<com.example.data.db.WorkerTrainingEntity?>(null)
 
     init {
@@ -1676,15 +1679,34 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun loadAdminVerificationQueue() {
+        // AUDIT-A-CONSOLE: guard overlapping refreshes; the callable stays the authorizer.
+        if (isAdminQueueLoading.value) return
+        isAdminQueueLoading.value = true
         viewModelScope.launch {
-            val queue = repository.getAdminVerificationQueue()
-            adminVerificationQueue.value = queue
+            try {
+                val queue = repository.getAdminVerificationQueue()
+                adminVerificationQueue.value = queue
+            } finally {
+                isAdminQueueLoading.value = false
+            }
         }
     }
 
     fun submitAdminDecision(userId: String, decision: String, feedback: String, onResult: (Boolean) -> Unit) {
+        // AUDIT-A-CONSOLE: client-side allow-list mirrors the server vocabulary; malformed
+        // taps never leave the device, but the callable remains the real authorizer.
+        val normalized = decision.trim().uppercase()
+        if (userId.isBlank() || normalized !in setOf("APPROVE", "REJECT", "CHANGES_REQUIRED")) {
+            onResult(false)
+            return
+        }
+        if ((normalized == "REJECT" || normalized == "CHANGES_REQUIRED") && feedback.trim().length < 10) {
+            authError.value = "Add feedback (10+ characters) so the worker knows what to fix."
+            onResult(false)
+            return
+        }
         viewModelScope.launch {
-            val success = repository.submitAdminVerificationDecision(userId, decision, feedback)
+            val success = repository.submitAdminVerificationDecision(userId, normalized, feedback.trim())
             if (success) loadAdminVerificationQueue()
             onResult(success)
         }

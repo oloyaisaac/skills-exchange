@@ -2,6 +2,19 @@
 
 All significant architectural, design, and implementation decisions are recorded here. This allows future agents and developers to understand why specific choices were made.
 
+### D-2026-10-15-2 - AUDIT-A-CONSOLE: In-App Operator Sheet with Explicit Unlock; Backend Claim Stays the Authorizer
+
+**Context.** `adminVerificationQueue` + `submitAdminDecision()` existed with zero Composable call sites, while the backend already enforced the `admin` custom claim server-side (callables + `firestore.rules`) and the project deliberately mirrors no client-side admin boolean (D-2026-10-05-2). Operators needed a first screen without inventing a client role.
+
+**Decision.**
+1. Ship the operator surface **inside the Android app** as `AdminVerificationQueueSheet` (drawer entry + bottom sheet), not a separate web portal — smallest traceable step that reuses the existing callable flow.
+2. Gate **visibility** client-side with an explicit `isAdminUnlocked` operator toggle (default locked, held in `MainScreen` remember-state, not derived from any profile flag); gate **authorization** server-side only (callable + rules return/decide nothing without the `admin` claim).
+3. Render only what the queue payload carries: `nationalIdNumberMasked` + Storage *paths* + timestamps + guarantor state; never fabricate NINs, URLs, or counts.
+4. Mirror the server decision vocabulary + feedback floor client-side (`AdminQueueDecisions`: allow-list + 10-char feedback for REJECT/CHANGES_REQUIRED) so malformed taps never leave the device.
+5. Leave `prd.json` untouched (all 93 stories `completed`); track this as TASKS.md `AUDIT-A-CONSOLE` + CHANGELOG entry until a PRD schema for audit follow-ups is agreed.
+
+**Consequences.** Non-admin devices see a locked console and an empty queue (backend returns no rows); a field operator can unlock the viewer on a provisioned device, but every decision still passes the backend claim check. Future admin work (`AUDIT-A-ARBITRATE`, `AUDIT-A-SOS`) should reuse this sheet pattern and the explicit-unlock posture.
+
 ### D-2026-10-15-1 - Multi-Perspective Persona Gap Remediation Roadmap: Prioritizing Mobile Operational Loops (Phase 1) and Operations Console (Phase 2)
 
 **Context.** A direct source-code audit across Worker, Client, and Administrator user journeys revealed severe gaps between backend readiness and frontend execution:

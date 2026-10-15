@@ -81,7 +81,14 @@ fun AppNavigationDrawer(
      */
     isKycVerified: Boolean = false,
     kycStatusLabel: String = "Not verified",
-    onOpenIdentity: () -> Unit = {}
+    onOpenIdentity: () -> Unit = {},
+    /**
+     * AUDIT-A-CONSOLE: opens the operator verification queue. Locked by default —
+     * the host decides the unlock; the backend `admin` claim stays the authorizer.
+     */
+    isAdminUnlocked: Boolean = false,
+    adminPendingCount: Int = 0,
+    onOpenAdminQueue: () -> Unit = {}
 ) {
     if (!isOpen) return
 
@@ -478,6 +485,23 @@ fun AppNavigationDrawer(
                             onClick = {
                                 onDismiss()
                                 onOpenDisputes()
+                            }
+                        )
+
+                        // AUDIT-A-CONSOLE: operator-only queue entry. Locked subtitle by
+                        // default; the sheet itself enforces the same lock on actions.
+                        DrawerMenuItem(
+                            icon = Icons.Outlined.AdminPanelSettings,
+                            title = "Admin Verification Queue",
+                            subtitle = if (isAdminUnlocked) {
+                                if (adminPendingCount > 0) "$adminPendingCount application(s) awaiting review"
+                                else "Queue open — none awaiting review"
+                            } else "Operator access locked",
+                            badgeText = if (isAdminUnlocked) "Operator" else "Locked",
+                            badgeColor = if (isAdminUnlocked) IndustrialEmerald else Slate500,
+                            onClick = {
+                                onDismiss()
+                                onOpenAdminQueue()
                             }
                         )
 
