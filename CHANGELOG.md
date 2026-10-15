@@ -1,4 +1,36 @@
-﻿# CHANGELOG.md â€” Skills Exchange Development History
+# CHANGELOG.md — Skills Exchange Development History
+
+### [2026-10-15] [AUDIT] Multi-Perspective Platform Audit (Worker, Client, Administrator) & Documentation Synchronization
+
+- **Scope:** Documentation and architectural audit synchronization only. Direct source inspection of Kotlin Composables, Room entities, ViewModels, Repository logic, Cloud Functions, and Firebase Security Rules was conducted without reliance on stale markdown claims. No production code modified this session.
+- **Worker Persona Findings:**
+  - `submitQuote` exists in repository and ViewModel, but `WorkerJobFeedCard` CTA opens `EscrowAndProofSheet` directly instead of a quoting form. No Composable exists for workers to propose rates, hours, or terms.
+  - `EscrowWalletSheet` is read-only; no "Withdraw to MoMo" button exists to trigger disbursements or manage payout numbers.
+  - Active job card lacks geo-intent triggers to launch Google Maps / turn-by-turn routing to the client's home.
+  - No interface exists for workers to submit counter-evidence photos or explanations when a client disputes a job.
+  - No UI for project portfolios, trade certificates, or tiered rates (emergency vs standard).
+- **Client Persona Findings:**
+  - `QuickRequestDrawer` only accepts text/numbers/enums; homeowners cannot attach photos of leaks/damage when posting jobs.
+  - Only binary `URGENT` vs `SCHEDULED` toggle exists; no calendar date or time window picker.
+  - `JobPostEntity` only captures district; no fields for street address, apartment, or landmark directions.
+  - `firestore.rules` permits `CANCELLED`, but neither `JobPipelineKanban` nor `MainScreen` provides a "Cancel Job" button or refund trigger.
+  - `WORKER_EN_ROUTE` state machine step has no real-time worker location streaming on client map.
+  - No re-hire shortcut in `JobHistorySheet`; no voluntary gratuity tip when releasing escrow.
+- **Platform Administrator Persona Findings:**
+  - `adminVerificationQueue` and `submitAdminDecision()` exist in `SkillsExchangeViewModel`, but are **never collected or rendered by any Composable in the repository**. Operators have zero UI across web and mobile.
+  - `resolveDispute` exists in Cloud Functions, but admins have no console to review statements, photos, or chat history before deciding splits/refunds.
+  - `isSosTriggered` boolean flag has no live operator incident monitor, SMS dispatch trigger, or police alert console.
+  - No financial reconciliation ledger tracking telecom transaction IDs, platform commissions, escrow held, and failed payouts.
+  - 10% platform fee and $5.00 callout fees hardcoded rather than remote-configured.
+- **Synchronized Artifacts:**
+  - `AUDIT_THREE_PERSONAS.md`: Comprehensive audit document with executive summary, persona breakdowns, gap matrix, and 2-phase roadmap.
+  - `requirement_file.md`: Added §15 specifying detailed operational requirements for all three personas; updated Open Questions Summary.
+  - `prd.json`: Annotated story notes for `MARKET-002`, `PAY-003`, `JOB-001`, `ADMIN-001`, `DISP-003`, and `SAFE-002`; updated `last_updated` timestamp (`2026-10-15T11:00:00+03:00`).
+  - `TASKS.md`: Added 12 new pending task items under Multi-Perspective Platform Audit; synchronized header.
+  - `AGENT_STATE.md`: Added top-priority audit banner and current handoff state.
+  - `DECISIONS.md`: Recorded D-2026-10-15-1.
+- **Verification:** `prd.json` re-parsed as valid JSON with 93 stories and 93 completed stories preserved; line endings (CRLF) preserved; `git diff --check` clean.
+
 ### [2026-10-14] [PAY-002] Trusted MTN MoMo payment confirmation — provider status verification, untrusted-callback pull-to-verify, idempotent escrow lock, backend-driven Android states
 
 - **Scope:** PAY-002 only (payments phase 2). No deploy, no commit, no push, no real-money transaction. Sandbox-only and fail-closed, like PAY-001. PAY-003 (payout) and PAY-004 (material advance) remain disconnected and were not implemented.
@@ -887,6 +919,15 @@ Types: `IMPL` (implementation), `FIX` (bug fix), `TEST` (test), `INFRA` (infrast
 
 ### [2026-08-27] [PAY-003] [IMPL] Escrow Release & Worker MoMo Payout
 - Added `releaseEscrowToWorker` callable Cloud Function in `functions/src/index.ts` to credit worker wallet upon escrow release.
+
+### [2026-10-14] [PAY-004] Material Advance Escrow Partial Disbursement — In Progress
+- Implemented Cloud Function callable createMoMoMaterialAdvance in unctions/src/index.ts.
+- Builds on PAY-003 trust boundary (initiatePayout): server-side partial payout (up to 50% of materials subtotal).
+- Records receipt-capture requirement in materialAdvances/{jobId} collection with 60-minute deadline.
+- TypeScript compilation clean; existing tests re-run (29/29 pass); no new test file added yet.
+- Next steps: Android repository wiring (pproveMaterialAdvance -> callable), receipt capture flow, comprehensive tests.
+- NO deployment, NO real-money transaction. Sandbox-only fail-closed.
+
 
 ### [2026-08-27] [PAY-002] [IMPL] Escrow Lock & Webhook Confirmation
 - Updated `processMoMoWebhook` in `functions/src/index.ts` to lock escrow and send notifications to resident and worker upon successful payment.

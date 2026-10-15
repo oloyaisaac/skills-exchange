@@ -1077,7 +1077,7 @@
                 "Admin role authorization check requirement"
             ],
             "rollback": "git checkout functions/src/index.ts",
-            "notes": "Enforces business rule #1 & #21. AUDIT 2026-10-13: the callables (getPendingVerificationQueue, reviewWorkerApplication, setWorkerActivationStatus) exist in functions/src/index.ts and are invoked from the Android app via FirebaseService.getHttpsCallable(). There is NO separate admin web dashboard - no admin/ or web/ surface exists; admin review is driven through the Android app/Cloud Functions only. The PRD goal for ADMIN-001 was a spec for a web dashboard; only the CF spec/endpoints exist."
+            "notes": "Enforces business rule #1 & #21. AUDIT 2026-10-13: the callables (getPendingVerificationQueue, reviewWorkerApplication, setWorkerActivationStatus) exist in functions/src/index.ts and are invoked from the Android app via FirebaseService.getHttpsCallable(). There is NO separate admin web dashboard - no admin/ or web/ surface exists; admin review is driven through the Android app/Cloud Functions only. The PRD goal for ADMIN-001 was a spec for a web dashboard; only the CF spec/endpoints exist. AUDIT 2026-10-15: In the Android app, adminVerificationQueue and submitAdminDecision() exist in SkillsExchangeViewModel but are never collected or rendered by any Composable in the repository. Operators have zero visual UI across web and mobile."
         },
         {
             "id": "ADMIN-002",
@@ -1219,7 +1219,7 @@
                 "Room migration required"
             ],
             "rollback": "git checkout DB files",
-            "notes": "Enforces business rule #18 \u0026 #19."
+            "notes": "Enforces business rule #18 \u0026 #19. AUDIT 2026-10-15: QuickRequestDrawer lacks photo attachments, specific date/time scheduling (urgent/normal toggle only), and street address/landmark fields (district only). JobPipelineKanban lacks a cancellation button."
         },
         {
             "id": "JOB-002",
@@ -1360,7 +1360,7 @@
                 "Multi-device sync"
             ],
             "rollback": "git checkout repository file",
-            "notes": "Enforces business rule #17."
+            "notes": "Enforces business rule #17. AUDIT 2026-10-15: submitQuote() and JobQuoteEntity exist in data and ViewModel layers, but WorkerJobFeedCard CTA opens EscrowAndProofSheet instead of a quoting form. No Composable input sheet exists for workers to propose rates, duration, or notes in the UI."
         },
         {
             "id": "MARKET-003",
@@ -1501,7 +1501,7 @@
                 "Escrow pool balance"
             ],
             "rollback": "git checkout functions/src/index.ts",
-            "notes": "Completes payment lifecycle. AUDIT 2026-10-13: releaseEscrowToWorker callable writes a momo_payouts doc with status QUEUED and a fabricated PAYOUT-<ts> ref but performs NO real MoMo Transfer API call. Android disburseEscrowPayoutToWorker() likewise fabricates a payoutId and returns status=\"DISBURSED\" with no network call and has zero production callers. No worker wallet is ever credited. Needs a server-side MoMo disbursement call with a verified transfer result before status may be RELEASED_TO_WORKER."
+            "notes": "Completes payment lifecycle. AUDIT 2026-10-13: releaseEscrowToWorker callable writes a momo_payouts doc with status QUEUED and a fabricated PAYOUT-<ts> ref but performs NO real MoMo Transfer API call. Android disburseEscrowPayoutToWorker() likewise fabricates a payoutId and returns status=\"DISBURSED\" with no network call and has zero production callers. No worker wallet is ever credited. Needs a server-side MoMo disbursement call with a verified transfer result before status may be RELEASED_TO_WORKER. AUDIT 2026-10-15: EscrowWalletSheet is read-only; workers have no 'Withdraw to MoMo' button to trigger disbursement or configure destination numbers."
         },
         {
             "id": "PAY-004",
@@ -1755,7 +1755,7 @@
                 "SMS dispatch costs"
             ],
             "rollback": "git checkout repository file",
-            "notes": "Worker physical safety. AUDIT 2026-10-13: triggerEmergencySos() sets isSosTriggered and calls SmsNotificationService.dispatchEmergencySosAlert(), but that service is SIMULATED - it only Log.d + delay(200) and returns a fabricated status=\"SENT\". No SMS gateway request is made, so no real alert is delivered to anyone. The in-app flag works; the emergency SMS does not. Needs a real SMS gateway before SOS can be considered dispatched."
+            "notes": "Worker physical safety. AUDIT 2026-10-13: triggerEmergencySos() sets isSosTriggered and calls SmsNotificationService.dispatchEmergencySosAlert(), but that service is SIMULATED - it only Log.d + delay(200) and returns a fabricated status=\"SENT\". No SMS gateway request is made, so no real alert is delivered to anyone. The in-app flag works; the emergency SMS does not. Needs a real SMS gateway before SOS can be considered dispatched. AUDIT 2026-10-15: No real-time emergency dispatch dashboard or incident feed exists for administrators to monitor active SOS events."
         },
         {
             "id": "OFF-001",
@@ -2537,7 +2537,7 @@
         },
         {
             "id": "DISP-003",
-            "notes": "AUDIT 2026-10-13: resolveDispute + getDisputesQueue Cloud Functions exist (admin-gated), but the Android app does NOT call them (no getHttpsCallable(\"resolveDispute\")); disputes are created/persisted locally in Room (submitDispute -> createDispute). There is no admin UI that resolves a dispute against the backend. Admin dispute resolution is backend-only with no working end-to-end workflow.",
+            "notes": "AUDIT 2026-10-13: resolveDispute + getDisputesQueue Cloud Functions exist (admin-gated), but the Android app does NOT call them (no getHttpsCallable(\"resolveDispute\")); disputes are created/persisted locally in Room (submitDispute -> createDispute). There is no admin UI that resolves a dispute against the backend. Admin dispute resolution is backend-only with no working end-to-end workflow. AUDIT 2026-10-15: Worker persona cannot submit counter-evidence or defense statements; admin has no UI console to review statements, photos, or chat history before resolving.",
             "phase": 16,
             "title": "Implement Admin Dispute Resolution",
             "priority": "P0",
@@ -3557,5 +3557,5 @@
         "AUTH-012"
     ],
     "blocked_stories": [],
-    "last_updated": "2026-10-14T11:15:00+03:00"
+    "last_updated": "2026-10-15T11:00:00+03:00"
 }

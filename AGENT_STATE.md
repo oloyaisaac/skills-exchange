@@ -1,5 +1,38 @@
-﻿# AGENT_STATE.md â€” Skills Exchange Project State
-## ⚠ 2026-10-13 — IMPLEMENTATION-TRUTH AUDIT (read first)
+# AGENT_STATE.md — Skills Exchange Project State
+
+## ⚠ 2026-10-15 — MULTI-PERSPECTIVE PLATFORM AUDIT: WORKER, CLIENT, ADMIN (read first)
+A comprehensive source-code and user-journey audit evaluated the executability of flows for Workers, Clients, and Administrators across Android Composables, Room DAOs, ViewModels, Repository logic, Cloud Functions, and Firebase Security Rules.
+**Key findings:**
+1. **Worker Persona:**
+   - **No Quote Proposal Modal:** While `submitQuote(jobId, workerId, proposedRate, proposedHours, notes)` and `JobQuoteEntity` exist, tapping "Submit Quote" on `WorkerJobFeedCard` opens `EscrowAndProofSheet` instead of a quoting form. No Composable exists for workers to propose rates/hours/notes.
+   - **Read-Only Escrow Wallet:** `EscrowWalletSheet` renders static lists only; workers have no button to withdraw released balances to MTN/Airtel MoMo.
+   - **No Turn-by-Turn Navigation:** Active job card lacks geo-intent triggers to launch Google Maps / turn-by-turn routing to the client's home.
+   - **No Dispute Defense UI:** Workers cannot submit counter-evidence photos, receipts, or explanations when a client disputes a job.
+   - **Static Pricing:** No UI for project portfolios, trade certificates, or tiered rates (emergency callout vs. standard).
+2. **Client Persona:**
+   - **Cannot Attach Photos on Job Post:** `QuickRequestDrawer` parameters only accept text/numbers/enums; homeowners cannot capture visual evidence of leaks/damage when requesting bids.
+   - **No Specific Date/Time Scheduling:** Only binary `URGENT` vs `SCHEDULED` toggle; no calendar date or time window picker.
+   - **No Exact Street Address or Landmark:** `JobPostEntity` only stores `district`; clients cannot provide street/apartment/landmark directions.
+   - **No Job Cancellation UI:** `firestore.rules` allows `CANCELLED`, but neither `JobPipelineKanban` nor `MainScreen` provides a "Cancel Job" button or escrow refund trigger.
+   - **No Live Worker ETA:** `WORKER_EN_ROUTE` state machine step has no real-time worker location streaming on client map.
+   - **No Re-Hire Favorites or Tipping:** No bookmarking in `JobHistorySheet`; no voluntary gratuity when releasing escrow.
+3. **Platform Administrator Persona:**
+   - **Zero UI Console (Web or Mobile):** `adminVerificationQueue` and `submitAdminDecision()` exist in `SkillsExchangeViewModel`, but are **never collected or rendered by any Composable in the repository**. Operators have no visual queue to inspect National IDs or guarantor submissions.
+   - **Blind Dispute Arbitration:** `resolveDispute` exists in Cloud Functions, but admins have no console to review statements, photos, or chat history before deciding splits/refunds.
+   - **No SOS Emergency Dispatch Desk:** `isSosTriggered` boolean flag has no live operator incident monitor, SMS dispatch trigger, or police alert console.
+   - **Missing Financial Reconciliation:** No ledger tracking telecom transaction IDs, platform commissions, escrow held, and failed payouts.
+   - **Hardcoded Fees:** 10% platform fee and $5.00 callout fees hardcoded instead of remote-configured.
+
+**Documentation Synchronized (2026-10-15):**
+- `AUDIT_THREE_PERSONAS.md` updated with full persona breakdown, gap matrix, and 2-phase roadmap.
+- `requirement_file.md` §15 added specifying detailed Worker, Client, and Admin operational requirements, plus updated Open Questions.
+- `prd.json` notes annotated for `MARKET-002`, `PAY-003`, `JOB-001`, `ADMIN-001`, `DISP-003`, `SAFE-002`; `last_updated` set to `2026-10-15T11:00:00+03:00`.
+- `TASKS.md` updated with 12 pending audit items across Worker, Client, and Admin categories.
+- `CHANGELOG.md` and `DECISIONS.md` updated with D-2026-10-15-1.
+
+---
+
+## ⚠ 2026-10-13 — IMPLEMENTATION-TRUTH AUDIT (historical reference)
 A source-code audit verified the completed PRD stories against their acceptance criteria. **Many "completed" stories are mocked, disconnected, or unverified end-to-end.** The `prd.json` schema only permits the status `completed`, so statuses were NOT bulk-flipped; instead every affected story's `notes` now carries an `AUDIT 2026-10-13:` annotation with the exact evidence. **Do not treat these as shipping features.**
 
 **Confirmed SIMULATED / DISCONNECTED (safety-critical):**
@@ -19,11 +52,20 @@ A source-code audit verified the completed PRD stories against their acceptance 
 - **MARKET-001** discovery/filtering is real (GPS distance + KYC filter); only the SMS leg is simulated.
 - **COMM-001** chat is real (Firestore `streamChatMessages`/`sendChatMessage` + phone masking), subject to rules being deployed.
 
-**First action for the next agent:** implement a real MoMo payment confirmation (PAY-001/002) or a real SMS/notification channel (SAFE-002/NOTIF-002) against a sandbox, then device-verify. Details: DECISIONS.md D-2026-10-13-1 and CHANGELOG.md 2026-10-13. *(PAY-001/002 DONE 2026-10-14 - see the current entry below; SMS/push/AI remain as described.)*
-
+---
 
 ## Last Updated
-2026-10-14 - **PAY-002 IMPLEMENTED AND VERIFIED (trusted backend MoMo confirmation, pull-to-verify). This is the CURRENT handoff entry.** No deploy, no commit, no push, no real-money transaction.
+2026-10-15 — **MULTI-PERSPECTIVE PLATFORM AUDIT & DOCUMENTATION SYNCHRONIZATION COMPLETED. This is the CURRENT handoff entry.**
+- Detailed gap analysis across Worker, Client, and Administrator journeys recorded in `AUDIT_THREE_PERSONAS.md`.
+- PRD story notes updated for `MARKET-002`, `PAY-003`, `JOB-001`, `ADMIN-001`, `DISP-003`, `SAFE-002`; `last_updated` synchronized.
+- `requirement_file.md` §15 added specifying operational requirements; Open Questions updated.
+- `TASKS.md` updated with human-readable task register for 12 persona gap items.
+- Next action: Proceed with **Phase 1: Close Worker & Client Operational Loops** starting with `AUDIT-W-QUOTE` (Quote Proposal Modal Composable wired to `submitQuote`) and `AUDIT-C-PHOTO` / `AUDIT-C-CANCEL`.
+
+---
+
+## Last Updated (Previous)
+2026-10-14 - **PAY-002 IMPLEMENTED AND VERIFIED (trusted backend MoMo confirmation, pull-to-verify).** No deploy, no commit, no push, no real-money transaction.
 
 **What PAY-002 changed (production):**
 - `functions/src/momoConfirmation.ts` (NEW, zero runtime imports; config loader injected as `deps.loadConfig` so `node --test` type-stripping works): pure confirmation core - status vocabulary `PENDING | SUCCESSFUL | FAILED | UNKNOWN | NEEDS_RECONCILIATION`; `parseProviderStatusResponse` (malformed -> `malformed`, never a guessed status); `decideConfirmation` (terminal states immutable; provider success must match the STORED transaction's amount/currency before escrow may be considered; timeout/5xx keeps last-known `PENDING` + records the check error; unknown-ref/malformed -> `UNKNOWN`; disagreement -> `NEEDS_RECONCILIATION`); `authorizeStatusQuery` (stored `clientUid` == authenticated caller); `extractCallbackReferenceHint` (reads ONLY a reference from the untrusted callback body - `referenceId`/legacy `transactionRef`); `verifyAndConfirmCollection` (fail-closed orchestrator: unknown ref -> rejected; terminal -> idempotent no-op without a provider call).
@@ -40,7 +82,7 @@ A source-code audit verified the completed PRD stories against their acceptance 
 
 **NOT verified / NOT done (do not claim otherwise):** no deploy of functions or rules; no commit/push; no real MTN transaction. Real sandbox end-to-end (portal-registered callback host, genuine provider callback delivery) is **implemented but awaiting sandbox verification**. PAY-003 payout and PAY-004 material advance remain fabricated/disconnected (AUDIT-PAY still open for those); cash-settlement local escrow flip in `EscrowAndProofSheet` untouched (non-MoMo path).
 
-**Next action:** PAY-001/PAY-002 of AUDIT-PAY are done. Either device/sandbox-verify the confirmation flow (needs deploy - out of scope for a no-deploy session) or pick the next eligible story per `prd.json` priority order (AUDIT-SMS / SAFE-002 real SMS is the other P0 safety blocker). Do not restart the project; read `prd.json` + this entry first.
+**Next action:** PAY-001/PAY-002 of AUDIT-PAY are done. PAY-003 payout still pending real E2E. PAY-004 material advance partial implementation done (callable + receipt tracking). Next: finish PAY-004 (Android wiring + tests) OR pick next P0 blocker (AUDIT-SMS / SAFE-002 real SMS). Do not restart the project; read `prd.json` + this entry first.
 
 
 

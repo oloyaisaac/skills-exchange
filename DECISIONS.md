@@ -2,6 +2,28 @@
 
 All significant architectural, design, and implementation decisions are recorded here. This allows future agents and developers to understand why specific choices were made.
 
+### D-2026-10-15-1 - Multi-Perspective Persona Gap Remediation Roadmap: Prioritizing Mobile Operational Loops (Phase 1) and Operations Console (Phase 2)
+
+**Context.** A direct source-code audit across Worker, Client, and Administrator user journeys revealed severe gaps between backend readiness and frontend execution:
+- **Workers** cannot submit bids or custom price quotes in the UI (the "Submit Quote" CTA in `FreelancerDashboardView` bypasses quoting and jumps to `EscrowAndProofSheet`), cannot withdraw wallet funds (`EscrowWalletSheet` is read-only), and have no turn-by-turn navigation or dispute defense interfaces.
+- **Clients** cannot attach photos when requesting jobs (`QuickRequestDrawer` is text/numbers/enum only), cannot pick specific appointment dates/times, cannot specify street addresses or landmarks, and have no UI button to cancel a request or trigger an escrow refund.
+- **Administrators** have zero UI surfaces (neither web portal nor mobile Composable) to review National IDs or guarantor submissions (`adminVerificationQueue` and `submitAdminDecision` in `SkillsExchangeViewModel` have zero call sites), no dispute arbitration console, and no live SOS emergency dispatch desk.
+
+**Decision.**
+1. **Prioritize Mobile Operational Loops (Phase 1):** The marketplace cannot function if workers cannot quote and clients cannot specify problems or cancel requests. Phase 1 will implement:
+   - `QuoteSubmissionSheet` Composable in `FreelancerDashboardView.kt` connected to `SkillsExchangeViewModel.submitQuote(jobId, workerId, proposedRate, proposedHours, notes)`.
+   - Media photo attachment picker (up to 3 photos) and date/time window picker in `QuickRequestDrawer.kt`.
+   - Street address and landmark fields in `JobPostEntity` / `QuickRequestDrawer.kt`.
+   - "Cancel Job" dialog in `JobPipelineKanban.kt` and `MainScreen.kt` using the existing secured `transitionJobStatus` boundary (`CANCELLED`).
+   - "Withdraw to Mobile Money" action in `EscrowWalletSheet.kt`.
+   - "Navigate to Site" geo-intent launcher on the active job card.
+2. **Operations & Admin Console (Phase 2):**
+   - Provide an operational interface connecting to the existing Cloud Functions (`getVerificationQueue`, `reviewWorkerApplication`, `reviewGuarantorSubmission`, `setWorkerActivationStatus`, `getDisputesQueue`, `resolveDispute`).
+   - Deliver dispute arbitration and SOS emergency monitoring views.
+3. **Documentation Alignment:** All six primary project memory files (`prd.json`, `requirement_file.md`, `AUDIT_THREE_PERSONAS.md`, `AGENT_STATE.md`, `TASKS.md`, `CHANGELOG.md`) are updated to reflect these findings and track the 12 resulting action items.
+
+**Consequences.** Future implementation sessions should pick stories from the Phase 1 operational roadmap first to unlock end-to-end user journeys before building the administrative backoffice.
+
 ### D-2026-10-14-1 - PAY-002: MTN callbacks are unsigned, so confirmation is pull-to-verify; the invented HMAC webhook gate is removed
 
 **Context.** PAY-001 (commit b740705) safely creates a sandbox collection and records HTTP 202 as `PENDING`. PAY-002 had to answer: how does the platform learn the provider ACTUALLY succeeded, and how may escrow then lock? The repo's legacy `processMoMoWebhook` (SEC-002, 2026-08-27) claimed "HMAC signature verification": it required a `x-momo-signature`-style header HMAC-signed with `MOMO_WEBHOOK_SECRET` and, on success, trusted the body's `status`/`jobId` and flipped escrow — while notifying `postedByResident` (a display string, not a uid).

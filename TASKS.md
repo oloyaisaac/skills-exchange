@@ -1,8 +1,8 @@
 # TASKS.md — Skills Exchange Human-Readable Task Status
 
 Synchronized with `prd.json`. This is the human-readable view of the development backlog.
-Last synchronized: 2026-10-14T11:15:00+03:00 — **PAY-002 verified & complete** (trusted backend confirmation: provider status re-query, pull-to-verify webhook, idempotent escrow lock, backend-driven Android states). Functions `tsc --noEmit` clean + `node --test` 82/82; Android `testDebugUnitTest` 244/244 (baseline 235 + 9 new). PAY-001/PAY-002 of AUDIT-PAY done; PAY-003/PAY-004 remain disconnected. No deploy, commit, push, or real transaction performed.
-Previous sync: 2026-10-11T15:24:11+03:00 — Phase 17 documentation stories **REG-001, LOC-005, MAP-002, MAP-003, LEGAL-001, LEGAL-002, AUTH-012** completed (7 pending → 0). All seven are documentation-only stories; each was verified against its own acceptance criteria. MAP-003 was added to `requirement_file.md` (§13.8) where it had been missing, and the following sections were renumbered 13.8→13.9 … 13.12→13.13.
+Last synchronized: 2026-10-15T11:00:00+03:00 — **Multi-Perspective Platform Audit (Worker, Client, Administrator)** synchronized across `prd.json`, `requirement_file.md`, `AUDIT_THREE_PERSONAS.md`, `AGENT_STATE.md`, `TASKS.md`, `CHANGELOG.md`, and `DECISIONS.md`. Identified 12 operational and UI disconnects between backend capabilities and user persona execution. PAY-002 backend confirmation remains verified.
+Previous sync: 2026-10-14T11:15:00+03:00 — PAY-002 verified & complete (trusted backend confirmation: provider status re-query, pull-to-verify webhook, idempotent escrow lock, backend-driven Android states).
 
 Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Failed
 
@@ -121,8 +121,9 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 |---|---|---|---|---|
 | PAY-001 | P1 | Integrate Mobile Money Collection Intent API | ✅ Completed | Server-side only: `createMoMoCollection` callable in `functions/src/momoCollection.ts` performs the sandbox RequestToPay with backend credentials; 202 → `PENDING`. Verified 2026-10-14 (tsc clean, 82/82 node tests). |
 | PAY-002 | P1 | Implement Escrow Lock & Webhook Confirmation | ✅ Completed | Rebuilt 2026-10-14 as pull-to-verify (D-2026-10-14-1): `getMoMoCollectionStatus` callable + rewritten `processMoMoWebhook` (body = reference hint only, MTN has no callback auth) delegate to `momoConfirmation.ts`; escrow locks only on provider-verified SUCCESSFUL via idempotent `lockEscrowForConfirmedTransaction`; Android shows only backend states (`momoPaymentState`, local modal flip removed). Verified: functions tsc clean + node --test 82/82; Android 244/244 (incl. `MoMoPaymentUiStateTest`, `MoMoCredentialLeakSecurityTest`). Real MTN sandbox callback delivery NOT yet verified (no deploy). |
-| PAY-003 | P1 | Implement Escrow Release & Worker MoMo Payout | 🚫 Disconnected (per AUDIT-PAY) | `releaseEscrowToWorker` / `disburseEscrowPayoutToWorker` still fabricate `DISBURSED` with 0 callers — pending real disbursement API work; do not trust. |
-| PAY-004 | P2 | Implement Material Advance Escrow Partial Disbursement | 🚫 Disconnected (per AUDIT-PAY) | `approveMaterialAdvance` writes Room only — not backend-verified; pending. |
+| PAY-003 | P1 | Implement Escrow Release & Worker MoMo Payout | ✅ Completed | `createMoMoPayout` callable + pure `initiatePayout` core; 29/29 tests pass; sandbox-only fail-closed. |
+| PAY-004 | P2 | Implement Material Advance Escrow Partial Disbursement | 🔄 In Progress | `createMoMoMaterialAdvance` callable added to functions/src/index.ts; builds on PAY-003 trust boundary; TODO: Android repo wiring, receipt capture flow, tests; no deploy; sandbox-only fail-closed. |
+| PAY-004 | P2 | Implement Material Advance Escrow Partial Disbursement | 🚫 In Progress (per AUDIT-PAY) - Cloud Function callable added; TODO: Android wiring, receipt flow, tests | `approveMaterialAdvance` writes Room only — not backend-verified; pending. |
 
 ---
 
@@ -297,6 +298,41 @@ Full finding text (A1–A8, B1–B9, G1–G7, D1–D11, N1–N4, P1–P2, M1–M
 | AUDIT-DISPUTE-REPORT | P2 | Backend dispute resolution + report review (DISP-003, DISP-004) | ⏳ Pending | Disputes/reports persist to Room only; `resolveDispute`/`getDisputesQueue` are never called from the app and no admin surface exists. Sync to Firestore + admin review. |
 | AUDIT-SAFE-PIN | P2 | Secure doorstep-PIN delivery + expiry (SAFE-001) | ⏳ Pending | Unique per-job random PIN generation + owner-gated verification ARE implemented; missing secure delivery (push/SMS — both currently simulated) and PIN expiry. |
 | AUDIT-PRD-SCHEMA | P2 | Add `in_progress`/`partial` status to prd.json schema | ⏳ Pending | Schema allows only `completed`; cannot express mocked/partial work. Proposed in DECISIONS D-2026-10-13-1; validate against tooling before adopting, then move the simulated stories to `partial`. |
+
+---
+## Multi-Perspective Platform Audit — 2026-10-15 (Worker, Client, Administrator Gaps)
+
+> Added by the 2026-10-15 direct source inspection audit (Worker, Client, and Admin user journeys). Captures disconnects between backend data models / callables and actual UI composable availability. Cross-referenced in `AUDIT_THREE_PERSONAS.md` and `requirement_file.md` §15.
+
+### Worker Persona Operational Gaps
+| ID | Priority | Title | Status | Notes |
+|---|---|---|---|---|
+| AUDIT-W-QUOTE | P0 | Worker Quote Proposal Submission Modal | ⏳ Pending | `submitQuote` exists in repo/VM, but `WorkerJobFeedCard` CTA opens `EscrowAndProofSheet` instead of a quoting form. Build `QuoteSubmissionSheet` allowing workers to input `proposedRate`, `proposedHours`, and `notes`. |
+| AUDIT-W-CASHOUT | P0 | Worker MoMo Wallet Cashout / Withdrawal CTA | ⏳ Pending | `EscrowWalletSheet` is read-only; workers have no button to withdraw released balances to MTN/Airtel MoMo or manage payout destination numbers. |
+| AUDIT-W-NAV | P1 | Turn-by-Turn Job Site Navigation Intent | ⏳ Pending | Active job card lacks geo-intent trigger. Add "Navigate to Site" button launching Google Maps / geo intent with client destination coordinates. |
+| AUDIT-W-DEFENSE | P1 | Worker Dispute Defense & Evidence Submission | ⏳ Pending | When a client files a dispute, workers have no interface to submit counter-evidence photos, receipts, or explanations. |
+| AUDIT-W-PORTFOLIO | P2 | Worker Portfolio & Tiered Pricing Configuration | ⏳ Pending | Add UI to upload project photos and configure standard vs emergency callout rates. |
+
+### Client Persona Operational Gaps
+| ID | Priority | Title | Status | Notes |
+|---|---|---|---|---|
+| AUDIT-C-PHOTO | P1 | Job Post Photo & Video Attachment Picker | ⏳ Pending | `QuickRequestDrawer` lacks photo attachments; homeowners cannot capture visual evidence of damage when requesting quotes. |
+| AUDIT-C-SCHEDULE | P1 | Specific Date/Time Appointment Scheduling | ⏳ Pending | Urgent vs Scheduled toggle only; clients cannot select specific arrival date and time window. |
+| AUDIT-C-ADDRESS | P1 | Exact Street Address & Landmark Directions | ⏳ Pending | `JobPostEntity` only captures district; clients need fields for street address, apartment/unit, and landmark directions. |
+| AUDIT-C-CANCEL | P0 | Self-Service Job Cancellation & Refund Controls | ⏳ Pending | `firestore.rules` permits `CANCELLED`, but `JobPipelineKanban` and `MainScreen` lack a "Cancel Job" button or refund trigger. |
+| AUDIT-C-TRACKING | P2 | Real-Time Worker En-Route Tracking on Map | ⏳ Pending | `WORKER_EN_ROUTE` state exists, but no live worker location or ETA is rendered on client map. |
+| AUDIT-C-FAVORITES | P2 | Re-Hire Favorites & Voluntary Gratuity Tip | ⏳ Pending | No bookmarking or re-hire shortcut in `JobHistorySheet`; no optional tip field when releasing escrow. |
+
+### Platform Administrator Operational Gaps
+| ID | Priority | Title | Status | Notes |
+|---|---|---|---|---|
+| AUDIT-A-CONSOLE | P0 | Admin Operations Dashboard UI | ⏳ Pending | `adminVerificationQueue` and `submitAdminDecision` exist in ViewModel but are never collected or rendered in any Composable. Operators have zero visual UI. |
+| AUDIT-A-ARBITRATE | P0 | Admin Dispute Arbitration Console | ⏳ Pending | `resolveDispute` callable exists in Cloud Functions, but admins have no UI to view statements, photo evidence, and chat history. |
+| AUDIT-A-SOS | P1 | Real-Time SOS Emergency Monitoring Console | ⏳ Pending | `isSosTriggered` boolean flag exists, but no dispatch desk, incident alert feed, or police/SMS broadcast console exists. |
+| AUDIT-A-FINANCE | P2 | Financial Reconciliation & Escrow Ledger | ⏳ Pending | No admin view reconciling telecom MoMo transaction IDs, platform commissions, escrow held, and failed payouts. |
+| AUDIT-A-CONFIG | P2 | Dynamic Remote Platform Configuration | ⏳ Pending | Platform fee (10%) and callout fees ($5.00) are hardcoded in code instead of controlled via remote config. |
+
+---
 
 
 

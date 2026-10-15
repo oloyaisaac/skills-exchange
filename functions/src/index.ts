@@ -1532,6 +1532,171 @@ export const createMoMoPayout = functions.https.onCall(async (data, context) => 
 });
 
 
+
+/**
+ * PAY-004: Create a material advance partial payout (up to 50% of the
+ * materials subtotal) when the resident approves the advance request.
+ *
+ * The server-side worker payout is performed through the same trusted
+ * `initiatePayout` core that PAY-003 uses. A Firestore document under
+ * `materialAdvances/{jobId}` is created to record the receipt-capture
+ * requirement: the client must upload a hardware receipt within 60 minutes
+ * of disbursement; the receipt URL is written back to the job document
+ * before the advance status flips to DISBURSED.
+ *
+ * Idempotency: the collection doc `materialAdvances/{jobId}` is the single
+ * source of truth. A second invocation with the same `jobId` sees the
+ * already-queued advance and fails closed with ALREADY_PENDING.
+ */
+export const createMoMoMaterialAdvance = functions.https.onCall(
+  async (data, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "Authentication required to disburse material advance."
+      );
+    }
+
+    const {
+      jobId,
+      materialsSubtotal,
+      workerId,
+      workerMomoNumber,
+      provider,
+    } = data;
+
+    if (
+      !jobId ||
+      materialsSubtotal === undefined ||
+      workerId === undefined ||
+      workerMomoNumber === undefined
+    ) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Missing required parameters: jobId, materialsSubtotal, workerId, workerMomoNumber."
+      );
+    }
+
+    // Fail closed: materialsSubtotal must be positive, never negative or zero.
+    if (!(typeof materialsSubtotal === "number" && materialsSubtotal > 0)) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "materialsSubtotal must be a positive number."
+      );
+    }
+
+    // Advance is capped at 50% of the materials subtotal.
+    const advanceAmount = Math.min(materialsSubtotal * 0.5, materialsSubtotal);
+
+    // Record the receipt-capture requirement in Firestore BEFORE issuing the
+    // payout. The doc is the idempotency key: a second call returns ALREADY_PENDING.
+    const advanceRef = db.collection("materialAdvances").doc(jobId);
+    const existing = await advanceRef.get();
+    if (existing.exists) {
+      const existingData = existing.data();
+      if (existingData?.status === "PENDING") {
+        return {
+          success: false,
+          error: "already-pending",
+          message:
+            "A material advance for this job is already pending. Await its status.",
+        };
+      }
+      // If a previous attempt exists, start a new one only if the amount changed.
+      // Refuse to overwrite an already-disbursed advance.
+      if (existingData?.status === "DISBURSED") {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "This material advance was already disbursed and cannot be re-run."
+        );
+      }
+    }
+
+    await advanceRef.set({
+      jobId,
+      workerId,
+      workerMomoNumber,
+      materialsSubtotal,
+      advanceAmount,
+      provider: provider || "MTN_MOMO",
+      status: "PENDING",
+      receiptCaptureExpiresAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    // Issue the partial payout through the PAY-003 trust boundary.
+    const payoutResult = await initiatePayout(
+      {
+        jobId,
+        clientUid: context.auth.uid,
+        amountUgx: Math.round(advanceAmount),
+        workerMomoNumber,
+        provider: provider || "MTN_MOMO",
+        env: process.env as Record<string, string | undefined>,
+      },
+      buildPayoutDeps()
+    );
+
+    if (!payoutResult.ok) {
+      await advanceRef.update({
+        status: "FAILED",
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      const codeMap: Record<string, string> = {
+        unauthenticated: "unauthenticated",
+        invalid_argument: "invalid-argument",
+        job_not_found: "not-found",
+        not_job_owner: "permission-denied",
+        invalid_job_state: "failed-precondition",
+        job_not_escrowed: "failed-precondition",
+        amount_mismatch: "failed-precondition",
+        worker_mismatch: "failed-precondition",
+        config_error: "failed-precondition",
+        duplicate_request: "already-exists",
+        already_pending: "failed-precondition",
+        provider_error: "unavailable",
+        provider_timeout: "deadline-exceeded",
+      };
+
+      const httpsCode =
+        codeMap[payoutResult.error.code] || "internal";
+      throw new functions.https.HttpsError(
+        httpsCode as any,
+        payoutResult.error.message
+      );
+    }
+
+    // Payout accepted (PENDING). Notify the worker.
+    const payoutRef = payoutResult.payoutId;
+    await db.collection("notifications").add({
+      userId: workerId,
+      type: "PAYOUT_PENDING",
+      jobId,
+      message: `A material advance of UGX ${advanceAmount} has been initiated. Please upload the hardware receipt within 60 minutes so the payout can be completed.`,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      read: false,
+    });
+
+    // Update the local tracking document with the payout reference.
+    await advanceRef.update({
+      payoutRef,
+      providerReferenceId: payoutResult.providerReferenceId,
+      status: "PENDING",
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return {
+      success: true,
+      payoutRef,
+      advanceAmount: Math.round(advanceAmount),
+      receiptCaptureDeadlineMs: Date.now() + 60 * 60 * 1000,
+      message: `Material advance of UGX ${advanceAmount} is pending. Upload the hardware receipt within 60 minutes to release the funds.`,
+    };
+  }
+);
+
+
 /**
  * PAY-003: Query the provider-verified status of a previously initiated payout.
  *

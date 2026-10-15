@@ -727,7 +727,7 @@ These new requirements are additions to the existing project, not replacements.
 
 ### Open Questions Summary
 
-**2026-09-17 Feature Connection Audit:** A complete connection audit was performed. See AGENT_STATE.md and TASKS.md for the pending fix register. Findings are not yet implemented.
+**2026-09-17 Feature Connection Audit & 2026-10-15 Multi-Perspective Platform Audit:** Comprehensive audits identified disconnects between backend capabilities and user journey executability. See AUDIT_THREE_PERSONAS.md, AGENT_STATE.md, and TASKS.md for full registers.
 
 The following questions remain unresolved and should be answered before implementation:
 
@@ -738,6 +738,9 @@ The following questions remain unresolved and should be answered before implemen
 5. **What exact legal wording should be used after Ugandan legal review?**
 6. **MAP-003:** How should the unguarded `map.onCreate()` crash from MAP-001 (device defect D1) be reconciled with the active-job screen design?
 7. **MAP-003:** Is the COMM-001 masked-chat mechanism already reachable from the active-job context?
+8. **Worker Bidding UX:** When a worker taps "Submit Quote", should the UI present a bottom sheet modal capturing hourly rate, estimated hours, and notes, and update the existing JobQuoteEntity immediately?
+9. **Cancellation Policy:** When a client cancels a job after worker selection but before work starts, should there be an automated callout fee deduction ($5.00/UGX equivalent) to compensate the worker for travel?
+10. **Admin Portal Architecture:** Should the Admin Operations Console be deployed as an internal Android debug drawer/screen for on-the-go ops or as a separate web portal (Next.js/React) connecting to existing Cloud Functions?
 
 ---
 
@@ -763,3 +766,60 @@ The project backlog is organized into **17 Logical Implementation Phases**:
 17. Phase 17: Future Requirements & Post-Launch Enhancements
 
 ---
+
+## 15. Multi-Perspective Operational Requirements (Worker, Client, Administrator)
+
+*(Derived from the 2026-10-15 Codebase & Persona Audit)*
+
+### 15.1 Worker Experience Requirements
+1. **Quote Proposal Submission UI**:
+   - Tapping "Submit Quote" on `WorkerJobFeedCard` must open a dedicated `QuoteSubmissionSheet` Composable.
+   - Form fields: `proposedRate` (number, UGX/hr), `proposedHours` (number), `notes` (text, optional).
+   - Wires to `SkillsExchangeViewModel.submitQuote(jobId, workerId, proposedRate, proposedHours, notes)`.
+   - Prevents duplicate quote submissions by checking existing quotes for `(jobId, workerId)`.
+2. **Mobile Money Wallet Cashout & Disbursement**:
+   - In `EscrowWalletSheet`, provide an actionable "Withdraw to Mobile Money" CTA when `releasedBalance > 0`.
+   - Confirmation dialog displaying destination phone number (defaulting to profile MoMo number), telecom provider (MTN/Airtel), platform deduction breakdown, and net amount.
+   - Triggers backend disbursement callable with fail-closed state tracking.
+3. **Turn-by-Turn Job Site Navigation Intent**:
+   - Active job card on the worker dashboard must render a "Navigate to Site" button when a job is `ACCEPTED` or `WORKER_EN_ROUTE`.
+   - Launches Android `geo:` intent or Google Maps URI with the client's destination coordinates/district.
+4. **Worker Dispute Defense & Counter-Evidence**:
+   - When a job status transitions to `DISPUTED`, the worker view in `EscrowAndProofSheet` must show a "Submit Dispute Defense" section.
+   - Allows uploading counter-evidence photos (before/after work, receipts) and explanatory statement.
+5. **Portfolio & Tiered Pricing Customization**:
+   - Worker profile settings must support showcasing up to 5 portfolio photos and configuring standard vs. emergency callout rates.
+
+### 15.2 Client Experience Requirements
+1. **Job Posting Photo & Video Attachments**:
+   - `QuickRequestDrawer` must include an optional media picker (up to 3 photos) before posting a job.
+   - Uploads photos to Firebase Storage under `jobs/{jobId}/initial_photos/` and persists URLs to `JobPostEntity`.
+2. **Specific Date & Time Appointment Scheduling**:
+   - Replace the binary `URGENT` vs `SCHEDULED` toggle with a scheduled date/time picker when `SCHEDULED` is selected.
+   - Stores `scheduledDate` (epoch ms) and displays clear appointment windows (e.g., "Tomorrow, 2:00 PM - 4:00 PM").
+3. **Street Address, Landmark, & Navigation Notes**:
+   - Expand `JobPostEntity` and `QuickRequestDrawer` to accept `streetAddress`, `apartmentSuite`, and `landmarkDirections` in addition to district.
+   - Displays doorstep landmark instructions to the assigned worker upon job acceptance.
+4. **Self-Service Job Cancellation & Refund Controls**:
+   - In `JobPipelineKanban` and `MainScreen`, active jobs in `POSTED`, `QUOTING`, or `ACCEPTED` states must display a "Cancel Job" button.
+   - If escrow funds are already locked, triggers the backend refund flow to return funds to the client's MoMo account.
+5. **Real-Time Worker Arrival & En-Route Tracking**:
+   - Surface `WORKER_EN_ROUTE` status on the client's job tracking screen with estimated arrival status.
+6. **Re-Hire Favorites & Voluntary Gratuity**:
+   - Add a "Re-Hire Specialist" shortcut on `JobHistorySheet`.
+   - Provide an optional tip field (e.g. 5%, 10%, or custom UGX) during final escrow release.
+
+### 15.3 Platform Administrator Experience Requirements
+1. **Administrative Operations Dashboard UI**:
+   - Implement an operational console (accessible via authorized admin role) that connects to `getVerificationQueue`, `reviewWorkerApplication`, and `setWorkerActivationStatus`.
+   - Enables operators to view applicant details, inspect high-resolution National ID photos, check guarantor verification cards, and toggle approval/rejection/changes-required.
+2. **Dispute Arbitration Console**:
+   - Interface for reviewing disputed jobs, inspecting client complaint vs. worker defense, viewing uploaded before/after photos and masked chat logs.
+   - Action controls to execute `resolveDispute` with split, full refund, or worker release decisions.
+3. **Live SOS & Incident Response Desk**:
+   - Real-time incident monitor for any job where `isSosTriggered == true`.
+   - Displays worker & client contact numbers, GPS coordinates, doorstep address, and rapid emergency escalation options (SMS dispatch / police notification).
+4. **Financial Reconciliation & Escrow Ledger**:
+   - Financial audit view reconciling telecom transaction IDs, pending escrow float, platform commission balances, and completed payouts.
+5. **Dynamic Remote Platform Configuration**:
+   - Migrate platform fee percentage (currently hardcoded 10%) and callout fees ($5.00) to Firestore remote config documents.

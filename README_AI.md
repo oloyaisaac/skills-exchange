@@ -117,18 +117,23 @@ Using the dependency graph in `prd.json`:
 3. Among eligible stories, prioritize by `priority` (P0 > P1 > P2 > P3).
 4. That is your next story.
 
-### Current Expected Next Story (as of 2026-08-25)
+### Current Status & Next Priorities (as of 2026-10-15)
 
-After STAB-001 and STAB-002 are marked complete:
+All 93 baseline PRD stories are tracked in `prd.json`.
+The project is currently addressing findings from the **2026-10-15 Multi-Perspective Platform Audit** (see `AUDIT_THREE_PERSONAS.md`, `requirement_file.md` §15, and `TASKS.md`):
 
-**STAB-003** (P3) — Depends on STAB-002 — Automated test verification script
-Then eligible in parallel:
-- **SEC-001** (P0) — Depends on STAB-001 — Harden Firestore rules
-- **AI-001** (P0) — Depends on STAB-001 — Repair Gemini model identifier
-- **SAFE-001** (P1) — Depends on STAB-001 — Dynamic doorstep PIN
-- **MAP-001** (P1) — Depends on STAB-001 — Google Maps integration
+1. **Phase 1: Close Worker & Client Operational Loops (Mobile App)**
+   - `AUDIT-W-QUOTE` (P0): Quote Proposal Modal Composable wired to `SkillsExchangeViewModel.submitQuote`.
+   - `AUDIT-C-CANCEL` (P0): Self-service "Cancel Job" dialog in `JobPipelineKanban` and `MainScreen` with escrow refund.
+   - `AUDIT-W-CASHOUT` (P0): "Withdraw to MoMo" button in `EscrowWalletSheet`.
+   - `AUDIT-C-PHOTO` & `AUDIT-C-SCHEDULE` (P1): Photo attachment picker and appointment date/time picker in `QuickRequestDrawer`.
+   - `AUDIT-W-NAV` (P1): Turn-by-turn navigation intent on active job cards.
 
-**Priority order**: SEC-001 (P0) → AI-001 (P0) → STAB-003 (P3, but logical next in Phase 1)
+2. **Phase 2: Operations & Admin Console (Internal / Admin Portal)**
+   - `AUDIT-A-CONSOLE` (P0): Admin verification queue UI for KYC IDs and guarantor photos.
+   - `AUDIT-A-ARBITRATE` (P0): Dispute arbitration console with evidence viewer.
+   - `AUDIT-A-SOS` (P1): Live SOS emergency monitoring desk.
+
 
 ---
 
