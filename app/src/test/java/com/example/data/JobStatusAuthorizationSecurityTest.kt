@@ -401,4 +401,37 @@ class JobStatusAuthorizationSecurityTest {
             )
         )
     }
+    // --- TEST D: job cancellation (cancelJob) ----------------------------------------------------
+
+    @Test
+    fun `cancelJob with no authenticated user fails closed`() = runBlocking {
+        db.jobPostDao().insertJob(job(status = JobStatus.ACCEPTED.value, postedByUid = "uid_A"))
+        val ok = repository.cancelJob("job_1", "should never cancel without an account")
+        assertFalse("cancel must fail closed with no Firebase user", ok)
+        assertEquals("ACCEPTED must be unchanged", JobStatus.ACCEPTED.value, storedStatus())
+        assertEquals("no audit row for a failed cancel", 0, auditCount())
+    }
+
+    @Test
+    fun `cancelJob with a non-existent job fails closed`() = runBlocking {
+        val ok = repository.cancelJob("job_missing", "should never touch a missing job")
+        assertFalse("cancel must fail on a missing job", ok)
+    }
+
+    @Test
+    fun `cancelJob authorization mirrors isJobTransitionAuthorized`() = runBlocking {
+        val owner = SkillsExchangeRepository.resolveAuthoritativeUid("uid_A")
+        val attacker = SkillsExchangeRepository.resolveAuthoritativeUid("uid_B")
+        assertTrue(
+            "owner may cancel their own ACCEPTED job",
+            repository.isJobTransitionAuthorized(owner, job(status = JobStatus.ACCEPTED.value), JobStatus.CANCELLED)
+        )
+        assertFalse(
+            "a different authenticated user must not cancel the owner's job",
+            repository.isJobTransitionAuthorized(
+                attacker, job(status = JobStatus.ACCEPTED.value, postedByUid = "uid_A"), JobStatus.CANCELLED
+            )
+        )
+    }
+
 }

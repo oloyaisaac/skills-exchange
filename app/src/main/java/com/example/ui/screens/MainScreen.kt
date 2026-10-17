@@ -404,7 +404,8 @@ fun MainScreen(
                                 onOpenQuoteComparison = { job ->
                                     quoteComparisonJob = job
                                     isQuoteComparisonOpen = true
-                                }
+                                },
+                                onCancelTask = { job, reason -> viewModel.cancelJob(job.id, reason) }
                             )
                                 }
                                 else -> {
@@ -468,6 +469,7 @@ fun MainScreen(
                                     escrowJobTarget = it
                                     isEscrowSheetOpen = true
                                 },
+                                onCancelTask = { job, reason -> viewModel.cancelJob(job.id, reason) },
                                 modifier = Modifier.fillMaxSize()
                             )
                         }

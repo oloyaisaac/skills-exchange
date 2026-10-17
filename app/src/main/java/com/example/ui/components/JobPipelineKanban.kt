@@ -34,6 +34,7 @@ fun JobPipelineKanban(
     onOpenChat: (JobPostEntity) -> Unit,
     onOpenEscrowSheet: (JobPostEntity) -> Unit,
     onOpenQuoteComparison: (JobPostEntity) -> Unit = {},
+    onCancelTask: (JobPostEntity, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val statuses = listOf("Requested", "Accepted", "In Progress", "Review", "Completed")
@@ -127,7 +128,8 @@ fun JobPipelineKanban(
                         onAdvanceStatus = { nextStatus -> onAdvanceStatus(job.id, nextStatus) },
                         onOpenChat = { onOpenChat(job) },
                         onOpenEscrowSheet = { onOpenEscrowSheet(job) },
-                        onOpenQuoteComparison = { onOpenQuoteComparison(job) }
+                        onOpenQuoteComparison = { onOpenQuoteComparison(job) },
+                        onCancelTask = { cancelledJob, reason -> onCancelTask(cancelledJob, reason) }
                     )
                 }
             }
@@ -142,9 +144,12 @@ fun JobPipelineCard(
     onAdvanceStatus: (String) -> Unit,
     onOpenChat: () -> Unit,
     onOpenEscrowSheet: () -> Unit,
-    onOpenQuoteComparison: () -> Unit = {}
+    onOpenQuoteComparison: () -> Unit = {},
+    onCancelTask: (JobPostEntity, String) -> Unit = { _, _ -> }
 ) {
     var isPricingExpanded by remember { mutableStateOf(false) }
+    var isCancelDialogOpen by remember { mutableStateOf(false) }
+    var cancelReason by remember { mutableStateOf("") }
 
     Card(
         modifier = Modifier
@@ -461,6 +466,67 @@ fun JobPipelineCard(
                         )
                     }
                 }
+            }
+
+            // AUDIT-C-CANCEL: client self-service cancellation. The button is a visibility
+            // affordance only — the repository's secured transitionJobStatus boundary still
+            // decides authentication, ownership, cancellable-state legality, and audit.
+            val isCancellableStatus = job.status in setOf(
+                "DRAFT", "POSTED", "QUOTING", "WORKER_SELECTED", "ACCEPTED",
+                "Requested", "Accepted",
+                "WORKER_EN_ROUTE", "ARRIVED", "IN_PROGRESS", "DISPUTED"
+            )
+            val isTerminalStatus = job.status == "CANCELLED" || job.status == "Completed" ||
+                job.status == "PAYMENT_RELEASED" || job.status == "EXPIRED"
+            if (isCancellableStatus && !isTerminalStatus) {
+                OutlinedButton(
+                    onClick = { isCancelDialogOpen = true },
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                    shape = RoundedCornerShape(6.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDC2626)),
+                    contentPadding = PaddingValues(vertical = 6.dp)
+                ) {
+                    Text(text = "Cancel Job", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626))
+                }
+            }
+            if (isCancelDialogOpen) {
+                AlertDialog(
+                    onDismissRequest = { isCancelDialogOpen = false },
+                    title = { Text("Cancel this job?", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                "The secured cancellation checks ownership and job state before anything changes.",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            OutlinedTextField(
+                                value = cancelReason,
+                                onValueChange = { cancelReason = it },
+                                label = { Text("Reason (optional)", fontSize = 11.sp) },
+                                modifier = Modifier.fillMaxWidth(),
+                                maxLines = 3
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                isCancelDialogOpen = false
+                                onCancelTask(job, cancelReason.trim())
+                                cancelReason = ""
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
+                        ) {
+                            Text("Confirm cancel", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { isCancelDialogOpen = false }) {
+                            Text("Keep job", fontSize = 11.sp)
+                        }
+                    }
+                )
             }
         }
     }

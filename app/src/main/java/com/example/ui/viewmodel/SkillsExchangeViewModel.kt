@@ -701,6 +701,19 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    /** Cancel a client-owned job. Dispatches through [repository.cancelJob] (which
+     *  runs the F6/F4 authorization + audit). On success the selected job is
+     *  refreshed; no worker notification is fired (client cancellation is not a
+     *  worker-status change). */
+    fun cancelJob(jobId: String, reason: String = "") {
+        viewModelScope.launch {
+            val canceled = repository.cancelJob(jobId, reason)
+            if (!canceled) return@launch
+            val updatedJob = repository.jobs.first().find { it.id == jobId }
+            selectedJob.value = updatedJob
+        }
+    }
+
     // JOB-005: Get audit trail for a job
     suspend fun getJobAuditTrail(jobId: String): List<com.example.data.db.JobStatusAuditEntity> {
         return repository.getJobAuditTrail(jobId)

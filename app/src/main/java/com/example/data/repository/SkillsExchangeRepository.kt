@@ -2176,6 +2176,16 @@ class SkillsExchangeRepository(
         return true
     }
 
+    /** Cancel a job owned by the authenticated client. Dispatches through the
+     *  secured [transitionJobStatus] boundary (F6 identity, F4 ownership,
+     *  authorization, structural legality, audit row). Returns true only when
+     *  CANCELLED was written. Fail-closed: no authoritative uid, no owner, or a
+     *  non-cancellable status aborts with nothing persisted. */
+    suspend fun cancelJob(jobId: String, reason: String = ""): Boolean {
+        val currentJob = db.jobPostDao().getJobById(jobId) ?: return false
+        return transitionJobStatus(jobId, currentJob.status, JobStatus.CANCELLED.value, reason)
+    }
+
     suspend fun getJobAuditTrail(jobId: String): List<JobStatusAuditEntity> {
         return db.jobStatusAuditDao().getAuditTrailForJob(jobId)
     }
