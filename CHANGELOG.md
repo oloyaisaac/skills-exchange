@@ -1,5 +1,14 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-10-17] [AUDIT-C-CANCEL] Self-Service Job Cancellation — Completed & Verified (code+unit+full suite, commit d6e2181)
+
+- **Scope:** AUDIT-C-CANCEL only. `prd.json` untouched (audit follow-up, not a baseline story). No schema/migration, no Cloud Functions, no `firestore.rules`, no escrow/payment change, no unrelated AUDIT-W-QUOTE code in the final diff (isolated out; Daos/ViewModel/MainScreen quote hunks reverted, stray W-QUOTE files removed).
+- **Implementation:** `SkillsExchangeRepository.cancelJob(jobId, reason)` delegates to secured `transitionJobStatus(..., CANCELLED, reason)` (F6 identity → real-row load → `isJobTransitionAuthorized` ownership/cancellable-state → `isValidTransition` structural → Room status + audit row with `changedBy=actorUid`); `SkillsExchangeViewModel.cancelJob` refreshes `selectedJob` only on success; `JobPipelineKanban`/`JobPipelineCard` add gated `Cancel Job` button + `AlertDialog` reason affordance (visibility only — backend boundary decides); both `MainScreen` Jobs views wire `onCancelTask = { job, reason -> viewModel.cancelJob(job.id, reason) }`.
+- **Tests:** `JobStatusAuthorizationSecurityTest` TEST D (3 new: unauthenticated fails closed, missing job fails closed, owner/attacker authorization mirror) — focused **12 tests / 0 failures / 0 errors / 0 skipped**; full `:app:testDebugUnitTest` **36 suites / 255 tests / 0 failures / 0 errors / 0 skipped** (with `TMP`/`TEMP=D:\gradle-home\tmp` workaround); `:app:compileDebugKotlin` **BUILD SUCCESSFUL**; `git diff --check` clean.
+- **Static review:** no direct Firestore write; authenticated UID required; F4 ownership enforced; missing job fails closed; terminal `CANCELLED/EXPIRED` (and non-cancellable states via state machine) blocked; worker path fails closed (`assignedProviderId` is a provider FK, never UID-compared); reason is audit-only; no escrow/payment edits; rules not weakened; no client admin bypass.
+- **Remaining:** device walkthrough of Jobs → Cancel Job → reason → confirm → refresh; escrow refund policy is still a product open question (requirement_file §open question 9 / no refund trigger implemented here).
+- **State:** committed by environment as `d6e2181 AUDIT-C-CANCEL` (5 files); `hs_err_pid20920.log`/`replay_pid20920.log` from the prompt no longer exist (older tracked `hs_err/replay` logs predate this task and were left untouched); docs updated this session (TASKS/CHANGELOG/AGENT_STATE, uncommitted).
+
 ### [2026-10-15] [AUDIT-A-CONSOLE] First Admin Verification Queue UI — Implemented & Verified (code+unit)
 
 - **Scope:** AUDIT-A-CONSOLE only (user-selected next step; all 93 `prd.json` stories remain `completed`, so `prd.json` is untouched). The `adminVerificationQueue` + `submitAdminDecision()` flow had zero Composable call sites — operators had no screen. No Cloud Functions, rules, schema, or unrelated UI changed. No deploy, no commit.

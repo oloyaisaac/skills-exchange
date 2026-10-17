@@ -1,3 +1,6 @@
+## DONE 2026-10-17 - AUDIT-C-CANCEL COMPLETE
+COMPLETE: repository.cancelJob → secured transitionJobStatus (F6/F4 + CANCELLABLE_STATES + audit), ViewModel refresh-on-success, gated Cancel Job + reason dialog in both Jobs views. Commit d6e2181 (5 files). Verified: compileDebugKotlin BUILD SUCCESSFUL, JobStatusAuthorizationSecurityTest 12/0/0/0, full testDebugUnitTest 36 suites / 255 tests / 0 fail / 0 err / 0 skip, diff --check clean. Docs: TASKS/CHANGELOG updated; prd.json untouched. Next: AUDIT-W-QUOTE per D-2026-10-15-1 Phase 1 (do not start until instructed).
+
 ## DONE 2026-10-15 - AUDIT-A-CONSOLE IMPLEMENTED
 IMPLEMENTED: AdminVerificationQueueSheet + AdminQueueDecisions + drawer + MainScreen + ViewModel guards. Tests 8/8, compile OK. See CHANGELOG + D-2026-10-15-2. Next: AUDIT-C-CANCEL or AUDIT-W-QUOTE.
 

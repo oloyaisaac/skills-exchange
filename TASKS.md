@@ -319,7 +319,7 @@ Full finding text (A1–A8, B1–B9, G1–G7, D1–D11, N1–N4, P1–P2, M1–M
 | AUDIT-C-PHOTO | P1 | Job Post Photo & Video Attachment Picker | ⏳ Pending | `QuickRequestDrawer` lacks photo attachments; homeowners cannot capture visual evidence of damage when requesting quotes. |
 | AUDIT-C-SCHEDULE | P1 | Specific Date/Time Appointment Scheduling | ⏳ Pending | Urgent vs Scheduled toggle only; clients cannot select specific arrival date and time window. |
 | AUDIT-C-ADDRESS | P1 | Exact Street Address & Landmark Directions | ⏳ Pending | `JobPostEntity` only captures district; clients need fields for street address, apartment/unit, and landmark directions. |
-| AUDIT-C-CANCEL | P0 | Self-Service Job Cancellation & Refund Controls | ⏳ Pending | `firestore.rules` permits `CANCELLED`, but `JobPipelineKanban` and `MainScreen` lack a "Cancel Job" button or refund trigger. |
+| AUDIT-C-CANCEL | P0 | Self-Service Job Cancellation & Refund Controls | ✅ Completed (2026-10-17, commit d6e2181) | Secured `cancelJob()` via `transitionJobStatus` (auth + ownership + cancellable-state + audit); gated Cancel Job button + reason dialog in both Jobs views; `JobStatusAuthorizationSecurityTest` 12/12; full `testDebugUnitTest` 36 suites / 255 tests / 0 fail / 0 err / 0 skip; `compileDebugKotlin` BUILD SUCCESSFUL. |
 | AUDIT-C-TRACKING | P2 | Real-Time Worker En-Route Tracking on Map | ⏳ Pending | `WORKER_EN_ROUTE` state exists, but no live worker location or ETA is rendered on client map. |
 | AUDIT-C-FAVORITES | P2 | Re-Hire Favorites & Voluntary Gratuity Tip | ⏳ Pending | No bookmarking or re-hire shortcut in `JobHistorySheet`; no optional tip field when releasing escrow. |
 
