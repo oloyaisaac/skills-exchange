@@ -122,6 +122,9 @@ interface JobQuoteDao {
     @Query("SELECT COUNT(*) FROM job_quotes WHERE jobId = :jobId AND status = 'PENDING'")
     suspend fun countPendingQuotesForJob(jobId: String): Int
 
+    @Query("SELECT COUNT(*) FROM job_quotes WHERE jobId = :jobId AND workerId = :workerId AND status = 'PENDING'")
+    suspend fun countPendingQuotesForWorkerAndJob(jobId: String, workerId: String): Int
+
     @Query("SELECT * FROM job_quotes WHERE id = :quoteId")
     suspend fun getQuoteById(quoteId: String): JobQuoteEntity?
 

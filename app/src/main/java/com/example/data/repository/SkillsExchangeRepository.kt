@@ -1063,13 +1063,98 @@ class SkillsExchangeRepository(
         return db.jobQuoteDao().getQuotesByWorker(workerId)
     }
 
-    suspend fun submitQuote(jobId: String, workerId: String, workerName: String, proposedRate: Double, proposedHours: Double, notes: String): String {
+    /**
+     * AUDIT-W-QUOTE: Outcome of a secured quote submission.
+     */
+    sealed class QuoteSubmissionResult {
+        data class Success(val quoteId: String) : QuoteSubmissionResult()
+        object NotAuthenticated : QuoteSubmissionResult()
+        object InvalidRate : QuoteSubmissionResult()
+        object InvalidHours : QuoteSubmissionResult()
+        object JobNotFound : QuoteSubmissionResult()
+        object InvalidJobState : QuoteSubmissionResult()
+        object SelfQuoteForbidden : QuoteSubmissionResult()
+        object DuplicatePendingQuote : QuoteSubmissionResult()
+    }
+
+    /**
+     * AUDIT-W-QUOTE: Outcome of a secured quote response (accept/reject).
+     */
+    sealed class QuoteResponseResult {
+        object Success : QuoteResponseResult()
+        object NotAuthenticated : QuoteResponseResult()
+        object JobNotFound : QuoteResponseResult()
+        object QuoteNotFound : QuoteResponseResult()
+        object JobMismatch : QuoteResponseResult()
+        object NotAuthorized : QuoteResponseResult()
+        object QuoteAlreadyTerminal : QuoteResponseResult()
+        object InvalidJobState : QuoteResponseResult()
+    }
+
+    /**
+     * AUDIT-W-QUOTE: The single SECURED boundary for submitting a worker quote.
+     * Identity, rate/hours validation, job existence, job state, ownership/self-quote,
+     * and duplicate prevention are all enforced here, and the caller is trusted for none of them.
+     */
+    suspend fun submitQuote(
+        jobId: String,
+        workerName: String,
+        proposedRate: Double,
+        proposedHours: Double,
+        notes: String
+    ): QuoteSubmissionResult {
+        val workerUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+        return submitQuoteInternal(jobId, workerUid, workerName, proposedRate, proposedHours, notes)
+    }
+
+    internal suspend fun submitQuoteInternal(
+        jobId: String,
+        workerUid: String?,
+        workerName: String,
+        proposedRate: Double,
+        proposedHours: Double,
+        notes: String
+    ): QuoteSubmissionResult {
+        // 1. Authoritative worker identity (F6/F7 rule). Never caller-supplied, never synthetic.
+        val uid = resolveAuthoritativeUid(workerUid)
+            ?: return QuoteSubmissionResult.NotAuthenticated
+
+        // 2. Validate proposedRate (finite, positive, non-NaN).
+        if (proposedRate.isNaN() || proposedRate.isInfinite() || proposedRate <= 0.0) {
+            return QuoteSubmissionResult.InvalidRate
+        }
+
+        // 3. Validate proposedHours (finite, positive, non-NaN).
+        if (proposedHours.isNaN() || proposedHours.isInfinite() || proposedHours <= 0.0) {
+            return QuoteSubmissionResult.InvalidHours
+        }
+
+        // 4. Load authoritative job from database.
+        val job = db.jobPostDao().getJobById(jobId)
+            ?: return QuoteSubmissionResult.JobNotFound
+
+        // 5. Validate job state: must be in QUOTABLE_JOB_STATES (POSTED or QUOTING).
+        val jobStatus = JobStatus.fromValue(job.status)
+        if (jobStatus == null || jobStatus !in QUOTABLE_JOB_STATES) {
+            return QuoteSubmissionResult.InvalidJobState
+        }
+
+        // 6. Self-quoting prevention and owner verification.
+        if (job.postedByUid == null || job.postedByUid == uid) {
+            return QuoteSubmissionResult.SelfQuoteForbidden
+        }
+
+        // 7. Duplicate pending quote check.
+        if (db.jobQuoteDao().countPendingQuotesForWorkerAndJob(jobId, uid) > 0) {
+            return QuoteSubmissionResult.DuplicatePendingQuote
+        }
+
         val quoteId = "quote_${System.currentTimeMillis()}"
         val totalQuote = proposedRate * proposedHours
         val quote = JobQuoteEntity(
             id = quoteId,
             jobId = jobId,
-            workerId = workerId,
+            workerId = uid,
             workerName = workerName,
             proposedRate = proposedRate,
             proposedHours = proposedHours,
@@ -1082,6 +1167,7 @@ class SkillsExchangeRepository(
             ChatMessageEntity(
                 id = "msg_${System.currentTimeMillis()}",
                 jobId = jobId,
+                senderId = uid,
                 senderName = workerName,
                 isFromUser = false,
                 message = "📋 Quote submitted: UGX ${"%.0f".format(totalQuote)} (${proposedHours}hrs @ UGX ${"%.0f".format(proposedRate)}/hr). ${if (notes.isNotBlank()) "Note: $notes" else ""}",
@@ -1093,7 +1179,7 @@ class SkillsExchangeRepository(
         createNotification(
             NotificationEntity(
                 id = "notif_${System.currentTimeMillis()}_quote",
-                userId = workerId,
+                userId = uid,
                 type = "NEW_QUOTE",
                 title = "Quote Submitted",
                 body = "Your quote for job $jobId has been submitted successfully.",
@@ -1102,42 +1188,91 @@ class SkillsExchangeRepository(
             )
         )
 
-        return quoteId
+        return QuoteSubmissionResult.Success(quoteId)
     }
 
-    suspend fun respondToQuote(quoteId: String, jobId: String, accept: Boolean) {
+    suspend fun respondToQuote(quoteId: String, jobId: String, accept: Boolean): QuoteResponseResult {
+        val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+        return respondToQuoteInternal(quoteId, jobId, actorUid, accept)
+    }
+
+    internal suspend fun respondToQuoteInternal(
+        quoteId: String,
+        jobId: String,
+        actorUid: String?,
+        accept: Boolean
+    ): QuoteResponseResult {
+        // 1. Authoritative actor identity.
+        val uid = resolveAuthoritativeUid(actorUid)
+            ?: return QuoteResponseResult.NotAuthenticated
+
+        // 2. Load authoritative job.
+        val job = db.jobPostDao().getJobById(jobId)
+            ?: return QuoteResponseResult.JobNotFound
+
+        // 3. Ownership authorization: only the job owner can respond to quotes.
+        if (job.postedByUid == null || job.postedByUid != uid) {
+            return QuoteResponseResult.NotAuthorized
+        }
+
+        // 4. Load quote.
+        val quote = db.jobQuoteDao().getQuoteById(quoteId)
+            ?: return QuoteResponseResult.QuoteNotFound
+
+        // 5. Job binding check.
+        if (quote.jobId != jobId) {
+            return QuoteResponseResult.JobMismatch
+        }
+
+        // 6. Terminal quote check: only PENDING quotes can be responded to.
+        if (quote.status != "PENDING") {
+            return QuoteResponseResult.QuoteAlreadyTerminal
+        }
+
+        // 7. Job state check: job cannot be in a terminal state.
+        val jobStatus = JobStatus.fromValue(job.status)
+        if (jobStatus != null && jobStatus in setOf(
+                JobStatus.CANCELLED,
+                JobStatus.COMPLETED,
+                JobStatus.EXPIRED,
+                JobStatus.PAYMENT_RELEASED
+            )
+        ) {
+            return QuoteResponseResult.InvalidJobState
+        }
+
         val newStatus = if (accept) "ACCEPTED" else "REJECTED"
         db.jobQuoteDao().updateQuoteStatus(quoteId, newStatus)
 
-        val quote = db.jobQuoteDao().getQuoteById(quoteId)
-        // C2: quote-response notifications go to the real worker id from the stored
-        // quote row. Abort the notification (not the status update) when the row is
-        // missing rather than notifying a "worker_default" placeholder.
-        val workerId = quote?.workerId?.takeIf { it.isNotBlank() } ?: return
-
-        db.chatMessageDao().insertMessage(
-            ChatMessageEntity(
-                id = "msg_${System.currentTimeMillis()}",
-                jobId = jobId,
-                senderName = "System",
-                isFromUser = false,
-                message = if (accept) "✅ Quote accepted! Worker has been assigned to this job." else "❌ Quote declined.",
-                timestampText = "Just now",
-                isSystemNotification = true
+        val workerId = quote.workerId.takeIf { it.isNotBlank() }
+        if (workerId != null) {
+            db.chatMessageDao().insertMessage(
+                ChatMessageEntity(
+                    id = "msg_${System.currentTimeMillis()}",
+                    jobId = jobId,
+                    senderId = uid,
+                    senderName = "System",
+                    isFromUser = false,
+                    message = if (accept) "✅ Quote accepted! Worker has been assigned to this job." else "❌ Quote declined.",
+                    timestampText = "Just now",
+                    isSystemNotification = true
+                )
             )
-        )
 
-        createNotification(
-            NotificationEntity(
-                id = "notif_${System.currentTimeMillis()}_quote_$quoteId",
-                userId = workerId,
-                type = if (accept) "QUOTE_ACCEPTED" else "QUOTE_REJECTED",
-                title = if (accept) "Quote Accepted!" else "Quote Declined",
-                body = if (accept) "Your quote for job $jobId has been accepted!" else "Your quote for job $jobId has been declined.",
-                jobId = jobId,
-                createdAt = System.currentTimeMillis()
+            createNotification(
+                NotificationEntity(
+                    id = "notif_${System.currentTimeMillis()}_quote_$quoteId",
+                    userId = workerId,
+                    type = if (accept) "QUOTE_ACCEPTED" else "QUOTE_REJECTED",
+                    title = if (accept) "Quote Accepted!" else "Quote Declined",
+                    body = if (accept) "Your quote for job $jobId has been accepted!" else "Your quote for job $jobId has been declined.",
+                    jobId = jobId,
+                    createdAt = System.currentTimeMillis()
+                )
             )
-        )
+        }
+
+        return QuoteResponseResult.Success
     }
 
     suspend fun countPendingQuotesForJob(jobId: String): Int {
@@ -1284,6 +1419,54 @@ class SkillsExchangeRepository(
             JobStatus.ACCEPTED, JobStatus.WORKER_EN_ROUTE, JobStatus.ARRIVED,
             JobStatus.IN_PROGRESS, JobStatus.COMPLETED, JobStatus.PAYMENT_RELEASED
         )
+
+        /**
+         * AUDIT-W-QUOTE: The states in which a job may legitimately accept quotes from workers.
+         */
+        val QUOTABLE_JOB_STATES = setOf(JobStatus.POSTED, JobStatus.QUOTING)
+
+        /**
+         * AUDIT-W-QUOTE: Pure quote submission authorization policy.
+         * May [workerUid] submit a quote for [job]?
+         *
+         * Pure, actor-explicit, fail-closed policy:
+         * 1. [workerUid] must be an authoritative Firebase UID (resolved via [resolveAuthoritativeUid]).
+         * 2. [job] must be in a quotable state ([QUOTABLE_JOB_STATES]: POSTED or QUOTING).
+         * 3. [job.postedByUid] must exist (legacy null-owner jobs belong to nobody and cannot be quoted).
+         * 4. Worker cannot quote their own job ([job.postedByUid] != [workerUid]).
+         */
+        fun isQuoteSubmissionAuthorized(workerUid: String?, job: JobPostEntity): Boolean {
+            val uid = resolveAuthoritativeUid(workerUid) ?: return false
+            val status = JobStatus.fromValue(job.status) ?: return false
+            if (status !in QUOTABLE_JOB_STATES) return false
+            if (job.postedByUid == null || job.postedByUid == uid) return false
+            return true
+        }
+
+        /**
+         * AUDIT-W-QUOTE: Pure quote response authorization policy.
+         * May [actorUid] accept or decline [quote] on [job]?
+         *
+         * Pure, actor-explicit, fail-closed policy:
+         * 1. [actorUid] must be an authoritative Firebase UID.
+         * 2. Only the job owner ([job.postedByUid] == [actorUid]) may accept/reject quotes.
+         * 3. [quote.jobId] must match [job.id].
+         * 4. [quote.status] must be "PENDING" (terminal quotes cannot be re-decided).
+         * 5. [job.status] must not be terminal (CANCELLED, COMPLETED, EXPIRED).
+         */
+        fun isQuoteResponseAuthorized(
+            actorUid: String?,
+            job: JobPostEntity,
+            quote: JobQuoteEntity
+        ): Boolean {
+            val uid = resolveAuthoritativeUid(actorUid) ?: return false
+            if (job.postedByUid == null || job.postedByUid != uid) return false
+            if (quote.jobId != job.id) return false
+            if (quote.status != "PENDING") return false
+            val jobStatus = JobStatus.fromValue(job.status) ?: return false
+            if (jobStatus in setOf(JobStatus.CANCELLED, JobStatus.COMPLETED, JobStatus.EXPIRED, JobStatus.PAYMENT_RELEASED)) return false
+            return true
+        }
 
         /**
          * C2-2 Fix #3 (F7): the ONLY identity a security-sensitive operation may use.

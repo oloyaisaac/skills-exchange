@@ -172,6 +172,11 @@ fun MainScreen(
     var isChatOpen by remember { mutableStateOf(false) }
     var isEscrowSheetOpen by remember { mutableStateOf(false) }
     var escrowJobTarget by remember { mutableStateOf<JobPostEntity?>(null) }
+    // AUDIT-W-QUOTE-UI: worker quote proposal sheet state. Deliberately separate
+    // from the escrow sheet: Submit Quote opens the quote form, never escrow.
+    var isQuoteSheetOpen by remember { mutableStateOf(false) }
+    var quoteJobTarget by remember { mutableStateOf<JobPostEntity?>(null) }
+    var quoteSheetMessage by remember { mutableStateOf<String?>(null) }
     var isQuoteComparisonOpen by remember { mutableStateOf(false) }
     var quoteComparisonJob by remember { mutableStateOf<JobPostEntity?>(null) }
 
@@ -339,10 +344,15 @@ fun MainScreen(
                             jobs = jobs,
                             isOnline = isWorkerOnline,
                             onToggleOnline = { viewModel.toggleWorkerOnline() },
+                            // AUDIT-W-QUOTE-UI: Submit Quote opens the quote proposal
+                            // sheet, NOT the escrow sheet. Escrow stays reachable
+                            // from the Jobs pipeline (onOpenEscrowSheet below).
                             onSelectJob = { job ->
                                 viewModel.selectJob(job)
-                                escrowJobTarget = job
-                                isEscrowSheetOpen = true
+                                quoteJobTarget = job
+                                quoteSheetMessage = null
+                                viewModel.resetQuoteSubmissionState()
+                                isQuoteSheetOpen = true
                             },
                             onOpenQuickRequest = { viewModel.setQuickRequestOpen(true) },
                             isAuthenticated = isAuthenticated,
@@ -640,6 +650,42 @@ fun MainScreen(
                 viewModel.resetSosClearState()
                 viewModel.clearMoMoPaymentState()
             }
+        )
+    }
+
+    if (isQuoteSheetOpen && quoteJobTarget != null) {
+        val liveQuoteTarget = jobs.find { it.id == quoteJobTarget!!.id } ?: quoteJobTarget!!
+        val quoteResult by viewModel.quoteSubmissionState.collectAsStateWithLifecycle()
+        val isSubmittingQuote by viewModel.isSubmittingQuote.collectAsStateWithLifecycle()
+        androidx.compose.runtime.LaunchedEffect(quoteResult) {
+            if (quoteResult is com.example.data.repository.SkillsExchangeRepository.QuoteSubmissionResult.Success) {
+                quoteSheetMessage = "Quote submitted successfully."
+                kotlinx.coroutines.delay(900)
+                isQuoteSheetOpen = false
+                quoteJobTarget = null
+                quoteSheetMessage = null
+                viewModel.resetQuoteSubmissionState()
+            }
+        }
+        QuoteSubmissionSheet(
+            isOpen = true,
+            job = liveQuoteTarget,
+            isSubmitting = isSubmittingQuote,
+            submissionResult = quoteResult,
+            submissionError = quoteSheetMessage?.takeIf {
+                quoteResult is com.example.data.repository.SkillsExchangeRepository.QuoteSubmissionResult.Success
+            },
+            onSubmit = { rate, hours, notes ->
+                quoteSheetMessage = null
+                val displayName = currentUserProfile?.fullName?.trim().orEmpty()
+                viewModel.submitQuote(liveQuoteTarget.id, displayName, rate, hours, notes)
+            },
+            onDismiss = {
+                isQuoteSheetOpen = false
+                quoteJobTarget = null
+                quoteSheetMessage = null
+                viewModel.resetQuoteSubmissionState()
+            },
         )
     }
 

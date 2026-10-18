@@ -1779,21 +1779,51 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    val quoteSubmissionState = MutableStateFlow<SkillsExchangeRepository.QuoteSubmissionResult?>(null)
+    val quoteResponseState = MutableStateFlow<SkillsExchangeRepository.QuoteResponseResult?>(null)
+    /**
+     * AUDIT-W-QUOTE-UI: single-flight guard for the quote sheet. True from the
+     * moment a submit leaves the device until the secured boundary answers, so
+     * the UI can disable the button + show a spinner and never double-fire.
+     */
+    val isSubmittingQuote = MutableStateFlow(false)
+
+    fun resetQuoteSubmissionState() {
+        quoteSubmissionState.value = null
+    }
+
+    fun resetQuoteResponseState() {
+        quoteResponseState.value = null
+    }
+
     fun submitQuote(jobId: String, workerName: String, proposedRate: Double, proposedHours: Double, notes: String) {
         if (!canAccessWorkerFeatures()) {
             authError.value = "Only verified and activated workers can submit quotes."
             return
         }
+        // AUDIT-W-QUOTE-UI single-flight: ignore re-entrant taps while a submit
+        // is in flight. The repository stays the duplicate authority; this only
+        // stops accidental double-taps from leaving the device twice.
+        if (isSubmittingQuote.value) return
+        isSubmittingQuote.value = true
+        quoteSubmissionState.value = null
         viewModelScope.launch {
-            // C2-2 Fix #3 (F7): quotes are attributed to the authenticated Firebase UID only.
-            val userId = currentAuthenticatedUid() ?: return@launch
-            repository.submitQuote(jobId, userId, workerName, proposedRate, proposedHours, notes)
+            try {
+                val result = repository.submitQuote(jobId, workerName, proposedRate, proposedHours, notes)
+                quoteSubmissionState.value = result
+                if (result is SkillsExchangeRepository.QuoteSubmissionResult.NotAuthenticated) {
+                    authError.value = "Authentication required to submit quotes."
+                }
+            } finally {
+                isSubmittingQuote.value = false
+            }
         }
     }
 
     fun respondToQuote(quoteId: String, jobId: String, accept: Boolean) {
         viewModelScope.launch {
-            repository.respondToQuote(quoteId, jobId, accept)
+            val result = repository.respondToQuote(quoteId, jobId, accept)
+            quoteResponseState.value = result
         }
     }
 
