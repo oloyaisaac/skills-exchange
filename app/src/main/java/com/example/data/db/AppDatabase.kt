@@ -23,9 +23,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         RatingEntity::class,
         NotificationEntity::class,
         JobStatusAuditEntity::class,
-        ReportEntity::class
+        ReportEntity::class,
+        WalletLedgerEntity::class,
+        WalletWithdrawalEntity::class
     ],
-    version = 21,
+    version = 22,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -44,6 +46,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun notificationDao(): NotificationDao
     abstract fun jobStatusAuditDao(): JobStatusAuditDao
     abstract fun reportDao(): ReportDao
+    abstract fun walletLedgerDao(): WalletLedgerDao
+    abstract fun walletWithdrawalDao(): WalletWithdrawalDao
 
     companion object {
         @Volatile
@@ -446,6 +450,45 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * AUDIT-W-CASHOUT: wallet ledger + worker withdrawal (cashout) tables.
+         *
+         * Additive only — no existing table or column is altered. The wallet ledger makes every
+         * movement of money auditable (the available balance is derived from it, never read from a
+         * mutable field), and the withdrawal table carries the explicit cashout state machine.
+         */
+        val MIGRATION_21_22 = object : Migration(21, 22) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS wallet_ledger (" +
+                        "id TEXT PRIMARY KEY NOT NULL, " +
+                        "workerId TEXT NOT NULL, " +
+                        "entryType TEXT NOT NULL, " +
+                        "amount REAL NOT NULL, " +
+                        "withdrawalId TEXT, " +
+                        "description TEXT NOT NULL DEFAULT '', " +
+                        "createdAt INTEGER NOT NULL DEFAULT 0, " +
+                        "FOREIGN KEY(workerId) REFERENCES user_profiles(id) ON DELETE CASCADE)"
+                )
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_wallet_ledger_workerId ON wallet_ledger(workerId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_wallet_ledger_withdrawalId ON wallet_ledger(withdrawalId)")
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS wallet_withdrawals (" +
+                        "id TEXT PRIMARY KEY NOT NULL, " +
+                        "workerId TEXT NOT NULL, " +
+                        "amount REAL NOT NULL, " +
+                        "destinationMomoNumber TEXT NOT NULL, " +
+                        "status TEXT NOT NULL, " +
+                        "idempotencyKey TEXT NOT NULL, " +
+                        "createdAt INTEGER NOT NULL DEFAULT 0, " +
+                        "updatedAt INTEGER NOT NULL DEFAULT 0, " +
+                        "FOREIGN KEY(workerId) REFERENCES user_profiles(id) ON DELETE CASCADE)"
+                )
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_wallet_withdrawals_workerId ON wallet_withdrawals(workerId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_wallet_withdrawals_idempotencyKey ON wallet_withdrawals(idempotencyKey)")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -453,7 +496,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "skills_exchange_database"
                 )
-                    .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21)
+                    .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22)
                     .build()
                 INSTANCE = instance
                 instance

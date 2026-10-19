@@ -1091,6 +1091,7 @@ class SkillsExchangeRepository(
         object InvalidJobState : QuoteResponseResult()
     }
 
+
     /**
      * AUDIT-W-QUOTE: The single SECURED boundary for submitting a worker quote.
      * Identity, rate/hours validation, job existence, job state, ownership/self-quote,
@@ -2404,6 +2405,246 @@ class SkillsExchangeRepository(
 
     suspend fun getPendingReports(): List<ReportEntity> {
         return db.reportDao().getReportsByStatus("PENDING")
+    }
+
+    /**
+     * AUDIT-W-CASHOUT: Outcome of a secured worker cashout (withdrawal) request.
+     *
+     * Produced by the repository boundary after the pure security core has run. The caller is
+     * trusted for NONE of identity, balance, amount, destination, idempotency or state.
+     */
+    sealed class CashoutRequestResult {
+        /**
+         * A withdrawal was recorded (created OR reused via the idempotency key). It is PENDING:
+         * the funds are RESERVED but NOT yet disbursed. No money has moved yet — real mobile-money
+         * disbursement is a separate server-authority integration step.
+         */
+        data class RequestRecorded(val withdrawalId: String, val status: String) : CashoutRequestResult()
+
+        /** A prior active withdrawal already exists; its id is returned so the UI can show it. */
+        data class DuplicateActiveWithdrawal(val existingWithdrawalId: String) : CashoutRequestResult()
+
+        object NotAuthenticated : CashoutRequestResult()
+        object InvalidAmount : CashoutRequestResult()
+        object AmountExceedsAvailable : CashoutRequestResult()
+        object DestinationNotSet : CashoutRequestResult()
+        object DestinationInvalid : CashoutRequestResult()
+    }
+
+    /** AUDIT-W-CASHOUT: Outcome of a worker-initiated withdrawal cancellation. */
+    sealed class WithdrawalCancelResult {
+        object Success : WithdrawalCancelResult()
+        object NotAuthenticated : WithdrawalCancelResult()
+        object WithdrawalNotFound : WithdrawalCancelResult()
+        object NotAuthorized : WithdrawalCancelResult()
+        /** The withdrawal is not PENDING (already terminal or already moving) — cannot cancel. */
+        object InvalidState : WithdrawalCancelResult()
+    }
+
+    // ==================== AUDIT-W-CASHOUT: WORKER WALLET CASHOUT ====================
+
+    /**
+     * AUDIT-W-CASHOUT: the SECURED boundary for requesting a worker wallet cashout.
+     *
+     * Takes only the REQUESTED amount, destination and an idempotency key. It never accepts a
+     * `workerId` — the actor is resolved internally from `FirebaseAuth.currentUser.uid`, so a
+     * caller cannot withdraw from anyone else's wallet. All rules live in
+     * [requestWorkerCashoutInternal] and the pure WorkerCashoutSecurityCore.
+     */
+    suspend fun requestWorkerCashout(
+        amount: Double,
+        destinationMomoNumber: String,
+        idempotencyKey: String
+    ): CashoutRequestResult {
+        val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+        return requestWorkerCashoutInternal(amount, destinationMomoNumber, idempotencyKey, actorUid)
+    }
+
+    /**
+     * Internal cashout boundary. [actorUid] is injected ONLY so tests can drive the real
+     * authorization path with a chosen (or null) identity; production always resolves it from
+     * `FirebaseAuth.currentUser.uid` in [requestWorkerCashout].
+     */
+    internal suspend fun requestWorkerCashoutInternal(
+        amount: Double,
+        destinationMomoNumber: String,
+        idempotencyKey: String,
+        actorUid: String?
+    ): CashoutRequestResult {
+        // 1. Authoritative identity. Fail closed when there is no valid authenticated uid.
+        val uid = resolveAuthoritativeUid(actorUid)
+            ?: return CashoutRequestResult.NotAuthenticated
+
+        // 2. Idempotency key must be present and sane (it becomes the row id for a new request).
+        val key = idempotencyKey.trim()
+        if (key.isEmpty() || key.any { it.isWhitespace() }) {
+            return CashoutRequestResult.InvalidAmount
+        }
+
+        // 3. Load THIS worker's withdrawals (never another account's) and run the idempotency gate.
+        val existing = db.walletWithdrawalDao().getWithdrawalsForWorker(uid)
+            .map { WithdrawalSnapshot(it.id, it.workerId, it.amount, it.status, it.idempotencyKey) }
+        when (val idem = evaluateCashoutIdempotency(existing, key)) {
+            is CashoutIdempotencyOutcome.ReuseExisting -> {
+                val reused = db.walletWithdrawalDao().getWithdrawalById(idem.withdrawalId)
+                return CashoutRequestResult.RequestRecorded(
+                    withdrawalId = idem.withdrawalId,
+                    status = reused?.status ?: WithdrawalStatus.PENDING.value
+                )
+            }
+            is CashoutIdempotencyOutcome.ActiveWithdrawalExists -> {
+                val active = existing.first { WithdrawalStatus.fromValue(it.status) in ACTIVE_WITHDRAWAL_STATUSES }
+                return CashoutRequestResult.DuplicateActiveWithdrawal(active.id)
+            }
+            CashoutIdempotencyOutcome.Proceed -> Unit
+        }
+
+        // 4. Authoritative available balance from the LEDGER — never a caller-supplied number and
+        //    never the display-only `UserProfileEntity.walletBalance` field.
+        val entries = db.walletLedgerDao().getEntriesForWorker(uid)
+            .map { WalletLedgerEntrySnapshot(it.entryType, it.amount, it.withdrawalId) }
+        val available = computeAvailableBalance(entries)
+
+        // 5. Validate the REQUEST (amount + destination) against the authoritative balance.
+        val validation = validateCashoutRequest(amount, destinationMomoNumber, available)
+        val valid = validation as? CashoutRequestValidation.Valid
+            ?: return when ((validation as CashoutRequestValidation.Invalid).reason) {
+                CashoutRejectReason.NOT_AUTHENTICATED -> CashoutRequestResult.NotAuthenticated
+                CashoutRejectReason.INVALID_AMOUNT -> CashoutRequestResult.InvalidAmount
+                CashoutRejectReason.AMOUNT_EXCEEDS_AVAILABLE -> CashoutRequestResult.AmountExceedsAvailable
+                CashoutRejectReason.DESTINATION_NOT_SET -> CashoutRequestResult.DestinationNotSet
+                CashoutRejectReason.DESTINATION_INVALID -> CashoutRequestResult.DestinationInvalid
+            }
+
+        // 6. Create the PENDING withdrawal and its RESERVE ledger entry ATOMICALLY, so the
+        //    reservation is enforced by the same transaction that records the request. A worker
+        //    can never create a withdrawal without reserving the funds against the ledger.
+        val withdrawalId = if (key.startsWith("wd_")) key else "wd_$key"
+        val now = System.currentTimeMillis()
+        db.runInTransaction {
+            // Re-check the active-withdrawal gate INSIDE the transaction to close the race where
+            // two concurrent requests both passed the pre-check above.
+            val concurrent = db.walletWithdrawalDao().getWithdrawalsForWorkerSync(uid)
+            if (concurrent.any { WithdrawalStatus.fromValue(it.status) in ACTIVE_WITHDRAWAL_STATUSES }) {
+                throw java.util.concurrent.CancellationException("active_withdrawal_exists")
+            }
+            db.walletWithdrawalDao().insertWithdrawalSync(
+                WalletWithdrawalEntity(
+                    id = withdrawalId,
+                    workerId = uid,
+                    amount = valid.normalizedAmount,
+                    destinationMomoNumber = valid.normalizedDestination,
+                    status = WithdrawalStatus.PENDING.value,
+                    idempotencyKey = key,
+                    createdAt = now,
+                    updatedAt = now
+                )
+            )
+            db.walletLedgerDao().insertEntrySync(
+                WalletLedgerEntity(
+                    id = "led_${withdrawalId}_reserve",
+                    workerId = uid,
+                    entryType = LedgerEntryType.RESERVE.value,
+                    amount = valid.normalizedAmount,
+                    withdrawalId = withdrawalId,
+                    description = "Reserved for withdrawal request",
+                    createdAt = now
+                )
+            )
+        }
+
+        return CashoutRequestResult.RequestRecorded(
+            withdrawalId = withdrawalId,
+            status = WithdrawalStatus.PENDING.value
+        )
+    }
+
+    /**
+     * AUDIT-W-CASHOUT: the SECURED boundary for CANCELLING a worker's own pending withdrawal.
+     *
+     * Only the withdrawal's owner may cancel, only while it is still PENDING, and the RESERVE is
+     * released back to the ledger in the same transaction (funds are never destroyed). A worker
+     * can never reach the terminal money-moving states through this path.
+     */
+    suspend fun cancelWorkerWithdrawal(withdrawalId: String): WithdrawalCancelResult {
+        val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+        return cancelWorkerWithdrawalInternal(withdrawalId, actorUid)
+    }
+
+    internal suspend fun cancelWorkerWithdrawalInternal(
+        withdrawalId: String,
+        actorUid: String?
+    ): WithdrawalCancelResult {
+        // 1. Authoritative identity — fail closed.
+        val uid = resolveAuthoritativeUid(actorUid) ?: return WithdrawalCancelResult.NotAuthenticated
+
+        // 2. Load the withdrawal; a caller can only ever name an id, never supply the row.
+        val withdrawal = db.walletWithdrawalDao().getWithdrawalById(withdrawalId)
+            ?: return WithdrawalCancelResult.WithdrawalNotFound
+
+        // 3. Ownership: another account's withdrawal is unreachable through this boundary.
+        if (withdrawal.workerId != uid) {
+            return WithdrawalCancelResult.NotAuthorized
+        }
+
+        // 4. State machine: only a PENDING withdrawal can be cancelled by its owner.
+        val snapshot = WithdrawalSnapshot(withdrawal.id, withdrawal.workerId, withdrawal.amount, withdrawal.status)
+        val outcome = evaluateWithdrawalTransition(
+            withdrawal = snapshot,
+            from = WithdrawalStatus.PENDING,
+            to = WithdrawalStatus.CANCELLED,
+            actorWorkerId = uid,
+            actorIsServerAuthority = false
+        )
+        val apply = outcome as? WithdrawalTransitionOutcome.Apply ?: return WithdrawalCancelResult.InvalidState
+
+        // 5. Apply the transition + release the reservation ATOMICALLY.
+        val now = System.currentTimeMillis()
+        db.runInTransaction {
+            val updated = db.walletWithdrawalDao().transitionStatusSync(
+                id = withdrawalId,
+                fromStatus = WithdrawalStatus.PENDING.value,
+                toStatus = apply.nextStatus.value,
+                timestamp = now
+            )
+            // Optimistic guard: if another actor moved the row first, abort (no partial write).
+            if (updated == 0) throw java.util.concurrent.CancellationException("withdrawal_already_moved")
+            if (apply.reversalRequired) {
+                db.walletLedgerDao().insertEntrySync(
+                    WalletLedgerEntity(
+                        id = "led_${withdrawalId}_release",
+                        workerId = uid,
+                        entryType = LedgerEntryType.RELEASE.value,
+                        amount = withdrawal.amount,
+                        withdrawalId = withdrawalId,
+                        description = "Reservation released (withdrawal cancelled)",
+                        createdAt = now
+                    )
+                )
+            }
+        }
+
+        return WithdrawalCancelResult.Success
+    }
+
+    /**
+     * AUDIT-W-CASHOUT: the authoritative AVAILABLE balance for the authenticated worker, derived
+     * from the wallet ledger. This is the only balance a cashout request is validated against.
+     * Returns 0.0 when there is no authenticated worker (fail closed).
+     */
+    suspend fun getAvailableWalletBalance(): Double {
+        val uid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid) ?: return 0.0
+        return computeAvailableBalance(
+            db.walletLedgerDao().getEntriesForWorker(uid)
+                .map { WalletLedgerEntrySnapshot(it.entryType, it.amount, it.withdrawalId) }
+        )
+    }
+
+    /** AUDIT-W-CASHOUT: the authenticated worker's own withdrawals (never another account's). */
+    fun getWorkerWithdrawals(): Flow<List<WalletWithdrawalEntity>> {
+        val uid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+            ?: return kotlinx.coroutines.flow.flowOf(emptyList())
+        return db.walletWithdrawalDao().observeWithdrawalsForWorker(uid)
     }
 
     suspend fun updateReportStatus(reportId: String, status: String, adminNotes: String = "", resolvedBy: String = "") {

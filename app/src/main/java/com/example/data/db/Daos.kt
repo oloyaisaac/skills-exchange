@@ -482,3 +482,72 @@ interface ReportDao {
     suspend fun clearAll()
 }
 
+// AUDIT-W-CASHOUT: Wallet Ledger DAO
+/**
+ * Data access for the wallet ledger. The available balance is ALWAYS computed from these rows via
+ * `computeAvailableBalance` (never read from a mutable balance field), so the ledger is the sole
+ * authoritative source of a worker's funds.
+ */
+@Dao
+interface WalletLedgerDao {
+    @Query("SELECT * FROM wallet_ledger WHERE workerId = :workerId ORDER BY createdAt ASC")
+    suspend fun getEntriesForWorker(workerId: String): List<WalletLedgerEntity>
+
+    @Query("SELECT * FROM wallet_ledger WHERE workerId = :workerId ORDER BY createdAt DESC")
+    fun observeEntriesForWorker(workerId: String): Flow<List<WalletLedgerEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertEntry(entry: WalletLedgerEntity)
+
+    // Synchronous variant used ONLY inside `db.runInTransaction { }`. Room executes the transaction
+    // block synchronously on one thread with the transaction held, so a blocking DAO call is safe
+    // here and is what makes the multi-write block atomic.
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    fun insertEntrySync(entry: WalletLedgerEntity)
+
+    @Query("DELETE FROM wallet_ledger")
+    suspend fun clearAll()
+}
+
+// AUDIT-W-CASHOUT: Worker Withdrawal DAO
+/**
+ * Data access for worker withdrawals (cashouts). There is deliberately NO public "set status to
+ * anything" query: the repository drives the state machine through the narrow, typed queries below
+ * so an arbitrary status write (e.g. marking a withdrawal COMPLETED from the client) is not even
+ * expressible at the DAO layer.
+ */
+@Dao
+interface WalletWithdrawalDao {
+    @Query("SELECT * FROM wallet_withdrawals WHERE workerId = :workerId ORDER BY createdAt DESC")
+    suspend fun getWithdrawalsForWorker(workerId: String): List<WalletWithdrawalEntity>
+
+    @Query("SELECT * FROM wallet_withdrawals WHERE workerId = :workerId ORDER BY createdAt DESC")
+    fun observeWithdrawalsForWorker(workerId: String): Flow<List<WalletWithdrawalEntity>>
+
+    @Query("SELECT * FROM wallet_withdrawals WHERE id = :id LIMIT 1")
+    suspend fun getWithdrawalById(id: String): WalletWithdrawalEntity?
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertWithdrawal(withdrawal: WalletWithdrawalEntity)
+
+    // Synchronous variants used ONLY inside `db.runInTransaction { }`. See WalletLedgerDao comment:
+    // Room runs the transaction block synchronously on one thread with the transaction held, so
+    // blocking DAO calls are safe here and keep the multi-statement block atomic.
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    fun insertWithdrawalSync(withdrawal: WalletWithdrawalEntity)
+
+    @Query("SELECT * FROM wallet_withdrawals WHERE workerId = :workerId ORDER BY createdAt DESC")
+    fun getWithdrawalsForWorkerSync(workerId: String): List<WalletWithdrawalEntity>
+
+    // Narrow, typed state transitions driven ONLY by the repository's state machine. `ABORT` on
+    // conflict makes the guard part of the SQL WHERE clause atomic: a stale read cannot overwrite.
+    @Query("UPDATE wallet_withdrawals SET status = :toStatus, updatedAt = :timestamp WHERE id = :id AND status = :fromStatus")
+    suspend fun transitionStatus(id: String, fromStatus: String, toStatus: String, timestamp: Long = System.currentTimeMillis()): Int
+
+    @Query("UPDATE wallet_withdrawals SET status = :toStatus, updatedAt = :timestamp WHERE id = :id AND status = :fromStatus")
+    fun transitionStatusSync(id: String, fromStatus: String, toStatus: String, timestamp: Long = System.currentTimeMillis()): Int
+
+    @Query("DELETE FROM wallet_withdrawals")
+    suspend fun clearAll()
+}
+

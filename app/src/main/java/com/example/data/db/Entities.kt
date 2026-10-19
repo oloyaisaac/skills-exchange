@@ -629,3 +629,80 @@ data class ReportEntity(
     val resolvedBy: String = ""
 )
 
+// AUDIT-W-CASHOUT: Wallet Ledger Entity
+/**
+ * One immutable entry in a worker's wallet audit trail. The AVAILABLE balance is always derived
+ * from these rows — never from a mutable balance field — so every movement of money is traceable
+ * and a worker can never inflate their balance by editing a number.
+ *
+ * `entryType` is one of CREDIT / DEBIT / RESERVE / RELEASE / ADJUSTMENT (see [LedgerEntryType] in
+ * `WorkerCashoutSecurityCore.kt`). A cashout writes a RESERVE entry at request time and either a
+ * RELEASE entry (cancel/fail — funds handed back) or a DEBIT entry (server-authoritative
+ * disbursement — money actually left) when the withdrawal settles.
+ */
+@Entity(
+    tableName = "wallet_ledger",
+    foreignKeys = [
+        ForeignKey(
+            entity = UserProfileEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["workerId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["workerId"]), Index(value = ["withdrawalId"])]
+)
+data class WalletLedgerEntity(
+    @PrimaryKey val id: String,
+    /** The wallet owner's authenticated Firebase UID. This is the ONLY identity key. */
+    val workerId: String,
+    /** CREDIT / DEBIT / RESERVE / RELEASE / ADJUSTMENT. */
+    val entryType: String,
+    /** Always positive; the [entryType] determines whether it raises or lowers available. */
+    val amount: Double,
+    /** Set when this entry is part of a withdrawal's lifecycle (reserve/release/debit). */
+    val withdrawalId: String? = null,
+    val description: String = "",
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+// AUDIT-W-CASHOUT: Worker Withdrawal (Cashout) Entity
+/**
+ * A worker's request to withdraw available wallet funds to a mobile-money number.
+ *
+ * The lifecycle is an explicit state machine (see [WithdrawalStatus]): a worker may create a
+ * PENDING request (which RESERVES the funds) and may CANCEL it while still PENDING; the terminal
+ * COMPLETED / FAILED / REVERSED states are reachable ONLY from server/provider authority. A worker
+ * can never mark their own withdrawal COMPLETED, and a terminal withdrawal can never be modified
+ * again (no double-pay, no resurrection).
+ *
+ * `idempotencyKey` is the caller's retry token; a repeated press with the same key returns the
+ * SAME row rather than creating a second reservation. It is scoped to this worker's rows only.
+ */
+@Entity(
+    tableName = "wallet_withdrawals",
+    foreignKeys = [
+        ForeignKey(
+            entity = UserProfileEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["workerId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["workerId"]), Index(value = ["idempotencyKey"])]
+)
+data class WalletWithdrawalEntity(
+    @PrimaryKey val id: String,
+    /** The wallet owner's authenticated Firebase UID — resolved internally, never trusted from UI. */
+    val workerId: String,
+    val amount: Double,
+    /** Normalized mobile-money destination (digits only). NEVER proof of identity. */
+    val destinationMomoNumber: String,
+    /** PENDING / PROCESSING / COMPLETED / FAILED / CANCELLED / REVERSED. */
+    val status: String,
+    /** Caller-supplied retry token used to deduplicate the same intended operation. */
+    val idempotencyKey: String,
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis()
+)
+
