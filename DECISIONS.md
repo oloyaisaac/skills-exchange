@@ -2,6 +2,19 @@
 
 All significant architectural, design, and implementation decisions are recorded here. This allows future agents and developers to understand why specific choices were made.
 
+### D-2026-10-20-1 - AUDIT-A-ARBITRATE: Client Mirrors Dispute Filing to Firestore; `reportedBy` Bound on Create; Resolutions Stay Server-Only
+
+**Context.** The arbitration console reads the admin-gated `getDisputesQueue` callable, which queries the Firestore `disputes` collection — but dispute filing (`submitDispute` → `createDispute`) only wrote the Room row, so the console would always have shown an empty queue at runtime. The established precedent for moving local entities to Firestore is the best-effort `syncJobToFirestore`/`syncProviderToFirestore` mirror. Until now no client wrote the `disputes` collection at all, which is why SEC-006's create rule was permissive.
+
+**Decision.**
+1. Add `FirebaseService.syncDisputeToFirestore` (best-effort `set()` with try/catch notice log, guarded `firestore ?: return`) invoked from `SkillsExchangeRepository.createDispute` after the Room insert — Room stays the filer's record; a failed network write never blocks reporting.
+2. Map `DisputeEntity` 1:1 onto the document fields the callable/function contract already uses (`disputeReason`, `evidenceUrlsCsv`, `status`, `createdAt`/`updatedAt` epoch ms) so no adapter layer is needed on read.
+3. Tighten `firestore.rules` SEC-006 create from `isAuthenticated()` to `isAuthenticated() && request.resource.data.reportedBy == request.auth.uid` — now that clients actually write this collection, a caller can only file disputes reported BY themselves (mirrors the F4 `postedByUid` binding for jobs). Read/update/delete unchanged (parties-or-admin read; admin-only write).
+4. **No change to resolution authority**: outcomes are written only by the admin-gated `resolveDispute` callable (Admin SDK); the client never writes `status`/`resolutionType`/`resolutionAmount` after filing.
+
+**Consequences.** The queue has real rows end-to-end on-device; a dispute cannot claim another user as its author. Residual risk: rules are source-only until deployed; JVM tests cannot execute the Firestore write (guarded early-return) so the sync leg is compile/inspection-verified; `reportedUserId` remains client-supplied — it determines who the server notifies on resolution, acceptable only while moderation is admin-driven and the filer's own statement is what's judged.
+
+
 ### D-2026-10-15-2 - AUDIT-A-CONSOLE: In-App Operator Sheet with Explicit Unlock; Backend Claim Stays the Authorizer
 
 **Context.** `adminVerificationQueue` + `submitAdminDecision()` existed with zero Composable call sites, while the backend already enforced the `admin` custom claim server-side (callables + `firestore.rules`) and the project deliberately mirrors no client-side admin boolean (D-2026-10-05-2). Operators needed a first screen without inventing a client role.

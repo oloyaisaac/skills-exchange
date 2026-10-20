@@ -88,7 +88,11 @@ fun AppNavigationDrawer(
      */
     isAdminUnlocked: Boolean = false,
     adminPendingCount: Int = 0,
-    onOpenAdminQueue: () -> Unit = {}
+    onOpenAdminQueue: () -> Unit = {},
+    /** AUDIT-A-ARBITRATE: opens the dispute arbitration console. UI visibility only —
+     * the `resolveDispute` callable + firestore.rules remain the real authorizer.
+     */
+    onOpenAdminArbitration: () -> Unit = {}
 ) {
     if (!isOpen) return
 
@@ -502,6 +506,18 @@ fun AppNavigationDrawer(
                             onClick = {
                                 onDismiss()
                                 onOpenAdminQueue()
+                            }
+                        )
+
+                        // AUDIT-A-ARBITRATE: dispute arbitration console entry. UI
+                        // visibility only — the `resolveDispute` callable authorizes.
+                        DrawerMenuItem(
+                            icon = Icons.Outlined.Gavel,
+                            title = "Dispute Arbitration",
+                            subtitle = "Review disputes, evidence, and issue resolutions",
+                            onClick = {
+                                onDismiss()
+                                onOpenAdminArbitration()
                             }
                         )
 

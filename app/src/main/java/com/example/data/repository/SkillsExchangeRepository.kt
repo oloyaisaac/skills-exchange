@@ -1011,6 +1011,32 @@ class SkillsExchangeRepository(
         return firebaseService.setWorkerActivationStatus(userId, activate)
     }
 
+    // ==================== AUDIT-A-ARBITRATE: Dispute Arbitration ====================
+
+    /**
+     * Fetches the admin dispute queue via the `getDisputesQueue` Cloud Function.
+     * Admin-gated server-side; returns empty list on failure.
+     */
+    suspend fun getDisputesQueue(status: String? = null): List<Map<String, Any>> {
+        return firebaseService.getDisputesQueue(status)
+    }
+
+    /**
+     * Resolves/rejects/escalates a dispute via the `resolveDispute` Cloud Function.
+     * Admin-gated server-side; returns true on success.
+     */
+    suspend fun resolveDispute(
+        disputeId: String,
+        resolution: String,
+        resolutionType: String?,
+        resolutionAmount: Double?,
+        adminNotes: String?
+    ): Boolean {
+        return firebaseService.resolveDispute(
+            disputeId, resolution, resolutionType, resolutionAmount, adminNotes
+        )
+    }
+
     suspend fun submitRecurringProposal(jobId: String, workerId: String, proposedRate: Double, proposalTerms: String) {
         val proposal = mapOf(
             "workerId" to workerId,
@@ -2051,6 +2077,11 @@ class SkillsExchangeRepository(
 
     suspend fun createDispute(dispute: DisputeEntity) {
         db.disputeDao().insertDispute(dispute)
+        // AUDIT-A-ARBITRATE: mirror the filed dispute to Firestore so the admin
+        // `getDisputesQueue` callable (which reads the `disputes` collection) actually
+        // receives it — otherwise the arbitration console always shows an empty queue.
+        // Best-effort like the job/provider syncs; Room stays the local record.
+        firebaseService.syncDisputeToFirestore(dispute)
     }
 
     suspend fun updateDisputeStatus(disputeId: String, status: String, adminNotes: String = "", resolutionType: String = "", amount: Double = 0.0, resolvedBy: String = "") {

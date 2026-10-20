@@ -2537,7 +2537,7 @@
         },
         {
             "id": "DISP-003",
-            "notes": "AUDIT 2026-10-13: resolveDispute + getDisputesQueue Cloud Functions exist (admin-gated), but the Android app does NOT call them (no getHttpsCallable(\"resolveDispute\")); disputes are created/persisted locally in Room (submitDispute -> createDispute). There is no admin UI that resolves a dispute against the backend. Admin dispute resolution is backend-only with no working end-to-end workflow. AUDIT 2026-10-15: Worker persona cannot submit counter-evidence or defense statements; admin has no UI console to review statements, photos, or chat history before resolving.",
+            "notes": "AUDIT 2026-10-13: resolveDispute + getDisputesQueue Cloud Functions exist (admin-gated), but the Android app does NOT call them (no getHttpsCallable(\"resolveDispute\")); disputes are created/persisted locally in Room (submitDispute -> createDispute). There is no admin UI that resolves a dispute against the backend. Admin dispute resolution is backend-only with no working end-to-end workflow. AUDIT 2026-10-15: Worker persona cannot submit counter-evidence or defense statements; admin has no UI console to review statements, photos, or chat history before resolving. AUDIT 2026-10-20: END-TO-END CLOSED for the admin side — AdminDisputeArbitrationSheet console wired drawer -> MainScreen explicit unlock -> ViewModel -> repository -> getDisputesQueue/resolveDispute callables; dispute filing now mirrors to Firestore (FirebaseService.syncDisputeToFirestore called from createDispute, best-effort syncJob pattern) so the callable queue receives rows; firestore.rules SEC-006 create binds reportedBy to request.auth.uid (source, NOT deployed); decisions validated by pure-JVM AdminDisputeDecisions (AdminDisputeDecisionsTest 19/19; full suite 40 suites / 334 tests / 0 failures). Still open: worker counter-evidence UI (AUDIT-W-DEFENSE), DISP-004 report review, chat-history pane, server->party resolution reflection, live deploy/device verification.",
             "phase": 16,
             "title": "Implement Admin Dispute Resolution",
             "priority": "P0",
@@ -3557,5 +3557,5 @@
         "AUTH-012"
     ],
     "blocked_stories": [],
-    "last_updated": "2026-10-15T11:00:00+03:00"
+    "last_updated": "2026-10-20T15:30:00+03:00"
 }

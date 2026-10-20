@@ -27,6 +27,7 @@ import com.example.data.remote.mapBackendStatusToPhase
 import com.example.data.remote.SmsNotificationService
 import com.example.data.remote.TranscribedVoiceJob
 import com.example.data.repository.SkillsExchangeRepository
+import com.example.util.AdminDisputeDecisions
 import com.example.util.AudioRecorderHelper
 import com.example.util.CurrencyRegion
 import com.example.util.DistanceUtil
@@ -1681,6 +1682,28 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     /** AUDIT-A-CONSOLE: loading flag for the operator queue refresh. */
     val isAdminQueueLoading = MutableStateFlow(false)
 
+    // ==================== AUDIT-A-ARBITRATE: Dispute Arbitration State ====================
+
+    /** Dispute queue for the arbitration console. */
+    val adminDisputeQueue = MutableStateFlow<List<Map<String, Any>>>(emptyList())
+
+    /** Loading flag for the dispute queue refresh. */
+    val isAdminDisputeLoading = MutableStateFlow(false)
+
+    /** Outcome of an arbitration decision submission. */
+    sealed class ArbitrationResult {
+        object Success : ArbitrationResult()
+        object NotAuthenticated : ArbitrationResult()
+        object NotAuthorized : ArbitrationResult()
+        data class Error(val message: String) : ArbitrationResult()
+    }
+
+    /** Last arbitration result, shown inline in the sheet. Null = no pending result. */
+    val arbitrationResult = MutableStateFlow<ArbitrationResult?>(null)
+
+    /** Currently selected dispute for detail view. Null = queue view. */
+    val selectedDispute = MutableStateFlow<Map<String, Any>?>(null)
+
     val currentTraining = MutableStateFlow<com.example.data.db.WorkerTrainingEntity?>(null)
 
     init {
@@ -1723,6 +1746,90 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             if (success) loadAdminVerificationQueue()
             onResult(success)
         }
+    }
+
+    // ==================== AUDIT-A-ARBITRATE: Dispute Arbitration Methods ====================
+
+    /** Loads the dispute queue via the admin-gated Cloud Function. */
+    fun loadDisputesQueue(status: String? = null) {
+        if (isAdminDisputeLoading.value) return
+        isAdminDisputeLoading.value = true
+        arbitrationResult.value = null
+        viewModelScope.launch {
+            try {
+                val queue = repository.getDisputesQueue(status)
+                adminDisputeQueue.value = queue
+            } finally {
+                isAdminDisputeLoading.value = false
+            }
+        }
+    }
+
+    /** Selects a dispute for the detail/decision view. */
+    fun selectDispute(dispute: Map<String, Any>?) {
+        selectedDispute.value = dispute
+        arbitrationResult.value = null
+    }
+
+    /** Clears the selected dispute, returning to queue view. */
+    fun clearSelectedDispute() {
+        selectedDispute.value = null
+        arbitrationResult.value = null
+    }
+
+    /**
+     * Submits an arbitration decision via the `resolveDispute` Cloud Function.
+     * Uses [AdminDisputeDecisions] for client-side guardrails; the callable remains
+     * the real authorizer. Single-flight guard prevents duplicate submissions.
+     */
+    fun submitDisputeResolution(
+        disputeId: String,
+        resolution: String,
+        resolutionType: String?,
+        resolutionAmount: Double?,
+        adminNotes: String?,
+        status: String?,
+        onResult: (ArbitrationResult) -> Unit
+    ) {
+        // AUDIT-A-ARBITRATE: client-side validation mirrors the server contract.
+        val blocker = AdminDisputeDecisions.decisionBlocker(
+            disputeId, resolution, resolutionType, resolutionAmount, status, adminNotes
+        )
+        if (blocker != null) {
+            arbitrationResult.value = ArbitrationResult.Error(blocker)
+            onResult(ArbitrationResult.Error(blocker))
+            return
+        }
+
+        // Single-flight guard.
+        if (arbitrationResult.value is ArbitrationResult.Success ||
+            arbitrationResult.value == ArbitrationResult.NotAuthenticated ||
+            arbitrationResult.value == ArbitrationResult.NotAuthorized
+        ) {
+            return
+        }
+
+        arbitrationResult.value = null
+        viewModelScope.launch {
+            val success = repository.resolveDispute(
+                disputeId, resolution.trim().uppercase(),
+                resolutionType?.trim()?.uppercase(), resolutionAmount, adminNotes?.trim()
+            )
+            if (success) {
+                arbitrationResult.value = ArbitrationResult.Success
+                loadDisputesQueue()
+                onResult(ArbitrationResult.Success)
+            } else {
+                val result = ArbitrationResult.Error("Failed to resolve dispute. Server may be unavailable.")
+                arbitrationResult.value = result
+                onResult(result)
+            }
+        }
+    }
+
+    fun resetArbitrationState() {
+        arbitrationResult.value = null
+        selectedDispute.value = null
     }
 
     fun setWorkerActivation(userId: String, activate: Boolean, onResult: (Boolean) -> Unit) {

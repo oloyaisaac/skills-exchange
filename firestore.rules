@@ -138,7 +138,12 @@ service cloud.firestore {
     match /disputes/{disputeId} {
       allow read: if isAuthenticated() &&
         (resource.data.reportedBy == request.auth.uid || resource.data.reportedUserId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated();
+      // AUDIT-A-ARBITRATE: dispute filing now writes this collection from the client
+      // (FirebaseService.syncDisputeToFirestore), so bind authorship server-side exactly
+      // like jobs bind postedByUid on create — a caller can only file a dispute reported
+      // BY themselves. Resolutions still only arrive via the admin-gated resolveDispute
+      // callable (Admin SDK bypasses these rules).
+      allow create: if isAuthenticated() && request.resource.data.reportedBy == request.auth.uid;
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }

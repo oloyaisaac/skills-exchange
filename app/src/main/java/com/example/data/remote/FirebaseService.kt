@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import com.example.data.db.DisputeEntity
 import com.example.data.db.GuarantorEntity
 import com.example.data.db.JobPostEntity
 import com.example.data.db.ServiceProviderEntity
@@ -518,6 +519,48 @@ class FirebaseService(private val context: Context? = null) {
         }
     }
 
+    /**
+     * AUDIT-A-ARBITRATE: mirrors a locally-filed dispute into the Firestore `disputes`
+     * collection that the admin `getDisputesQueue` callable reads. Without this link the
+     * arbitration console would always show an empty queue because dispute filing only
+     * wrote the Room row.
+     *
+     * Best-effort, exactly like [syncJobToFirestore] / [syncProviderToFirestore]: the Room
+     * insert is the user's record of the report and is never rolled back when the network
+     * write fails. `firestore.rules` SEC-006 is the authorizer on create (the document's
+     * `reportedBy` must equal the caller's uid); the server-side `resolveDispute` callable
+     * gated by `isAdmin()` remains the only writer of any resolution outcome.
+     */
+    suspend fun syncDisputeToFirestore(dispute: DisputeEntity) {
+        val db = firestore ?: return
+        try {
+            val disputeData = mapOf(
+                "id" to dispute.id,
+                "jobId" to dispute.jobId,
+                "reportedBy" to dispute.reportedBy,
+                "reportedUserId" to dispute.reportedUserId,
+                "disputeReason" to dispute.disputeReason,
+                "description" to dispute.description,
+                "evidenceUrlsCsv" to dispute.evidenceUrlsCsv,
+                "status" to dispute.status,
+                "adminNotes" to dispute.adminNotes,
+                "resolutionType" to dispute.resolutionType,
+                "resolutionAmount" to dispute.resolutionAmount,
+                "createdAt" to dispute.createdAt,
+                "updatedAt" to dispute.updatedAt,
+                "resolvedAt" to dispute.resolvedAt,
+                "resolvedBy" to dispute.resolvedBy
+            )
+            db.collection("disputes")
+                .document(dispute.id)
+                .set(disputeData)
+                .await()
+            Log.d("FirebaseService", "Successfully synced dispute ${dispute.id} to Firestore")
+        } catch (e: Exception) {
+            Log.d("FirebaseService", "Firestore sync dispute notice: ${e.message}")
+        }
+    }
+
     fun streamJobsFromFirestore(): Flow<List<Map<String, Any>>> = callbackFlow {
         val db = firestore
         if (db == null) {
@@ -846,6 +889,66 @@ class FirebaseService(private val context: Context? = null) {
             val data = result.data as? Map<String, Any> ?: emptyMap()
             data["success"] as? Boolean ?: false
         } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * AUDIT-A-ARBITRATE: fetch the admin dispute queue.
+     *
+     * Invokes the `getDisputesQueue` Cloud Function, which is admin-gated via
+     * `isAdmin(context)` → `checkAdminCaller(context)`. The Firebase `admin` custom
+     * claim remains the authority; the client never supplies admin identity.
+     */
+    suspend fun getDisputesQueue(status: String? = null): List<Map<String, Any>> {
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val payload = mutableMapOf<String, Any>()
+            if (!status.isNullOrBlank()) payload["status"] = status
+            val result = functions
+                .getHttpsCallable("getDisputesQueue")
+                .call(payload)
+                .await()
+            @Suppress("UNCHECKED_CAST")
+            val data = result.data as? Map<String, Any> ?: emptyMap()
+            data["disputes"] as? List<Map<String, Any>> ?: emptyList()
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "getDisputesQueue failed: ${e.message}")
+            emptyList()
+        }
+    }
+
+    /**
+     * AUDIT-A-ARBITRATE: resolve/reject/escalate a dispute.
+     *
+     * Invokes the `resolveDispute` Cloud Function, which is admin-gated via
+     * `isAdmin(context)` → `checkAdminCaller(context)`. Returns true when the server
+     * reports success; false otherwise. The server remains the real authorizer.
+     */
+    suspend fun resolveDispute(
+        disputeId: String,
+        resolution: String,
+        resolutionType: String?,
+        resolutionAmount: Double?,
+        adminNotes: String?
+    ): Boolean {
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val payload = mutableMapOf<String, Any>()
+            payload["disputeId"] = disputeId
+            payload["resolution"] = resolution
+            if (resolutionType != null) payload["resolutionType"] = resolutionType
+            if (resolutionAmount != null) payload["resolutionAmount"] = resolutionAmount
+            if (adminNotes != null) payload["adminNotes"] = adminNotes
+            val result = functions
+                .getHttpsCallable("resolveDispute")
+                .call(payload)
+                .await()
+            @Suppress("UNCHECKED_CAST")
+            val data = result.data as? Map<String, Any> ?: emptyMap()
+            data["success"] as? Boolean ?: false
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "resolveDispute failed: ${e.message}")
             false
         }
     }

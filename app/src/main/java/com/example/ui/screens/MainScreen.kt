@@ -198,6 +198,13 @@ fun MainScreen(
     val adminQueue by viewModel.adminVerificationQueue.collectAsStateWithLifecycle()
     val isAdminQueueLoading by viewModel.isAdminQueueLoading.collectAsStateWithLifecycle()
 
+    // AUDIT-A-ARBITRATE: admin dispute arbitration console.
+    var isAdminArbitrationOpen by remember { mutableStateOf(false) }
+    val adminDisputeQueue by viewModel.adminDisputeQueue.collectAsStateWithLifecycle()
+    val isAdminDisputeLoading by viewModel.isAdminDisputeLoading.collectAsStateWithLifecycle()
+    val arbitrationResult by viewModel.arbitrationResult.collectAsStateWithLifecycle()
+    val selectedArbitrationDispute by viewModel.selectedDispute.collectAsStateWithLifecycle()
+
     val notifications by viewModel.notifications.collectAsStateWithLifecycle(initialValue = emptyList())
     val unreadNotificationCount by viewModel.unreadNotificationCount.collectAsStateWithLifecycle(initialValue = 0)
 
@@ -793,6 +800,8 @@ fun MainScreen(
         isAdminUnlocked = isAdminUnlocked,
         adminPendingCount = adminQueue.size,
         onOpenAdminQueue = { isAdminQueueOpen = true },
+        // AUDIT-A-ARBITRATE: dispute arbitration console entry.
+        onOpenAdminArbitration = { isAdminArbitrationOpen = true },
         onOpenDataBackup = { isDataBackupOpen = true },
         onOpenPrivacyPolicy = { isPrivacyPolicyOpen = true },
         onOpenDeleteAccount = { isAccountDeletionOpen = true }
@@ -821,6 +830,48 @@ fun MainScreen(
             viewModel.submitAdminDecision(userId, decision, feedback, onResult)
         },
         onDismiss = { isAdminQueueOpen = false }
+    )
+
+    // AUDIT-A-ARBITRATE: admin dispute arbitration console.
+    AdminDisputeArbitrationSheet(
+        isOpen = isAdminArbitrationOpen,
+        disputes = adminDisputeQueue,
+        isLoading = isAdminDisputeLoading,
+        arbitrationResult = arbitrationResult,
+        selectedDispute = selectedArbitrationDispute,
+        onRefresh = { viewModel.loadDisputesQueue() },
+        onSelectDispute = { viewModel.selectDispute(it) },
+        onClearSelection = { viewModel.clearSelectedDispute() },
+        onSubmitResolution = { disputeId: String,
+            resolution: String,
+            resolutionType: String?,
+            resolutionAmount: Double?,
+            adminNotes: String?,
+            status: String? ->
+            viewModel.submitDisputeResolution(
+                disputeId = disputeId,
+                resolution = resolution,
+                resolutionType = resolutionType,
+                resolutionAmount = resolutionAmount,
+                adminNotes = adminNotes,
+                status = status,
+                onResult = { result ->
+                    when (result) {
+                        is SkillsExchangeViewModel.ArbitrationResult.Success -> { /* success already reflected in UI state */ }
+                        is SkillsExchangeViewModel.ArbitrationResult.Error -> {
+                            // Error already surfaced via arbitrationResult state
+                        }
+                        is SkillsExchangeViewModel.ArbitrationResult.NotAuthenticated -> {
+                            // Should not happen — callable handles auth server-side
+                        }
+                        is SkillsExchangeViewModel.ArbitrationResult.NotAuthorized -> {
+                            // Should not happen — callable handles authorization server-side
+                        }
+                    }
+                }
+            )
+        },
+        onDismiss = { isAdminArbitrationOpen = false }
     )
 
     // REG-003 / REG-004: profile photo upload & backup contact management.
