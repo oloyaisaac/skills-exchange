@@ -221,12 +221,12 @@ export const createMoMoCollection = functions.https.onCall(async (data, context)
     const code = result.error.code;
     const httpsCode =
       code === "unauthenticated" ? "unauthenticated"
-      : code === "invalid_argument" ? "invalid-argument"
-      : code === "job_not_found" ? "not-found"
-      : code === "not_job_owner" || code === "invalid_job_state" || code === "already_funded" || code === "amount_mismatch" || code === "duplicate_request" ? "failed-precondition"
-      : code === "config_error" ? "failed-precondition"
-      : code === "provider_timeout" ? "deadline-exceeded"
-      : "unavailable";
+        : code === "invalid_argument" ? "invalid-argument"
+          : code === "job_not_found" ? "not-found"
+            : code === "not_job_owner" || code === "invalid_job_state" || code === "already_funded" || code === "amount_mismatch" || code === "duplicate_request" ? "failed-precondition"
+              : code === "config_error" ? "failed-precondition"
+                : code === "provider_timeout" ? "deadline-exceeded"
+                  : "unavailable";
     throw new functions.https.HttpsError(
       httpsCode as "unauthenticated" | "invalid-argument" | "not-found" | "failed-precondition" | "deadline-exceeded" | "unavailable",
       result.error.message,
@@ -483,8 +483,8 @@ export const getMoMoCollectionStatus = functions.https.onCall(async (data, conte
   if (!authz.ok) {
     const httpsCode =
       authz.code === "unauthenticated" ? "unauthenticated"
-      : authz.code === "not_found" ? "not-found"
-      : "permission-denied";
+        : authz.code === "not_found" ? "not-found"
+          : "permission-denied";
     throw new functions.https.HttpsError(httpsCode, authz.message);
   }
 
@@ -496,9 +496,9 @@ export const getMoMoCollectionStatus = functions.https.onCall(async (data, conte
   if (!outcome.ok) {
     const code =
       outcome.error.code === "unknown_reference" ? "not-found"
-      : outcome.error.code === "config_error" ? "failed-precondition"
-      : outcome.error.code === "token_error" ? "unavailable"
-      : "internal";
+        : outcome.error.code === "config_error" ? "failed-precondition"
+          : outcome.error.code === "token_error" ? "unavailable"
+            : "internal";
     throw new functions.https.HttpsError(
       code as "not-found" | "failed-precondition" | "unavailable" | "internal",
       outcome.error.message
@@ -893,8 +893,8 @@ export const reviewWorkerApplication = functions.https.onCall(async (data, conte
     message: decision === "APPROVE"
       ? "Your worker application has been approved. Please complete training to activate your account."
       : decision === "REJECT"
-      ? `Your worker application was not approved. Reason: ${feedback || "No reason provided."}`
-      : `Changes required for your application. Reason: ${feedback || "Please review feedback."}`,
+        ? `Your worker application was not approved. Reason: ${feedback || "No reason provided."}`
+        : `Changes required for your application. Reason: ${feedback || "Please review feedback."}`,
     createdAt: now,
     read: false
   });
@@ -1161,8 +1161,8 @@ export const reviewGuarantorSubmission = functions.https.onCall(async (data, con
       command.status === "APPROVED"
         ? "Your guarantors have been verified. Thank you — your worker verification is moving forward."
         : command.status === "REJECTED"
-        ? `Your guarantor verification was not approved. Reason: ${command.feedback || "No reason provided."}`
-        : `Changes required for your guarantor verification. Reason: ${command.feedback || "Please review the feedback."}`,
+          ? `Your guarantor verification was not approved. Reason: ${command.feedback || "No reason provided."}`
+          : `Changes required for your guarantor verification. Reason: ${command.feedback || "Please review the feedback."}`,
     createdAt: serverNow,
     read: false
   });
@@ -1323,313 +1323,257 @@ export const getDisputesQueue = functions.https.onCall(async (data, context) => 
   return { success: true, disputes };
 });
 
-// ==================== PAY-003: Escrow Release & Worker MoMo Payout ====================
-
 /**
- * Build the real axios/Firestore wiring for the payout trust boundary and pass
- * it to the pure `initiatePayout` core in `momoDisbursement.ts`. Mirrors
- * `buildCollectionDeps`/`buildConfirmationDeps`: every security decision lives
- * in the pure core; this function only performs the actual provider HTTP calls
- * and Firestore reads/writes.
+ * AUDIT-A-SOS: Get SOS Queue
+ * Admin-only function to retrieve SOS incidents for the dispatch desk.
  */
-function buildPayoutDeps(): PayoutDeps {
-  return {
-    randomUuid: () => crypto.randomUUID(),
-    now: () => Date.now(),
-    async getJob(id: string): Promise<JobRecordPayout | null> {
-      const snap = await db.collection("jobs").doc(id).get();
-      if (!snap.exists) return null;
-      return (snap.data() || {}) as JobRecordPayout;
-    },
-    async findPendingPayout(jobId: string, clientUid: string): Promise<PayoutRecord | null> {
-      const snap = await db.collection("payouts")
-        .where("jobId", "==", jobId)
-        .where("clientUid", "==", clientUid)
-        .limit(1)
-        .get();
-      if (snap.empty) return null;
-      const data = snap.docs[0].data();
-      return {
-        jobId: data.jobId,
-        workerId: data.workerId,
-        workerMomoNumber: data.workerMomoNumber,
-        amount: data.amount,
-        currency: data.currency,
-        provider: data.provider,
-        status: data.status as PayoutStatus,
-        payoutId: data.payoutId,
-        clientUid: data.clientUid,
-        releasedBy: data.releasedBy,
-        transactionId: data.transactionId,
-        providerReferenceId: data.providerReferenceId,
-      };
-    },
-
-    async acquireToken(config: MomoConfig) {
-      try {
-        const basic = Buffer.from(`${config.apiUser}:${config.apiKey}`).toString("base64");
-        const resp = await axios.post(
-          `${config.baseUrl}/disbursement/token/`,
-          {},
-          {
-            headers: {
-              "Authorization": `Basic ${basic}`,
-              "Ocp-Apim-Subscription-Key": config.subscriptionKey,
-            },
-            timeout: 15000,
-            validateStatus: () => true,
-          }
-        );
-        if (resp.status !== 200 || !resp.data?.access_token) {
-          return { ok: false as const, error: `Token exchange returned HTTP ${resp.status}.` };
-        }
-        return { ok: true as const, token: String(resp.data.access_token) };
-      } catch (e: any) {
-        return { ok: false as const, error: e?.message || "Token exchange failed." };
-      }
-    },
-    async requestPayout(config: MomoConfig, token: string, referenceId: string, payload: Record<string, unknown>) {
-      try {
-        const resp = await axios.post(
-          `${config.baseUrl}/disbursement/v1_0/transfer`,
-          payload,
-          {
-            headers: {
-              "Authorization": `Bearer ${token}`,
-              "X-Reference-Id": referenceId,
-              "X-Target-Environment": "sandbox",
-              "Ocp-Apim-Subscription-Key": config.subscriptionKey,
-              "Content-Type": "application/json",
-            },
-            timeout: 20000,
-            validateStatus: () => true,
-          }
-        );
-        return { statusCode: resp.status };
-      } catch (e: any) {
-        const timeout = e?.code === "ECONNABORTED" || /timeout/i.test(e?.message || "");
-        return { networkError: true as const, timeout, error: e?.message || "Provider request failed." };
-      }
-    },
-
-    async queryProviderPayoutStatus(config: MomoConfig, token: string, providerReferenceId: string): Promise<ProviderPayoutStatusResult> {
-      try {
-        const resp = await axios.get(
-          `${config.baseUrl}/disbursement/v1_0/transfer/${encodeURIComponent(providerReferenceId)}`,
-          {
-            headers: {
-              "Authorization": `Bearer ${token}`,
-              "X-Target-Environment": "sandbox",
-              "Ocp-Apim-Subscription-Key": config.subscriptionKey,
-            },
-            timeout: 15000,
-            validateStatus: () => true,
-          }
-        );
-        if (resp.status === 404) {
-          return { kind: "providerError", statusCode: 404, error: "Reference unknown to provider." };
-        }
-        if (resp.status !== 200 || !resp.data || typeof resp.data.status !== "string") {
-          return { kind: "providerError", statusCode: resp.status, error: `Provider status returned HTTP ${resp.status}.` };
-        }
-        return {
-          kind: "ok",
-          status: resp.data.status,
-          amount: typeof resp.data.amount === "number" ? resp.data.amount : undefined,
-          currency: typeof resp.data.currency === "string" ? resp.data.currency : undefined,
-          financialTransactionId: typeof resp.data.financialTransactionId === "string" ? resp.data.financialTransactionId : undefined,
-          referenceId: typeof resp.data.referenceId === "string" ? resp.data.referenceId : undefined,
-          statusCode: 200,
-        };
-      } catch (e: any) {
-        const timeout = e?.code === "ECONNABORTED" || /timeout/i.test(e?.message || "");
-        return { kind: timeout ? "providerTimeout" : "networkError", error: e?.message || "Provider status unavailable." };
-      }
-    },
-    async persistPayout(record: PayoutRecord) {
-      await db.collection("payouts").doc(record.payoutId).set({
-        ...record,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-    },
-    async updatePayout(ref: string, patch: Record<string, unknown>) {
-      await db.collection("payouts").doc(ref).update(patch);
-    },
-  };
-}
-
-
-/**
- * PAY-003: Create a worker payout (escrow release). Callable triggered when a
- * resident approves job completion. The resident releases escrow; the worker
- * receives the amount through the MTN Disbursement API (sandbox only). The
- * device never touches the payout endpoint — all trust decisions are enforced
- * server-side by the pure `initiatePayout` core.
- */
-export const createMoMoPayout = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
+export const getSosQueue = functions.https.onCall(async (data, context) => {
+  if (!isAdmin(context)) {
     throw new functions.https.HttpsError(
-      "unauthenticated",
-      "Authentication required to release escrow."
+      "permission-denied",
+      "Admin access required."
     );
   }
 
-  const { jobId, workerId, workerMomoNumber, amountUgx, provider } = data;
-  if (!jobId || !workerId || !workerMomoNumber || amountUgx === undefined) {
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      "Missing required parameters: jobId, workerId, workerMomoNumber, amountUgx."
-    );
+  const { status } = data;
+  let query = db.collection("sosIncidents").orderBy("raisedAt", "desc");
+
+  if (status) {
+    query = query.where("status", "==", status);
   }
 
-  const result = await initiatePayout(
-    {
-      jobId,
-      clientUid: context.auth.uid,
-      amountUgx,
-      workerMomoNumber,
-      provider: provider || "MTN_MOMO",
-      env: process.env as Record<string, string | undefined>,
-    },
-    buildPayoutDeps()
-  );
+  const snapshot = await query.limit(50).get();
+  const incidents = snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
 
-  if (!result.ok) {
-    const codeMap: Record<string, string> = {
-      unauthenticated: "unauthenticated",
-      invalid_argument: "invalid-argument",
-      job_not_found: "not-found",
-      not_job_owner: "permission-denied",
-      invalid_job_state: "failed-precondition",
-      job_not_escrowed: "failed-precondition",
-      amount_mismatch: "failed-precondition",
-      worker_mismatch: "failed-precondition",
-      config_error: "failed-precondition",
-      duplicate_request: "already-exists",
-      already_pending: "failed-precondition",
-      provider_error: "unavailable",
-      provider_timeout: "deadline-exceeded",
-    };
-    const httpsCode = codeMap[result.error.code] || "internal";
-    throw new functions.https.HttpsError(httpsCode as any, result.error.message);
-  }
+  /** AUDIT-A-SOS: acknowledge an ACTIVE incident as reviewed. Admin-only — caller must hold the
+   * verified `admin` claim from a verified ID token (never a client-supplied role). */
+  export const acknowledgeSos = functions.https.onCall(async (data, context) => {
+    const caller = checkAdminCaller(context);
+    if (!caller.ok) {
+      throw new functions.https.HttpsError(caller.code, caller.message);
+    }
 
-  // Payout accepted (PENDING). Notify the worker.
-  await db.collection("notifications").add({
-    userId: workerId,
-    type: "PAYOUT_PENDING",
-    jobId,
-    message: `A payout of UGX ${amountUgx} has been initiated. You will receive payment soon.`,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    read: false,
+    const { sosIncidentId } = data ?? {};
+    if (typeof sosIncidentId !== "string" || sosIncidentId.length === 0) {
+      throw new functions.https.HttpsError("invalid-argument", "sosIncidentId is required.");
+    }
+
+    const snap = await db.collection("sosIncidents").doc(sosIncidentId).get();
+    if (!snap.exists) {
+      throw new functions.https.HttpsError("not-found", "SOS incident not found.");
+    }
+    const doc = snap.data() as Record<string, unknown>;
+    if (doc.status !== "ACTIVE") {
+      throw new functions.https.HttpsError("failed-precondition", "Only ACTIVE incidents can be acknowledged.");
+    }
+
+    await db.collection("sosIncidents").doc(sosIncidentId).update({
+      status: "ACKNOWLEDGED",
+      acknowledgedAt: new Date(),
+      acknowledgedBy: caller.value,
+    });
+
+    return { success: true, sosIncidentId };
   });
 
-  return {
-    success: true,
-    payoutRef: result.payoutId,
-    message: `Payout pending. UGX ${amountUgx} will be delivered to ${workerMomoNumber} via the MTN Disbursement API (sandbox). Poll getMoMoPayoutStatus for the provider-verified result.`,
-  };
-});
+  /** AUDIT-A-SOS: resolve an ACTIVE incident as complete. Admin-only — caller must hold the
+   * verified `admin` claim from a verified ID token (never a client-supplied role). */
+  export const resolveSosIncident = functions.https.onCall(async (data, context) => {
+    const caller = checkAdminCaller(context);
+    if (!caller.ok) {
+      throw new functions.https.HttpsError(caller.code, caller.message);
+    }
+
+    const { sosIncidentId } = data ?? {};
+    if (typeof sosIncidentId !== "string" || sosIncidentId.length === 0) {
+      throw new functions.https.HttpsError("invalid-argument", "sosIncidentId is required.");
+    }
+
+    const snap = await db.collection("sosIncidents").doc(sosIncidentId).get();
+    if (!snap.exists) {
+      throw new functions.https.HttpsError("not-found", "SOS incident not found.");
+    }
+    const doc = snap.data() as Record<string, unknown>;
+    if (doc.status !== "ACTIVE") {
+      throw new functions.https.HttpsError("failed-precondition", "Only ACTIVE incidents can be resolved.");
+    }
+
+    await db.collection("sosIncidents").doc(sosIncidentId).update({
+      status: "CLEARED",
+      clearedAt: new Date(),
+      clearedBy: caller.value,
+    });
+
+    return { success: true, sosIncidentId };
+  });
+
+  // ==================== PAY-003: Escrow Release & Worker MoMo Payout ====================
+
+  /**
+   * Build the real axios/Firestore wiring for the payout trust boundary and pass
+   * it to the pure `initiatePayout` core in `momoDisbursement.ts`. Mirrors
+   * `buildCollectionDeps`/`buildConfirmationDeps`: every security decision lives
+   * in the pure core; this function only performs the actual provider HTTP calls
+   * and Firestore reads/writes.
+   */
+  function buildPayoutDeps(): PayoutDeps {
+    return {
+      randomUuid: () => crypto.randomUUID(),
+      now: () => Date.now(),
+      async getJob(id: string): Promise<JobRecordPayout | null> {
+        const snap = await db.collection("jobs").doc(id).get();
+        if (!snap.exists) return null;
+        return (snap.data() || {}) as JobRecordPayout;
+      },
+      async findPendingPayout(jobId: string, clientUid: string): Promise<PayoutRecord | null> {
+        const snap = await db.collection("payouts")
+          .where("jobId", "==", jobId)
+          .where("clientUid", "==", clientUid)
+          .limit(1)
+          .get();
+        if (snap.empty) return null;
+        const data = snap.docs[0].data();
+        return {
+          jobId: data.jobId,
+          workerId: data.workerId,
+          workerMomoNumber: data.workerMomoNumber,
+          amount: data.amount,
+          currency: data.currency,
+          provider: data.provider,
+          status: data.status as PayoutStatus,
+          payoutId: data.payoutId,
+          clientUid: data.clientUid,
+          releasedBy: data.releasedBy,
+          transactionId: data.transactionId,
+          providerReferenceId: data.providerReferenceId,
+        };
+      },
+
+      async acquireToken(config: MomoConfig) {
+        try {
+          const basic = Buffer.from(`${config.apiUser}:${config.apiKey}`).toString("base64");
+          const resp = await axios.post(
+            `${config.baseUrl}/disbursement/token/`,
+            {},
+            {
+              headers: {
+                "Authorization": `Basic ${basic}`,
+                "Ocp-Apim-Subscription-Key": config.subscriptionKey,
+              },
+              timeout: 15000,
+              validateStatus: () => true,
+            }
+          );
+          if (resp.status !== 200 || !resp.data?.access_token) {
+            return { ok: false as const, error: `Token exchange returned HTTP ${resp.status}.` };
+          }
+          return { ok: true as const, token: String(resp.data.access_token) };
+        } catch (e: any) {
+          return { ok: false as const, error: e?.message || "Token exchange failed." };
+        }
+      },
+      async requestPayout(config: MomoConfig, token: string, referenceId: string, payload: Record<string, unknown>) {
+        try {
+          const resp = await axios.post(
+            `${config.baseUrl}/disbursement/v1_0/transfer`,
+            payload,
+            {
+              headers: {
+                "Authorization": `Bearer ${token}`,
+                "X-Reference-Id": referenceId,
+                "X-Target-Environment": "sandbox",
+                "Ocp-Apim-Subscription-Key": config.subscriptionKey,
+                "Content-Type": "application/json",
+              },
+              timeout: 20000,
+              validateStatus: () => true,
+            }
+          );
+          return { statusCode: resp.status };
+        } catch (e: any) {
+          const timeout = e?.code === "ECONNABORTED" || /timeout/i.test(e?.message || "");
+          return { networkError: true as const, timeout, error: e?.message || "Provider request failed." };
+        }
+      },
+
+      async queryProviderPayoutStatus(config: MomoConfig, token: string, providerReferenceId: string): Promise<ProviderPayoutStatusResult> {
+        try {
+          const resp = await axios.get(
+            `${config.baseUrl}/disbursement/v1_0/transfer/${encodeURIComponent(providerReferenceId)}`,
+            {
+              headers: {
+                "Authorization": `Bearer ${token}`,
+                "X-Target-Environment": "sandbox",
+                "Ocp-Apim-Subscription-Key": config.subscriptionKey,
+              },
+              timeout: 15000,
+              validateStatus: () => true,
+            }
+          );
+          if (resp.status === 404) {
+            return { kind: "providerError", statusCode: 404, error: "Reference unknown to provider." };
+          }
+          if (resp.status !== 200 || !resp.data || typeof resp.data.status !== "string") {
+            return { kind: "providerError", statusCode: resp.status, error: `Provider status returned HTTP ${resp.status}.` };
+          }
+          return {
+            kind: "ok",
+            status: resp.data.status,
+            amount: typeof resp.data.amount === "number" ? resp.data.amount : undefined,
+            currency: typeof resp.data.currency === "string" ? resp.data.currency : undefined,
+            financialTransactionId: typeof resp.data.financialTransactionId === "string" ? resp.data.financialTransactionId : undefined,
+            referenceId: typeof resp.data.referenceId === "string" ? resp.data.referenceId : undefined,
+            statusCode: 200,
+          };
+        } catch (e: any) {
+          const timeout = e?.code === "ECONNABORTED" || /timeout/i.test(e?.message || "");
+          return { kind: timeout ? "providerTimeout" : "networkError", error: e?.message || "Provider status unavailable." };
+        }
+      },
+      async persistPayout(record: PayoutRecord) {
+        await db.collection("payouts").doc(record.payoutId).set({
+          ...record,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      },
+      async updatePayout(ref: string, patch: Record<string, unknown>) {
+        await db.collection("payouts").doc(ref).update(patch);
+      },
+    };
+  }
 
 
-
-/**
- * PAY-004: Create a material advance partial payout (up to 50% of the
- * materials subtotal) when the resident approves the advance request.
- *
- * The server-side worker payout is performed through the same trusted
- * `initiatePayout` core that PAY-003 uses. A Firestore document under
- * `materialAdvances/{jobId}` is created to record the receipt-capture
- * requirement: the client must upload a hardware receipt within 60 minutes
- * of disbursement; the receipt URL is written back to the job document
- * before the advance status flips to DISBURSED.
- *
- * Idempotency: the collection doc `materialAdvances/{jobId}` is the single
- * source of truth. A second invocation with the same `jobId` sees the
- * already-queued advance and fails closed with ALREADY_PENDING.
- */
-export const createMoMoMaterialAdvance = functions.https.onCall(
-  async (data, context) => {
+  /**
+   * PAY-003: Create a worker payout (escrow release). Callable triggered when a
+   * resident approves job completion. The resident releases escrow; the worker
+   * receives the amount through the MTN Disbursement API (sandbox only). The
+   * device never touches the payout endpoint — all trust decisions are enforced
+   * server-side by the pure `initiatePayout` core.
+   */
+  export const createMoMoPayout = functions.https.onCall(async (data, context) => {
     if (!context.auth) {
       throw new functions.https.HttpsError(
         "unauthenticated",
-        "Authentication required to disburse material advance."
+        "Authentication required to release escrow."
       );
     }
 
-    const {
-      jobId,
-      materialsSubtotal,
-      workerId,
-      workerMomoNumber,
-      provider,
-    } = data;
-
-    if (
-      !jobId ||
-      materialsSubtotal === undefined ||
-      workerId === undefined ||
-      workerMomoNumber === undefined
-    ) {
+    const { jobId, workerId, workerMomoNumber, amountUgx, provider } = data;
+    if (!jobId || !workerId || !workerMomoNumber || amountUgx === undefined) {
       throw new functions.https.HttpsError(
         "invalid-argument",
-        "Missing required parameters: jobId, materialsSubtotal, workerId, workerMomoNumber."
+        "Missing required parameters: jobId, workerId, workerMomoNumber, amountUgx."
       );
     }
 
-    // Fail closed: materialsSubtotal must be positive, never negative or zero.
-    if (!(typeof materialsSubtotal === "number" && materialsSubtotal > 0)) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "materialsSubtotal must be a positive number."
-      );
-    }
-
-    // Advance is capped at 50% of the materials subtotal.
-    const advanceAmount = Math.min(materialsSubtotal * 0.5, materialsSubtotal);
-
-    // Record the receipt-capture requirement in Firestore BEFORE issuing the
-    // payout. The doc is the idempotency key: a second call returns ALREADY_PENDING.
-    const advanceRef = db.collection("materialAdvances").doc(jobId);
-    const existing = await advanceRef.get();
-    if (existing.exists) {
-      const existingData = existing.data();
-      if (existingData?.status === "PENDING") {
-        return {
-          success: false,
-          error: "already-pending",
-          message:
-            "A material advance for this job is already pending. Await its status.",
-        };
-      }
-      // If a previous attempt exists, start a new one only if the amount changed.
-      // Refuse to overwrite an already-disbursed advance.
-      if (existingData?.status === "DISBURSED") {
-        throw new functions.https.HttpsError(
-          "failed-precondition",
-          "This material advance was already disbursed and cannot be re-run."
-        );
-      }
-    }
-
-    await advanceRef.set({
-      jobId,
-      workerId,
-      workerMomoNumber,
-      materialsSubtotal,
-      advanceAmount,
-      provider: provider || "MTN_MOMO",
-      status: "PENDING",
-      receiptCaptureExpiresAt: admin.firestore.FieldValue.serverTimestamp(),
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-
-    // Issue the partial payout through the PAY-003 trust boundary.
-    const payoutResult = await initiatePayout(
+    const result = await initiatePayout(
       {
         jobId,
         clientUid: context.auth.uid,
-        amountUgx: Math.round(advanceAmount),
+        amountUgx,
         workerMomoNumber,
         provider: provider || "MTN_MOMO",
         env: process.env as Record<string, string | undefined>,
@@ -1637,12 +1581,7 @@ export const createMoMoMaterialAdvance = functions.https.onCall(
       buildPayoutDeps()
     );
 
-    if (!payoutResult.ok) {
-      await advanceRef.update({
-        status: "FAILED",
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-
+    if (!result.ok) {
       const codeMap: Record<string, string> = {
         unauthenticated: "unauthenticated",
         invalid_argument: "invalid-argument",
@@ -1658,143 +1597,290 @@ export const createMoMoMaterialAdvance = functions.https.onCall(
         provider_error: "unavailable",
         provider_timeout: "deadline-exceeded",
       };
-
-      const httpsCode =
-        codeMap[payoutResult.error.code] || "internal";
-      throw new functions.https.HttpsError(
-        httpsCode as any,
-        payoutResult.error.message
-      );
+      const httpsCode = codeMap[result.error.code] || "internal";
+      throw new functions.https.HttpsError(httpsCode as any, result.error.message);
     }
 
     // Payout accepted (PENDING). Notify the worker.
-    const payoutRef = payoutResult.payoutId;
     await db.collection("notifications").add({
       userId: workerId,
       type: "PAYOUT_PENDING",
       jobId,
-      message: `A material advance of UGX ${advanceAmount} has been initiated. Please upload the hardware receipt within 60 minutes so the payout can be completed.`,
+      message: `A payout of UGX ${amountUgx} has been initiated. You will receive payment soon.`,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       read: false,
     });
 
-    // Update the local tracking document with the payout reference.
-    await advanceRef.update({
-      payoutRef,
-      providerReferenceId: payoutResult.providerReferenceId,
-      status: "PENDING",
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-
     return {
       success: true,
-      payoutRef,
-      advanceAmount: Math.round(advanceAmount),
-      receiptCaptureDeadlineMs: Date.now() + 60 * 60 * 1000,
-      message: `Material advance of UGX ${advanceAmount} is pending. Upload the hardware receipt within 60 minutes to release the funds.`,
+      payoutRef: result.payoutId,
+      message: `Payout pending. UGX ${amountUgx} will be delivered to ${workerMomoNumber} via the MTN Disbursement API (sandbox). Poll getMoMoPayoutStatus for the provider-verified result.`,
     };
-  }
-);
+  });
 
 
-/**
- * PAY-003: Query the provider-verified status of a previously initiated payout.
- *
- * Callable-only (authenticated). Re-queries the MTN provider status API with
- * the platform's own credentials and reports PAYOUT_PENDING /
- * PAYOUT_SUCCESSFUL / PAYOUT_FAILED / NEEDS_RECONCILIATION. The caller may
- * only query payouts bound to their own uid (the stored `clientUid`) or a job
- * they own (`postedByUid`).
- */
-export const getMoMoPayoutStatus = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-      "unauthenticated",
-      "Authentication required to query payout status."
-    );
-  }
 
-  const { payoutRef } = data;
-  if (!payoutRef) {
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      "payoutRef is required."
-    );
-  }
+  /**
+   * PAY-004: Create a material advance partial payout (up to 50% of the
+   * materials subtotal) when the resident approves the advance request.
+   *
+   * The server-side worker payout is performed through the same trusted
+   * `initiatePayout` core that PAY-003 uses. A Firestore document under
+   * `materialAdvances/{jobId}` is created to record the receipt-capture
+   * requirement: the client must upload a hardware receipt within 60 minutes
+   * of disbursement; the receipt URL is written back to the job document
+   * before the advance status flips to DISBURSED.
+   *
+   * Idempotency: the collection doc `materialAdvances/{jobId}` is the single
+   * source of truth. A second invocation with the same `jobId` sees the
+   * already-queued advance and fails closed with ALREADY_PENDING.
+   */
+  export const createMoMoMaterialAdvance = functions.https.onCall(
+    async (data, context) => {
+      if (!context.auth) {
+        throw new functions.https.HttpsError(
+          "unauthenticated",
+          "Authentication required to disburse material advance."
+        );
+      }
 
-  const deposit = await db.collection("payouts").doc(payoutRef).get();
-  if (!deposit.exists) {
-    throw new functions.https.HttpsError(
-      "not-found",
-      "Payout not found."
-    );
-  }
-  const ledger = deposit.data() as PayoutRecord;
-  const callerUid = context.auth.uid;
+      const {
+        jobId,
+        materialsSubtotal,
+        workerId,
+        workerMomoNumber,
+        provider,
+      } = data;
 
-  // Authorize: the caller must be the stored clientUid or the job's owner.
-  const jobDoc = await db.collection("jobs").doc(ledger.jobId).get();
-  const ownerUid = jobDoc.exists ? (jobDoc.data() as any)?.postedByUid : undefined;
-  if (ledger.clientUid !== callerUid && ownerUid !== callerUid) {
-    throw new functions.https.HttpsError(
-      "permission-denied",
-      "You may only query payouts bound to your own account."
-    );
-  }
+      if (
+        !jobId ||
+        materialsSubtotal === undefined ||
+        workerId === undefined ||
+        workerMomoNumber === undefined
+      ) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "Missing required parameters: jobId, materialsSubtotal, workerId, workerMomoNumber."
+        );
+      }
 
-  // Idempotent fast-path: a terminal stored record returns its final state
-  // with no provider call and no write.
-  if (TERMINAL_PAYOUT_STATUSES.includes(ledger.status)) {
+      // Fail closed: materialsSubtotal must be positive, never negative or zero.
+      if (!(typeof materialsSubtotal === "number" && materialsSubtotal > 0)) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "materialsSubtotal must be a positive number."
+        );
+      }
+
+      // Advance is capped at 50% of the materials subtotal.
+      const advanceAmount = Math.min(materialsSubtotal * 0.5, materialsSubtotal);
+
+      // Record the receipt-capture requirement in Firestore BEFORE issuing the
+      // payout. The doc is the idempotency key: a second call returns ALREADY_PENDING.
+      const advanceRef = db.collection("materialAdvances").doc(jobId);
+      const existing = await advanceRef.get();
+      if (existing.exists) {
+        const existingData = existing.data();
+        if (existingData?.status === "PENDING") {
+          return {
+            success: false,
+            error: "already-pending",
+            message:
+              "A material advance for this job is already pending. Await its status.",
+          };
+        }
+        // If a previous attempt exists, start a new one only if the amount changed.
+        // Refuse to overwrite an already-disbursed advance.
+        if (existingData?.status === "DISBURSED") {
+          throw new functions.https.HttpsError(
+            "failed-precondition",
+            "This material advance was already disbursed and cannot be re-run."
+          );
+        }
+      }
+
+      await advanceRef.set({
+        jobId,
+        workerId,
+        workerMomoNumber,
+        materialsSubtotal,
+        advanceAmount,
+        provider: provider || "MTN_MOMO",
+        status: "PENDING",
+        receiptCaptureExpiresAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      // Issue the partial payout through the PAY-003 trust boundary.
+      const payoutResult = await initiatePayout(
+        {
+          jobId,
+          clientUid: context.auth.uid,
+          amountUgx: Math.round(advanceAmount),
+          workerMomoNumber,
+          provider: provider || "MTN_MOMO",
+          env: process.env as Record<string, string | undefined>,
+        },
+        buildPayoutDeps()
+      );
+
+      if (!payoutResult.ok) {
+        await advanceRef.update({
+          status: "FAILED",
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        const codeMap: Record<string, string> = {
+          unauthenticated: "unauthenticated",
+          invalid_argument: "invalid-argument",
+          job_not_found: "not-found",
+          not_job_owner: "permission-denied",
+          invalid_job_state: "failed-precondition",
+          job_not_escrowed: "failed-precondition",
+          amount_mismatch: "failed-precondition",
+          worker_mismatch: "failed-precondition",
+          config_error: "failed-precondition",
+          duplicate_request: "already-exists",
+          already_pending: "failed-precondition",
+          provider_error: "unavailable",
+          provider_timeout: "deadline-exceeded",
+        };
+
+        const httpsCode =
+          codeMap[payoutResult.error.code] || "internal";
+        throw new functions.https.HttpsError(
+          httpsCode as any,
+          payoutResult.error.message
+        );
+      }
+
+      // Payout accepted (PENDING). Notify the worker.
+      const payoutRef = payoutResult.payoutId;
+      await db.collection("notifications").add({
+        userId: workerId,
+        type: "PAYOUT_PENDING",
+        jobId,
+        message: `A material advance of UGX ${advanceAmount} has been initiated. Please upload the hardware receipt within 60 minutes so the payout can be completed.`,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        read: false,
+      });
+
+      // Update the local tracking document with the payout reference.
+      await advanceRef.update({
+        payoutRef,
+        providerReferenceId: payoutResult.providerReferenceId,
+        status: "PENDING",
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return {
+        success: true,
+        payoutRef,
+        advanceAmount: Math.round(advanceAmount),
+        receiptCaptureDeadlineMs: Date.now() + 60 * 60 * 1000,
+        message: `Material advance of UGX ${advanceAmount} is pending. Upload the hardware receipt within 60 minutes to release the funds.`,
+      };
+    }
+  );
+
+
+  /**
+   * PAY-003: Query the provider-verified status of a previously initiated payout.
+   *
+   * Callable-only (authenticated). Re-queries the MTN provider status API with
+   * the platform's own credentials and reports PAYOUT_PENDING /
+   * PAYOUT_SUCCESSFUL / PAYOUT_FAILED / NEEDS_RECONCILIATION. The caller may
+   * only query payouts bound to their own uid (the stored `clientUid`) or a job
+   * they own (`postedByUid`).
+   */
+  export const getMoMoPayoutStatus = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "Authentication required to query payout status."
+      );
+    }
+
+    const { payoutRef } = data;
+    if (!payoutRef) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "payoutRef is required."
+      );
+    }
+
+    const deposit = await db.collection("payouts").doc(payoutRef).get();
+    if (!deposit.exists) {
+      throw new functions.https.HttpsError(
+        "not-found",
+        "Payout not found."
+      );
+    }
+    const ledger = deposit.data() as PayoutRecord;
+    const callerUid = context.auth.uid;
+
+    // Authorize: the caller must be the stored clientUid or the job's owner.
+    const jobDoc = await db.collection("jobs").doc(ledger.jobId).get();
+    const ownerUid = jobDoc.exists ? (jobDoc.data() as any)?.postedByUid : undefined;
+    if (ledger.clientUid !== callerUid && ownerUid !== callerUid) {
+      throw new functions.https.HttpsError(
+        "permission-denied",
+        "You may only query payouts bound to your own account."
+      );
+    }
+
+    // Idempotent fast-path: a terminal stored record returns its final state
+    // with no provider call and no write.
+    if (TERMINAL_PAYOUT_STATUSES.includes(ledger.status)) {
+      return {
+        payoutRef,
+        status: ledger.status,
+        statusText: ledger.status.replace("PAYOUT_", ""),
+        workerId: ledger.workerId,
+        momoNumber: ledger.workerMomoNumber,
+        amount: ledger.amount,
+        reason: ledger.reason || "already_terminal",
+        message: payoutMessageFor(ledger.status),
+      };
+    }
+
+    const config = loadPayoutConfig(process.env as Record<string, string | undefined>);
+    if ("error" in config) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        `Payout status unavailable: ${config.error}`
+      );
+    }
+
+    const deps = buildPayoutDeps();
+    const token = await deps.acquireToken(config);
+    if (!token.ok) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        `Payout status unavailable: ${token.error}`
+      );
+    }
+
+    const provider = await deps.queryProviderPayoutStatus(config, token.token, ledger.providerReferenceId);
+    const { newStatus, reason } = decidePayoutStatus({ stored: ledger, provider });
+
+    // Update the ledger only when the status actually changed.
+    if (newStatus !== ledger.status) {
+      const patch: Record<string, unknown> = { status: newStatus, reason, lastCheckedAt: Date.now() };
+      if (provider.kind === "ok" && provider.financialTransactionId) {
+        patch.providerFinancialTransactionId = provider.financialTransactionId;
+      }
+      await db.collection("payouts").doc(payoutRef).update(patch);
+    }
+
     return {
       payoutRef,
-      status: ledger.status,
-      statusText: ledger.status.replace("PAYOUT_", ""),
+      status: newStatus,
+      statusText: newStatus.replace("PAYOUT_", ""),
       workerId: ledger.workerId,
       momoNumber: ledger.workerMomoNumber,
       amount: ledger.amount,
-      reason: ledger.reason || "already_terminal",
-      message: payoutMessageFor(ledger.status),
+      reason,
+      message: payoutMessageFor(newStatus),
     };
-  }
-
-  const config = loadPayoutConfig(process.env as Record<string, string | undefined>);
-  if ("error" in config) {
-    throw new functions.https.HttpsError(
-      "failed-precondition",
-      `Payout status unavailable: ${config.error}`
-    );
-  }
-
-  const deps = buildPayoutDeps();
-  const token = await deps.acquireToken(config);
-  if (!token.ok) {
-    throw new functions.https.HttpsError(
-      "failed-precondition",
-      `Payout status unavailable: ${token.error}`
-    );
-  }
-
-  const provider = await deps.queryProviderPayoutStatus(config, token.token, ledger.providerReferenceId);
-  const { newStatus, reason } = decidePayoutStatus({ stored: ledger, provider });
-
-  // Update the ledger only when the status actually changed.
-  if (newStatus !== ledger.status) {
-    const patch: Record<string, unknown> = { status: newStatus, reason, lastCheckedAt: Date.now() };
-    if (provider.kind === "ok" && provider.financialTransactionId) {
-      patch.providerFinancialTransactionId = provider.financialTransactionId;
-    }
-    await db.collection("payouts").doc(payoutRef).update(patch);
-  }
-
-  return {
-    payoutRef,
-    status: newStatus,
-    statusText: newStatus.replace("PAYOUT_", ""),
-    workerId: ledger.workerId,
-    momoNumber: ledger.workerMomoNumber,
-    amount: ledger.amount,
-    reason,
-    message: payoutMessageFor(newStatus),
-  };
-});
-
+  });

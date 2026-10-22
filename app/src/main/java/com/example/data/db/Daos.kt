@@ -551,3 +551,30 @@ interface WalletWithdrawalDao {
     suspend fun clearAll()
 }
 
+/**
+ * AUDIT-A-SOS: Data access for the authoritative local SOS incident records.
+ */
+@Dao
+interface SosIncidentDao {
+    @Query("SELECT * FROM sos_incidents WHERE id = :incidentId LIMIT 1")
+    suspend fun getSosIncidentById(incidentId: String): SosIncidentEntity?
+
+    @Query("SELECT * FROM sos_incidents WHERE jobId = :jobId LIMIT 1")
+    suspend fun getSosIncidentByJobId(jobId: String): SosIncidentEntity?
+
+    @Query("SELECT * FROM sos_incidents WHERE status = 'ACTIVE' ORDER BY raisedAt DESC")
+    fun getActiveSosIncidents(): Flow<List<SosIncidentEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSosIncident(incident: SosIncidentEntity)
+
+    @Query("UPDATE sos_incidents SET status = :status, acknowledgedAt = :acknowledgedAt, clearedAt = :clearedAt, clearedBy = :clearedBy WHERE id = :id")
+    suspend fun updateSosIncidentStatus(
+        id: String,
+        status: String,
+        acknowledgedAt: Long,
+        clearedAt: Long,
+        clearedBy: String?
+    )
+}
+

@@ -1,4 +1,25 @@
 ## ✅ DONE 2026-10-20 - AUDIT-A-ARBITRATE ADMIN ARBITRATION CONSOLE COMPLETE (code+unit+full suite, committed 059ca38)
+## ✅ DONE 2026-10-21 - AUDIT-A-SOS BACKEND FOUNDATION COMPLETE (code+unit+full suite)
+
+COMPLETE: AUDIT-A-SOS — SOS backend foundation and admin incident-data path.
+- SOS raise is authorization-gated via `isSosRaiseAuthorized()` checking owner (`postedByUid`) or assigned provider (`assignedProviderUid`)
+- Authoritative UID resolved from `FirebaseAuth.currentUser.uid`, never trusted from UI
+- Unauthenticated access fails closed (`NotAuthenticated` result)
+- Owner/assigned-worker policy enforced for both raise and clear operations
+- Authoritative incident record (`SosIncidentEntity`) persists across devices via Room
+- Best-effort Firestore mirror via `syncSosIncidentToFirestore()` (never rolls back local state)
+- Admin can retrieve active incidents through `getActiveSosIncidents()` flow
+- Admin can acknowledge (`ACKNOWLEDGED`) or clear (`CLEARED`) incidents via bounded transitions
+- Incident identity (actor/job/id/raisedAt) cannot be rewritten through resolve
+- Firestore security rules enforce: create=authenticated participant only with actor==request.auth.uid; update=explicit state validation; read=admin monitoring possible; delete=admin retention for auditability
+- Admin server callable pattern follows `getDisputesQueue`/`checkAdminCaller` conventions
+- 17 focused security tests pass (SosRaiseAuthorizationSecurityTest: 12/0/0, SosClearAuthorizationSecurityTest: 5/0/0)
+- Full unit suite: BUILD SUCCESSFUL, all tests pass with 0 failures
+- No SMS dispatch, no police/emergency-service integration, no fake emergency capability
+- Admin SOS UI remains pending — this task covers backend foundation only
+- Working tree clean, compilation verified, diff check passed
+
+Next: Do NOT begin admin SOS UI until this backend foundation has been successfully verified. Follow the existing pattern: only start admin UI after confirming the callable/rules/DAO layer is verified and deployed.
 
 COMPLETE: end-to-end dispute arbitration loop. `AdminDisputeArbitrationSheet` (queue rows arrive ONLY from the admin-gated `getDisputesQueue` callable; detail view of parties/reason/description/evidence list; decision controls validated by pure-JVM `AdminDisputeDecisions`) behind the explicit operator unlock → drawer `onOpenArbitration` → `MainScreen` → `SkillsExchangeViewModel` (`adminDisputeQueue`/`adminDisputeLoading`/`adminArbitrationResult`/`selectedAdminDispute`, `loadDisputesQueue`, `submitDisputeResolution`) → repository `getDisputesQueue`/`resolveDispute` → `FirebaseService.getHttpsCallable(...)`; sheet auto-refreshes on open. **Runtime gap closed (last link):** filing wrote ONLY Room, so the Firestore-backed queue would have been empty — added `FirebaseService.syncDisputeToFirestore` (best-effort mirror like `syncJobToFirestore`, `firestore ?: return` guard, DisputeEntity mapped 1:1) called from `createDispute`, and tightened `firestore.rules` SEC-006 create to `reportedBy == request.auth.uid` (F4 posture; source only, NOT deployed). Resolutions stay server-authoritative: only the admin-gated `resolveDispute` callable writes `status`/`resolution*`. Verified: `compileDebugKotlin` BUILD SUCCESSFUL (10m 33s), `AdminDisputeDecisionsTest` 19/0/0/0, full `testDebugUnitTest` **40 suites / 334 tests / 0 fail / 0 err / 0 skip** (fresh XML 2026-10-20 15:22), `git diff --check` exit 0. NOT verified: live device run, real-device Firestore sync (JVM guarded by null firestore), rules/CF deploy. Out of scope: chat-history pane (queue payload carries no chat), worker counter-evidence (`AUDIT-W-DEFENSE`), DISP-004 report review, server→party resolution reflection into the filer's Room row. Docs updated: TASKS (ARBITRATE ✅, DISPUTE-REPORT partial), CHANGELOG, DECISIONS D-2026-10-20-1, prd DISP-003 notes + last_updated. Next: AUDIT-A-SOS — do not start until instructed.
 

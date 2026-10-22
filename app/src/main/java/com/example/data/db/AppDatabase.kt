@@ -25,9 +25,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         JobStatusAuditEntity::class,
         ReportEntity::class,
         WalletLedgerEntity::class,
-        WalletWithdrawalEntity::class
+        WalletWithdrawalEntity::class,
+        SosIncidentEntity::class
     ],
-    version = 22,
+    version = 23,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -48,12 +49,12 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun reportDao(): ReportDao
     abstract fun walletLedgerDao(): WalletLedgerDao
     abstract fun walletWithdrawalDao(): WalletWithdrawalDao
+    abstract fun sosIncidentDao(): SosIncidentDao
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
-        // DB-001: Proper migrations instead of destructive fallback
         val MIGRATION_11_12 = object : Migration(11, 12) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 // DISP-001: Create disputes table
@@ -489,6 +490,52 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * AUDIT-A-SOS: sos_incidents table (authoritative local incident record).
+         * Additive only — no existing table or column is altered.
+         */
+        val MIGRATION_22_23 = object : Migration(22, 23) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS sos_incidents (" +
+                        "id TEXT PRIMARY KEY NOT NULL, " +
+                        "jobId TEXT NOT NULL UNIQUE, " +
+                        "postedByUid TEXT NOT NULL, " +
+                        "assignedProviderId TEXT, " +
+                        "status TEXT NOT NULL DEFAULT 'ACTIVE', " +
+                        "latitude REAL NOT NULL DEFAULT 0.0, " +
+                        "longitude REAL NOT NULL DEFAULT 0.0, " +
+                        "district TEXT NOT NULL DEFAULT '', " +
+                        "raisedAt INTEGER NOT NULL DEFAULT 0, " +
+                        "acknowledgedAt INTEGER NOT NULL DEFAULT 0, " +
+                        "clearedAt INTEGER NOT NULL DEFAULT 0, " +
+                        "clearedBy TEXT, " +
+                        "firestoreMirrored INTEGER NOT NULL DEFAULT 0, " +
+                        "FOREIGN KEY(jobId) REFERENCES job_posts(id) ON DELETE CASCADE)"
+                )
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_sos_incidents_jobId ON sos_incidents(jobId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_sos_incidents_status ON sos_incidents(status)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_sos_incidents_postedByUid ON sos_incidents(postedByUid)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_sos_incidents_assignedProviderId ON sos_incidents(assignedProviderId)")
+            }
+        }
+
+        /**
+         * AUDIT-A-SOS: additive migrations for the canonical provider -> Firebase UID
+         * authorization model (H7). Additive only — no existing column is altered or dropped.
+         */
+        val MIGRATION_23_24 = object : Migration(23, 24) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE job_posts ADD COLUMN assignedProviderUid TEXT")
+            }
+        }
+
+        val MIGRATION_24_25 = object : Migration(24, 25) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE sos_incidents ADD COLUMN assignedProviderUid TEXT")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -496,7 +543,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "skills_exchange_database"
                 )
-                    .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22)
+                    .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25)
                     .build()
                 INSTANCE = instance
                 instance

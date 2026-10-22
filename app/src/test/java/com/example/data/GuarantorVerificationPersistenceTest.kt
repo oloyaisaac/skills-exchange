@@ -374,9 +374,10 @@ class GuarantorVerificationPersistenceTest {
         var schemaVersion = 0L
         forEachRow("PRAGMA user_version") { cursor -> schemaVersion = cursor.getLong(0) }
         // C2-2 Fix #4 (F4) bumped the schema to v20 and Fix #5 (F5) to v21 (chat sender identity);
-        // AUDIT-W-CASHOUT later bumped it to v22 (wallet ledger + worker withdrawals).
+        // AUDIT-W-CASHOUT later bumped it to v22 (wallet ledger + worker withdrawals); AUDIT-A-SOS
+        // bumped it to v23 (sos_incidents table).
         // The MIGRATION_18_19 assertions above are unchanged and still must hold.
-        assertEquals("Room must build the v22 schema", 22L, schemaVersion)
+        assertEquals("Room must build the v23 schema", 23L, schemaVersion)
     }
 
     @Test
@@ -388,10 +389,11 @@ class GuarantorVerificationPersistenceTest {
 
         var schemaVersion = 0L
         forEachRow("PRAGMA user_version") { cursor -> schemaVersion = cursor.getLong(0) }
-        // AUDIT-W-CASHOUT later bumped the schema to v22 (wallet ledger + worker withdrawals).
-        // This test asserts the F5 migration itself — its senderId checks below — so only the
-        // live schema version moves forward. MIGRATION_20_21's own start/end stay pinned at 20 -> 21.
-        assertEquals("Room must build the v22 schema", 22L, schemaVersion)
+        // AUDIT-W-CASHOUT later bumped it to v22 (wallet ledger + worker withdrawals); AUDIT-A-SOS
+        // bumped it to v23 (sos_incidents table). This test asserts the F5 migration itself — its
+        // senderId checks below — so only the live schema version moves forward. MIGRATION_20_21's
+        // own start/end stay pinned at 20 -> 21.
+        assertEquals("Room must build the v23 schema", 23L, schemaVersion)
 
         var senderIdColumn: String? = null
         forEachRow("PRAGMA table_info(chat_messages)") { cursor ->
@@ -413,10 +415,11 @@ class GuarantorVerificationPersistenceTest {
         var schemaVersion = 0L
         forEachRow("PRAGMA user_version") { cursor -> schemaVersion = cursor.getLong(0) }
         // C2-2 Fix #5 (F5) later bumped the schema to v21 (chat sender identity) and AUDIT-W-CASHOUT
-        // to v22 (wallet ledger + worker withdrawals). This test asserts the F4 migration itself —
-        // its postedByUid checks below — so only the live schema version moves forward. The
-        // migration's own start/end versions stay pinned at 19 -> 20.
-        assertEquals("Room must build the current v22 schema", 22L, schemaVersion)
+        // to v22 (wallet ledger + worker withdrawals); AUDIT-A-SOS bumped it to v23 (sos_incidents
+        // table). This test asserts the F4 migration itself — its postedByUid checks below — so
+        // only the live schema version moves forward. The migration's own start/end versions stay
+        // pinned at 19 -> 20.
+        assertEquals("Room must build the current v23 schema", 23L, schemaVersion)
 
         var postedByUidColumn: String? = null
         forEachRow("PRAGMA table_info(job_posts)") { cursor ->

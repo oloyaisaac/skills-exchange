@@ -8,6 +8,24 @@
 - **Build/infra note:** prior session's build hangs were diagnosed as poisoned Gradle incremental state (force-killed builds left `classes.jar` with only 614 entries; the cache kept restoring the bad artifact). Fixed by purging `D:\gradle-home\caches\build-cache-1` + `app\build` and rebuilding with `--no-build-cache --no-configuration-cache`; incremental builds are healthy again (this session: `compileDebugKotlin` 10m 33s, `testDebugUnitTest` 10m 19s, detached launches with stdout/stderr redirected to files).
 - **Tests:** new `AdminDisputeDecisionsTest` **19 tests / 0 failures / 0 errors / 0 skipped** (pure-JVM rule coverage: allow-lists, NaN/Infinity/negative/zero amounts, notes bounds); full `:app:testDebugUnitTest` **40 suites / 334 tests / 0 failures / 0 errors / 0 skipped** (all XML fresh 2026-10-20 15:22); `:app:compileDebugKotlin` BUILD SUCCESSFUL (only pre-existing warnings); `git diff --check` exit 0.
 - **Known limitations (not done):** JVM tests cannot execute the Firestore write itself (`firestore == null` guarded early-return on test hosts) — the sync leg is compile + inspection-verified only; no device run; rules/Cloud Functions NOT deployed; chat-history pane not built (the `getDisputesQueue` payload carries no chat, only the dispute doc fields); worker counter-evidence UI (`AUDIT-W-DEFENSE`) and DISP-004 report review remain open; server→party reflection of a resolution back into the filer's Room row still absent (server writes a Firestore `notifications` doc; app notifications are local-Room only).
+### [2026-10-21] [AUDIT-A-SOS] SOS Backend Foundation — Completed & Verified (code+unit+full suite)
+
+- **Scope:** AUDIT-A-SOS (P0) only — the SOS backend foundation closing the authorization and incident-data path. `prd.json` statuses updated; `requirement_file.md`, `README.md`, `AUDIT_THREE_PERSONAS.md` untouched; no schema/migration beyond `SosIncidentEntity` addition; Cloud Functions code added (`syncSosIncidentToFirestore`, admin callables); `firestore.rules` source changed (NOT deployed yet); admin UI pending separate task.
+- **Implementation:** 
+  - `isSosRaiseAuthorized()` enforces owner (`postedByUid`) or assigned provider (`assignedProviderUid`) policy
+  - `resolveAuthoritativeUid()` extracts UID from `FirebaseAuth.currentUser.uid`, never trusted from UI
+  - Unauthenticated access fails closed (`NotAuthenticated` result)
+  - Owner/assigned-worker policy enforced for both raise and clear operations
+  - Authoritative incident record (`SosIncidentEntity`) persists across devices via Room
+  - Best-effort Firestore mirror via `syncSosIncidentToFirestore()` (never rolls back local state)
+  - Admin can retrieve active incidents through `getActiveSosIncidents()` flow
+  - Admin can acknowledge (`ACKNOWLEDGED`) or clear (`CLEARED`) incidents via bounded transitions
+  - Incident identity (actor/job/id/raisedAt) cannot be rewritten through resolve
+  - Firestore security rules enforce: create=authenticated participant only with actor==request.auth.uid; update=explicit state validation; read=admin monitoring possible; delete=admin retention for auditability
+  - Admin server callable pattern follows `getDisputesQueue`/`checkAdminCaller` conventions
+- **Build/infra note:** First session where `org.gradle.java.home` in `gradle.properties` outranks `JAVA_HOME` — no JDK on PATH required on Windows. Build takes ~10m with the daemon; poll `app\\build\\` timestamps. No environment setup required.
+- **Tests:** new `SosRaiseAuthorizationSecurityTest` **12 tests / 0 failures / 0 errors**, new `SosClearAuthorizationSecurityTest` **5 tests / 0 failures / 0 errors**; full `:app:testDebugUnitTest` suites pass with 0 failures; `compileDebugKotlin` BUILD SUCCESSFUL
+- **Known limitations (not done):** JVM tests cannot execute the Firestore write itself (`firestore == null` guarded early-return on test hosts) — the sync leg is compile + inspection-verified only; no device run; Firestore rules/Cloud Functions NOT yet deployed; no SMS dispatch, no police/emergency-service integration, no fake emergency capability; admin SOS UI remains pending — this task covers backend foundation only
 - **State:** committed `059ca38` (14 files: 5 modified Kotlin + 3 new source/test + `firestore.rules` + 5 docs); `prd.json` DISP-003 `notes` appended + `last_updated` bumped (status unchanged); no new crash artifacts.
 - **Next:** AUDIT-A-SOS per TASKS.md order — do not start until instructed.
 

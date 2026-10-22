@@ -201,6 +201,22 @@ data class JobPostEntity(
     val status: String, // Requested, Accepted, In Progress, Review, Completed
     val assignedProviderId: String?,
     val assignedProviderName: String?,
+    /**
+     * Canonical assigned-provider identity for authorization (H7 / AUDIT-A-SOS).
+     *
+     * The Firebase Auth UID of the account that is assigned to this job. This is the ONLY
+     * field that may be compared against [FirebaseAuth.currentUser.uid] when deciding
+     * "may this account raise an emergency SOS on / stand down this job's flag". It is set by
+     * the assignment flow and is stable for the lifetime of the job; it is never derived
+     * from the display text, the newest Room row, or a provider-catalog record id.
+     *
+     * [assignedProviderId] is the row-level foreign key into [ServiceProviderEntity] and is
+     * left on the job only for catalog joins (logs, feed labels, analytics). It is
+     * DISPLAY-ONLY and must NEVER be compared to a uid — a catalog id and an account uid are
+     * different identity classes, and comparing them is the identity-semantics bug this field
+     * exists to eliminate.
+     */
+    val assignedProviderUid: String? = null,
     val createdTimestamp: Long,
     val estimatedHours: Double,
     val materialsCost: Double,
@@ -240,6 +256,61 @@ data class JobPostEntity(
     val recurringNegotiatedRate: Double = 0.0, // Worker's proposed rate for recurring contract
     val recurringProposalStatus: String = "NONE" // "NONE", "PENDING", "ACCEPTED", "REJECTED"
 )
+
+/**
+ * AUDIT-A-SOS: Authoritative local record of an emergency SOS incident raised on a job.
+ *
+ * Room is the source of truth for the incident lifecycle; Firestore (`sosIncidents`) is a
+ * best-effort mirror consumed by the admin-gated `getSosQueue` callable. Status is one of
+ * ACTIVE / ACKNOWLEDGED / CLEARED only.
+ */
+@Entity(
+    tableName = "sos_incidents",
+    foreignKeys = [
+        ForeignKey(
+            entity = JobPostEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["jobId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [
+        Index(value = ["jobId"], unique = true),
+        Index(value = ["status"]),
+        Index(value = ["postedByUid"]),
+        Index(value = ["assignedProviderId"])
+    ]
+)
+data class SosIncidentEntity(
+    @PrimaryKey val id: String, // "sos_$jobId"
+    val jobId: String,
+    val postedByUid: String,
+    val assignedProviderId: String?,
+    /**
+     * Canonical assigned-provider identity for cross-device authorization (H7 / AUDIT-A-SOS).
+     *
+     * The Firebase Auth UID of the account that is assigned to the underlying job. It is the
+     * value mirrored to `sosIncidents.assignedProviderUid` and compared against
+     * `request.auth.uid` in the Firestore read rule. It is never derived from the display
+     * text, the newest Room row, or the provider-catalog record id.
+     */
+    val assignedProviderUid: String? = null,
+    val status: String = "ACTIVE", // ACTIVE / ACKNOWLEDGED / CLEARED
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val district: String = "",
+    val raisedAt: Long = System.currentTimeMillis(),
+    val acknowledgedAt: Long = 0,
+    val clearedAt: Long = 0,
+    val clearedBy: String? = null,
+    val firestoreMirrored: Boolean = false
+) {
+    companion object {
+        const val STATUS_ACTIVE = "ACTIVE"
+        const val STATUS_ACKNOWLEDGED = "ACKNOWLEDGED"
+        const val STATUS_CLEARED = "CLEARED"
+    }
+}
 
 @Entity(
     tableName = "chat_messages",

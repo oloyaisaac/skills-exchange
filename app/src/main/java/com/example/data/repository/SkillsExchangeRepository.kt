@@ -828,40 +828,6 @@ class SkillsExchangeRepository(
         )
     }
 
-    suspend fun triggerSosAlert(jobId: String) {
-        db.jobPostDao().setSosAlert(jobId, true)
-        db.chatMessageDao().insertMessage(
-            ChatMessageEntity(
-                id = "msg_${System.currentTimeMillis()}",
-                jobId = jobId,
-                senderName = "🚨 EMERGENCY SOS",
-                isFromUser = false,
-                message = "🚨 EMERGENCY PANIC BUTTON TRIGGERED! Live GPS location & job telemetry broadcasted to local emergency contacts and platform security.",
-                timestampText = "Just now",
-                isSystemNotification = true
-            )
-        )
-
-        // C2 / C2-2 Fix #3 (F7): the SOS notification is attributed to the AUTHENTICATED Firebase
-        // UID's own row. The newest Room row is not an identity, so a device that ever held another
-        // account can no longer file this alert under somebody else's profile — and when Firebase
-        // has no authenticated profile the caller aborts instead of substituting a placeholder.
-        // NOTE: the demo-placeholder check is inline (not via the ViewModel companion) to keep
-        // the data layer decoupled from the UI layer.
-        val currentUserId = authenticatedProfileOnce()?.id ?: return
-        createNotification(
-            NotificationEntity(
-                id = "notif_${System.currentTimeMillis()}_sos",
-                userId = currentUserId,
-                type = "SOS_EVENT",
-                title = "Emergency SOS Triggered",
-                body = "Your emergency alert has been sent. Help is on the way.",
-                jobId = jobId,
-                createdAt = System.currentTimeMillis()
-            )
-        )
-    }
-
     suspend fun updatePaymentChannel(jobId: String, channel: String, phone: String) {
         db.jobPostDao().updatePaymentChannel(jobId, channel, phone)
     }
@@ -1594,6 +1560,42 @@ class SkillsExchangeRepository(
             return job.isSosTriggered
         }
 
+        /**
+         * AUDIT-A-SOS: SOS **raise** authorization policy -- may [actorUid] raise an emergency SOS
+         * on [job]?
+         *
+         * Raising the panic flag is an emergency action, but it mutates somebody's job and
+         * broadcasts their location, so it is participant-gated and fail-closed, mirroring
+         * [isSosClearAuthorized]:
+         *
+         *  1. The actor must be a real, authoritative uid (F7 rule); synthetic/blank/padded ids deny.
+         *  2. The actor must be a participant of the job: the owner (`postedByUid`) or the assigned
+         *     provider (`assignedProviderId`). A stranger can never trigger another account's SOS.
+         *  3. A legacy job with a null `postedByUid` belongs to nobody and may be raised on by
+         *     nobody.
+         *
+         * The job is always loaded by the secured boundary from its own id, so the caller can never
+         * assert an ownership relationship of its choosing.
+         */
+        fun isSosRaiseAuthorized(
+            actorUid: String?,
+            job: JobPostEntity
+        ): Boolean {
+            // F7/F4: only a real, authoritative uid is an identity; synthetic/blank/padded ids deny.
+            val uid = resolveAuthoritativeUid(actorUid) ?: return false
+            // A legacy job with a null postedByUid belongs to nobody.
+            if (job.postedByUid == null) return false
+            // Participant gate: owner OR assigned provider.
+            val isOwner = job.postedByUid == uid
+            // The assigned-provider gate uses assignedProviderUid (the assigned account's
+            // Firebase Auth UID). assignedProviderId is the service_providers catalog foreign
+            // key (a display/join id, e.g. "prov_1") — DISPLAY-ONLY, never an authorization
+            // key. Comparing an account uid against it is the identity-semantics defect this
+            // gate no longer contains.
+            val isAssignedProvider = job.assignedProviderUid == uid
+            return isOwner || isAssignedProvider
+        }
+
         val initialProviders = listOf(
             ServiceProviderEntity(
                 id = "prov_1",
@@ -2006,26 +2008,122 @@ class SkillsExchangeRepository(
         return advanceAmount
     }
 
-    suspend fun triggerEmergencySos(jobId: String, latitude: Double, longitude: Double, district: String) {
+    suspend fun triggerEmergencySos(jobId: String, latitude: Double, longitude: Double, district: String): SosRaiseResult {
+        val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+            ?: return SosRaiseResult.NotAuthenticated
+        return raiseSos(jobId, latitude, longitude, district, actorUid, sendSms = true)
+    }
+
+    /**
+     * AUDIT-A-SOS: internal test seam — raises an SOS with an explicitly injected actor UID
+     * instead of resolving `FirebaseAuth.currentUser.uid`. Mirrors `submitQuoteInternal`.
+     */
+    internal suspend fun triggerEmergencySosInternal(
+        jobId: String,
+        latitude: Double,
+        longitude: Double,
+        district: String,
+        actorUid: String
+    ): SosRaiseResult = raiseSos(jobId, latitude, longitude, district, actorUid, sendSms = false)
+
+    suspend fun triggerSosAlert(jobId: String): SosRaiseResult {
+        val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+            ?: return SosRaiseResult.NotAuthenticated
+        val job = db.jobPostDao().getJobById(jobId) ?: return SosRaiseResult.JobNotFound
+        return raiseSos(jobId, 0.0, 0.0, job.district, actorUid, sendSms = false)
+    }
+
+    /**
+     * AUDIT-A-SOS: internal test seam — raises an SOS alert with an explicitly injected actor UID.
+     */
+    internal suspend fun triggerSosAlertInternal(jobId: String, actorUid: String): SosRaiseResult {
+        val job = db.jobPostDao().getJobById(jobId) ?: return SosRaiseResult.JobNotFound
+        return raiseSos(jobId, 0.0, 0.0, job.district, actorUid, sendSms = false)
+    }
+
+    /**
+     * AUDIT-A-SOS: shared secured raise core. Identity (who), authorization (may they) and the
+     * authoritative Room incident record are decided here; the Firestore mirror is best-effort
+     * and never rolls back the local record.
+     */
+    private suspend fun raiseSos(
+        jobId: String,
+        latitude: Double,
+        longitude: Double,
+        district: String,
+        actorUid: String,
+        sendSms: Boolean
+    ): SosRaiseResult {
+        val job = db.jobPostDao().getJobById(jobId) ?: return SosRaiseResult.JobNotFound
+        if (!isSosRaiseAuthorized(actorUid, job)) return SosRaiseResult.NotAuthorized
+
         db.jobPostDao().setSosAlert(jobId, true)
+        db.chatMessageDao().insertMessage(
+            ChatMessageEntity(
+                id = "msg_${System.currentTimeMillis()}",
+                jobId = jobId,
+                senderName = "🚨 EMERGENCY SOS",
+                isFromUser = false,
+                message = "🚨 EMERGENCY PANIC BUTTON TRIGGERED! Live GPS location & job telemetry broadcasted to local emergency contacts and platform security.",
+                timestampText = "Just now",
+                isSystemNotification = true
+            )
+        )
 
-        // C2-2 Fix #3 (F7): the details broadcast to emergency contacts must belong to the
-        // AUTHENTICATED account only — never the newest Room row, never a fabricated placeholder.
-        // With no authenticated profile the SMS is not dispatched at all (the in-app SOS flag set
-        // above is still raised): sending a stranger's number, or a made-up "+256 700 000 000", to
-        // responders is worse than sending none.
-        val profile = resolveSosContactProfile(
-            firebaseUid = firebaseService.getCurrentUser()?.uid,
-            row = authenticatedProfileOnce()
-        ) ?: return
-
-        smsNotificationService.dispatchEmergencySosAlert(
-            workerPhone = profile.phoneNumber,
-            workerName = profile.fullName.ifBlank { "Authenticated user" },
+        // Authoritative local incident record (Room is the source of truth).
+        val incidentDistrict = district.takeIf { it.isNotBlank() } ?: job.district
+        val incident = SosIncidentEntity(
+            id = "sos_$jobId",
+            jobId = jobId,
+            postedByUid = job.postedByUid ?: "",
+            assignedProviderId = job.assignedProviderId,
+            assignedProviderUid = job.assignedProviderUid,
+            status = SosIncidentEntity.STATUS_ACTIVE,
             latitude = latitude,
             longitude = longitude,
-            district = district
+            district = incidentDistrict,
+            raisedAt = System.currentTimeMillis()
         )
+        db.sosIncidentDao().insertSosIncident(incident)
+        // Best-effort mirror — a network failure must never roll back the local incident.
+        firebaseService.syncSosIncidentToFirestore(incident)
+
+        if (sendSms) {
+            val currentUserId = authenticatedProfileOnce()?.id
+            if (currentUserId != null) {
+                createNotification(
+                    NotificationEntity(
+                        id = "notif_${System.currentTimeMillis()}_sos",
+                        userId = currentUserId,
+                        type = "SOS_EVENT",
+                        title = "Emergency SOS Triggered",
+                        body = "Your emergency alert has been sent. Help is on the way.",
+                        jobId = jobId,
+                        createdAt = System.currentTimeMillis()
+                    )
+                )
+                // C2-2 Fix #3 (F7): the details broadcast to emergency contacts must belong to the
+                // AUTHENTICATED account only — never the newest Room row, never a fabricated
+                // placeholder. With no authenticated profile the SMS is not dispatched at all: the
+                // in-app SOS flag and incident are still raised, but a stranger's number (or a
+                // made-up "+256 700 000 000") is never sent to responders.
+                val profile = resolveSosContactProfile(
+                    firebaseUid = firebaseService.getCurrentUser()?.uid,
+                    row = authenticatedProfileOnce()
+                )
+                if (profile != null) {
+                    smsNotificationService.dispatchEmergencySosAlert(
+                        workerPhone = profile.phoneNumber,
+                        workerName = profile.fullName.ifBlank { "Authenticated user" },
+                        latitude = latitude,
+                        longitude = longitude,
+                        district = district
+                    )
+                }
+            }
+        }
+
+        return SosRaiseResult.Success
     }
 
     /**
@@ -2065,6 +2163,51 @@ class SkillsExchangeRepository(
             )
         )
         return SosClearResult.Success
+    }
+
+
+    // ==================== H7 / AUDIT-A-SOS: SOS Incident Methods ====================
+
+    /** ADMIN DESK queue contents, straight from the authoritative Room record. */
+    fun getActiveSosIncidents(): Flow<List<SosIncidentEntity>> =
+        db.sosIncidentDao().getActiveSosIncidents()
+
+    /**
+     * ADMIN DESK: acknowledge [incidentId] as reviewed. The server callable enforces the
+     * admin claim; this boundary is the client-side fail-closed gate. Returns true only
+     * after the Room record is actually transitioned to ACKNOWLEDGED.
+     */
+    suspend fun acknowledgeSos(incidentId: String, acknowledgedBy: String): Boolean {
+        val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid) ?: return false
+        val incident = db.sosIncidentDao().getSosIncidentById(incidentId) ?: return false
+        if (incident.status != SosIncidentEntity.STATUS_ACTIVE) return false
+        db.sosIncidentDao().updateSosIncidentStatus(
+            incidentId,
+            SosIncidentEntity.STATUS_ACKNOWLEDGED,
+            System.currentTimeMillis(),
+            0L,
+            actorUid
+        )
+        return true
+    }
+
+    /**
+     * ADMIN DESK: resolve [incidentId] as complete. The server callable enforces the
+     * admin claim; this boundary is the client-side fail-closed gate. Returns true only
+     * after the Room record is actually transitioned to CLEARED.
+     */
+    suspend fun resolveSosIncident(incidentId: String, resolvedBy: String): Boolean {
+        val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid) ?: return false
+        val incident = db.sosIncidentDao().getSosIncidentById(incidentId) ?: return false
+        if (incident.status != SosIncidentEntity.STATUS_ACTIVE) return false
+        db.sosIncidentDao().updateSosIncidentStatus(
+            incidentId,
+            SosIncidentEntity.STATUS_CLEARED,
+            0L,
+            System.currentTimeMillis(),
+            actorUid
+        )
+        return true
     }
 
     // ==================== DISP-001: Dispute Methods ====================
@@ -2156,6 +2299,17 @@ class SkillsExchangeRepository(
         object NotAuthenticated : SosClearResult()
         object JobNotFound : SosClearResult()
         object NotAuthorized : SosClearResult()
+    }
+
+    /**
+     * Outcome of a secured SOS raise. Discriminated so the caller can surface a precise,
+     * honest message and tests can assert each failure path without a persisted side effect.
+     */
+    sealed class SosRaiseResult {
+        object Success : SosRaiseResult()
+        object NotAuthenticated : SosRaiseResult()
+        object JobNotFound : SosRaiseResult()
+        object NotAuthorized : SosRaiseResult()
     }
 
     /**

@@ -8,6 +8,7 @@ import com.example.data.db.DisputeEntity
 import com.example.data.db.GuarantorEntity
 import com.example.data.db.JobPostEntity
 import com.example.data.db.ServiceProviderEntity
+import com.example.data.db.SosIncidentEntity
 import com.example.data.db.UserProfileEntity
 import com.example.util.GuarantorValidators
 import com.google.firebase.FirebaseApp
@@ -558,6 +559,40 @@ class FirebaseService(private val context: Context? = null) {
             Log.d("FirebaseService", "Successfully synced dispute ${dispute.id} to Firestore")
         } catch (e: Exception) {
             Log.d("FirebaseService", "Firestore sync dispute notice: ${e.message}")
+        }
+    }
+
+    /**
+     * AUDIT-A-SOS: mirrors a locally-filed SOS incident into the Firestore `sosIncidents`
+     * collection that the admin-gated `getSosQueue` callable reads. Room remains the source of
+     * truth; this write is best-effort and never rolls back the local incident.
+     */
+    suspend fun syncSosIncidentToFirestore(incident: SosIncidentEntity) {
+        val db = firestore ?: return
+        try {
+            val incidentData = mapOf(
+                "id" to incident.id,
+                "jobId" to incident.jobId,
+                "postedByUid" to incident.postedByUid,
+                "assignedProviderId" to incident.assignedProviderId,
+                "assignedProviderUid" to incident.assignedProviderUid,
+                "status" to incident.status,
+                "latitude" to incident.latitude,
+                "longitude" to incident.longitude,
+                "district" to incident.district,
+                "raisedAt" to incident.raisedAt,
+                "acknowledgedAt" to incident.acknowledgedAt,
+                "clearedAt" to incident.clearedAt,
+                "clearedBy" to incident.clearedBy,
+                "firestoreMirrored" to incident.firestoreMirrored
+            )
+            db.collection("sosIncidents")
+                .document(incident.id)
+                .set(incidentData)
+                .await()
+            Log.d("FirebaseService", "Successfully synced sos incident ${incident.id} to Firestore")
+        } catch (e: Exception) {
+            Log.d("FirebaseService", "Firestore sync sos incident notice: ${e.message}")
         }
     }
 

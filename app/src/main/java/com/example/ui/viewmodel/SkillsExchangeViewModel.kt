@@ -12,6 +12,7 @@ import com.example.data.db.ChatMessageEntity
 import com.example.data.db.DisputeEntity
 import com.example.data.db.DisputeReason
 import com.example.data.db.DisputeStatus
+import com.example.data.db.SosIncidentEntity
 import com.example.data.db.JobPostEntity
 import com.example.data.db.ServiceProviderEntity
 import com.example.data.db.SkillEndorsementEntity
@@ -831,11 +832,61 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         sosClearState.value = SosClearState.Idle
     }
 
+    // --- H7 / AUDIT-A-SOS: admin incident-monitoring queue (backend foundation, no UI yet) ---
+    private val _adminSosLoading = MutableStateFlow(false)
+    val adminSosLoading: StateFlow<Boolean> = _adminSosLoading.asStateFlow()
+
+    private val _adminSosQueue = MutableStateFlow<List<SosIncidentEntity>>(emptyList())
+    val adminSosQueue: StateFlow<List<SosIncidentEntity>> = _adminSosQueue.asStateFlow()
+
+    private val _adminSosError = MutableStateFlow<String?>(null)
+    val adminSosError: StateFlow<String?> = _adminSosError.asStateFlow()
+
     /**
-     * H7: surfaces a client-side pre-submission dispute failure (e.g. no assigned
-     * worker) through the same [DisputeSubmissionState] channel the sheet already
-     * observes, so the dialog shows a visible error instead of silently dropping
-     * the tap. Mirrors [setRatingError]. Never writes any dispute row.
+     * ADMIN DESK: refresh the active-SOS queue from the authoritative Room record.
+     * The Firestore mirror is best-effort; Room is the source of truth for the UI.
+     */
+    fun loadAdminSosQueue() {
+        viewModelScope.launch {
+            _adminSosLoading.value = true
+            _adminSosError.value = null
+            try {
+                _adminSosQueue.value = repository.getActiveSosIncidents().first()
+            } catch (t: Throwable) {
+                _adminSosError.value = "Could not load incident queue."
+            } finally {
+                _adminSosLoading.value = false
+            }
+        }
+    }
+
+    /**
+     * ADMIN DESK: acknowledge the incident as reviewed.
+     * Server callable enforces the admin claim; this boundary is the client-side
+     * fail-closed gate (unauthenticated callers are refused).
+     */
+    fun acknowledgeSosIncident(incidentId: String) {
+        viewModelScope.launch {
+            val actorUid = currentAuthenticatedUid() ?: return@launch
+            val ok = repository.acknowledgeSos(incidentId, actorUid)
+            if (ok) loadAdminSosQueue() else _adminSosError.value = "Could not acknowledge incident (not found or already resolved)."
+        }
+    }
+
+    /**
+     * ADMIN DESK: resolve the incident as complete.
+     * Server callable enforces the admin claim.
+     */
+    fun resolveSosIncident(incidentId: String) {
+        viewModelScope.launch {
+            val actorUid = currentAuthenticatedUid() ?: return@launch
+            val ok = repository.resolveSosIncident(incidentId, actorUid)
+            if (ok) loadAdminSosQueue() else _adminSosError.value = "Could not resolve incident (not found or not authorized)."
+        }
+    }
+
+    /**
+     * H7: surfaces a client-side pre-submission dispute failure
      */
     fun setDisputeError(message: String) {
         disputeSubmissionState.value = DisputeSubmissionState.Error(message)
