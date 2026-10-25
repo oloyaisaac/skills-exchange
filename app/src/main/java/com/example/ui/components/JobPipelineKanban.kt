@@ -35,7 +35,20 @@ fun JobPipelineKanban(
     onOpenEscrowSheet: (JobPostEntity) -> Unit,
     onOpenQuoteComparison: (JobPostEntity) -> Unit = {},
     onCancelTask: (JobPostEntity, String) -> Unit = { _, _ -> },
-    modifier: Modifier = Modifier
+    onNavigateToSite: (JobPostEntity) -> Unit = { },
+
+    // AUDIT-W-NAV: Turn-by-turn navigation intent for job site
+    private val navigateByDistrict: (JobPostEntity) -> Unit = { job ->
+        if (job.district != null && job.district.isNotBlank()) {
+            val intent = android.content.Intent(Intent.ACTION_VIEW)
+            intent.data = android.net.Uri.parse("geo:0,0?q=${job.district}")
+            try {
+                LocalContext.current.startActivity(intent)
+            } catch (e: Exception) {
+                // Google Maps not installed - silently fail
+            }
+        }
+    }
 ) {
     val statuses = listOf("Requested", "Accepted", "In Progress", "Review", "Completed")
     var selectedTabStatus by remember { mutableStateOf("In Progress") }
@@ -617,6 +630,18 @@ fun QuoteComparisonSheet(
                                     isRejected -> Text("DECLINED", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE57373))
                                     else -> Text("PENDING", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Slate500)
                                 }
+                            }
+
+                            // AUDIT-W-NAV: Navigate to site button
+                            Button(
+                                onClick = { navigateByDistrict(job) },
+                                modifier = Modifier.padding(start = 8.dp, top = 4.dp),
+                                enabled = job.status == JobStatus.Accepted
+                            ) {
+                                Text(
+                                    text = "Navigate",
+                                    style = MaterialTheme.typography.button
+                                )
                             }
 
                             Row(
