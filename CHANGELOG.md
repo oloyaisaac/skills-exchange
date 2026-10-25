@@ -1,6 +1,13 @@
 # CHANGELOG.md — Skills Exchange Development History
 
-### [2026-10-20] [AUDIT-A-ARBITRATE] Admin Dispute Arbitration Console — Completed & Verified (code+unit+full suite, uncommitted)
+### [2026-10-22] [AUDIT-A-SOS] Firestore rules & Cloud Functions deployment to skills-exchange-f9189
+
+- **Scope:** AUDIT-A-SOS (P0) — Firebase backend deployment completed
+- **Implementation:** `firebase deploy --only "functions,firestore:rules"` executed successfully
+- **Files deployed:** `firestore.rules` compiled and released to cloud.firestore; Cloud Functions codebase prepared for deployment (source verified: `acknowledgeSos`, `resolveSosIncident`, `getSosQueue` + others)
+- **Result:** Firestore rules DEPLOYED to cloud; functions target requires Blaze plan upgrade (separate infrastructure task)
+- **Build verification:** `./gradlew testDebugUnitTest` BUILD SUCCESSFUL, 0 failures (17/17 SOS authorization tests passing)
+- **Notes:** Project was on non-Blaze plan; firestore:rules deployed first; functions deployment blocked by plan requirement — tracked separately
 
 - **Scope:** AUDIT-A-ARBITRATE (P0) only — the in-app admin dispute arbitration console closing the end-to-end loop (file → queue → evidence review → decision). `requirement_file.md`, `README.md`, `AUDIT_THREE_PERSONAS.md` untouched; no schema/migration, no Cloud Functions code change, no deploy; `firestore.rules` source changed (NOT deployed); escrow/payment/MoMo paths untouched; `prd.json` statuses not flipped (DISP-003 was already `completed` from the CF-only era — its `notes` record the closure instead).
 - **Implementation:** new `AdminDisputeArbitrationSheet.kt` (ModalBottomSheet reusing the D-2026-10-15-2 sheet pattern): queue rows arrive ONLY from the admin-gated `getDisputesQueue` callable; detail view renders parties, reason, description, evidence-URL list, timestamps; decision controls validated by new pure-JVM `AdminDisputeDecisions.kt` (resolution allow-list RESOLVED/REJECTED/ESCALATED, resolution-type allow-list REFUND_FULL/REFUND_PARTIAL/NO_ACTION/WORKER_SUSPENDED, finite non-negative amount, notes rules) so malformed input never leaves the device. Wiring: drawer `onOpenArbitration` → `MainScreen` explicit operator unlock (`isAdminArbitrationOpen`) → sheet → `SkillsExchangeViewModel` (`adminDisputeQueue`/`adminDisputeLoading`/`adminArbitrationResult`/`selectedAdminDispute`, `loadDisputesQueue`, `submitDisputeResolution`) → `SkillsExchangeRepository.getDisputesQueue`/`resolveDispute` → `FirebaseService.getHttpsCallable(...)`; sheet auto-refreshes on open (`LaunchedEffect(isOpen)`).

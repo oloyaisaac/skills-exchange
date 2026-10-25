@@ -16,7 +16,9 @@ COMPLETE: AUDIT-A-SOS — SOS backend foundation and admin incident-data path.
 - 17 focused security tests pass (SosRaiseAuthorizationSecurityTest: 12/0/0, SosClearAuthorizationSecurityTest: 5/0/0)
 - Full unit suite: BUILD SUCCESSFUL, all tests pass with 0 failures
 - No SMS dispatch, no police/emergency-service integration, no fake emergency capability
-- Admin SOS UI remains pending — this task covers backend foundation only
+- Admin SOS UI remains pending — backend foundation complete, Firebase deployment preparation completed 2026-10-22
+- ✅ Firestore rules DEPLOYED to Firebase project skills-exchange-f9189 (deployed 2026-10-22)
+- Cloud Functions: source verified, ready for deployment (requires Blaze plan upgrade)
 - Working tree clean, compilation verified, diff check passed
 
 Next: Do NOT begin admin SOS UI until this backend foundation has been successfully verified. Follow the existing pattern: only start admin UI after confirming the callable/rules/DAO layer is verified and deployed.
