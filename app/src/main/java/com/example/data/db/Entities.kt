@@ -5,6 +5,13 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
+// JOB-012: Job Address Fields
+data class JobAddress(
+    val streetAddress: String = "",
+    val apartmentSuite: String = "",
+    val landmarkDirections: String = ""
+)
+
 // JOB-004: Job Status Enum with validated states
 enum class JobStatus(val value: String) {
     DRAFT("DRAFT"),
@@ -174,6 +181,13 @@ data class SkillEndorsementEntity(
 data class JobPostEntity(
     @PrimaryKey val id: String,
     val title: String,
+    val postedByUid: String,
+    val createdTimestamp: Long,
+    val streetAddress: String = "",
+    val apartmentSuite: String = "",
+    val landmarkDirections: String = "",
+    val photos: List<String> = emptyList(),
+    val scheduledAt: Long = 0,
     val category: String,
     val description: String,
     /**
@@ -389,10 +403,42 @@ data class WorkerKycEntity(
      */
     val guarantorStatus: String = "NOT_STARTED",
     val guarantorsSubmittedAt: Long = 0,
-    val guarantorReviewFeedback: String = ""
+    val guarantorReviewFeedback: String = "",
+    // KYC-006: Identity Document Validation
+    val identityDocumentUri: String? = null,
+    val identityDocumentIssuingAuthority: String? = null,
+    val identityDocumentExpiry: Long? = null,
+    val identityDocumentConsentGiven: Boolean = false,
+    val identityDocumentConsentWithdrawn: Boolean = false,
+    // KYC-007: Address Verification
+    val addressDocumentUri: String? = null,
+    val addressDocumentIssuingAuthority: String? = null,
+    val addressDocumentExpiry: Long? = null,
+    val addressDocumentUtilityBillDate: Long? = null,
+    val addressDocumentConsentGiven: Boolean = false,
+    val addressDocumentConsentWithdrawn: Boolean = false,
+    // KYC-008: Income Proof
+    val incomeDocumentUri: String? = null,
+    val incomeDocumentType: String? = null,
+    val incomeDocumentDate: Long? = null,
+    val incomeDocumentConsentGiven: Boolean = false,
+    val incomeDocumentConsentWithdrawn: Boolean = false,
+    // KYC-009: Income Source Legitimacy
+    val sourceDocumentUri: String? = null,
+    val sourceDocumentType: String? = null,
+    val sourceDocumentAuthenticityVerified: Boolean = false,
+    val sourceDocumentConsentGiven: Boolean = false,
+    val sourceDocumentConsentWithdrawn: Boolean = false,
+    // KYC-010: Facial Recognition
+    val faceMatchResult: Float? = null,
+    val faceIdPhotoUri: String? = null,
+    val faceMatchThreshold: Float = 0.7f,
+    val faceRecognitionConsentGiven: Boolean = false,
+    val faceRecognitionConsentWithdrawn: Boolean = false
 )
 
 /**
+ * KYC-003: Two-Guarantor Data Model
  * KYC-003: Two-Guarantor Data Model
  * Each worker application must have exactly two distinct guarantors.
  */

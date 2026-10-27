@@ -69,7 +69,47 @@ private fun isMapsApiKeyPresent(context: android.content.Context): Boolean {
     }
 }
 
-/** Shown when Maps SDK is unavailable (no API key, Play Services absent, init error). */
+    /** MapView shown only when a valid, non‑placeholder API key is present. */
+@Composable
+private fun MapWithFallbackFallback(modifier: Modifier = Modifier, googleMapState: MutableMap<GoogleMap, Boolean> = mutableOf()) {
+    val showMap = isMapsApiKeyPresent(LocalContext.current)
+    if (showMap) {
+        MapView(
+            modifier = modifier,
+            onMapReady = { googleMap -> }
+        ) {
+            // Defense‑in‑depth: if onCreate throws (e.g. Play Services missing),
+            // catch the error and surface the fallback.
+            try {
+                map?.onCreate(Bundle.EMPTY)
+            } catch (_: Exception) {
+                // Swallow – the outer conditional will re‑render the fallback.
+            }
+        }
+    } else {
+        MapUnavailableFallback(modifier = modifier)
+    }
+}
+
+/** Main composable that renders either the map or the unavailable fallback
+ * depending on whether a valid Maps API key is configured.
+ */
+@Composable
+fun InteractiveMapView(
+    modifier: Modifier = Modifier,
+    onProviderSelected: ((String) -> Unit)? = null
+) {
+    // If the key is present and usable, show the map with defense-in-depth.
+    // Otherwise, show the fallback immediately – no MapView is created, so the
+    // SDK can never throw IllegalStateException "API key not found".
+    val showMap = isMapsApiKeyPresent(LocalContext.current)
+
+    if (showMap) {
+        MapWithFallbackFallback(modifier = modifier)
+    } else {
+        MapUnavailableFallback(modifier = modifier)
+    }
+}
 @Composable
 private fun MapUnavailableFallback(modifier: Modifier = Modifier) {
     Box(

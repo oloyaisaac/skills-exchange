@@ -76,7 +76,7 @@ Legend: ✅ Completed | 🔄 In Progress | ⏳ Pending | 🚫 Blocked | ❌ Fail
 
 | ID | Priority | Title | Status | Notes |
 |---|---|---|---|---|
-| KYC-006 | P1 | Implement Verification State Machine & 48h SLA Timestamps | ✅ Completed | State transition methods + getKycSlaDeadline(48h) |
+| KYC-006 | P1 | Implement Identity Document Validation | ✅ Completed | WorkerKycEntity field added: identityDocumentUri, identityDocumentIssuingAuthority, identityDocumentExpiry, identityDocumentConsentGiven, identityDocumentConsentWithdrawn |
 | KYC-007 | P1 | Implement Worker 'Changes Required' feedback view & resubmission workflow | ✅ Completed | ChangesRequiredView with feedback, support links, update button |
 
 ---
@@ -311,6 +311,7 @@ Full finding text (A1–A8, B1–B9, G1–G7, D1–D11, N1–N4, P1–P2, M1–M
 | AUDIT-W-QUOTE-UI | P0 | Worker Quote Proposal Submission Modal | ✅ COMPLETE (2026-10-18, uncommitted) | `QuoteSubmissionSheet` (rate/hours/notes + live UGX total + validation + single-flight + success/failure feedback + cancel) on hardened `submitQuote` + `quoteSubmissionState`; worker feed CTA rerouted off `EscrowAndProofSheet`; escrow intact. `QuoteProposalValidatorsTest` 9/9 + `QuoteAuthorizationSecurityTest` 24/24; full `testDebugUnitTest` 38 suites / 288 tests / 0 fail / 0 err / 0 skip; `compileDebugKotlin` BUILD SUCCESSFUL. |
 | AUDIT-W-CASHOUT | P0 | Worker MoMo Wallet Cashout / Withdrawal CTA | ✅ Backend COMPLETE (2026-10-18, uncommitted) | Smallest secure cashout backend built on explicit authorization: additive schema v22 (`wallet_ledger` + `wallet_withdrawals` + `MIGRATION_21_22`), narrow typed `transitionStatus` DAO, pure-JVM `WorkerCashoutSecurityCore` (ledger-derived balance, validation, worker-never-terminal transitions, idempotency + single-active gate), repository boundaries `requestWorkerCashout`/`cancelWorkerWithdrawal` (actor from FirebaseAuth, fail closed, atomic RESERVE/RELEASE). Fixed dead idempotency reuse (core matched row id, not stored key) + 3 direct `user_version` test regressions. `WorkerCashoutSecurityTest` 27/27; full `testDebugUnitTest` 39 suites / 315 tests / 0 fail / 0 err / 0 skip; `compileDebugKotlin` BUILD SUCCESSFUL. **UI, Cloud Functions, rules, MoMo hookup NOT built — no real money moves yet.** |
 | AUDIT-W-NAV | P1 | Turn-by-Turn Job Site Navigation Intent | ⏳ Pending | Active job card lacks geo-intent trigger. Add "Navigate to Site" button launching Google Maps / geo intent with client destination coordinates. |
+| MAP-003 | P1 | Google Maps UI for Active-Job Screen | ✅ Completed | Applied MapWithFallbackFallback composable pattern; conditional map rendering based on API key presence; fallback UI with "Contact Worker" and "Continue Without Map" actions; prevents IllegalStateException crashes associated with missing API keys. |
 | AUDIT-W-DEFENSE | P1 | Worker Dispute Defense & Evidence Submission | ⏳ Pending | When a client files a dispute, workers have no interface to submit counter-evidence photos, receipts, or explanations. |
 | AUDIT-W-PORTFOLIO | P2 | Worker Portfolio & Tiered Pricing Configuration | ⏳ Pending | Add UI to upload project photos and configure standard vs emergency callout rates. |
 

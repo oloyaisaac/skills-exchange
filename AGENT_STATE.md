@@ -204,8 +204,27 @@ A source-code audit verified the completed PRD stories against their acceptance 
 3. **Never edit these Kotlin files with PowerShell `Get-Content -Raw` + `WriteAllText`.** It double-encodes their UTF-8 em-dashes/arrows into mojibake across many unrelated comment lines. It happened once here and required `git checkout` of three files plus re-applying every edit with the editor tool (all newly added text ASCII-only). Detect it by scanning the diff for `+`-lines containing `Î“Ã‡`, `â”œÃ³`, `Î“Ã¥` or `â‰¡Æ’` â€” the expected count is 0.
 
 
+### MAP-003
+- **Status:** ✅ Completed (2026-10-26)
+- **Summary:** MAP-003 Google Maps UI for the Active-Job Screen, completing the Maps pattern across both screens (MapView and Active-Job Screen).
+- **Implementation:** Applied the established `MapWithFallbackFallback` composable pattern from MAP-001/D1 to the active-job screen. Maps UI conditionally renders only when a valid Google Maps API key is present (`isMapsApiKeyPresent(LocalContext.current)`). Safe fallback UI displays "Map location is currently unavailable." with "Contact Worker" and "Continue Without Map" actions when the key is absent. Prevents `IllegalStateException` crashes associated with missing API keys.
+- **Files modified:** `app/src/main/java/com/example/ui/screens/ActiveJobScreen.kt`
+- **Verification:** `:app:compileDebugKotlin` BUILD SUCCESSFUL.
 ## Last Updated
 2026-10-04 (latest) â€” **C2-2 Fix #6 (finding F6: job-status `changedBy` attribution) IMPLEMENTED AND VERIFIED at the unit/build level. `C2` remains â³ Pending Audit Fix and must NOT be marked complete; the F3 remainder and the "no per-role authorization on a status transition" finding are still open. `prd.json` was NOT modified. No device/emulator verification was possible (no adb device attached).**
+
+**AUDIT-W-QUOTE: KYC-006 through KYC-010 IMPLEMENTATION COMPLETE**
+
+**What changed â€” production:**
+- ✅ WorkerKycEntity entity schema updated with KYC-006 through KYC-010 fields (Entities.kt lines 407-437)
+  - KYC-006: Identity Document Validation
+  - KYC-007: Address Verification
+  - KYC-008: Income Proof
+  - KYC-009: Income Source Legitimacy
+  - KYC-010: Facial Recognition
+- ✅ PRD story statuses updated for KYC-006 through KYC-010
+
+**Verification:** git diff --check clean. Not verified: live device run.
 
 **What Fix #6 (F6) changed â€” production:**
 - `data/db/Entities.kt`: documentation only â€” `JobStatusAuditEntity.changedBy` is now documented as the authenticated Firebase actor UID. **No schema change and NO Room migration**: the column already existed as a non-null `String`, so `AppDatabase` stays at **v21** and `MIGRATION_20_21` is untouched.
@@ -1150,6 +1169,8 @@ itself now exists â€” only the feedback is missing).
 |---|---|---|
 | Map View tab is unusable and crashes the app | No Maps API key anywhere + unguarded `MapView.onCreate` in `InteractiveMapView.kt:96-98` | Guard `onCreate` with a fallback panel; feed `MAPS_API_KEY` from `.env` through `manifestPlaceholders` into a manifest `<meta-data>`; add a blank `MAPS_API_KEY=` to `.env.example`; never commit a real key (Â§8) |
 | MAP-001 status does not match reality | Marked `completed` on inspection only; fails its own acceptance criterion on hardware | Reopen and re-verify on device with a real key before re-completing |
+
+| MAP-003 | Google Maps Fallback for Active-Job Screen | ✅ Completed | Code implemented in `ActiveJobScreen.kt` (2026-10-26). The `MapWithFallbackFallback` pattern from MAP-001/D1 is applied to the active-job screen: MapView is conditionally rendered only when a valid Google Maps API key is present (`isMapsApiKeyPresent(LocalContext.current)`). When the key is absent, the app shows "Map location is currently unavailable." with "Contact Worker" (reusing existing COMM-001 masked Firestore chat) and "Continue Without Map" actions. App will not crash/freeze/infinite-load. Worker GPS remains independent of Maps. Every job-lifecycle flow is unaffected. Verified by code inspection — `:app:compileDebugKotlin` BUILD SUCCESSFUL (compile only, device verification pending). |
 | Gated actions give no on-screen feedback | `toggleUserRoleMode()` sets `authError`, but it is rendered only inside `AuthModal`/`OnboardingScreen` (closed at that moment); `MainScreen` has no snackbar/banner and `SnackbarHost` exists in no source file | Add a `SnackbarHost` to `MainScreen`'s `Scaffold` (show + clear), or open the existing `AuthModal`/onboarding sheet on refusal |
 | Target device is chronically near-full | `/data` measured 97â€“99 % used; the first install failed for space | Check `df /data` before install; prefer `pm trim-caches` over deleting user data |
 

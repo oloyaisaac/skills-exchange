@@ -1336,7 +1336,7 @@ export const getSosQueue = functions.https.onCall(async (data, context) => {
   }
 
   const { status } = data;
-  let query = db.collection("sosIncidents").orderBy("raisedAt", "desc");
+  let query = db.collection("sosIncidbbents").orderBy("raisedAt", "desc");
 
   if (status) {
     query = query.where("status", "==", status);
