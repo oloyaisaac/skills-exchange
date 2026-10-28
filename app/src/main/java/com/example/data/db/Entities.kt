@@ -7,9 +7,9 @@ import androidx.room.PrimaryKey
 
 // JOB-012: Job Address Fields
 data class JobAddress(
-    val streetAddress: String = "",
-    val apartmentSuite: String = "",
-    val landmarkDirections: String = ""
+    var streetAddress: String = "",
+    var apartmentSuite: String = "",
+    var landmarkDirections: String = ""
 )
 
 // JOB-004: Job Status Enum with validated states
@@ -53,8 +53,8 @@ enum class JobStatus(val value: String) {
         }
 
         fun isValidTransition(from: String, to: String): Boolean {
-            val fromStatus = fromValue(from) ?: return false;
-            val toStatus = fromValue(to) ?: return false;
+            var fromStatus = fromValue(from) ?: return false;
+            var toStatus = fromValue(to) ?: return false;
             return canTransition(fromStatus, toStatus);
         }
     }
@@ -112,33 +112,33 @@ enum class NotificationType(val value: String) {
 @Entity(tableName = "service_providers")
 data class ServiceProviderEntity(
     @PrimaryKey val id: String,
-    val name: String,
-    val tagline: String,
-    val category: String,
-    val neighborhood: String,
-    val residenceYears: Int,
-    val hourlyRate: Double,
-    val distanceMiles: Double,
-    val rating: Double,
-    val completedJobsCount: Int,
-    val avgResponseTime: String,
-    val isVerifiedResident: Boolean,
-    val isBackgroundChecked: Boolean,
-    val bio: String,
-    val skillsCsv: String,
-    val latitude: Double,
-    val longitude: Double,
-    val endorsementsCount: Int,
+    var name: String,
+    var tagline: String,
+    var category: String,
+    var neighborhood: String,
+    var residenceYears: Int,
+    var hourlyRate: Double,
+    var distanceMiles: Double,
+    var rating: Double,
+    var completedJobsCount: Int,
+    var avgResponseTime: String,
+    var isVerifiedResident: Boolean,
+    var isBackgroundChecked: Boolean,
+    var bio: String,
+    var skillsCsv: String,
+    var latitude: Double,
+    var longitude: Double,
+    var endorsementsCount: Int,
     // KYC & Verification Layer
-    val nationalIdNumber: String = "UG-8829104-B",
-    val idDocumentUrl: String = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80",
-    val selfieVerificationUrl: String = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
-    val kycStatus: String = "APPROVED", // "UNVERIFIED", "PENDING_REVIEW", "APPROVED", "REJECTED"
-    val isActivated: Boolean = false,
+    var nationalIdNumber: String = "UG-8829104-B",
+    var idDocumentUrl: String = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80",
+    var selfieVerificationUrl: String = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+    var kycStatus: String = "APPROVED", // "UNVERIFIED", "PENDING_REVIEW", "APPROVED", "REJECTED"
+    var isActivated: Boolean = false,
     // Mobile Money Wallet Schema
-    val momoNumber: String = "+256 772 198 420",
-    val momoProvider: String = "MTN_MOMO", // "MTN_MOMO", "AIRTEL_MONEY"
-    val walletBalance: Double = 185.0
+    var momoNumber: String = "+256 772 198 420",
+    var momoProvider: String = "MTN_MOMO", // "MTN_MOMO", "AIRTEL_MONEY"
+    var walletBalance: Double = 185.0
 )
 
 @Entity(
@@ -155,10 +155,10 @@ data class ServiceProviderEntity(
 )
 data class SkillEndorsementEntity(
     @PrimaryKey val id: String,
-    val providerId: String,
-    val skillName: String,
-    val endorsedByNeighborName: String,
-    val neighborDistrict: String
+    var providerId: String,
+    var skillName: String,
+    var endorsedByNeighborName: String,
+    var neighborDistrict: String
 )
 
 @Entity(
@@ -180,16 +180,14 @@ data class SkillEndorsementEntity(
 )
 data class JobPostEntity(
     @PrimaryKey val id: String,
-    val title: String,
-    val postedByUid: String,
-    val createdTimestamp: Long,
-    val streetAddress: String = "",
-    val apartmentSuite: String = "",
-    val landmarkDirections: String = "",
-    val photos: List<String> = emptyList(),
-    val scheduledAt: Long = 0,
-    val category: String,
-    val description: String,
+    var title: String,
+    var streetAddress: String = "",
+    var apartmentSuite: String = "",
+    var landmarkDirections: String = "",
+    var photos: List<String> = emptyList(),
+    var scheduledAt: Long = 0,
+    var category: String,
+    var description: String,
     /**
      * C2-2 Fix #4 (audit finding **F4**) — the AUTHORITATIVE, immutable owner identity of this
      * job. It is the `FirebaseAuth.currentUser.uid` of the account that created the job and is the
@@ -202,19 +200,19 @@ data class JobPostEntity(
      * New jobs created through [com.example.data.repository.SkillsExchangeRepository.addJobPost]
      * are guaranteed to carry a non-null, validated UID — creation fails closed otherwise.
      */
-    val postedByUid: String? = null,
+    var postedByUid: String? = null,
     /**
      * DISPLAY-ONLY presentation text, e.g. `"Robert K. (Sunnyside)"`. It is human-readable and is
      * NEVER an ownership or security key — the string is freely editable and is not an identity.
      * Do not compare it to a uid and do not gate any permission on it.
      */
-    val postedByResident: String,
-    val district: String,
-    val budget: Double,
-    val urgency: String,
-    val status: String, // Requested, Accepted, In Progress, Review, Completed
-    val assignedProviderId: String?,
-    val assignedProviderName: String?,
+    var postedByResident: String,
+    var district: String,
+    var budget: Double,
+    var urgency: String,
+    var status: String, // Requested, Accepted, In Progress, Review, Completed
+    var assignedProviderId: String?,
+    var assignedProviderName: String?,
     /**
      * Canonical assigned-provider identity for authorization (H7 / AUDIT-A-SOS).
      *
@@ -230,45 +228,45 @@ data class JobPostEntity(
      * different identity classes, and comparing them is the identity-semantics bug this field
      * exists to eliminate.
      */
-    val assignedProviderUid: String? = null,
-    val createdTimestamp: Long,
-    val estimatedHours: Double,
-    val materialsCost: Double,
-    val safetyFee: Double,
+    var assignedProviderUid: String? = null,
+    var createdTimestamp: Long,
+    var estimatedHours: Double,
+    var materialsCost: Double,
+    var safetyFee: Double,
     // Enhanced Labor-Only & Escrow Engine Fields
-    val materialsProvidedBy: String = "RESIDENT", // "RESIDENT" (Labor-Only), "PROVIDER" (Labor + Materials), "NONE_NEEDED"
-    val laborHours: Double = 2.0,
-    val laborRate: Double = 60.0,
-    val laborTotal: Double = 120.0,
-    val materialsSubtotal: Double = 0.0,
-    val platformFee: Double = 12.0,
-    val grandTotal: Double = 132.0,
-    val materialReceiptsCsv: String = "",
-    val beforePhotoUrl: String? = null,
-    val afterPhotoUrl: String? = null,
-    val emergencyAddonRequested: Boolean = false,
-    val emergencyAddonAmount: Double = 0.0,
-    val emergencyAddonReason: String = "",
-    val emergencyAddonReceiptUrl: String = "",
-    val emergencyAddonStatus: String = "NONE", // "NONE", "PENDING", "APPROVED", "REJECTED"
-    val paymentChannel: String = "MTN_MOMO", // "MTN_MOMO", "AIRTEL_MONEY", "CARD"
-    val momoPhoneNumber: String = "+256 772 198 420",
-    val escrowStatus: String = "QUOTE_PENDING", // "QUOTE_PENDING", "DEPOSIT_PROMPTED", "FUNDS_LOCKED_IN_ESCROW", "WORK_IN_PROGRESS", "PROOF_SUBMITTED", "RELEASED_TO_WORKER"
+    var materialsProvidedBy: String = "RESIDENT", // "RESIDENT" (Labor-Only), "PROVIDER" (Labor + Materials), "NONE_NEEDED"
+    var laborHours: Double = 2.0,
+    var laborRate: Double = 60.0,
+    var laborTotal: Double = 120.0,
+    var materialsSubtotal: Double = 0.0,
+    var platformFee: Double = 12.0,
+    var grandTotal: Double = 132.0,
+    var materialReceiptsCsv: String = "",
+    var beforePhotoUrl: String? = null,
+    var afterPhotoUrl: String? = null,
+    var emergencyAddonRequested: Boolean = false,
+    var emergencyAddonAmount: Double = 0.0,
+    var emergencyAddonReason: String = "",
+    var emergencyAddonReceiptUrl: String = "",
+    var emergencyAddonStatus: String = "NONE", // "NONE", "PENDING", "APPROVED", "REJECTED"
+    var paymentChannel: String = "MTN_MOMO", // "MTN_MOMO", "AIRTEL_MONEY", "CARD"
+    var momoPhoneNumber: String = "+256 772 198 420",
+    var escrowStatus: String = "QUOTE_PENDING", // "QUOTE_PENDING", "DEPOSIT_PROMPTED", "FUNDS_LOCKED_IN_ESCROW", "WORK_IN_PROGRESS", "PROOF_SUBMITTED", "RELEASED_TO_WORKER"
     // Real-World Operational Safeguards
-    val doorstepPin: String = "4829",
-    val isDoorstepVerified: Boolean = false,
-    val materialAdvanceRequested: Boolean = false,
-    val materialAdvanceAmount: Double = 0.0,
-    val materialAdvanceReceiptUrl: String = "",
-    val materialAdvanceStatus: String = "NONE", // "NONE", "REQUESTED", "DISBURSED"
-    val isSosTriggered: Boolean = false,
-    val calloutFee: Double = 5.0,
-    val jobType: String = "ONE_TIME", // "ONE_TIME", "RECURRING"
-    val recurringSchedule: String = "", // "DAILY", "WEEKLY", "BI_WEEKLY", "MONTHLY", "CUSTOM"
-    val recurringStartDate: String = "",
-    val recurringContractProposal: String = "", // JSON or description of negotiated terms
-    val recurringNegotiatedRate: Double = 0.0, // Worker's proposed rate for recurring contract
-    val recurringProposalStatus: String = "NONE" // "NONE", "PENDING", "ACCEPTED", "REJECTED"
+    var doorstepPin: String = "4829",
+    var isDoorstepVerified: Boolean = false,
+    var materialAdvanceRequested: Boolean = false,
+    var materialAdvanceAmount: Double = 0.0,
+    var materialAdvanceReceiptUrl: String = "",
+    var materialAdvanceStatus: String = "NONE", // "NONE", "REQUESTED", "DISBURSED"
+    var isSosTriggered: Boolean = false,
+    var calloutFee: Double = 5.0,
+    var jobType: String = "ONE_TIME", // "ONE_TIME", "RECURRING"
+    var recurringSchedule: String = "", // "DAILY", "WEEKLY", "BI_WEEKLY", "MONTHLY", "CUSTOM"
+    var recurringStartDate: String = "",
+    var recurringContractProposal: String = "", // JSON or description of negotiated terms
+    var recurringNegotiatedRate: Double = 0.0, // Worker's proposed rate for recurring contract
+    var recurringProposalStatus: String = "NONE" // "NONE", "PENDING", "ACCEPTED", "REJECTED"
 )
 
 /**
@@ -297,9 +295,9 @@ data class JobPostEntity(
 )
 data class SosIncidentEntity(
     @PrimaryKey val id: String, // "sos_$jobId"
-    val jobId: String,
-    val postedByUid: String,
-    val assignedProviderId: String?,
+    var jobId: String,
+    var postedByUid: String,
+    var assignedProviderId: String?,
     /**
      * Canonical assigned-provider identity for cross-device authorization (H7 / AUDIT-A-SOS).
      *
@@ -308,16 +306,16 @@ data class SosIncidentEntity(
      * `request.auth.uid` in the Firestore read rule. It is never derived from the display
      * text, the newest Room row, or the provider-catalog record id.
      */
-    val assignedProviderUid: String? = null,
-    val status: String = "ACTIVE", // ACTIVE / ACKNOWLEDGED / CLEARED
-    val latitude: Double = 0.0,
-    val longitude: Double = 0.0,
-    val district: String = "",
-    val raisedAt: Long = System.currentTimeMillis(),
-    val acknowledgedAt: Long = 0,
-    val clearedAt: Long = 0,
-    val clearedBy: String? = null,
-    val firestoreMirrored: Boolean = false
+    var assignedProviderUid: String? = null,
+    var status: String = "ACTIVE", // ACTIVE / ACKNOWLEDGED / CLEARED
+    var latitude: Double = 0.0,
+    var longitude: Double = 0.0,
+    var district: String = "",
+    var raisedAt: Long = System.currentTimeMillis(),
+    var acknowledgedAt: Long = 0,
+    var clearedAt: Long = 0,
+    var clearedBy: String? = null,
+    var firestoreMirrored: Boolean = false
 ) {
     companion object {
         const val STATUS_ACTIVE = "ACTIVE"
@@ -340,7 +338,7 @@ data class SosIncidentEntity(
 )
 data class ChatMessageEntity(
     @PrimaryKey val id: String,
-    val jobId: String,
+    var jobId: String,
     /**
      * C2-2 Fix #5 (audit finding **F5**) — the AUTHENTICATED author of this message, i.e.
      * `FirebaseAuth.currentUser.uid`. This is the only field that may be used to decide "did I
@@ -352,13 +350,13 @@ data class ChatMessageEntity(
      *  - system/notification rows, which genuinely have no human author.
      * A null here must never be treated as "mine".
      */
-    val senderId: String? = null,
+    var senderId: String? = null,
     /** DISPLAY-ONLY name shown in the chat bubble. Never an identity. */
-    val senderName: String,
-    val isFromUser: Boolean,
-    val message: String,
-    val timestampText: String,
-    val isSystemNotification: Boolean
+    var senderName: String,
+    var isFromUser: Boolean,
+    var message: String,
+    var timestampText: String,
+    var isSystemNotification: Boolean
 )
 
 /**
@@ -379,62 +377,62 @@ data class ChatMessageEntity(
 )
 data class WorkerKycEntity(
     @PrimaryKey val userId: String,
-    val fullLegalName: String,
-    val nationalIdNumber: String,
-    val dateOfBirth: String,
-    val gender: String,
-    val idFrontStoragePath: String,
-    val idBackStoragePath: String,
-    val status: String = "NOT_STARTED",
-    val submittedAt: Long = 0,
-    val reviewedAt: Long = 0,
-    val reviewFeedback: String = "",
+    var fullLegalName: String,
+    var nationalIdNumber: String,
+    var dateOfBirth: String,
+    var gender: String,
+    var idFrontStoragePath: String,
+    var idBackStoragePath: String,
+    var status: String = "NOT_STARTED",
+    var submittedAt: Long = 0,
+    var reviewedAt: Long = 0,
+    var reviewFeedback: String = "",
     // --- REG-002: group photograph + guarantor verification state ---
     /**
      * Private Storage path of the single group photograph that must contain the worker
      * together with both guarantors. Client-writable locally only; the Firestore copy is
      * written by the guarantor-submission callable and read back for review.
      */
-    val groupPhotoStoragePath: String = "",
+    var groupPhotoStoragePath: String = "",
     /**
      * Guarantor step state: NOT_STARTED | DRAFT | SUBMITTED | APPROVED | CHANGES_REQUIRED
      * | REJECTED. Admin-owned values are only ever applied from the synced
      * guarantor_submissions document, never from client input.
      */
-    val guarantorStatus: String = "NOT_STARTED",
-    val guarantorsSubmittedAt: Long = 0,
-    val guarantorReviewFeedback: String = "",
+    var guarantorStatus: String = "NOT_STARTED",
+    var guarantorsSubmittedAt: Long = 0,
+    var guarantorReviewFeedback: String = "",
     // KYC-006: Identity Document Validation
-    val identityDocumentUri: String? = null,
-    val identityDocumentIssuingAuthority: String? = null,
-    val identityDocumentExpiry: Long? = null,
-    val identityDocumentConsentGiven: Boolean = false,
-    val identityDocumentConsentWithdrawn: Boolean = false,
+    var identityDocumentUri: String? = null,
+    var identityDocumentIssuingAuthority: String? = null,
+    var identityDocumentExpiry: Long? = null,
+    var identityDocumentConsentGiven: Boolean = false,
+    var identityDocumentConsentWithdrawn: Boolean = false,
     // KYC-007: Address Verification
-    val addressDocumentUri: String? = null,
-    val addressDocumentIssuingAuthority: String? = null,
-    val addressDocumentExpiry: Long? = null,
-    val addressDocumentUtilityBillDate: Long? = null,
-    val addressDocumentConsentGiven: Boolean = false,
-    val addressDocumentConsentWithdrawn: Boolean = false,
+    var addressDocumentUri: String? = null,
+    var addressDocumentIssuingAuthority: String? = null,
+    var addressDocumentExpiry: Long? = null,
+    var addressDocumentUtilityBillDate: Long? = null,
+    var addressDocumentConsentGiven: Boolean = false,
+    var addressDocumentConsentWithdrawn: Boolean = false,
     // KYC-008: Income Proof
-    val incomeDocumentUri: String? = null,
-    val incomeDocumentType: String? = null,
-    val incomeDocumentDate: Long? = null,
-    val incomeDocumentConsentGiven: Boolean = false,
-    val incomeDocumentConsentWithdrawn: Boolean = false,
+    var incomeDocumentUri: String? = null,
+    var incomeDocumentType: String? = null,
+    var incomeDocumentDate: Long? = null,
+    var incomeDocumentConsentGiven: Boolean = false,
+    var incomeDocumentConsentWithdrawn: Boolean = false,
     // KYC-009: Income Source Legitimacy
-    val sourceDocumentUri: String? = null,
-    val sourceDocumentType: String? = null,
-    val sourceDocumentAuthenticityVerified: Boolean = false,
-    val sourceDocumentConsentGiven: Boolean = false,
-    val sourceDocumentConsentWithdrawn: Boolean = false,
+    var sourceDocumentUri: String? = null,
+    var sourceDocumentType: String? = null,
+    var sourceDocumentAuthenticityVerified: Boolean = false,
+    var sourceDocumentConsentGiven: Boolean = false,
+    var sourceDocumentConsentWithdrawn: Boolean = false,
     // KYC-010: Facial Recognition
-    val faceMatchResult: Float? = null,
-    val faceIdPhotoUri: String? = null,
-    val faceMatchThreshold: Float = 0.7f,
-    val faceRecognitionConsentGiven: Boolean = false,
-    val faceRecognitionConsentWithdrawn: Boolean = false
+    var faceMatchResult: Float? = null,
+    var faceIdPhotoUri: String? = null,
+    var faceMatchThreshold: Float = 0.7f,
+    var faceRecognitionConsentGiven: Boolean = false,
+    var faceRecognitionConsentWithdrawn: Boolean = false
 )
 
 /**
@@ -456,27 +454,27 @@ data class WorkerKycEntity(
 )
 data class GuarantorEntity(
     @PrimaryKey val id: String,
-    val workerKycId: String,
-    val fullName: String,
-    val phoneNumber: String,
-    val relationship: String,
-    val district: String,
-    val idFrontStoragePath: String,
-    val idBackStoragePath: String,
-    val createdAt: Long = System.currentTimeMillis(),
+    var workerKycId: String,
+    var fullName: String,
+    var phoneNumber: String,
+    var relationship: String,
+    var district: String,
+    var idFrontStoragePath: String,
+    var idBackStoragePath: String,
+    var createdAt: Long = System.currentTimeMillis(),
     // --- REG-002: guarantor verification requirements (KYC-003 is preserved above) ---
     /** Guarantor NIN as typed by the worker. Never written to logcat — scrub first. */
-    val nationalIdNumber: String = "",
+    var nationalIdNumber: String = "",
     /** Private Storage path of the guarantor's own photograph (never a signed URL). */
-    val guarantorPhotoStoragePath: String = "",
+    var guarantorPhotoStoragePath: String = "",
     /** Private Storage path of the worker + this guarantor photograph. */
-    val workerWithGuarantorPhotoStoragePath: String = "",
+    var workerWithGuarantorPhotoStoragePath: String = "",
     /** Guarantor consent to being listed and to their data being processed. */
-    val consentProvided: Boolean = false,
+    var consentProvided: Boolean = false,
     /** Admin-set NIN check result. The client may only ever write "PENDING". */
-    val ninVerificationStatus: String = "PENDING",
-    val submittedAt: Long = 0,
-    val updatedAt: Long = 0
+    var ninVerificationStatus: String = "PENDING",
+    var submittedAt: Long = 0,
+    var updatedAt: Long = 0
 )
 
 /**
@@ -489,31 +487,31 @@ data class GuarantorEntity(
 )
 data class UserProfileEntity(
     @PrimaryKey val id: String = "user_default_me",
-    val phoneNumber: String = "+256 772 198 420",
-    val fullName: String = "Sarah Namukasa",
-    val district: String = "Sunnyside",
-    val initialRole: String = "CLIENT", // "CLIENT" or "WORKER"
-    val currentActiveMode: String = "CLIENT", // "CLIENT" or "WORKER"
-    val workerKycStatus: String = "NOT_APPLIED", // "NOT_APPLIED", "UNVERIFIED", "PENDING_REVIEW", "CHANGES_REQUIRED", "APPROVED", "REJECTED", "SUSPENDED"
-    val isWorkerActivated: Boolean = false,
-    val trainingCompleted: Boolean = false,
-    val nationalIdNumber: String = "UG-8829104-B",
-    val primarySkill: String? = "Electrical",
-    val additionalSkillsCsv: String = "Plumbing,Home Repair",
+    var phoneNumber: String = "+256 772 198 420",
+    var fullName: String = "Sarah Namukasa",
+    var district: String = "Sunnyside",
+    var initialRole: String = "CLIENT", // "CLIENT" or "WORKER"
+    var currentActiveMode: String = "CLIENT", // "CLIENT" or "WORKER"
+    var workerKycStatus: String = "NOT_APPLIED", // "NOT_APPLIED", "UNVERIFIED", "PENDING_REVIEW", "CHANGES_REQUIRED", "APPROVED", "REJECTED", "SUSPENDED"
+    var isWorkerActivated: Boolean = false,
+    var trainingCompleted: Boolean = false,
+    var nationalIdNumber: String = "UG-8829104-B",
+    var primarySkill: String? = "Electrical",
+    var additionalSkillsCsv: String = "Plumbing,Home Repair",
     // REG-004: empty = no photo uploaded yet (UI falls back to initials).
-    val avatarUrl: String = "",
+    var avatarUrl: String = "",
     // REG-003: optional worker backup contact; empty strings = not set.
-    val backupContactName: String = "",
-    val backupContactPhone: String = "",
-    val momoNumber: String = "+256 772 198 420",
-    val momoProvider: String = "MTN_MOMO",
-    val walletBalance: Double = 185.0,
-    val latitude: Double? = null,
-    val longitude: Double? = null,
-    val address: String? = null,
-    val isOnboardingCompleted: Boolean = true,
-    val createdAtTimestamp: Long = System.currentTimeMillis(),
-    val updatedAtTimestamp: Long = System.currentTimeMillis()
+    var backupContactName: String = "",
+    var backupContactPhone: String = "",
+    var momoNumber: String = "+256 772 198 420",
+    var momoProvider: String = "MTN_MOMO",
+    var walletBalance: Double = 185.0,
+    var latitude: Double? = null,
+    var longitude: Double? = null,
+    var address: String? = null,
+    var isOnboardingCompleted: Boolean = true,
+    var createdAtTimestamp: Long = System.currentTimeMillis(),
+    var updatedAtTimestamp: Long = System.currentTimeMillis()
 )
 
 /**
@@ -540,16 +538,16 @@ data class UserProfileEntity(
 )
 data class JobQuoteEntity(
     @PrimaryKey val id: String,
-    val jobId: String,
-    val workerId: String,
-    val workerName: String,
-    val proposedRate: Double,
-    val proposedHours: Double,
-    val totalQuote: Double,
-    val notes: String = "",
-    val status: String = "PENDING", // "PENDING", "ACCEPTED", "REJECTED", "WITHDRAWN"
-    val submittedAt: Long = System.currentTimeMillis(),
-    val respondedAt: Long = 0
+    var jobId: String,
+    var workerId: String,
+    var workerName: String,
+    var proposedRate: Double,
+    var proposedHours: Double,
+    var totalQuote: Double,
+    var notes: String = "",
+    var status: String = "PENDING", // "PENDING", "ACCEPTED", "REJECTED", "WITHDRAWN"
+    var submittedAt: Long = System.currentTimeMillis(),
+    var respondedAt: Long = 0
 )
 
 /**
@@ -570,18 +568,18 @@ data class JobQuoteEntity(
 )
 data class WorkerTrainingEntity(
     @PrimaryKey val userId: String,
-    val status: String = "NOT_STARTED", // "NOT_STARTED", "IN_PROGRESS", "COMPLETED"
-    val completedModulesCsv: String = "",
-    val startedAt: Long = 0,
-    val completionTimestamp: Long = 0,
-    val currentModuleIndex: Int = 0,
-    val totalModules: Int = 3,
-    val platformRulesCompleted: Boolean = false,
-    val escrowGuidelinesCompleted: Boolean = false,
-    val customerEtiquetteCompleted: Boolean = false,
-    val safetyProtocolsCompleted: Boolean = false,
-    val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    var status: String = "NOT_STARTED", // "NOT_STARTED", "IN_PROGRESS", "COMPLETED"
+    var completedModulesCsv: String = "",
+    var startedAt: Long = 0,
+    var completionTimestamp: Long = 0,
+    var currentModuleIndex: Int = 0,
+    var totalModules: Int = 3,
+    var platformRulesCompleted: Boolean = false,
+    var escrowGuidelinesCompleted: Boolean = false,
+    var customerEtiquetteCompleted: Boolean = false,
+    var safetyProtocolsCompleted: Boolean = false,
+    var createdAt: Long = System.currentTimeMillis(),
+    var updatedAt: Long = System.currentTimeMillis()
 )
 
 /**
@@ -591,12 +589,12 @@ data class WorkerTrainingEntity(
 @Entity(tableName = "pending_actions")
 data class PendingActionEntity(
     @PrimaryKey val id: String,
-    val actionType: String, // "CREATE_JOB", "UPDATE_STATUS", "SEND_MESSAGE", "SUBMIT_QUOTE", etc.
-    val payloadJson: String, // Serialized action data
-    val createdAt: Long = System.currentTimeMillis(),
-    val retryCount: Int = 0,
-    val maxRetries: Int = 3,
-    val status: String = "PENDING" // "PENDING", "SYNCING", "COMPLETED", "FAILED"
+    var actionType: String, // "CREATE_JOB", "UPDATE_STATUS", "SEND_MESSAGE", "SUBMIT_QUOTE", etc.
+    var payloadJson: String, // Serialized action data
+    var createdAt: Long = System.currentTimeMillis(),
+    var retryCount: Int = 0,
+    var maxRetries: Int = 3,
+    var status: String = "PENDING" // "PENDING", "SYNCING", "COMPLETED", "FAILED"
 )
 
 // DISP-001: Dispute Entity
@@ -614,20 +612,20 @@ data class PendingActionEntity(
 )
 data class DisputeEntity(
     @PrimaryKey val id: String,
-    val jobId: String,
-    val reportedBy: String, // User ID who reported
-    val reportedUserId: String, // User ID being reported (worker or client)
-    val disputeReason: String, // DisputeReason value
-    val description: String,
-    val evidenceUrlsCsv: String = "", // Comma-separated evidence photo URLs
-    val status: String = DisputeStatus.OPEN.value,
-    val adminNotes: String = "",
-    val resolutionType: String = "", // "REFUND_FULL", "REFUND_PARTIAL", "NO_ACTION", "WORKER_SUSPENDED"
-    val resolutionAmount: Double = 0.0,
-    val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis(),
-    val resolvedAt: Long = 0,
-    val resolvedBy: String = ""
+    var jobId: String,
+    var reportedBy: String, // User ID who reported
+    var reportedUserId: String, // User ID being reported (worker or client)
+    var disputeReason: String, // DisputeReason value
+    var description: String,
+    var evidenceUrlsCsv: String = "", // Comma-separated evidence photo URLs
+    var status: String = DisputeStatus.OPEN.value,
+    var adminNotes: String = "",
+    var resolutionType: String = "", // "REFUND_FULL", "REFUND_PARTIAL", "NO_ACTION", "WORKER_SUSPENDED"
+    var resolutionAmount: Double = 0.0,
+    var createdAt: Long = System.currentTimeMillis(),
+    var updatedAt: Long = System.currentTimeMillis(),
+    var resolvedAt: Long = 0,
+    var resolvedBy: String = ""
 )
 
 // RATE-001: Rating Entity
@@ -645,13 +643,13 @@ data class DisputeEntity(
 )
 data class RatingEntity(
     @PrimaryKey val id: String,
-    val jobId: String,
-    val fromUserId: String, // User who gave the rating
-    val toUserId: String, // User who received the rating
-    val rating: Int, // 1-5 stars
-    val review: String = "",
-    val isFromClient: Boolean = true, // true if from client to worker, false if worker to client
-    val createdAt: Long = System.currentTimeMillis()
+    var jobId: String,
+    var fromUserId: String, // User who gave the rating
+    var toUserId: String, // User who received the rating
+    var rating: Int, // 1-5 stars
+    var review: String = "",
+    var isFromClient: Boolean = true, // true if from client to worker, false if worker to client
+    var createdAt: Long = System.currentTimeMillis()
 )
 
 // NOTIF-001: Notification Entity
@@ -669,13 +667,13 @@ data class RatingEntity(
 )
 data class NotificationEntity(
     @PrimaryKey val id: String,
-    val userId: String,
-    val type: String, // NotificationType value
-    val title: String,
-    val body: String,
-    val jobId: String = "",
-    val isRead: Boolean = false,
-    val createdAt: Long = System.currentTimeMillis()
+    var userId: String,
+    var type: String, // NotificationType value
+    var title: String,
+    var body: String,
+    var jobId: String = "",
+    var isRead: Boolean = false,
+    var createdAt: Long = System.currentTimeMillis()
 )
 
 // JOB-005: Job Status Audit Trail Entity
@@ -693,9 +691,9 @@ data class NotificationEntity(
 )
 data class JobStatusAuditEntity(
     @PrimaryKey val id: String,
-    val jobId: String,
-    val fromStatus: String,
-    val toStatus: String,
+    var jobId: String,
+    var fromStatus: String,
+    var toStatus: String,
     /**
      * C2-2 Fix #6 (audit finding **F6**) — the AUTHENTICATED actor who made the change, i.e.
      * `FirebaseAuth.currentUser.uid`. It is written by the repository, never by a caller, so it is
@@ -706,9 +704,9 @@ data class JobStatusAuditEntity(
      * those legacy values — they are immutable historical data and are never rewritten to the
      * current user.
      */
-    val changedBy: String, // authenticated Firebase uid of the actor
-    val changedAt: Long = System.currentTimeMillis(),
-    val reason: String = ""
+    var changedBy: String, // authenticated Firebase uid of the actor
+    var changedAt: Long = System.currentTimeMillis(),
+    var reason: String = ""
 )
 
 // DISP-004: User/Worker Reporting Entity
@@ -732,18 +730,18 @@ data class JobStatusAuditEntity(
 )
 data class ReportEntity(
     @PrimaryKey val id: String,
-    val reportedBy: String, // User ID who submitted the report
-    val reportedUserId: String, // User ID being reported
-    val reportedUserName: String, // Display name of reported user
-    val reason: String, // Report reason
-    val description: String = "",
-    val evidenceUrlsCsv: String = "",
-    val status: String = "PENDING", // "PENDING", "REVIEWED", "RESOLVED", "DISMISSED"
-    val adminNotes: String = "",
-    val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis(),
-    val resolvedAt: Long = 0,
-    val resolvedBy: String = ""
+    var reportedBy: String, // User ID who submitted the report
+    var reportedUserId: String, // User ID being reported
+    var reportedUserName: String, // Display name of reported user
+    var reason: String, // Report reason
+    var description: String = "",
+    var evidenceUrlsCsv: String = "",
+    var status: String = "PENDING", // "PENDING", "REVIEWED", "RESOLVED", "DISMISSED"
+    var adminNotes: String = "",
+    var createdAt: Long = System.currentTimeMillis(),
+    var updatedAt: Long = System.currentTimeMillis(),
+    var resolvedAt: Long = 0,
+    var resolvedBy: String = ""
 )
 
 // AUDIT-W-CASHOUT: Wallet Ledger Entity
@@ -772,15 +770,15 @@ data class ReportEntity(
 data class WalletLedgerEntity(
     @PrimaryKey val id: String,
     /** The wallet owner's authenticated Firebase UID. This is the ONLY identity key. */
-    val workerId: String,
+    var workerId: String,
     /** CREDIT / DEBIT / RESERVE / RELEASE / ADJUSTMENT. */
-    val entryType: String,
+    var entryType: String,
     /** Always positive; the [entryType] determines whether it raises or lowers available. */
-    val amount: Double,
+    var amount: Double,
     /** Set when this entry is part of a withdrawal's lifecycle (reserve/release/debit). */
-    val withdrawalId: String? = null,
-    val description: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    var withdrawalId: String? = null,
+    var description: String = "",
+    var createdAt: Long = System.currentTimeMillis()
 )
 
 // AUDIT-W-CASHOUT: Worker Withdrawal (Cashout) Entity
@@ -811,15 +809,15 @@ data class WalletLedgerEntity(
 data class WalletWithdrawalEntity(
     @PrimaryKey val id: String,
     /** The wallet owner's authenticated Firebase UID — resolved internally, never trusted from UI. */
-    val workerId: String,
-    val amount: Double,
+    var workerId: String,
+    var amount: Double,
     /** Normalized mobile-money destination (digits only). NEVER proof of identity. */
-    val destinationMomoNumber: String,
+    var destinationMomoNumber: String,
     /** PENDING / PROCESSING / COMPLETED / FAILED / CANCELLED / REVERSED. */
-    val status: String,
+    var status: String,
     /** Caller-supplied retry token used to deduplicate the same intended operation. */
-    val idempotencyKey: String,
-    val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    var idempotencyKey: String,
+    var createdAt: Long = System.currentTimeMillis(),
+    var updatedAt: Long = System.currentTimeMillis()
 )
 
