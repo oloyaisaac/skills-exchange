@@ -534,6 +534,7 @@ class SkillsExchangeRepository(
      * hardcoded `momoPhoneNumber` below is left untouched — payment contact is a separate finding
      * and changing it here would alter behaviour beyond F4's scope.
      */
+
     suspend fun addJobPost(
         title: String,
         category: String,
@@ -541,6 +542,11 @@ class SkillsExchangeRepository(
         budget: Double,
         urgency: String,
         district: String,
+        streetAddress: String = "",
+        apartmentSuite: String = "",
+        landmarkDirections: String = "",
+        scheduledAt: Long = 0,
+        photos: List<String> = emptyList(),
         materialsProvidedBy: String = "RESIDENT",
         laborHours: Double = 2.0,
         laborRate: Double = 60.0,
@@ -570,6 +576,11 @@ class SkillsExchangeRepository(
             // F4: DISPLAY-ONLY text — never an ownership key.
             postedByResident = "You ($district)",
             district = district,
+            streetAddress = streetAddress,
+            apartmentSuite = apartmentSuite,
+            landmarkDirections = landmarkDirections,
+            scheduledAt = scheduledAt,
+            photos = photos,
             budget = grandTotal,
             urgency = urgency,
             status = "Requested",

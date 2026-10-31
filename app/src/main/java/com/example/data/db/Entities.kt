@@ -182,7 +182,6 @@ data class JobPostEntity(
     @PrimaryKey val id: String,
     var title: String,
     var streetAddress: String = "",
-    var apartmentSuite: String = "",
     var landmarkDirections: String = "",
     var photos: List<String> = emptyList(),
     var scheduledAt: Long = 0,

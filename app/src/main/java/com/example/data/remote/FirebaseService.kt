@@ -471,6 +471,11 @@ class FirebaseService(private val context: Context? = null) {
                 // DISPLAY-ONLY text; never an authorization key.
                 "postedByResident" to job.postedByResident,
                 "district" to job.district,
+                "streetAddress" to job.streetAddress,
+                "apartmentSuite" to job.apartmentSuite,
+                "landmarkDirections" to job.landmarkDirections,
+                "scheduledAt" to job.scheduledAt,
+                "photos" to job.photos,
                 "budget" to job.budget,
                 "urgency" to job.urgency,
                 "status" to job.status,

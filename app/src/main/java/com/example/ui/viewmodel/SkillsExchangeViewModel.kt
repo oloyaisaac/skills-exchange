@@ -623,7 +623,12 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         laborHours: Double = 2.0,
         laborRate: Double = 60.0,
         jobType: String = "ONE_TIME",
-        recurringSchedule: String = "WEEKLY"
+        recurringSchedule: String = "WEEKLY",
+        streetAddress: String = "",
+        apartmentSuite: String = "",
+        landmarkDirections: String = "",
+        scheduledAt: Long = 0,
+        photos: List<String> = emptyList()
     ) {
         viewModelScope.launch {
             val district = filterState.value.district
@@ -634,6 +639,11 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 budget = budget,
                 urgency = urgency,
                 district = district,
+                streetAddress = streetAddress,
+                apartmentSuite = apartmentSuite,
+                landmarkDirections = landmarkDirections,
+                scheduledAt = scheduledAt,
+                photos = photos,
                 materialsProvidedBy = materialsProvidedBy,
                 laborHours = laborHours,
                 laborRate = laborRate,
