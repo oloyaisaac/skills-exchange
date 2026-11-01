@@ -674,19 +674,46 @@ class FirebaseService(private val context: Context? = null) {
      * never touch Room or Firestore.
      */
     suspend fun uploadProfilePhoto(userId: String, photoUri: Uri): String? {
-    /**\n     * AUDIT-C-PHOTO: Uploads a job photo to Firebase Storage at the path\n     * `jobs/{jobId}/initial_photos/{photoId}` and returns the download URL.\n     * Uses the Android content resolver to read the selected URI safely.\n     * Validates image MIME types and file size before upload.\n     *\n     * EMAIL STYLE: uploadJobPostPhoto(jobId, photoUri) takes a JWT style signature:\n     * (jobId: String, photoUri: android.net.Uri) -> returns the download URL String\n     * with all auth/permission handling done server-side.\n     */\n    suspend fun uploadJobPostPhoto(jobId: String, photoUri: android.net.Uri): String? {\n        // Fail closed if no authentication context\n        val uid = firebaseAuth.currentUser?.uid ?: return null\n        if (jobId.isBlank()) return null\n\n        // Validate content type - must be an image\n        val contentType = context?.contentResolver?.getType(photoUri) ?: \"\"\n        if (!contentType.startsWith(\"image/\")) return null\n\n        // Validate file size (max 10MB)\n        val stream = context?.contentResolver?.openInputStream(photoUri) ?: return null\n        val fileSize = stream.use { it?.available()?.toLong() ?: 0L }\n        stream.close()\n        if (fileSize > 10 * 1024 * 1024) return null // 10MB limit\n\n        // Generate unique filename\n        val photoId = java.util.UUID.randomUUID().toString()\n        val fileName = \"$photoId\"\n\n        // Upload to storage/jobs/{jobId}/initial_photos/{photoId}\n        try {\n            val storageRef = storage?.child(\"jobs/$jobId/initial_photos/$fileName\")\n                ?: return null\n\n            // Use putFile with ByteArray for direct upload (memory efficient)\n            val inputStream = context?.contentResolver?.openInputStream(photoUri)\n            val bytes = inputStream.use { it?.readBytes() }\n            inputStream?.close()\n\n            if (bytes == null) return null\n\n            val uploadTask = storageRef.putBytes(bytes).await()\n            val downloadUrl = storageRef.downloadUrl.await()\n            return downloadUrl.toString()\n        } catch (e: Exception) {\n            // Avoid logging sensitive info - use generic error\n            Log.d(\"FirebaseService\", \"uploadJobPostPhoto failed: upload error\")\n            return null\n        }\n    }
-        if (userId.isBlank()) return null
-        val storageInstance = storage ?: return null
-        return try {
-            val fileName = "profile_${System.currentTimeMillis()}.jpg"
-            val storageRef = storageInstance.reference.child("avatars/$userId/$fileName")
-            storageRef.putFile(photoUri).await()
-            storageRef.downloadUrl.await().toString()
-        } catch (e: Exception) {
-            Log.e("FirebaseService", "Profile photo upload failed: ${e.message}")
-            null
-        }
+    // Fail closed if no authentication context or userId doesn't match auth
+    val uid = firebaseAuth.currentUser?.uid
+    if (uid == null || uid.isBlank() || uid != userId) return null
+
+    // Validate content type - must be an image
+    val contentType = context?.contentResolver?.getType(photoUri) ?: ""
+    if (!contentType.startsWith("image/")) return null
+
+    // Read image bytes and validate size (max 10MB) using readBytes(), NOT available()
+    val inputStream = context?.contentResolver?.openInputStream(photoUri)
+    val bytes = inputStream?.use { it?.readBytes() } ?: return null
+    inputStream?.close()
+    if (bytes.isEmpty()) return null
+    if (bytes.size > 10 * 1024 * 1024) return null // 10MB limit
+
+    // Generate unique filename with timestamp
+    val photoId = java.util.UUID.randomUUID().toString()
+    val timestamp = System.currentTimeMillis()
+    val fileName = "profile_${timestamp}_${photoId}"
+
+    // Upload to storage/avatars/{userId}/profile_{timestamp}_{photoId}
+    try {
+        val storageRef = storage?.child("avatars/${userId}/${fileName}") ?: return null
+        val uploadTask = storageRef.putBytes(bytes).await()
+        val downloadUrl = storageRef.downloadUrl.await()
+        return downloadUrl.toString()
+    } catch (e: Exception) {
+        // Avoid logging sensitive info - use generic error
+        Log.d("FirebaseService", "uploadProfilePhoto failed: upload error")
+        return null
     }
+}
+    /**\n     * AUDIT-C-PHOTO: Uploads a job photo to Firebase Storage at the path\n     * `jobs/{jobId}/initial_photos/{photoId}` and returns the download URL.\n     * Uses the Android content resolver to read the selected URI safely.\n     * Validates image MIME types and file size before upload.\n     *\n     * EMAIL STYLE: uploadJobPostPhoto(jobId, photoUri) takes a JWT style signature:\n     * (jobId: String, photoUri: android.net.Uri) -> returns the download URL String\n     * with all auth/permission handling done server-side.\n     */\n    }
+   /** AUDIT-C-PHOTO: Uploads a job photo to Firebase Storage at the path `jobs/{jobId}/initial_photos/{photoId}` and returns the download URL. Uses the Android content resolver to read the selected URI safely. Validates image MIME types and file size before upload. Returns null (fail closed) when [jobId] is blank, [photoUri] has an invalid MIME type, Firebase Storage is unavailable, or the upload/URL fetch fails. Only the resulting URL string is stored — image bytes never touch Room or Firestore. */
+suspend fun uploadJobPostPhoto(jobId: String, photoUri: Uri): String? {
+    // Fail closed if no authentication context
+    val uid = firebaseAuth.currentUser?.uid ?: return null
+    if (jobId.isBlank()) return null\n        // Fail closed if no authentication context\n        val uid = firebaseAuth.currentUser?.uid ?: return null\n        if (jobId.isBlank()) return null\n\n        // Validate content type - must be an image\n        val contentType = context?.contentResolver?.getType(photoUri) ?: \"\"\n        if (!contentType.startsWith(\"image/\")) return null\n\n        // Validate file size (max 10MB)\n        val stream = context?.contentResolver?.openInputStream(photoUri) ?: return null\n        val fileSize = bytes.size\n        stream.close()\n        if (fileSize > 10 * 1024 * 1024) return null // 10MB limit\n\n        // Generate unique filename\n        val photoId = java.util.UUID.randomUUID().toString()\n        val fileName = \"$photoId\"\n\n        // Upload to storage/jobs/{jobId}/initial_photos/{photoId}\n        try {\n            val storageRef = storage?.child(\"jobs/$jobId/initial_photos/$fileName\")\n                ?: return null\n\n            // Use putFile with ByteArray for direct upload (memory efficient)\n            val inputStream = context?.contentResolver?.openInputStream(photoUri)\n            val bytes = inputStream.use { it?.readBytes() }\n            inputStream?.close()\n\n            if (bytes == null) return null\n\n            val uploadTask = storageRef.putBytes(bytes).await()\n            val downloadUrl = storageRef.downloadUrl.await()\n            return downloadUrl.toString()\n        } catch (e: Exception) {\n            // Avoid logging sensitive info - use generic error\n            Log.d(\"FirebaseService\", \"uploadJobPostPhoto failed: upload error\")\n            return null\n        }\n    }
+        
+        
 
     /**
      * REG-002: Reads back the caller's own guarantor submission so the app can show the
