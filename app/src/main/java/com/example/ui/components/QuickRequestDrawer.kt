@@ -371,6 +371,10 @@ fun QuickRequestDrawer(
     var laborRateText by remember { mutableStateOf("60.0") }
     var jobType by remember { mutableStateOf("ONE_TIME") }
     var recurringSchedule by remember { mutableStateOf("WEEKLY") }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+    var showPhotoPicker by remember { mutableStateOf(false) }
+    var selectedPhotoUri by remember { mutableStateOf<Uri?>(null) }
 
     // Auto-populate when AI Voice Transcription completes
     LaunchedEffect(transcribedVoiceJob) {
@@ -872,7 +876,7 @@ fun AddressDetailsRow(
                     ) {
                         // Date picker button
                         OutlinedButton(
-                            onClick = { /* DatePickerImplementation */ },
+                            onClick = { showDatePicker = true },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(6.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Slate50)
@@ -889,7 +893,7 @@ fun AddressDetailsRow(
                         }
                         // Time picker button
                         OutlinedButton(
-                            onClick = { /* TimePickerImplementation */ },
+                            onClick = { showTimePicker = true },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(6.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Slate50)
@@ -904,6 +908,29 @@ fun AddressDetailsRow(
                                 fontSize = 12.sp
                             )
                         }
+                    }
+
+                    if (showDatePicker) {
+                        AppointmentsDatePicker(
+                            selectedDate = scheduledAt,
+                            onDateChange = { scheduledAt = it }
+                        )
+                    }
+
+                    if (showTimePicker) {
+                        AppointmentsTimePicker(
+                            selectedTime = scheduledAt,
+                            onTimeChange = { scheduledAt = it }
+                        )
+                    }
+
+                    if (showPhotoPicker) {
+                        OutlinedTextField(
+                            value = selectedPhotoUri?.toString() ?: "No photo selected",
+                            readOnly = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { showPhotoPicker = true }
+                        )
                     }
 
                     OutlinedTextField(
