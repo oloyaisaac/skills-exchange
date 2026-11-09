@@ -17,6 +17,9 @@ import com.example.data.db.JobPostEntity
 import com.example.data.db.ServiceProviderEntity
 import com.example.data.db.SkillEndorsementEntity
 import com.example.data.db.UserProfileEntity
+import com.example.data.remote.AfricaTalkingService
+import com.example.data.remote.AfricaTalkingService.OtpResponse
+import com.example.data.remote.AfricaTalkingService.VerificationResponse
 import com.example.data.remote.FirebaseService
 import com.example.data.remote.GeminiAudioTranscriptionService
 import com.example.data.remote.GeminiMapsGroundingService
@@ -143,6 +146,14 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     val authPendingAction = MutableStateFlow<String?>(null)
     val isOnboardingCompleted = MutableStateFlow(false)
     val isSessionRestored = MutableStateFlow(false)
+
+    // Africa's Talking OTP authentication state
+    private val africaService = AfricaTalkingService()
+    val otpSendState = MutableStateFlow<OtpResponse?>(null)
+    val otpVerifyState = MutableStateFlow<VerificationResponse?>(null)
+    var africaStoredRequestId: String? = null
+    var africaPhoneError: String? = null
+    var africaOtpError: String? = null
 
     val selectedProvider = MutableStateFlow<ServiceProviderEntity?>(null)
     val selectedJob = MutableStateFlow<JobPostEntity?>(null)
@@ -454,6 +465,61 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
         setUserRoleMode(newMode)
     }
+
+    // ============================================================
+    // AFRICA'S TALKING OTP AUTHENTICATION FLOW
+    // ============================================================
+
+    /** Send OTP via Africa's Talking */
+    fun loginWithPhone(phoneNumber: String) {
+        viewModelScope.launch {
+            otpSendState.value = null
+            africaPhoneError = null
+            val result = africaService.sendOtp(phoneNumber)
+            when (val r = result) {
+                is OtpResponse.Success -> {
+                    otpSendState.value = r
+                    africaStoredRequestId = r.requestId
+                    africaPhoneError = null
+                }
+                is OtpResponse.Error -> {
+                    africaPhoneError = r.message
+                }
+            }
+        }
+    }
+
+    /** Verify OTP and complete login */
+    fun verifyOtpAndLogin(otpCode: String) {
+        viewModelScope.launch {
+            otpVerifyState.value = null
+            africaOtpError = null
+            val result = africaService.verifyOtp(phoneNumberFromUi.value, otpCode, africaStoredRequestId)
+            when (val v = result) {
+                is VerificationResponse.Valid -> {
+                    otpVerifyState.value = v
+                    loginUser(v.userId ?: africaStoredRequestId ?: africaPhoneError ?: "", phoneNumberFromUi.value)
+                }
+                is VerificationResponse.Error -> {
+                    africaOtpError = v.message
+                }
+            }
+        }
+    }
+
+    /** Complete login with phone-backed identity */
+    fun loginUserWithPhone(authoritativeUid: String, phoneNumber: String) {
+        isAuthenticated.value = true
+        currentUserPhone.value = phoneNumber
+        authState.value = AuthState.SignedIn
+        isOnboardingCompleted.value = false
+    }
+
+    private var phoneNumberFromUi by mutableStateOf("")
+    fun setPhoneNumberFromUi(phone: String) {
+        phoneNumberFromUi = phone
+    }
+
 
     val providers: StateFlow<List<ServiceProviderEntity>> = combine(
         repository.providers,
@@ -2245,6 +2311,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     fun sendOtp(phoneNumber: String, onResult: (Boolean, String?) -> Unit) {
         pendingPhoneNumber = phoneNumber
+        phoneNumberFromUi = phoneNumber
         viewModelScope.launch {
             authState.value = AuthState.SendingOtp
             authError.value = null
@@ -2259,16 +2326,21 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             }
 
             try {
-                val result = firebaseService.sendPhoneVerificationCode(phoneNumber)
-                if (result.isSuccess) {
-                    authState.value = AuthState.OtpSent
-                    phoneError.value = null
-                    onResult(true, null)
-                } else {
-                    val error = result.exceptionOrNull()?.message ?: "Failed to send OTP"
-                    authState.value = AuthState.Error(error)
-                    authError.value = error
-                    onResult(false, error)
+                val result = africaService.sendOtp(phoneNumber)
+                when (result) {
+                    is OtpResponse.Success -> {
+                        authState.value = AuthState.OtpSent
+                        phoneError.value = null
+                        africaStoredRequestId = result.requestId
+                        onResult(true, null)
+                    }
+                    is OtpResponse.Error -> {
+                        val error = result.message
+                        phoneError.value = error
+                        authState.value = AuthState.Error(error)
+                        authError.value = error
+                        onResult(false, error)
+                    }
                 }
             } catch (e: Exception) {
                 val error = e.message ?: "Failed to send OTP"
@@ -2294,45 +2366,30 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             }
 
             try {
-                val result = firebaseService.verifyPhoneCode(otpCode)
-                if (result.isSuccess) {
-                    // C2-1: the session owner is the Firebase UID that the SMS-code verification
-                    // just produced. It is never a local Room row id and never a placeholder —
-                    // verification events that produced no phone-backed identity have already
-                    // failed closed inside FirebaseService.
-                    val verifiedUser = result.getOrNull() ?: firebaseService.getCurrentUser()
-                    val userId = resolveSessionOwnerId(verifiedUser?.uid, firebaseService.getCurrentUser()?.uid)
-                    if (userId == null) {
-                        isAuthenticated.value = false
-                        val error = "Phone verification did not complete. Request a new code and try again."
+                val result = africaService.verifyOtp(phoneNumberFromUi.value, otpCode, africaStoredRequestId)
+                when (result) {
+                    is VerificationResponse.Valid -> {
+                        authState.value = AuthState.SignedIn
+                        isAuthenticated.value = true
+                        currentUserPhone.value = phoneNumberFromUi.value
+                        otpError.value = null
+                        // AUTH-002: Persist session
+                        val deviceId = sessionManager.getDeviceId(appContext)
+                        sessionManager.saveSession(
+                            isAuthenticated = true,
+                            phone = phoneNumberFromUi.value,
+                            userId = result.userId ?: africaStoredRequestId ?: pendingPhoneNumber ?: "",
+                            deviceId = deviceId
+                        )
+                        onResult(true, null)
+                    }
+                    is VerificationResponse.Error -> {
+                        val error = result.message
                         authState.value = AuthState.Error(error)
                         authError.value = error
                         otpError.value = error
                         onResult(false, error)
-                        return@launch
                     }
-                    val phone = pendingPhoneNumber?.takeIf { it.isNotBlank() }
-                        ?: verifiedUser?.phoneNumber?.takeIf { it.isNotBlank() }
-                        ?: currentUserPhone.value
-                    authState.value = AuthState.SignedIn
-                    isAuthenticated.value = true
-                    currentUserPhone.value = phone
-                    otpError.value = null
-                    // AUTH-002: Persist session
-                    val deviceId = sessionManager.getDeviceId(appContext)
-                    sessionManager.saveSession(
-                        isAuthenticated = true,
-                        phone = phone,
-                        userId = userId,
-                        deviceId = deviceId
-                    )
-                    onResult(true, null)
-                } else {
-                    val error = result.exceptionOrNull()?.message ?: "Invalid verification code"
-                    authState.value = AuthState.Error(error)
-                    authError.value = error
-                    otpError.value = error
-                    onResult(false, error)
                 }
             } catch (e: Exception) {
                 val error = e.message ?: "Verification failed"
