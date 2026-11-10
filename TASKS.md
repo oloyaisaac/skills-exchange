@@ -320,7 +320,7 @@ Full finding text (A1–A8, B1–B9, G1–G7, D1–D11, N1–N4, P1–P2, M1–M
 |---|---|---|---|---|
 | AUDIT-C-PHOTO | P1 | Job Post Photo & Video Attachment Picker | ✅ Completed | Photo attachment picker framework implemented in QuickRequestDrawer; state variables and UI added; photos can be selected and uploaded to Firebase Storage with URLs persisted to JobPostEntity |
 | AUDIT-C-SCHEDULE | P1 | Specific Date/Time Appointment Scheduling | ✅ Completed | Date/time picker implemented in QuickRequestDrawer; clients can select scheduled date and time window; `scheduledAt` field persisted to JobPostEntity |
-| AUDIT-C-ADDRESS | P1 | Exact Street Address & Landmark Directions | 🔄 In Progress | `JobPostEntity` expanded with streetAddress, apartmentSuite, landmarkDirections fields; QuickRequestDrawer updated to collect these from clients; persisted to JobPostEntity alongside district |
+| AUDIT-C-ADDRESS | P1 | Exact Street Address & Landmark Directions | ✅ Completed | `JobPostEntity` expanded with streetAddress, apartmentSuite, landmarkDirections fields; QuickRequestDrawer updated to collect these from clients; persisted to JobPostEntity alongside district; FirebaseService syncs to Firestore |
   | AUDIT-C-AUTH | P1 | Africa's Talking OTP Authentication | 🔄 In Progress | Primary authentication via Africa's Talking SMS OTP; replaced Firebase Phone Auth; phone-backed authoritative identity; cost savings on Firebase |
   | AT-001 | P1 | AfricaTalkingService.kt implementation | ✅ Completed | `sendOtp()` and `verifyOtp()` functions implemented; `OtpResponse` and `VerificationResponse` data classes; API key integrated |
   | AT-002 | P1 | OnboardingScreen.kt Africa's Talking integration | ✅ Completed | Phone OTP UI (send OTP, verify OTP) wired to ViewModel |
