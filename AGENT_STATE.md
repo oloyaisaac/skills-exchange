@@ -1187,3 +1187,6 @@ and every server-side rule √¢‚Ç¨‚Äù `firebase deploy --only firestore:rules,stor
 3. Render `authError` (D2) and re-test the mode-card tap as a guest.
 4. Then resume the operational backlog from `### Next action (for the next session)` above.
 
+
+## ? 2026-10-23 - SECURITY SEVEN-HOLE AUDIT ó FULL CODE REVIEW COMPLETE (read-only)
+## ? 2026-10-23 - SECURITY SEVEN-HOLE AUDIT ó FULL CODE REVIEW COMPLETE (read-only)
