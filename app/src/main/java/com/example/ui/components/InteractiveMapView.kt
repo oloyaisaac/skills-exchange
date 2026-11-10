@@ -207,7 +207,11 @@ fun InteractiveMapView(
     onSelectProvider: (ServiceProviderEntity) -> Unit,
     radiusMiles: Double,
     activeRegion: CurrencyRegion = CurrencyRegion.currentRegion,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // AUDIT-C-TRACKING: Optional worker en-route location
+    workerLatitude: Double? = null,
+    workerLongitude: Double? = null,
+    workerJobId: String? = null
 ) {
     val context = LocalContext.current
 
@@ -238,6 +242,7 @@ fun InteractiveMapView(
             true
         }
 
+        var workerMarker: Marker? = null
         markers.forEach { it.remove() }
         markers = providers.map { provider ->
             val position = LatLng(provider.latitude, provider.longitude)
@@ -249,6 +254,18 @@ fun InteractiveMapView(
             )
             marker
         }.filterNotNull()
+
+        // AUDIT-C-TRACKING: Render worker en-route marker on map
+        if (workerLatitude != null && workerLongitude != null) {
+            val workerPosition = LatLng(workerLatitude!!, workerLongitude!!)
+            workerMarker = googleMapInstance?.addMarker(
+                MarkerOptions()
+                    .position(workerPosition)
+                    .title("Worker En Route")
+                    .snippet("Heading to job $workerJobId")
+                    .icon(com.google.android.gms.maps.model.BitmapDescriptorFactory.defaultMarker(com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_AZURE))
+            )
+        }
 
         if (selectedProvider != null && markers.isNotEmpty()) {
             val selectedIndex = providers.indexOfFirst { it.id == selectedProvider.id }
@@ -264,6 +281,7 @@ fun InteractiveMapView(
     // Cleanup MapView resources when leaving the map view to reduce memory usage
     DisposableEffect(Unit) {
         onDispose {
+            workerMarker?.remove()
             mapViewReference?.onPause()
             mapViewReference?.onDestroy()
             googleMapInstance = null

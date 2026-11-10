@@ -71,7 +71,10 @@ interface JobPostDao {
     @Query("UPDATE job_posts SET assignedProviderId = :providerId, assignedProviderName = :providerName, status = 'Accepted', escrowStatus = 'DEPOSIT_PROMPTED' WHERE id = :jobId")
     suspend fun assignProvider(jobId: String, providerId: String, providerName: String)
 
-    @Query("UPDATE job_posts SET escrowStatus = :escrowStatus WHERE id = :jobId")
+    @Query("UPDATE job_posts SET workerLatitude = :latitude, workerLongitude = :longitude, workerLocationUpdatedAt = :timestamp WHERE id = :jobId")
+    suspend fun updateWorkerLocation(jobId: String, latitude: Double, longitude: Double, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE job_posts SET status = :status WHERE id = :jobId")
     suspend fun updateEscrowStatus(jobId: String, escrowStatus: String)
 
     @Query("UPDATE job_posts SET beforePhotoUrl = :beforeUrl, afterPhotoUrl = :afterUrl WHERE id = :jobId")

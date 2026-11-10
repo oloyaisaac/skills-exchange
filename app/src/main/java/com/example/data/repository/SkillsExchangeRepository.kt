@@ -728,6 +728,15 @@ class SkillsExchangeRepository(
         return transitionJobStatus(jobId, job.status, newStatus)
     }
 
+    /** AUDIT-C-TRACKING: Update real-time worker location for a job */
+    suspend fun updateWorkerLocation(
+        jobId: String,
+        latitude: Double,
+        longitude: Double
+    ) {
+        db.jobPostDao().updateWorkerLocation(jobId, latitude, longitude)
+    }
+
     suspend fun updateEscrowStatus(jobId: String, newEscrowStatus: String) {
         db.jobPostDao().updateEscrowStatus(jobId, newEscrowStatus)
 

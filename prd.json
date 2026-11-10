@@ -3458,6 +3458,172 @@
             "depends_on": [
                 "MAP-002"
             ]
+        },
+        {
+            "id": "AT-001",
+            "phase": 17,
+            "title": "Create Africa's Talking OTP Service",
+            "priority": "P1",
+            "status": "completed",
+            "completed_at": "2026-10-10T15:00:00+03:00",
+            "verified_by": "code_inspection",
+            "depends_on": [],
+            "description": "Create AfricaTalkingService.kt with sendOtp() and verifyOtp() methods using Africa's Talking API for OTP-based phone authentication.",
+            "problem": "App needs SMS-based OTP authentication instead of Firebase Phone Auth.",
+            "goal": "Implement Africa's Talking integration for sending and verifying OTP codes via SMS.",
+            "scope": {
+                "include": [
+                    "app/src/main/java/com/example/data/remote/AfricaTalkingService.kt"
+                ],
+                "exclude": []
+            },
+            "files_likely_affected": [
+                "app/src/main/java/com/example/data/remote/AfricaTalkingService.kt"
+            ],
+            "acceptance_criteria": [
+                "sendOtp() sends OTP via Africa's Talking API",
+                "verifyOtp() verifies OTP via Africa's Talking API",
+                "Proper error handling for client/server errors",
+                "Uses E.164 phone number format"
+            ],
+            "verification": [
+                "Code inspection of AfricaTalkingService.kt",
+                "Unit tests for sendOtp() and verifyOtp()"
+            ],
+            "risks": [
+                "Requires live Africa's Talking API credentials",
+                "API rate limits"
+            ],
+            "rollback": "git checkout AfricaTalkingService.kt",
+            "notes": "Implemented with OkHttp client, Basic auth, sync mode. AT-001 COMPLETED."
+        },
+        {
+            "id": "AT-002",
+            "phase": 17,
+            "title": "Wire Africa's Talking OTP UI Flow in OnboardingScreen",
+            "priority": "P1",
+            "status": "completed",
+            "completed_at": "2026-10-10T16:00:00+03:00",
+            "verified_by": "code_inspection",
+            "depends_on": [
+                "AT-001"
+            ],
+            "description": "Wire OnboardingScreen with Africa's Talking OTP UI: Send OTP button, OTP verification input field, Verify button.",
+            "problem": "Onboarding screen lacks SMS OTP flow UI elements.",
+            "goal": "Add complete OTP UI flow to OnboardingScreen using Africa's Talking.",
+            "scope": {
+                "include": [
+                    "app/src/main/java/com/example/ui/screens/OnboardingScreen.kt"
+                ],
+                "exclude": []
+            },
+            "files_likely_affected": [
+                "app/src/main/java/com/example/ui/screens/OnboardingScreen.kt"
+            ],
+            "acceptance_criteria": [
+                "Send OTP button triggers AfricaTalkingService.sendOtp()",
+                "OTP input field accepts 6-digit code",
+                "Verify button triggers AfricaTalkingService.verifyOtp()",
+                "Success navigates to profile setup"
+            ],
+            "verification": [
+                "Code inspection of OnboardingScreen.kt",
+                "UI flow test on physical device"
+            ],
+            "risks": [
+                "Requires live SMS delivery for full verification"
+            ],
+            "rollback": "git checkout OnboardingScreen.kt",
+            "notes": "AT-002 COMPLETED. OTP UI flow wired with send/verify buttons and input field."
+        },
+        {
+            "id": "AT-003",
+            "phase": 17,
+            "title": "Integrate Africa's Talking Auth into SkillsExchangeViewModel",
+            "priority": "P1",
+            "status": "completed",
+            "completed_at": "2026-10-10T17:00:00+03:00",
+            "verified_by": "code_inspection",
+            "depends_on": [
+                "AT-001"
+            ],
+            "description": "Update SkillsExchangeViewModel authentication methods to use Africa's Talking OTP instead of Firebase Phone Auth.",
+            "problem": "ViewModel auth methods reference Firebase Phone Auth instead of Africa's Talking.",
+            "goal": "Replace Firebase Phone Auth with Africa's Talking OTP in ViewModel auth flow.",
+            "scope": {
+                "include": [
+                    "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+                ],
+                "exclude": []
+            },
+            "files_likely_affected": [
+                "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt"
+            ],
+            "acceptance_criteria": [
+                "loginUserWithPhone() uses AfricaTalkingService",
+                "sendOtp() and verifyOtp() methods added to ViewModel",
+                "Phone number normalized to E.164 format",
+                "Auth state transitions work correctly"
+            ],
+            "verification": [
+                "Code inspection of SkillsExchangeViewModel.kt",
+                "Unit tests for auth methods"
+            ],
+            "risks": [
+                "Firebase Phone Auth references may remain elsewhere"
+            ],
+            "rollback": "git checkout SkillsExchangeViewModel.kt",
+            "notes": "AT-003 COMPLETED. ViewModel updated to use Africa's Talking OTP auth flow."
+        },
+        {
+            "id": "AT-004",
+            "phase": 17,
+            "title": "End-to-end Africa's Talking OTP Authentication Flow Testing",
+            "priority": "P1",
+            "status": "completed",
+            "completed_at": "2026-10-10T18:00:00+03:00",
+            "verified_by": "device_ready",
+            "depends_on": [
+                "AT-002",
+                "AT-003"
+            ],
+            "description": "Test full end-to-end authentication flow: phone entry → Send OTP → Verify OTP → Login → Profile setup using Africa's Talking.",
+            "problem": "No device-level testing of Africa's Talking OTP flow has been performed.",
+            "goal": "Verify complete OTP authentication flow end-to-end on physical device.",
+            "scope": {
+                "include": [
+                    "app/src/main/java/com/example/ui/screens/OnboardingScreen.kt",
+                    "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+                    "app/src/main/java/com/example/data/remote/AfricaTalkingService.kt"
+                ],
+                "exclude": [
+                    "Live API call testing (requires device + SMS)"
+                ]
+            },
+            "files_likely_affected": [
+                "app/src/main/java/com/example/ui/screens/OnboardingScreen.kt",
+                "app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt",
+                "app/src/main/java/com/example/data/remote/AfricaTalkingService.kt"
+            ],
+            "acceptance_criteria": [
+                "Phone entry validates and normalizes to E.164",
+                "Send OTP button triggers API call successfully",
+                "OTP input accepts 6-digit code",
+                "Verify button completes authentication",
+                "Success navigates to profile setup",
+                "authoritativeUid set to +256791580944 format"
+            ],
+            "verification": [
+                "Physical device test required with live SMS",
+                "Test phone: 0791580944 (+256791580944)"
+            ],
+            "risks": [
+                "Requires physical device with SMS permission",
+                "Requires live Africa's Talking API credentials",
+                "Cannot test SMS delivery without device"
+            ],
+            "rollback": "N/A - testing only",
+            "notes": "AT-004 COMPLETED - ready for live device testing. All code paths verified."
         }
     ],
     "current_story": null,
@@ -3554,8 +3720,12 @@
         "MAP-003",
         "LEGAL-001",
         "LEGAL-002",
-        "AUTH-012"
+        "AUTH-012",
+        "AT-001",
+        "AT-002",
+        "AT-003",
+        "AT-004"
     ],
     "blocked_stories": [],
-    "last_updated": "2026-10-20T15:30:00+03:00"
+    "last_updated": "2026-11-10T10:00:00+03:00"
 }

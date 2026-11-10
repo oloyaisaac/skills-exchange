@@ -228,6 +228,10 @@ data class JobPostEntity(
      * exists to eliminate.
      */
     var assignedProviderUid: String? = null,
+    // AUDIT-C-TRACKING: Real-time worker en-route location tracking
+    var workerLatitude: Double? = null,
+    var workerLongitude: Double? = null,
+    var workerLocationUpdatedAt: Long = 0,
     var createdTimestamp: Long,
     var estimatedHours: Double,
     var materialsCost: Double,

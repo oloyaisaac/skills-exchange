@@ -28,7 +28,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         WalletWithdrawalEntity::class,
         SosIncidentEntity::class
     ],
-    version = 26,
+    version = 27,
     exportSchema = false,
     converters = [TypeConverters::class]
 )
@@ -549,6 +549,18 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * AUDIT-C-TRACKING: Add workerLatitude, workerLongitude, workerLocationUpdatedAt columns to job_posts.
+         * Additive only — no existing column is altered or dropped.
+         */
+        val MIGRATION_26_27 = object : Migration(26, 27) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE job_posts ADD COLUMN workerLatitude REAL")
+                database.execSQL("ALTER TABLE job_posts ADD COLUMN workerLongitude REAL")
+                database.execSQL("ALTER TABLE job_posts ADD COLUMN workerLocationUpdatedAt INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -556,7 +568,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "skills_exchange_database"
                 )
-                    .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26)
+                    .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27)
                     .build()
                 INSTANCE = instance
                 instance
