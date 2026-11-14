@@ -4,7 +4,6 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-
 // JOB-012: Job Address Fields
 data class JobAddress(
     var streetAddress: String = "",
@@ -178,6 +177,7 @@ data class SkillEndorsementEntity(
         Index(value = ["postedByUid"])
     ]
 )
+@androidx.room.TypeConverters(TypeConverters::class)
 data class JobPostEntity(
     @PrimaryKey val id: String,
     var title: String,
