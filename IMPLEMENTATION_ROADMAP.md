@@ -269,3 +269,36 @@ Execute by dependency wave; inside a wave, CRITICAL first, then HIGH, MEDIUM, LO
 
 - Any change to a finding requires a re-review of the owning report, not an edit to this plan alone.
 
+
+## 9. Findings raised by multiple reviewers
+
+The plan assigns each finding one primary owner so work is not duplicated, but the other reviewers’
+perspectives remain attached to the finding. These tasks were raised independently by more than
+one reviewer; the owning task must satisfy all listed perspectives.
+
+| Task | Finding | Primary owner | Also raised by | Reviewer-local IDs |
+|---|---|---|---|---|
+| REM-009 | MR-009 | R03 | R14 | R03-02, R14-05 |
+| REM-011 | MR-011 | R07 | R05 | R07-11, R05-01 |
+| REM-016 | MR-016 | R07 | R09 | R07-06, R09-07 |
+| REM-017 | MR-017 | R07 | R03 | R07-07, R03-03 |
+| REM-018 | MR-018 | R07 | R10 | R07-08, R10-04 |
+| REM-019 | MR-019 | R07 | R11 | R07-09, R11-03 |
+| REM-022 | MR-022 | R06 | R02 | R06-01, R02-01 |
+| REM-032 | MR-032 | R08 | R03 | R08-07, R03-06 |
+| REM-033 | MR-033 | R05 | R08 | R05-05, R08-08 |
+| REM-035 | MR-035 | R10 | R03 | R10-02, R03-04 |
+| REM-036 | MR-036 | R10 | R02 | R10-03, R02-04 |
+| REM-037 | MR-037 | R09 | R10 | R09-02, R10-05 |
+| REM-046 | MR-046 | R04 | R11 | R04-01, R11-04 |
+| REM-047 | MR-047 | R04 | R08 | R04-02, R08-09 |
+| REM-049 | MR-049 | R04 | R13 | R04-04, R13-06 |
+| REM-052 | MR-052 | R05 | R13 | R05-03, R13-05 |
+| REM-054 | MR-054 | R02 | R12 | R02-02, R12-05 |
+| REM-056 | MR-056 | R12 | R02 | R12-02, R12-03, R02-05 |
+| REM-058 | MR-058 | R12 | R11 | R12-06, R11-05 |
+| REM-060 | MR-060 | R13 | R02 | R13-02, R02-03 |
+
+**Shared findings:** 20 of 73. All other findings have a single reporter.
+
+Where reviewers reached different conclusions, the master register records them in §4 (corrections and disagreements); this table does not average them away. For example, R03 treats the webhook as integrity-safe because it re-queries the provider, while R07 treats it as unauthenticated; both are true and both requirements are in REM-021.
