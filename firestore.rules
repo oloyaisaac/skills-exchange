@@ -233,6 +233,12 @@ service cloud.firestore {
 
     // REM-023: provisioning audit trail. Written only by scripts/grant-admin.js through the
     // Admin SDK; readable by administrators, never writable from a client.
+    // REM-027: refunds are server-written only; admins can read the trail.
+    match /refunds/{refundId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     match /admin_audit/{auditId} {
       allow read: if isAdmin();
       allow write: if false;

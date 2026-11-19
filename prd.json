@@ -5291,7 +5291,10 @@
       "phase": 19,
       "title": "Wire escrow release end-to-end",
       "priority": "CRITICAL",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
+      "status_note": "Completing a job as its client now calls releaseEscrowToWorker. The server ignores client amounts and wallets: it reads escrowAmount/budget from the job and the phone from the worker profile, requires FUNDS_LOCKED_IN_ESCROW, uses a deterministic PAYOUT-{jobId} id, and returns the existing payout on retry. 3 tests. Not verified: no MTN sandbox or deployed callable; Android cannot be compiled here.",
+      "independent_verification": "PENDING",
+
       "depends_on": [
         "REM-002",
         "REM-022"
@@ -5330,7 +5333,10 @@
       "phase": 19,
       "title": "Implement refunds",
       "priority": "CRITICAL",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
+      "status_note": "A refund is now a provider request: refunds are allowed only against a SUCCESS collection for the job, capped at the settled amount, once per job; the refund document records PENDING/FAILED and the job only becomes REFUND_PENDING when the provider accepts. The fake QUEUED payout plus immediate REFUNDED write in dispute resolution is gone. 3 tests. Not verified: MTN refund sandbox unavailable.",
+      "independent_verification": "PENDING",
+
       "depends_on": [
         "REM-002",
         "REM-026"
@@ -7108,7 +7114,7 @@
       "review_report": "review_results/R02_ANDROID_CLIENT.md",
       "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
     }],
-    "current_story": "REM-025",
+    "current_story": "REM-026",
   "review_cycle_status": "all_15_reviews_complete_0_pass_15_fail",
   "review_cycle_completed_at": "2026-11-19T18:00:00+03:00",
     "completed_stories": [
@@ -7227,5 +7233,5 @@
     "RVW-013",
     "RVW-015"],
     "blocked_stories": [],
-    "last_updated": "2026-11-20T03:20:00+03:00"
+    "last_updated": "2026-11-20T04:05:00+03:00"
 }

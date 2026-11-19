@@ -266,6 +266,24 @@ class FirebaseService(private val context: Context? = null) {
     }
 
     /** REM-024: revoke refresh tokens server-side so a copied session cannot outlive logout. */
+    /**
+     * REM-026: ask the server to release escrow. Only identifiers are sent; the amount and the
+     * worker's wallet are read server-side, and a retry returns the existing payout.
+     */
+    suspend fun releaseEscrowToWorker(jobId: String, workerId: String): Pair<Boolean, String> {
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val result = functions.getHttpsCallable("releaseEscrowToWorker")
+                .call(mapOf("jobId" to jobId, "workerId" to workerId))
+                .await()
+            val data = result.data as? Map<*, *>
+            Pair(true, data?.get("message")?.toString() ?: "Escrow released.")
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "releaseEscrowToWorker failed: ${e.message}")
+            Pair(false, e.message ?: "Escrow release failed.")
+        }
+    }
+
     suspend fun revokeMyTokens(reason: String = "LOGOUT"): Boolean {
         return try {
             val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()

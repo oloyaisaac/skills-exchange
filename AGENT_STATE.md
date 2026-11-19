@@ -1,3 +1,20 @@
+## 2026-11-20 (Wave 1e) - MONEY PATH: RELEASE AND REFUND
+
+- **REM-026 (IN_PROGRESS).** `escrowRelease.ts` decides release from server records; the callable
+  takes only jobId/workerId, requires a funded escrow and a completed job, derives the amount and
+  wallet, and pays once per job. The Android completion flow now calls it and only marks escrow
+  released on success.
+- **REM-027 (IN_PROGRESS).** `refund.ts` refuses unsettled, over-amount, duplicate or reference-less
+  refunds. `refundEscrow` (admin) and dispute resolution request the provider refund; failures are
+  recorded as FAILED and never mark the job REFUNDED.
+- **Not verified:** MTN sandbox credentials absent; provider calls and the Android path unexecuted.
+  Android still cannot be compiled here.
+- **Tests:** 167/167 backend tests.
+
+**Next:** REM-028 (device payout fabricates DISBURSED) and REM-029 (client-side fees), R08.
+
+---
+
 ## 2026-11-20 (Wave 1d) - README CLAIMS ALIGNED TO SOURCE
 
 - **REM-071 (IN_PROGRESS).** README no longer advertises an Airtel Money integration or a web admin

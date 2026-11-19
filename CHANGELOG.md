@@ -1,5 +1,17 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [WAVE-1E] Server-authoritative escrow release and refunds
+
+- **REM-026 (IN_PROGRESS):** the client now calls `releaseEscrowToWorker` when a client completes a
+  job. The callable ignores client-supplied amounts and wallets: it reads the job's escrow amount and
+  the worker's phone server-side, requires `FUNDS_LOCKED_IN_ESCROW`, uses a deterministic
+  `PAYOUT-{jobId}` id and returns the existing payout on a retry. 3 tests.
+- **REM-027 (IN_PROGRESS):** refunds go through the provider. The fake `QUEUED` payout and immediate
+  `REFUNDED` job write in dispute resolution are removed; a `refunds` document records
+  PENDING/FAILED, and the job becomes `REFUND_PENDING` only when the provider accepts. 3 tests.
+- **Verification:** 167/167 backend tests, build exit 0. No MTN sandbox, so neither provider call nor
+  the Android release path has been executed.
+
 ### [2026-11-20] [WAVE-1D] README claims corrected
 
 - **REM-071 (IN_PROGRESS):** removed the Airtel Money integration claim and the "Admin Operations

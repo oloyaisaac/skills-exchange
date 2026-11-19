@@ -941,3 +941,10 @@ REM-001, which still needs a JDK and Android SDK to verify.
 
 - **REM-071:** the README no longer claims an Airtel Money integration or a web admin dashboard; the
   Android console is described as server-claim gated. A checker enforces the caveat and links.
+
+### 18.7 Wave 1e: money path
+
+- **REM-026:** escrow release is invoked by the client completion flow, but the server decides the
+  amount and wallet from its own records and pays once per job.
+- **REM-027:** refunds are provider requests against a settled collection; a failed request is never
+  presented as a refund. Verification against the MTN sandbox is outstanding.
