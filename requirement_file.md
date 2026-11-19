@@ -923,3 +923,21 @@ REM-001, which still needs a JDK and Android SDK to verify.
   `AFRICASTALKING_SENDER_ID`, and `SOS_DISPATCH_NUMBERS`.
 - **REM-035:** the same incident pushes to the FCM topic `sos_dispatch`.
 - Neither channel is verified against a live provider in this environment.
+
+### 18.4 Wave 1b: operator access
+
+- **REM-023:** the admin UI gate is server-verified via `getAdminAccess`; the `admin` custom claim
+  is granted/revoked only by `scripts/grant-admin.js`, which preserves other claims, revokes
+  refresh tokens and writes an immutable `admin_audit` record. Requires a Firebase Admin service
+  account and `ADMIN_ACTOR` to run.
+
+### 18.5 Wave 1c: session security
+
+- **REM-024:** destructive owner deletes require authentication within the last five minutes
+  (`auth_time`), and logout revokes refresh tokens server-side. The client blocks account deletion
+  on a stale session. Verification against a live project is outstanding.
+
+### 18.6 Wave 1d: README accuracy
+
+- **REM-071:** the README no longer claims an Airtel Money integration or a web admin dashboard; the
+  Android console is described as server-claim gated. A checker enforces the caveat and links.

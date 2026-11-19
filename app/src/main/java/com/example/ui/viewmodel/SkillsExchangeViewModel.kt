@@ -1345,6 +1345,12 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             // comes from FirebaseAuth only — the newest Room row is no longer consulted, so a stale
             // device profile can neither delete nor shield another account's data.
             val userId = currentAuthenticatedUid() ?: return@launch
+            // REM-024: account deletion is irreversible; require a recent sign-in before touching
+            // any data. The rules enforce the same five-minute window on owner deletes.
+            if (!firebaseService.hasFreshAuthentication()) {
+                authError.value = "Please sign in again before deleting your account."
+                return@launch
+            }
             val userJobIds = repository.jobs.first().map { it.id }
 
             val firestoreDeleted = firebaseService.deleteUserFirestoreData(userId, userJobIds)
@@ -1843,6 +1849,19 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         viewModelScope.launch {
             repository.currentTraining.collect { training ->
                 currentTraining.value = training
+            }
+        }
+    }
+
+    /** REM-023: true only after the server confirms the signed-in account holds the admin claim. */
+    val isAdminVerified = MutableStateFlow(false)
+
+    fun verifyAdminAccess() {
+        viewModelScope.launch {
+            val verified = repository.checkAdminAccess()
+            isAdminVerified.value = verified
+            if (verified) {
+                loadAdminVerificationQueue()
             }
         }
     }
@@ -2454,6 +2473,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                     repository.saveUserIdentityToServer(profile)
                 }
             }
+            // REM-024: revoke refresh tokens while the ID token is still valid, then clear locally.
+            firebaseService.revokeMyTokens("LOGOUT")
             repository.clearAllUserData()
             firebaseService.signOut()
             sessionManager.clearSession()

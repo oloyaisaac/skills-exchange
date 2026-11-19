@@ -1,5 +1,31 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [WAVE-1D] README claims corrected
+
+- **REM-071 (IN_PROGRESS):** removed the Airtel Money integration claim and the "Admin Operations
+  Dashboard" wording (the console is Android-only and server-claim gated); README keeps the
+  pre-production caveat and links the traceability matrix and document map.
+- `scripts/check_readme_claims.mjs` fails if those claims return; wired into CI alongside the other
+  documentation checks.
+
+### [2026-11-20] [WAVE-1C] Fresh authentication and session revocation
+
+- **REM-024 (IN_PROGRESS):** owner deletes in `firestore.rules` (worker_kyc, notifications,
+  job_quotes) now require `auth_time` within five minutes; the client refuses account deletion on a
+  stale session and calls `revokeMyTokens` before local sign-out, revoking refresh tokens
+  server-side. 3 tests.
+- **Verification:** 161/161 backend tests, build exit 0. No Firebase project, so stale-session and
+  revoked-token rejection are unverified end to end.
+
+### [2026-11-20] [WAVE-1B] Server-verified admin access and audited claim provisioning
+
+- **REM-023 (IN_PROGRESS):** the admin console no longer unlocks on a local boolean. `getAdminAccess`
+  returns the verified `admin` claim, `MainScreen` calls it, and `scripts/grant-admin.js` is the only
+  supported way to grant/revoke the claim: it preserves other claims, revokes refresh tokens and
+  writes an immutable `admin_audit` record naming the actor. 3 tests.
+- **Verification:** 158/158 backend tests, build exit 0. No Firebase project or admin service
+  account, so provisioning has not been exercised end to end.
+
 ### [2026-11-20] [WAVE-1A] Real SOS dispatch by SMS and FCM
 
 - **REM-034:** replaced the log-only `sendSmsAlert` stub with the Africa's Talking messaging API

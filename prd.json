@@ -5170,7 +5170,10 @@
       "phase": 19,
       "title": "Provision admin claims and gate the admin UI",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
+      "status_note": "Admin access is now server-verified: getAdminAccess returns the claim, the UI unlock calls it, and scripts/grant-admin.js sets/revokes the claim with an immutable admin_audit record and token revocation. 3 tests. Not verified: no Firebase project or admin credentials, so the claim has never been provisioned end to end.",
+      "independent_verification": "PENDING",
+
       "depends_on": [
         "REM-022"
       ],
@@ -5211,7 +5214,10 @@
       "phase": 19,
       "title": "Add re-authentication and token revocation",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
+      "status_note": "Destructive actions now require a sign-in within five minutes: hasFreshAuth() guards owner deletes in Firestore rules, the client blocks account deletion when stale, and revokeMyTokens revokes refresh tokens before local sign-out. 3 tests. Not verified: no Firebase project, so stale-session and revoked-token behaviour has not been observed.",
+      "independent_verification": "PENDING",
+
       "depends_on": [
         "REM-022"
       ],
@@ -6988,7 +6994,10 @@
       "phase": 19,
       "title": "Correct README capability claims",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
+      "status_note": "README no longer advertises Airtel Money integration or a web admin dashboard; it keeps the pre-production caveat and points to the traceability matrix. scripts/check_readme_claims.mjs guards those claims. Dependency on REM-023/REM-033 is not yet fully verified.",
+      "independent_verification": "PENDING",
+
       "depends_on": [
         "REM-033",
         "REM-023"
@@ -7099,7 +7108,7 @@
       "review_report": "review_results/R02_ANDROID_CLIENT.md",
       "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
     }],
-    "current_story": "REM-034",
+    "current_story": "REM-025",
   "review_cycle_status": "all_15_reviews_complete_0_pass_15_fail",
   "review_cycle_completed_at": "2026-11-19T18:00:00+03:00",
     "completed_stories": [
@@ -7218,5 +7227,5 @@
     "RVW-013",
     "RVW-015"],
     "blocked_stories": [],
-    "last_updated": "2026-11-20T01:30:00+03:00"
+    "last_updated": "2026-11-20T03:20:00+03:00"
 }

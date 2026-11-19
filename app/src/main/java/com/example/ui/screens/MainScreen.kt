@@ -194,7 +194,8 @@ fun MainScreen(
     var isProfileSettingsSheetOpen by remember { mutableStateOf(false) }
     // AUDIT-A-CONSOLE: first operator surface for the admin verification queue.
     var isAdminQueueOpen by remember { mutableStateOf(false) }
-    var isAdminUnlocked by remember { mutableStateOf(false) }
+    // REM-023: no local unlock; the server decides whether this account is an operator.
+    val isAdminUnlocked by viewModel.isAdminVerified.collectAsStateWithLifecycle()
     val adminQueue by viewModel.adminVerificationQueue.collectAsStateWithLifecycle()
     val isAdminQueueLoading by viewModel.isAdminQueueLoading.collectAsStateWithLifecycle()
 
@@ -829,7 +830,7 @@ fun MainScreen(
         queue = adminQueue,
         isLoading = isAdminQueueLoading,
         isAdminUnlocked = isAdminUnlocked,
-        onUnlockOperator = { isAdminUnlocked = true },
+        onUnlockOperator = { viewModel.verifyAdminAccess() },
         onRefresh = { viewModel.loadAdminVerificationQueue() },
         onSubmitDecision = { userId, decision, feedback, onResult ->
             viewModel.submitAdminDecision(userId, decision, feedback, onResult)

@@ -29,6 +29,14 @@ service cloud.firestore {
       );
     }
 
+    // REM-024: destructive owner actions require a recent sign-in (auth_time within five
+    // minutes of the request). A long-lived stolen session can read and update, but cannot delete.
+    function hasFreshAuth() {
+      return isAuthenticated() &&
+        request.auth.token.auth_time is int &&
+        request.auth.token.auth_time * 1000 > request.time.toMillis() - 300000;
+    }
+
     function isWorkerKycApproved() {
       return isAuthenticated() &&
         exists(/databases/$(database)/documents/worker_kyc/$(request.auth.uid)) &&
@@ -125,7 +133,7 @@ service cloud.firestore {
              .hasAny(['status', 'reviewFeedback', 'reviewedAt', 'reviewedBy', 'ninVerificationStatus'])
       );
 
-      allow delete: if isAdmin() || isDocOwner(workerId);
+      allow delete: if isAdmin() || (isDocOwner(workerId) && hasFreshAuth());
     }
 
     // SEC-006 / AUDIT-W-QUOTE: Rules for job_quotes collection
@@ -143,7 +151,7 @@ service cloud.firestore {
         (resource.data.workerId == request.auth.uid && request.resource.data.workerId == resource.data.workerId) ||
         isAdmin()
       );
-      allow delete: if isAdmin() || (isAuthenticated() && resource.data.workerId == request.auth.uid);
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.workerId == request.auth.uid && hasFreshAuth());
     }
 
     // SEC-006: Rules for notifications collection
@@ -158,7 +166,7 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid &&
         request.resource.data.userId == resource.data.userId &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt']);
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid && hasFreshAuth();
     }
 
     // SEC-006: Rules for disputes collection
@@ -221,6 +229,13 @@ service cloud.firestore {
         allow read: if isDocOwner(userId) || isAdmin();
         allow create, update: if isDocOwner(userId) || isAdmin();
       }
+    }
+
+    // REM-023: provisioning audit trail. Written only by scripts/grant-admin.js through the
+    // Admin SDK; readable by administrators, never writable from a client.
+    match /admin_audit/{auditId} {
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
     // Service Providers catalog

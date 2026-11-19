@@ -1,3 +1,43 @@
+## 2026-11-20 (Wave 1d) - README CLAIMS ALIGNED TO SOURCE
+
+- **REM-071 (IN_PROGRESS).** README no longer advertises an Airtel Money integration or a web admin
+  dashboard; it states the Android, claim-gated console accurately and keeps the pre-production
+  caveat + traceability links. `scripts/check_readme_claims.mjs` guards the claims and runs in CI.
+- Dependency note: REM-023 (server-verified admin gate) is implemented but unverified; REM-033 is
+  untouched, so the task is not marked complete.
+- No backend behaviour changed this slice.
+
+---
+
+## 2026-11-20 (Wave 1c) - FRESH AUTH AND TOKEN REVOCATION
+
+- **REM-024 (IN_PROGRESS).** `session.ts` defines the five-minute freshness policy; Firestore
+  rules apply it to owner deletes of worker_kyc, notifications and job_quotes. The Android client
+  blocks account deletion when `hasFreshAuthentication()` is false and calls `revokeMyTokens`
+  before `signOut`, which revokes refresh tokens through the Admin SDK. Three tests.
+- **Not verified:** no Firebase project, so an old ID token and a revoked refresh token were never
+  exercised. Android remains uncompiled.
+- **Tests:** 161/161 backend tests.
+
+**Next:** REM-025 (identity linking), then R08 money (REM-026-032).
+
+---
+
+## 2026-11-20 (Wave 1b) - SERVER-VERIFIED ADMIN ACCESS
+
+- **REM-023 (IN_PROGRESS).** `getAdminAccess` returns `hasAdminClaim(context.auth.token)`; the
+  MainScreen unlock now calls `viewModel.verifyAdminAccess()` and holds no client boolean. The
+  claim itself is provisioned only by `scripts/grant-admin.js`, which preserves other claims,
+  revokes refresh tokens and writes `admin_audit {action,targetUid,actor,at,claims}`. Rules make
+  the audit trail admin-readable and client-immutable. Tests cover claim parsing and audit input.
+- **Not verified:** no project/service account, so no claim was actually granted or observed in the
+  UI. Android is still uncompiled.
+- **Tests:** 158/158 backend tests, build exit 0.
+
+**Next:** REM-024 (re-auth + token revocation), REM-025 (identity linking), then money (REM-026-032).
+
+---
+
 ## 2026-11-20 (Wave 1a) - REAL SOS DISPATCH (SMS + FCM)
 
 - **REM-034 (VERIFICATION_PENDING).** `sms.ts` builds the Africa's Talking messaging request,
