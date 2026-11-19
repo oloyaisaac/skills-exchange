@@ -89,7 +89,7 @@ An independent review programme (2026-11-19) defines 15 specialist reviewers cov
 | [`PRODUCTION_READINESS.md`](PRODUCTION_READINESS.md) | Per-domain release gates and blockers |
 | [`reviewers/`](reviewers/) | One instruction file per reviewer + `reports/` output convention |
 
-No reviewer has completed yet; statuses in the register are authoritative.
+**Review cycle complete (2026-11-19):** all 15 reviews executed against baseline `6b39a10`; **0 PASS / 15 FAIL**. Readiness: 0 of 13 domains. See [`reviewers/reports/`](reviewers/reports/) and [`PRODUCTION_READINESS.md`](PRODUCTION_READINESS.md).
 
 ## Development Phases
 

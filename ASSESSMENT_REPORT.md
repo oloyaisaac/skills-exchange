@@ -120,7 +120,7 @@ skills-exchange/
 ### 2.9 Testing, deployment, CI/CD, documentation
 - 41 JVM test files (7,780 lines) with genuinely valuable security/authorization suites; **1 placeholder instrumented test**; 4 Node test files (111 passing). No Firestore rules tests, no Compose UI tests, no coverage reporting, no CI.
 - Deployment: `firebase.json` + `.firebaserc` (project `skills-exchange-f9189`); rules reportedly deployed historically; functions blocked by the Blaze plan per `AGENT_STATE.md`/`ANALYSIS_SUMMARY.md`. No staging environment, no runbook, no rollback procedure.
-- Documentation is extensive (620 KB of master docs) but drifts from code: 97/97 PRD stories marked `completed`, README `.env` variable names do not match `loadMomoConfig` (`MTN_*`, `MOMO_ENVIRONMENT`, `MOMO_BASE_URL`), and README's manifest key instructions are superseded by the Secrets plugin.
+- Documentation is extensive (620 KB of master docs) but drifts from code: 112/112 PRD stories marked `completed` (99/99 at assessment), README `.env` variable names do not match `loadMomoConfig` (`MTN_*`, `MOMO_ENVIRONMENT`, `MOMO_BASE_URL`), and README's manifest key instructions are superseded by the Secrets plugin.
 
 ### 2.10 Error handling and reliability
 - Extensive try/catch with fail-closed returns in auth/repository layers; typed result objects for quotes, SOS, cashout.
@@ -216,6 +216,8 @@ Coverage matrix, reviewer files and assignments: see `REVIEWER_REGISTER.md` and 
 
 ## 5. Phases 4–6 — Reviewer Instructions, Master Documentation, Reviewer Directory
 
+> **Execution addendum (2026-11-19):** all 15 reviewer files were issued and all 15 reviews have now been executed against baseline `6b39a10`. Every review returned **FAIL**; reports are in `reviewers/reports/`. The findings below and in §6 include the results of that cycle.
+
 Created (see §10 for the full file list):
 - 15 reviewer instruction files under `reviewers/`, each with the 11 mandated sections, exact source paths, requirements, evidence and passing conditions.
 - `REVIEWER_REGISTER.md` (roster, gates, coverage matrix, statuses).
@@ -228,9 +230,9 @@ Created (see §10 for the full file list):
 
 ---
 
-## 6. Findings Register (pre-review, evidence-backed)
+## 6. Findings Register (pre-review + review cycle, evidence-backed)
 
-Severity: **S1** blocker, **S2** high, **S3** medium, **S4** low. These are the assessment's own findings; reviewers must confirm, refute or extend them.
+Severity: **S1** blocker, **S2** high, **S3** medium, **S4** low. F-001…F-022 were the assessor's pre-review findings. F-023…F-037 were added by the executed review cycle (all 15 specialist reviews returned FAIL). Findings marked *(extends F-xxx)* sharpen an earlier entry rather than restating it.
 
 | ID | Sev | Finding | Evidence |
 |---|---|---|---|
@@ -246,7 +248,7 @@ Severity: **S1** blocker, **S2** high, **S3** medium, **S4** low. These are the 
 | F-010 | S2 | **No security-rules tests and a missing composite index.** Rules are untested; `getDisputesQueue` filters by `status` and orders by `createdAt` but `firebase.json` has no `firestore.indexes.json`. | `functions/src/index.ts:1302–1325`; `firebase.json` |
 | F-011 | S2 | **App Check declared but unused; no rate limiting.** `firebase-appcheck-recaptcha` dependency exists, no initialisation; no callable/webhook quota controls. | grep of `app/src/main`; callable handlers |
 | F-012 | S2 | **No observability.** No Crashlytics, Analytics, structured logging, tracing, SLOs or alerting; diagnostics are committed logcat/heap dumps. | build deps; root diagnostic files |
-| F-013 | S2 | **Requirements and status drift.** 97/97 PRD stories `completed` while HEAD is broken; admin **web** dashboard required but absent; README env names (`MOMO_API_KEY`, `MOMO_API_USER`, `MOMO_API_PASS`, `WEBHOOK_SECRET`) do not match code (`MTN_SUBSCRIPTION_KEY`, `MTN_API_USER`, `MTN_API_KEY`, `MOMO_ENVIRONMENT`, `MOMO_BASE_URL`); webhook secret was removed by design. | `prd.json`; `requirement_file.md` §15.3; `README.md:48–55`; `momoCollection.ts:103–136` |
+| F-013 | S2 | **Requirements and status drift.** 112/112 PRD stories `completed` while HEAD is broken (99/99 at assessment); admin **web** dashboard required but absent; README env names (`MOMO_API_KEY`, `MOMO_API_USER`, `MOMO_API_PASS`, `WEBHOOK_SECRET`) do not match code (`MTN_SUBSCRIPTION_KEY`, `MTN_API_USER`, `MTN_API_KEY`, `MOMO_ENVIRONMENT`, `MOMO_BASE_URL`); webhook secret was removed by design. | `prd.json`; `requirement_file.md` §15.3; `README.md:48–55`; `momoCollection.ts:103–136` |
 | F-014 | S2 | **Repository ships sensitive/high-volume artifacts.** Two ~31 MB APKs, a device SQLite database, 665 KB logcat dump, heap crash logs, 87 `diag-*` files; `.gitignore` does not exclude them. | repo inventory |
 | F-015 | S2 | **No localisation and weak accessibility.** 0 `stringResource`, 1 string resource, 178 inline strings, 59 null content descriptions, English-only for 4 countries, RTL declared but untested. | source scan |
 | F-016 | S3 | **Money representation and currency inconsistency.** Monetary values are `Double`; `CurrencyUtils` uses fixed USD multipliers; Gemini fallback suggests a USD budget in a UGX flow; no rounding/commission policy. | `Entities.kt`; `CurrencyUtils.kt`; `GeminiAudioTranscriptionService.kt` |
@@ -256,10 +258,47 @@ Severity: **S1** blocker, **S2** high, **S3** medium, **S4** low. These are the 
 | F-020 | S4 | **Dead code/deps and duplicate configuration.** Unused `ActiveJobScreen`, deprecated/fake `MoMoPaymentService`, unused Retrofit/Moshi/Navigation deps, duplicate root `AndroidManifest.xml`, `META-INF` committed. | imports/build deps/file inventory |
 | F-021 | S1 | **Backend supply chain is unsafe.** `npm audit --omit=dev` reports 16 vulnerabilities (1 critical, 10 high) in production dependencies; the only fix path is a major `firebase-admin` upgrade. | `npm audit` output in `reviewers/reports/REVIEW_14.md` §2.4 |
 | F-022 | S2 | **Offline "automatic sync" is not implemented.** `flushPendingActions()` takes a snapshot, logs the count, and deletes/executes nothing; queued actions never reach the server. README/PRD claim sync on reconnect. | `SkillsExchangeViewModel.kt:2196–2215`; README features list |
+| F-023 | S1 | **Phone signup never creates a Firebase identity.** `verifyOtp` accepts the device-side Africa's Talking response, sets `isAuthenticated = true` and stores a session whose `userId` can fall back to an ATT request id. No `signInWithCredential`/custom token; `signInAnonymously()` has no production caller; the Firebase phone-auth code and its tests are dead. **Consequence: `loginUser` cannot find a UID, so registration fails on a clean install.** *(extends F-002/F-008)* | `SkillsExchangeViewModel.kt:2354–2405`, `1096`, `FirebaseService.kt:345–435`; `REVIEW_06.md` |
+| F-024 | S2 | **Duplicate `sosIncidents` rule blocks nullify the stronger one.** Blocks at `firestore.rules:156` and `:318`; Firestore ORs allow rules for a path, so the weaker first block wins and the second's `exists(/jobs/$(jobId))` guard is bypassed. | `firestore.rules:156–170`, `:318–330`; `REVIEW_07.md` |
+| F-025 | S2 | **Notifications and MoMo transactions are client-forgeable.** `notifications` create allows any authenticated user with no field binding (`:132`); `momo_transactions` create likewise (`:177`). | `firestore.rules`; `REVIEW_07.md` |
+| F-026 | S2 | **Job photo writes trust self-asserted metadata.** `storage.rules` authorizes `create, update` on incoming `jobOwnerId`, so any authenticated user can write/overwrite inside another job's folder. | `storage.rules` `match /jobs/{jobId}/{allPaths=**}`; `REVIEW_07.md` |
+| F-027 | S3 | **All bids are readable by every authenticated user.** `job_quotes` `allow read: if isAuthenticated()`. | `firestore.rules:119`; `REVIEW_07.md` |
+| F-028 | S2 | **Admin unlock is presentation-only.** `onUnlockOperator = { isAdminUnlocked = true }`; no credential check. Server callables are gated, but the claim is never provisioned, so administration is unreachable either way. *(extends F-008)* | `MainScreen.kt:832`; `REVIEW_06.md` |
+| F-029 | S1 | **Deletion over-deletes and destroys complaint evidence.** `userJobIds` comes from every job cached on the device; job/message deletes are rules-denied for non-admins so the cascade aborts; Storage is untouched; disputes where the user is `reportedUserId` are deleted; no re-auth. *(extends F-007)* | `SkillsExchangeViewModel.kt:1336–1367`, `FirebaseService.kt:275–315`; `REVIEW_09.md` |
+| F-030 | S2 | **Doorstep PIN is disclosed to the worker.** The "security" PIN is rendered in the job sheet for both parties and defaults to `4829`. *(extends F-004)* | `EscrowAndProofSheet.kt`; `Entities.kt`; `REVIEW_10.md` |
+| F-031 | S1 | **No refund implementation exists.** Grep for a refund function in the repository returns zero; cancellation/dispute leaves funds locked. *(extends F-006)* | `SkillsExchangeRepository.kt`; `REVIEW_08.md` |
+| F-032 | S2 | **Transcription fabricates output.** Missing/invalid Gemini key returns a canned "Emergency Pipe Repair" result indistinguishable from a real transcription; the API key is called directly from the app. *(extends F-019)* | `GeminiAudioTranscriptionService.kt:35–74`; `REVIEW_05.md` |
+| F-033 | S2 | **Backups are enabled with empty rules.** `allowBackup="true"` plus sample `backup_rules.xml`/`data_extraction_rules.xml` with no includes/excludes; Firebase tokens, DataStore session and the Room DB are eligible. | `AndroidManifest.xml:18–20`; `res/xml/*`; `REVIEW_07.md` |
+| F-034 | S1 | **Escrow release is never invoked.** `releaseEscrowToWorker` exists server-side and is authorized, but no client call site exists, so a completed job cannot pay the worker. *(extends F-006)* | `SkillsExchangeRepository.kt:2569` (comment only); `REVIEW_08.md` |
+| F-035 | S3 | **No crash, ANR, analytics or performance telemetry.** No Crashlytics/Sentry/Firebase-Perf/Analytics dependency; production failures are invisible. *(extends F-012)* | dependency inventory; `REVIEW_13.md` |
+| F-036 | S3 | **Non-functional payment channels are offered as real.** Airtel Money and Visa/Card appear as selectable channels and in copy with no integration; Maps uses a placeholder key. | `EscrowAndProofSheet.kt:972`; `build.gradle.kts:28`; `REVIEW_05.md` |
+| F-037 | S2 | **Abuse reports never leave the device.** `reportUser()` writes Room only and no `reports` collection has rules. *(extends F-005 area)* | `firestore.rules`; repository `reportUser`; `REVIEW_10.md` |
 
 Full analysis and validation of each finding is assigned in `REVIEWER_REGISTER.md`.
 
 ---
+
+## 6b. Review Cycle Results
+
+| Reviewer | Verdict | Strongest confirmed finding | Report |
+|---|---|---|---|
+| R01 Architecture | FAIL | Four structurally invalid production files; 2,979/2,749-line god classes | `REVIEW_01.md` |
+| R02 Android Client | FAIL | Phone onboarding cannot obtain a Firebase identity; 0 `rememberSaveable`/`BackHandler` | `REVIEW_02.md` |
+| R03 Backend | FAIL | `npm run build` exits 2; no App Check; no FCM send; no `predeploy` | `REVIEW_03.md` |
+| R04 Data | FAIL | `exportSchema=false`, 16 untested migrations, 33 `Double` money fields | `REVIEW_04.md` |
+| R05 Integrations | FAIL | Committed AT key; fabricated transcription; log-only SMS; Airtel/card absent | `REVIEW_05.md` |
+| R06 Auth | FAIL | Device-side OTP mints a local session; admin claim unprovisionable | `REVIEW_06.md` |
+| R07 AppSec | FAIL | `jobs` and `messages` world-readable unauthenticated; forgeable collections | `REVIEW_07.md` |
+| R08 Payments | FAIL | Release never invoked; fabricated `DISBURSED`; no refund function | `REVIEW_08.md` |
+| R09 Privacy/KYC | FAIL | Erasure over-deletes cached jobs, aborts, ignores Storage, erases complaints | `REVIEW_09.md` |
+| R10 Safety | FAIL | SOS is a log-only stub returning `SENT`; PIN shown to worker | `REVIEW_10.md` |
+| R11 QA | FAIL | 355 tests unexecutable; no rules/migration/UI/coverage/CI | `REVIEW_11.md` |
+| R12 UI/UX/A11y | FAIL | 99× `5.sp`; 59 null content descriptions; no localisation | `REVIEW_12.md` |
+| R13 Perf/Reliability | FAIL | No telemetry; offline replay is a no-op; ad-hoc coroutine scopes | `REVIEW_13.md` |
+| R14 DevOps | FAIL | No CI; `D:/` paths; Java 11/25; R8 off; 16 advisories | `REVIEW_14.md` |
+| R15 Docs | FAIL | 99 completed stories contradicted; 61 host-absolute links; 81 build claims | `REVIEW_15.md` |
+
+**Programme outcome: 0 PASS / 0 PASS WITH CONDITIONS / 15 FAIL. Gates G0–G8 all closed. Readiness re-scored to 0/13 domains PASS.**
 
 ## 7. Risk Register (programme level)
 
@@ -311,7 +350,7 @@ See §4 and `REVIEWER_REGISTER.md` coverage matrix; each `reviewers/*.md` file s
 See §10.
 
 ### 8.7 Important risks discovered
-See §7 and §6 (F-001 … F-022). The five that should stop a release today: non-buildable HEAD (F-001), committed credential (F-002), public job/chat data (F-003), fabricated SOS dispatch (F-005), incomplete erasure (F-007).
+See §7 and §6 (F-001 … F-037). The reviews added five release-stopping clusters: world-readable jobs/chats (F-003/F-007), a signup that cannot produce a Firebase identity (F-023), an SOS path that reports success without sending (F-005), a money lifecycle with no release or refund (F-031/F-034), and an erasure cascade that over-deletes and aborts (F-029).
 
 ### 8.8 Recommended review execution order
 **Wave 0 (gates):** R01 → R14.

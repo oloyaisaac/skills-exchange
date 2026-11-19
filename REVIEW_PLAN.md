@@ -23,15 +23,33 @@
 - **Preserve history.** Master documents are appended/prepended, never rewritten.
 - **No production claims.** The programme cannot certify readiness on behalf of the business; it can only recommend.
 
-## 2b. Execution status (updated 2026-11-19)
+## 2b. Execution status (final, 2026-11-19)
 
 | Reviewer | State | Verdict | Report |
 |---|---|---|---|
 | R01 Architecture & Codebase Integrity | submitted | **FAIL** | `reviewers/reports/REVIEW_01.md` |
 | R14 DevOps & Release | submitted | **FAIL** | `reviewers/reports/REVIEW_14.md` |
-| R02–R13, R15 | not started | — | — |
+| R07 Application Security | submitted | **FAIL** | `reviewers/reports/REVIEW_07.md` |
+| R10 Safety, Trust & Fraud | submitted | **FAIL** | `reviewers/reports/REVIEW_10.md` |
+| R08 Payments & Escrow | submitted | **FAIL** | `reviewers/reports/REVIEW_08.md` |
+| R09 Privacy, KYC & Compliance | submitted | **FAIL** | `reviewers/reports/REVIEW_09.md` |
+| R06 Auth & Identity | submitted | **FAIL** | `reviewers/reports/REVIEW_06.md` |
+| R03 Backend & Cloud Functions | submitted | **FAIL** | `reviewers/reports/REVIEW_03.md` |
+| R04 Data & Persistence | submitted | **FAIL** | `reviewers/reports/REVIEW_04.md` |
+| R05 API & Integrations | submitted | **FAIL** | `reviewers/reports/REVIEW_05.md` |
+| R11 QA & Test Engineering | submitted | **FAIL** | `reviewers/reports/REVIEW_11.md` |
+| R13 Performance & Reliability | submitted | **FAIL** | `reviewers/reports/REVIEW_13.md` |
+| R02 Android Client | submitted | **FAIL** | `reviewers/reports/REVIEW_02.md` |
+| R12 UI/UX & Accessibility | submitted | **FAIL** | `reviewers/reports/REVIEW_12.md` |
+| R15 Documentation & Traceability | submitted | **FAIL** | `reviewers/reports/REVIEW_15.md` |
 
-**Gate status:** G0 FAIL, G1 FAIL. Wave 1 may proceed only as static analysis (R07/R09/R10 are safe to start immediately); no PASS verdict is admissible until G0 is re-run green.
+**Programme status:** 15/15 submitted; **0 PASS, 0 PASS WITH CONDITIONS, 15 FAIL, 0 BLOCKED**. Gates
+G0–G8 are all closed (see `REVIEWER_REGISTER.md` §7b). No PASS verdict was admissible because G0/G1
+failed before Wave 1 and were never re-run green.
+
+**Execution mode:** static source, rules, manifest, configuration and executable Node-suite analysis
+at baseline `6b39a10`. No Android build, emulator, device or provider sandbox was available; every
+dynamic check is labelled `UNVERIFIED` in its report and credited as neither pass nor fail.
 
 ## 3. Execution waves
 

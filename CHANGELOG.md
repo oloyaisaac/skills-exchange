@@ -1,5 +1,24 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-19] [ASMT-CYCLE] All 15 specialist reviews executed — 0 PASS / 15 FAIL
+
+- **Reports:** `reviewers/reports/REVIEW_01.md` … `REVIEW_15.md` (all FAIL). Register: 15 submitted,
+  0 accepted; gates G0–G8 closed. Readiness: **0 of 13 domains PASS**.
+- **Critical confirmations:** `jobs`/`messages` world-readable unauthenticated; phone signup never
+  creates a Firebase identity; SOS dispatch is a log-only stub returning `SENT`; escrow release has no
+  client caller and no refund function exists; erasure over-deletes cached jobs, aborts and erases
+  complaints; admin claim unprovisionable; committed Africa's Talking key.
+- **New findings:** F-023…F-037 (15 added; register now 37). Full table in `ASSESSMENT_REPORT.md` §6,
+  cycle summary in §6b, domain re-score in `PRODUCTION_READINESS.md`.
+- **Executed evidence:** Node `npm test` 111/111 pass; `npm run build` exit 2; rules/storage/manifest/
+  Kotlin/TS static analysis. Android build, emulator, device and provider sandbox **not available**;
+  all dynamic claims are `UNVERIFIED`.
+- **Updated:** `ASSESSMENT_REPORT.md`, `PRODUCTION_READINESS.md`, `REVIEWER_REGISTER.md`,
+  `REVIEW_PLAN.md`, `TASKS.md`, `prd.json` (`RVW-002…013`, `RVW-015` completed with
+  `review_verdict: FAIL`), `reviewers/reports/`.
+- **No application source, rules, build scripts or tests changed.** Do not re-issue PASS without a
+  green build transcript and reproducible evidence.
+
 ### [2026-11-19] [ASMT-WAVE0] R01 build-integrity review and R14 release/supply-chain review executed
 
 - **Reports:** `reviewers/reports/REVIEW_01.md` (FAIL, gate G0), `reviewers/reports/REVIEW_14.md` (FAIL, gate G1).
