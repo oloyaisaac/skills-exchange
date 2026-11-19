@@ -24,5 +24,9 @@
     "@types/express": "^4.17.21",
     "@types/node": "^20.14.10"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "@types/express": "^4.17.21",
+    "@types/express-serve-static-core": "^4.19.9"
+  }
 }

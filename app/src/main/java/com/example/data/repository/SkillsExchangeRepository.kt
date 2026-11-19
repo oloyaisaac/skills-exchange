@@ -613,95 +613,9 @@ class SkillsExchangeRepository(
             doorstepPin = randomDoorstepPin,
             jobType = jobType,
             recurringSchedule = if (jobType == "RECURRING") recurringSchedule else ""
-        db.jobPostDao().insertJob(job)
-
-        // Add initial system message
-        db.chatMessageDao().insertMessage(
-            ChatMessageEntity(
-                id = "msg_${System.currentTimeMillis()}",
-                jobId = newJobId,
-                senderName = "System",
-                isFromUser = false,
-                message = "Job request (${if (isLaborOnly) "Labor Only" else "Labor + Materials"}) broadcasted to verified local $category specialists in $district.",
-                timestampText = "Just now",
-                isSystemNotification = true
-            )
-        )
-        return newJobId
-    }
-
-    /**
-
-    /**
         )
         db.jobPostDao().insertJob(job)
-        budget: Double,
-        urgency: String,
-        district: String,
-        streetAddress: String = "",
-        apartmentSuite: String = "",
-        landmarkDirections: String = "",
-        scheduledAt: Long = 0,
-        photos: List<String> = emptyList(),
-        materialsProvidedBy: String = "RESIDENT",
-        laborHours: Double = 2.0,
-        laborRate: Double = 60.0,
-        jobType: String = "ONE_TIME",
-        recurringSchedule: String = "WEEKLY"
-    ): String? {
-        // F4: the ONLY acceptable owner identity. Never the newest Room row, never a display
-        // name/district, never "unknown"/"system"/a synthetic or anonymous id.
-        val ownerUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
-            ?: return null
-        val newJobId = "job_${System.currentTimeMillis()}"
-        val laborTotal = laborHours * laborRate
-        val isLaborOnly = materialsProvidedBy == "RESIDENT" || materialsProvidedBy == "NONE_NEEDED"
-        val materialsSubtotal = if (isLaborOnly) 0.0 else (budget - laborTotal).coerceAtLeast(0.0)
-        val platformFee = laborTotal * 0.10
-        val grandTotal = laborTotal + materialsSubtotal + platformFee
 
-        val randomDoorstepPin = (1000..9999).random().toString()
-
-        val job = JobPostEntity(
-            id = newJobId,
-            title = title,
-            category = category,
-            description = description,
-            // F4: authoritative ownership (immutable authenticated uid).
-            postedByUid = ownerUid,
-            // F4: DISPLAY-ONLY text — never an ownership key.
-            postedByResident = "You ($district)",
-            district = district,
-            streetAddress = streetAddress,
-            apartmentSuite = apartmentSuite,
-            landmarkDirections = landmarkDirections,
-            scheduledAt = scheduledAt,
-            photos = photos,
-            budget = grandTotal,
-            urgency = urgency,
-            status = "Requested",
-            assignedProviderId = null,
-            assignedProviderName = null,
-            createdTimestamp = System.currentTimeMillis(),
-            estimatedHours = laborHours,
-            materialsCost = materialsSubtotal,
-            safetyFee = platformFee,
-            materialsProvidedBy = materialsProvidedBy,
-            laborHours = laborHours,
-            laborRate = laborRate,
-            laborTotal = laborTotal,
-            materialsSubtotal = materialsSubtotal,
-            platformFee = platformFee,
-            grandTotal = grandTotal,
-            paymentChannel = "MTN_MOMO",
-            momoPhoneNumber = "+256 772 198 420",
-            escrowStatus = "QUOTE_PENDING",
-            doorstepPin = randomDoorstepPin,
-            jobType = jobType,
-            recurringSchedule = if (jobType == "RECURRING") recurringSchedule else ""
-        )
-        db.jobPostDao().insertJob(job)
-        
         // Add initial system message
         db.chatMessageDao().insertMessage(
             ChatMessageEntity(

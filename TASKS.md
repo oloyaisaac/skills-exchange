@@ -406,13 +406,13 @@ _Last synchronized: 2026-10-11T15:24:11+03:00 â€” Phase 17 documentation st
 
 ## Remediation Track — Prompt 3 (2026-11-19)
 
-Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDINGS.md`. Full task detail, dependencies, tests and acceptance criteria: `IMPLEMENTATION_ROADMAP.md`. **All tasks are `NOT_STARTED`; no implementation has begun.**
+Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDINGS.md`. Full task detail, dependencies, tests and acceptance criteria: `IMPLEMENTATION_ROADMAP.md`. **Wave 0 implementation has begun (2026-11-19): REM-002 and REM-010 are `VERIFICATION_PENDING`, REM-001 is `VERIFICATION_PENDING`, REM-011 is `IN_PROGRESS`; all other rows remain `NOT_STARTED`.**
 
 | Task | Priority | Reviewer | Task title | Depends on | Status |
 |---|---|---|---|---|---|
-| REM-001 | CRITICAL | R01 | Restore Android compilation | - | NOT_STARTED |
-| REM-002 | CRITICAL | R03 | Restore the backend build | - | NOT_STARTED |
-| REM-010 | CRITICAL | R07 | Close public Firestore reads | - | NOT_STARTED |
+| REM-001 | CRITICAL | R01 | Restore Android compilation | - | VERIFICATION_PENDING |
+| REM-002 | CRITICAL | R03 | Restore the backend build | - | VERIFICATION_PENDING |
+| REM-010 | CRITICAL | R07 | Close public Firestore reads | - | VERIFICATION_PENDING |
 | REM-022 | CRITICAL | R06 | Make OTP produce a Firebase identity | REM-011; REM-002 | NOT_STARTED |
 | REM-026 | CRITICAL | R08 | Wire escrow release end-to-end | REM-002; REM-022 | NOT_STARTED |
 | REM-027 | CRITICAL | R08 | Implement refunds | REM-002; REM-026 | NOT_STARTED |
@@ -425,7 +425,7 @@ Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDI
 | REM-005 | HIGH | R14 | Create a CI pipeline | REM-001; REM-002 | NOT_STARTED |
 | REM-006 | HIGH | R14 | Make the build portable | - | NOT_STARTED |
 | REM-007 | HIGH | R14 | Restore release signing and hardening | REM-001; REM-006 | NOT_STARTED |
-| REM-011 | HIGH | R07 | Remove and rotate the committed SMS/OTP key | - | NOT_STARTED |
+| REM-011 | HIGH | R07 | Remove and rotate the committed SMS/OTP key | - | IN_PROGRESS |
 | REM-012 | HIGH | R07 | Remove duplicate SOS rules | REM-010 | NOT_STARTED |
 | REM-013 | HIGH | R07 | Make notifications and transactions server-only | REM-010 | NOT_STARTED |
 | REM-014 | HIGH | R07 | Bind Storage writes to stored job ownership | REM-010 | NOT_STARTED |

@@ -640,7 +640,8 @@ export const releaseEscrowToWorker = functions.https.onCall(async (data, context
  *     callback can therefore do nothing except cause a legitimate re-check.
  * Processing is idempotent and terminal states are immutable (replays are no-ops).
  */
-export const processMoMoWebhook = functions.https.onRequest(async (req, res) => {
+export const processMoMoWebhook = functions.https.onRequest(
+  async (req: functions.https.Request, res) => {
   try {
     if (req.method !== "POST") {
       res.status(405).send({ error: "Method not allowed." });

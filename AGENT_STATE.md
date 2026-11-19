@@ -1,3 +1,39 @@
+## 2026-11-19 (Wave 0) - FIRST REMEDIATION COMMITS: BUILD GREEN, PUBLIC READS CLOSED, KEY REMOVED
+
+Wave 0 started on `arena/87f323b5-skills-exchange` (base `f353ebf`). Four tasks touched; **no
+task is marked COMPLETED** and the product remains not production-ready.
+
+- **REM-002 - VERIFICATION_PENDING.** Backend builds again. `functions/src/index.ts` now types the
+  webhook request as `functions.https.Request`; `functions/package.json` gained `overrides`
+  pinning `@types/express` and `@types/express-serve-static-core` so the stale nested copy under
+  `firebase-functions` is not used. Evidence (local, clean `lib/`): `npm ci`, `npm run build`
+  exit 0, `npm test` 111/111. The task's required CI log needs REM-005.
+- **REM-001 - VERIFICATION_PENDING.** Four corrupted regions repaired and the unreferenced
+  `ActiveJobScreen.kt` deleted. Delimiter scan across all Kotlin files is clean. **Not compiled:**
+  no JDK/Android SDK. Compilation also still fails on pre-existing `OtpResponse.Success` /
+  `OtpResponse.Error` matching in `SkillsExchangeViewModel.kt` - do not report the Android build as
+  restored until that is fixed.
+- **REM-010 - VERIFICATION_PENDING.** `firestore.rules`: zero `allow read: if true` remain.
+  `jobs` -> owner, assigned provider (`assignedProviderUid`, legacy `assignedProviderId`) or admin;
+  `messages` -> author, job participant or admin; `providers` -> authenticated only. Client code does
+  not currently consume the jobs/providers snapshots, so no wired screen regresses. Rules were not
+  emulator-tested (no Firebase CLI/JDK) and are not deployed; "field policy enforced" is therefore
+  not claimed.
+- **REM-011 - IN_PROGRESS.** Key literal deleted from `AfricaTalkingService.kt`. It now comes from
+  `BuildConfig.AFRICASTALKING_API_KEY`, sourced from a Gradle property or environment variable;
+  blank means OTP returns a configuration error without a network call. **Outstanding:** the key is
+  still in git history and must be revoked; OTP still runs from the device with the key in the APK;
+  callables and client wiring are not written.
+- **Known conflict to resolve:** the repo keys `providers` documents by `ServiceProviderEntity.id`
+  while the rules authorize writes by `request.auth.uid == providerId`. REM-010 did not change that
+  ownership model.
+
+**Next:** finish REM-011 (callables + revocation + client), then continue wave 0 with REM-006,
+REM-016, REM-039, REM-044, REM-049, REM-051, REM-069, REM-070, REM-072. Do not mark REM-001/002/010
+complete without the evidence each task names.
+
+---
+
 ## 2026-11-19 (Prompt 3) — MASTER FINDINGS CONSOLIDATED INTO 73-TASK REMEDIATION PLAN
 
 Consolidation complete. All 73 master findings (`MR-001`…`MR-073`) were validated against the 15
