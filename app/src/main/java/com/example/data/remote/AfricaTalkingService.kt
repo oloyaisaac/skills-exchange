@@ -12,13 +12,16 @@ import okhttp3.MediaType
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
-const val AFRICASTALKING_API_KEY = "atsk_b3bc63b19b8393b9b8ae74aac03e8b7ccda0aac6bf5865355de2440aac683ef5b953aeb8"
+// REM-011: the API key is never stored in source control. It is supplied at build time
+// (Gradle property or environment variable, see app/build.gradle.kts) and injected into
+// BuildConfig. A blank key disables OTP instead of silently shipping a shared credential.
+// TODO(REM-011 remainder): move send/verify behind callables so the key never reaches the APK.
 const val AFRICASTALKING_USERNAME = "SkillsExchange"
 const val AFRICASTALKING_BASE_URL = "https://api.africastalking.com/version1/otps"
 const val AFRICASTALKING_VERIFY_URL = "https://api.africastalking.com/version1/otps/verify"
 
 class AfricaTalkingService(
-    private val apiKey: String = AFRICASTALKING_API_KEY,
+    private val apiKey: String = com.example.BuildConfig.AFRICASTALKING_API_KEY,
     private val username: String = AFRICASTALKING_USERNAME
 ) {
     private val client = OkHttpClient.Builder()
@@ -29,6 +32,10 @@ class AfricaTalkingService(
     private val JSON = MediaType.get("application/json; charset=utf-8")
 
     suspend fun sendOtp(phoneNumber: String, message: String = "Your Skills Exchange verification code is: "): OtpResponse {
+        if (apiKey.isBlank()) {
+            // Fail closed: no credential was provisioned for this build.
+            return OtpResponse.error(0, "Phone verification is not configured for this build")
+        }
         return try {
             CoroutineScope(Dispatchers.IO).async {
                 val body = JSONObject(mapOf(
@@ -63,6 +70,9 @@ class AfricaTalkingService(
     }
 
     suspend fun verifyOtp(phoneNumber: String, code: String, requestId: String? = null): VerificationResponse {
+        if (apiKey.isBlank()) {
+            return VerificationResponse.error(0, "Phone verification is not configured for this build")
+        }
         return try {
             CoroutineScope(Dispatchers.IO).async {
                 val body = JSONObject(mapOf(
