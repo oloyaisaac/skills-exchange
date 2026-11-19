@@ -1,3 +1,30 @@
+## 2026-11-19 (Wave 0c) - WEBHOOK AUTH, GUARANTOR RISK, TRACEABILITY AND CI
+
+Third wave-0 slice on `arena/111454bc-skills-exchange` (base `3fe9a11`). Three tasks implemented,
+one partially; still no completion declaration because no reviewer's whole assignment is verified.
+
+- **REM-021 (VERIFICATION_PENDING).** `functions/src/webhookAuth.ts` implements rotated shared
+  secrets, a five-minute timestamp window and a ten-per-minute per-reference limit. The webhook
+  rejects `not_configured` (503), `missing_secret`/`bad_secret` (401) and `stale_timestamp` (408)
+  before reading Firestore, and 429s a flood. Eight unit tests. **Operational note:** production
+  must set `MOMO_WEBHOOK_SECRET`; without it every callback is refused.
+- **REM-039 (IN_PROGRESS).** `guarantorRisk.ts` flags DUPLICATE_GUARANTOR, REUSED_NIN and
+  REUSED_PHONE from the guarantor records already on file; the admin queue exposes `riskFlags`.
+  Seven tests. The Compose review queue does not display them yet, and Android cannot be compiled
+  here, so the acceptance criterion is not claimed.
+- **REM-070 (VERIFICATION_PENDING).** `docs/traceability.md` plus
+  `scripts/check_traceability.mjs`: 18 IDs, sections 3-10 covered, four requirements still have no
+  automated test. Documents the gap instead of hiding it.
+- **REM-005 (IN_PROGRESS).** `.github/workflows/ci.yml` covers backend build/tests, documentation
+  and secret scanning. Android and rules jobs wait on REM-001/REM-019. No CI run exists yet.
+- **Verification:** `npm run build` exit 0, 143/143 tests, link/document/traceability/secret
+  checkers all pass. No MTN sandbox, Android toolchain or Firebase project involved.
+
+**Next eligible:** REM-044 (consent/DSAR), REM-049 (paging), then REM-023/024/025 once REM-022 is
+verified. Money (R08) and safety (R10) remain unimplemented.
+
+---
+
 ## 2026-11-19 (Wave 0b) - OTP/TRANSCRIPTION MOVED SERVER-SIDE; RULES, BACKUP AND BUILD CONFIG HARDENED
 
 Second wave-0 slice on `arena/037d33dc-skills-exchange` (base `38ed1cf`). Eight tasks implemented,

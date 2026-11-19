@@ -1,5 +1,21 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-19] [WAVE-0C] Webhook authentication, guarantor risk flags, traceability and CI
+
+- **REM-021:** the MoMo callback now requires a rotated shared secret (`MOMO_WEBHOOK_SECRET`),
+  a timestamp within five minutes and at most ten callbacks per reference per minute. Missing
+  configuration, wrong/missing secrets, stale timestamps and floods are rejected before any
+  Firestore lookup. 8 new unit tests. **Deployment must set the secret or callbacks fail closed.**
+- **REM-039:** `guarantorRisk.ts` flags duplicate guarantors inside one application and NIN/phone
+  reuse across workers; `getPendingVerificationQueue` returns a `riskFlags` map and per-row flags.
+  The admin UI does not render them yet, so the task stays `IN_PROGRESS`.
+- **REM-070:** `docs/traceability.md` assigns 18 requirement IDs across sections 3–10 and maps each
+  to code and tests; `scripts/check_traceability.mjs` validates it and reports 4 test gaps.
+- **REM-005:** `.github/workflows/ci.yml` runs the backend build/tests, documentation checkers and
+  secret scan. Android and rules jobs are intentionally not added yet.
+- **Verification:** 143/143 backend tests, `tsc` exit 0, all three documentation checkers pass,
+  secret scan passes. Nothing was exercised against MTN, Android or a Firebase project.
+
 ### [2026-11-19] [WAVE-0B] OTP and transcription moved server-side; rules, backup and build config hardened
 
 - **REM-011 / REM-022:** new `sendOtp` / `verifyOtp` callables own the Africa's Talking key

@@ -1,0 +1,54 @@
+# REM-005: continuous integration.
+#
+# Scope today: backend build/tests, documentation integrity and secret scanning. The Android job is
+# intentionally absent until REM-001 restores compilation and REM-064 makes the JVM suite runnable;
+# adding it now would only produce a permanently red check. The rules job arrives with REM-019.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  functions:
+    name: Backend build and tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+  documentation:
+    name: Documentation checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: node scripts/check_doc_links.mjs
+      - run: node scripts/check_document_map.mjs
+      - run: node scripts/check_traceability.mjs
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: node scripts/secret_scan.mjs

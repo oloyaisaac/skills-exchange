@@ -4467,7 +4467,10 @@
       "phase": 19,
       "title": "Create a CI pipeline",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
+      "status_note": "CI workflow added for backend build/tests, documentation checkers and the secret scan. Android and rules jobs are deliberately absent until REM-001 and REM-019 make them runnable; no CI run exists yet because the branch is not on GitHub Actions until pushed.",
+      "independent_verification": "PENDING",
+
       "depends_on": [
         "REM-001",
         "REM-002"
@@ -5086,7 +5089,10 @@
       "phase": 19,
       "title": "Authenticate and throttle the MoMo webhook",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "VERIFICATION_PENDING",
+      "status_note": "Webhook now requires a rotated shared secret (MOMO_WEBHOOK_SECRET), a timestamp within five minutes and a per-reference limit of ten callbacks per minute; unauthenticated/stale/replayed requests are rejected. Unit-tested (8 tests); not exercised against MTN because there is no sandbox callback. Deployment must set MOMO_WEBHOOK_SECRET or callbacks are refused (fail closed).",
+      "independent_verification": "PENDING",
+
       "depends_on": [
         "REM-002",
         "REM-011"
@@ -5773,7 +5779,10 @@
       "phase": 19,
       "title": "Strengthen guarantor and identity checks",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
+      "status_note": "Guarantor reuse detection is implemented server-side: duplicate NIN/phone inside one application and reuse across workers are flagged in getPendingVerificationQueue (pure module + 7 tests). The admin UI does not render riskFlags yet, so the review-queue acceptance criterion is not met.",
+      "independent_verification": "PENDING",
+
       "depends_on": [],
       "description": "Strengthen guarantor and identity checks. No cross-worker reuse detection; NIN validation is format-only.",
       "goal": "Detect reused guarantors, add stronger identity verification and liveness where feasible",
@@ -6931,7 +6940,10 @@
       "phase": 19,
       "title": "Assign requirement IDs and build a trace matrix",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "VERIFICATION_PENDING",
+      "status_note": "docs/traceability.md assigns 18 REQ IDs across requirement sections 3-10, maps each to code and tests, and scripts/check_traceability.mjs validates the structure and reports 4 requirements with no automated test. Coverage of every feature is not yet complete.",
+      "independent_verification": "PENDING",
+
       "depends_on": [],
       "description": "Assign requirement IDs and build a trace matrix. Only 6 requirement IDs exist and no requirement\u2192code\u2192test map.",
       "goal": "Assign IDs and generate a trace matrix",
@@ -7075,7 +7087,7 @@
       "review_report": "review_results/R02_ANDROID_CLIENT.md",
       "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
     }],
-    "current_story": "REM-039",
+    "current_story": "REM-044",
   "review_cycle_status": "all_15_reviews_complete_0_pass_15_fail",
   "review_cycle_completed_at": "2026-11-19T18:00:00+03:00",
     "completed_stories": [
@@ -7194,5 +7206,5 @@
     "RVW-013",
     "RVW-015"],
     "blocked_stories": [],
-    "last_updated": "2026-11-19T22:55:00+03:00"
+    "last_updated": "2026-11-19T23:55:00+03:00"
 }

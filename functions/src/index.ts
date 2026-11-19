@@ -66,6 +66,13 @@ import {
   OTP_TTL_MS,
 } from "./otp";
 import type { OtpRateRecord } from "./otp";
+import { assessGuarantorRisk } from "./guarantorRisk";
+import {
+  authorizeWebhook,
+  loadWebhookSecrets,
+  evaluateWebhookRate,
+} from "./webhookAuth";
+import type { WebhookRateRecord } from "./webhookAuth";
 import {
   buildTranscriptionPrompt,
   buildGeminiTranscriptionRequest,
@@ -668,9 +675,38 @@ export const processMoMoWebhook = functions.https.onRequest(
       return;
     }
 
+    // REM-021: authenticate, freshness-check and throttle the callback before any lookup.
+    const auth = authorizeWebhook({
+      headers: req.headers as Record<string, unknown>,
+      body: (req.body ?? {}) as Record<string, unknown>,
+      secrets: loadWebhookSecrets(process.env as Record<string, string | undefined>),
+      now: Date.now(),
+    });
+    if (!auth.ok) {
+      const status = auth.reason === "not_configured" ? 503 : auth.reason === "stale_timestamp" ? 408 : 401;
+      res.status(status).send({ error: "Unauthorized webhook.", code: auth.reason });
+      return;
+    }
+
     const referenceHint = extractCallbackReferenceHint(req.body);
     if (!referenceHint) {
       res.status(400).send({ error: "Invalid webhook payload: no reference id." });
+      return;
+    }
+
+    const rateRef = db
+      .collection("webhook_rate_limits")
+      .doc(String(referenceHint).replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 200));
+    const rateDecision = await db.runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(rateRef);
+      const decision = evaluateWebhookRate(snapshot.exists ? (snapshot.data() as WebhookRateRecord) : undefined, Date.now());
+      if (decision.allowed) {
+        transaction.set(rateRef, { ...decision.next, updatedAt: Date.now() }, { merge: true });
+      }
+      return decision;
+    });
+    if (!rateDecision.allowed) {
+      res.status(429).send({ error: "Too many callbacks for this reference." });
       return;
     }
 
@@ -857,10 +893,25 @@ export const getPendingVerificationQueue = functions.https.onCall(async (data, c
 
   const applications = buildQueueRows({ kycDocs, submissionDocs, namesByWorkerId, now, limit });
 
+  // REM-039: surface collusion signals for the workers in this queue. The records are read with
+  // the Admin SDK (guarantors are not client-readable) and reduced in memory; no NIN or phone
+  // number is copied into the response or into a new collection.
+  const workerIds = new Set(applications.map((row) => row.userId));
+  const riskSnapshot = await db.collection("guarantors").limit(500).get();
+  const riskRecords = riskSnapshot.docs
+    .map((doc) => ({
+      workerId: typeof doc.get("workerKycId") === "string" ? String(doc.get("workerKycId")) : "",
+      nationalIdNumber: doc.get("nationalIdNumber"),
+      phoneNumber: doc.get("phoneNumber"),
+    }))
+    .filter((record) => workerIds.has(record.workerId));
+  const riskByWorker = assessGuarantorRisk(riskRecords);
+
   return {
     count: applications.length,
     guarantorsAwaitingReview: applications.filter((row) => row.guarantorsAwaitingReview).length,
-    applications
+    applications,
+    riskFlags: riskByWorker
   };
 });
 
