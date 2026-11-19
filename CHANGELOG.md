@@ -1,5 +1,14 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [WAVE-1C] Fresh authentication and session revocation
+
+- **REM-024 (IN_PROGRESS):** owner deletes in `firestore.rules` (worker_kyc, notifications,
+  job_quotes) now require `auth_time` within five minutes; the client refuses account deletion on a
+  stale session and calls `revokeMyTokens` before local sign-out, revoking refresh tokens
+  server-side. 3 tests.
+- **Verification:** 161/161 backend tests, build exit 0. No Firebase project, so stale-session and
+  revoked-token rejection are unverified end to end.
+
 ### [2026-11-20] [WAVE-1B] Server-verified admin access and audited claim provisioning
 
 - **REM-023 (IN_PROGRESS):** the admin console no longer unlocks on a local boolean. `getAdminAccess`

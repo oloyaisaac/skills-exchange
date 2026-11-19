@@ -930,3 +930,9 @@ REM-001, which still needs a JDK and Android SDK to verify.
   is granted/revoked only by `scripts/grant-admin.js`, which preserves other claims, revokes
   refresh tokens and writes an immutable `admin_audit` record. Requires a Firebase Admin service
   account and `ADMIN_ACTOR` to run.
+
+### 18.5 Wave 1c: session security
+
+- **REM-024:** destructive owner deletes require authentication within the last five minutes
+  (`auth_time`), and logout revokes refresh tokens server-side. The client blocks account deletion
+  on a stale session. Verification against a live project is outstanding.

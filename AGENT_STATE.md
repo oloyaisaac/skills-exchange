@@ -1,3 +1,17 @@
+## 2026-11-20 (Wave 1c) - FRESH AUTH AND TOKEN REVOCATION
+
+- **REM-024 (IN_PROGRESS).** `session.ts` defines the five-minute freshness policy; Firestore
+  rules apply it to owner deletes of worker_kyc, notifications and job_quotes. The Android client
+  blocks account deletion when `hasFreshAuthentication()` is false and calls `revokeMyTokens`
+  before `signOut`, which revokes refresh tokens through the Admin SDK. Three tests.
+- **Not verified:** no Firebase project, so an old ID token and a revoked refresh token were never
+  exercised. Android remains uncompiled.
+- **Tests:** 161/161 backend tests.
+
+**Next:** REM-025 (identity linking), then R08 money (REM-026-032).
+
+---
+
 ## 2026-11-20 (Wave 1b) - SERVER-VERIFIED ADMIN ACCESS
 
 - **REM-023 (IN_PROGRESS).** `getAdminAccess` returns `hasAdminClaim(context.auth.token)`; the

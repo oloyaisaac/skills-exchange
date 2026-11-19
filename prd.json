@@ -5214,7 +5214,10 @@
       "phase": 19,
       "title": "Add re-authentication and token revocation",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
+      "status_note": "Destructive actions now require a sign-in within five minutes: hasFreshAuth() guards owner deletes in Firestore rules, the client blocks account deletion when stale, and revokeMyTokens revokes refresh tokens before local sign-out. 3 tests. Not verified: no Firebase project, so stale-session and revoked-token behaviour has not been observed.",
+      "independent_verification": "PENDING",
+
       "depends_on": [
         "REM-022"
       ],
@@ -7102,7 +7105,7 @@
       "review_report": "review_results/R02_ANDROID_CLIENT.md",
       "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
     }],
-    "current_story": "REM-023",
+    "current_story": "REM-024",
   "review_cycle_status": "all_15_reviews_complete_0_pass_15_fail",
   "review_cycle_completed_at": "2026-11-19T18:00:00+03:00",
     "completed_stories": [
@@ -7221,5 +7224,5 @@
     "RVW-013",
     "RVW-015"],
     "blocked_stories": [],
-    "last_updated": "2026-11-20T02:15:00+03:00"
+    "last_updated": "2026-11-20T02:55:00+03:00"
 }
