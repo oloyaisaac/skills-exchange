@@ -955,3 +955,13 @@ REM-001, which still needs a JDK and Android SDK to verify.
   payout record. Provider confirmation remains unverified here.
 - **REM-029:** the platform fee and grand total are computed and enforced server-side before any
   collection; the client keeps a display-only estimate.
+
+### 18.9 Prompt-4 R01: architecture remediation
+
+- **Single gateway:** the ViewModel owns one `FirebaseService`, injected into the repository; UI
+  identity reads use `currentAuthenticatedUid()`.
+- **Guards:** `scripts/check_architecture_guards.mjs` fails if a second gateway, a UI bypass or the
+  duplicate root manifest returns.
+- **Decomposition:** a five-slice roadmap is recorded; the split itself is still outstanding.
+- **Limitation:** Android compilation and unit tests remain unexecuted here, so R01 is implemented
+  only in part and is not verified.

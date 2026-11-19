@@ -1,3 +1,13 @@
+## Prompt-4 remediation (one reviewer at a time)
+
+**R01 — IN PROGRESS (gate not passed).**
+- Single `FirebaseService` injected into the repository; UI identity reads go through
+  `currentAuthenticatedUid()`; root duplicate manifest removed; README test count corrected; CI guard
+  `scripts/check_architecture_guards.mjs` added.
+- God-class decomposition roadmap recorded (DECISIONS D-2026-11-20-1); code split not started.
+- **Blocked:** Android compile/test cannot run here (no JDK/SDK), so R01 cannot be declared complete.
+- R02–R15: not started; do not begin until R01's gate passes or the programme lead authorizes closure.
+
 ﻿# TASKS.md â€” Skills Exchange Human-Readable Task Status
 
 Synchronized with `prd.json`. This is the human-readable view of the development backlog.

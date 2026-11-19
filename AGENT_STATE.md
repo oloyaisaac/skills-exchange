@@ -1,3 +1,14 @@
+## 2026-11-20 (Prompt-4 R01) - ONE GATEWAY, ARCHITECTURE GUARD, DECOMPOSITION ROADMAP
+
+- **R01-P2-02.** One private `FirebaseService` is created and injected into the repository; the UI no
+  longer dereferences the gateway. Static guard in CI prevents regression.
+- **R01-P2-03.** Five-slice decomposition roadmap recorded; implementation not started.
+- **R01-P2-04/05.** Root duplicate manifest deleted; README test count fixed.
+- **Status:** R01 gate NOT passed - Android compile/test unavailable (no JDK/SDK). No reviewer is
+  complete; R02 has not started.
+
+---
+
 ## 2026-11-20 (Wave 1f) - NO FAKE PAYOUTS, SERVER PRICING
 
 - **REM-028 (IN_PROGRESS).** The device payout stub is removed: the old method returned a synthetic
