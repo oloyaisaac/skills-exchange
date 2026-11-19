@@ -30,6 +30,7 @@ a verification standpoint.
 | REQ-AI-01 | Server-side voice transcription (§9) | `functions/src/transcription.ts`, `app/src/main/java/com/example/data/remote/GeminiAudioTranscriptionService.kt` | `functions/test/transcription.test.mjs` | Implemented; deployment unavailable |
 | REQ-SAFE-01 | SOS raise/acknowledge lifecycle (§10) | `firestore.rules`, `functions/src/index.ts` | `app/src/test/java/com/example/data/SosRaiseAuthorizationSecurityTest.kt`, `functions/test/sosDispatch.test.mjs` | Dispatch implemented server-side; FCM/SMS not exercised |
 | REQ-PRIV-01 | Consent receipts and DSAR export (§8) | `functions/src/compliance.ts`, `docs/privacy/DSAR.md`, `app/src/main/java/com/example/data/remote/FirebaseService.kt` | `functions/test/compliance.test.mjs` | Server and docs implemented; UI not wired |
+| REQ-ADMIN-01 | Admin claim provisioning and server-verified operator gate (§10) | `scripts/grant-admin.js`, `functions/src/admin.ts`, `app/src/main/java/com/example/ui/screens/MainScreen.kt` | `functions/test/admin.test.mjs` | Server gate and audit trail implemented; live claim provisioning untested |
 | REQ-SEC-01 | Private documents and job evidence (§8) | `storage.rules`, `firestore.rules` | NONE | Rules changed; emulator suite missing (REM-019) |
 | REQ-DOC-01 | Documentation precedence and link integrity (§17) | `docs/DOCUMENT_MAP.md`, `docs/traceability.md` | `scripts/check_document_map.mjs`, `scripts/check_doc_links.mjs`, `scripts/check_traceability.mjs` | Implemented and checked |
 

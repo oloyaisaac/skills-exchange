@@ -923,3 +923,10 @@ REM-001, which still needs a JDK and Android SDK to verify.
   `AFRICASTALKING_SENDER_ID`, and `SOS_DISPATCH_NUMBERS`.
 - **REM-035:** the same incident pushes to the FCM topic `sos_dispatch`.
 - Neither channel is verified against a live provider in this environment.
+
+### 18.4 Wave 1b: operator access
+
+- **REM-023:** the admin UI gate is server-verified via `getAdminAccess`; the `admin` custom claim
+  is granted/revoked only by `scripts/grant-admin.js`, which preserves other claims, revokes
+  refresh tokens and writes an immutable `admin_audit` record. Requires a Firebase Admin service
+  account and `ADMIN_ACTOR` to run.

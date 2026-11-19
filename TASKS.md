@@ -406,7 +406,7 @@ _Last synchronized: 2026-10-11T15:24:11+03:00 â€” Phase 17 documentation st
 
 ## Remediation Track — Prompt 3 (2026-11-19)
 
-Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDINGS.md`. Full task detail, dependencies, tests and acceptance criteria: `IMPLEMENTATION_ROADMAP.md`. **Wave 1a (2026-11-20): REM-069/072 `COMPLETED`; REM-044/005/011/039 `IN_PROGRESS`; REM-001/002/006/010/012–016/021/022/034/035/049/051/070 `VERIFICATION_PENDING`; the rest `NOT_STARTED`.**
+Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDINGS.md`. Full task detail, dependencies, tests and acceptance criteria: `IMPLEMENTATION_ROADMAP.md`. **Wave 1b (2026-11-20): REM-069/072 `COMPLETED`; REM-005/011/023/039/044 `IN_PROGRESS`; REM-001/002/006/010/012–016/021/022/034/035/049/051/070 `VERIFICATION_PENDING`; the rest `NOT_STARTED`.**
 
 | Task | Priority | Reviewer | Task title | Depends on | Status |
 |---|---|---|---|---|---|
@@ -432,7 +432,7 @@ Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDI
 | REM-015 | HIGH | R07 | Scope quote reads | REM-010 | VERIFICATION_PENDING |
 | REM-016 | HIGH | R07 | Fix app backup configuration | - | VERIFICATION_PENDING |
 | REM-017 | HIGH | R07 | Enforce App Check and rate limits | REM-011; REM-022 | NOT_STARTED |
-| REM-023 | HIGH | R06 | Provision admin claims and gate the admin UI | REM-022 | NOT_STARTED |
+| REM-023 | HIGH | R06 | Provision admin claims and gate the admin UI | REM-022 | IN_PROGRESS |
 | REM-024 | HIGH | R06 | Add re-authentication and token revocation | REM-022 | NOT_STARTED |
 | REM-029 | HIGH | R08 | Make fees and totals server-authoritative | REM-002 | NOT_STARTED |
 | REM-030 | HIGH | R08 | Enforce escrow state transitions server-side | REM-029 | NOT_STARTED |

@@ -1,3 +1,18 @@
+## 2026-11-20 (Wave 1b) - SERVER-VERIFIED ADMIN ACCESS
+
+- **REM-023 (IN_PROGRESS).** `getAdminAccess` returns `hasAdminClaim(context.auth.token)`; the
+  MainScreen unlock now calls `viewModel.verifyAdminAccess()` and holds no client boolean. The
+  claim itself is provisioned only by `scripts/grant-admin.js`, which preserves other claims,
+  revokes refresh tokens and writes `admin_audit {action,targetUid,actor,at,claims}`. Rules make
+  the audit trail admin-readable and client-immutable. Tests cover claim parsing and audit input.
+- **Not verified:** no project/service account, so no claim was actually granted or observed in the
+  UI. Android is still uncompiled.
+- **Tests:** 158/158 backend tests, build exit 0.
+
+**Next:** REM-024 (re-auth + token revocation), REM-025 (identity linking), then money (REM-026-032).
+
+---
+
 ## 2026-11-20 (Wave 1a) - REAL SOS DISPATCH (SMS + FCM)
 
 - **REM-034 (VERIFICATION_PENDING).** `sms.ts` builds the Africa's Talking messaging request,
