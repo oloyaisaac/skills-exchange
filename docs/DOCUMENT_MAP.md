@@ -18,6 +18,7 @@ be corrected rather than followed.
 | `DECISIONS.md` | Architecture decision records | 10 | Engineering lead | Append a new ADR; supersede rather than edit an accepted decision |
 | `README.md` | Orientation for newcomers | 11 | Product owner | Kept short; must link to this map rather than restate requirements |
 | `AGENTS.md`, `README_AI.md` | Instructions for automation | 12 | Engineering lead | Changed only when the workflow changes |
+| `docs/traceability.md` | Requirement → code → test matrix | 4 (supplements findings) | Engineering lead | Updated when a requirement, implementation file or test changes |
 | `docs/DOCUMENT_MAP.md` | This precedence map | 0 (meta) | Engineering lead | Updated whenever a document is added, removed or changes role |
 | `SECURITY.md` | Security policy and reporting | 13 | Security lead | Changed only with a security decision |
 | `ASSESSMENT_REPORT.md`, `PRODUCTION_READINESS.md`, `ANALYSIS_SUMMARY.md`, `AUDIT_PREP.md`, `AUDIT_THREE_PERSONAS.md`, `REVIEW_PLAN.md`, `REVIEWER_REGISTER.md`, `TXT_FILE_AUDIT.md` | Point-in-time audits and review operations | 14 (snapshot; not current state) | Review lead | Left as evidence of the date they were produced; current status is read from `prd.json` |
