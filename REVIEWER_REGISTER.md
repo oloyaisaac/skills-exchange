@@ -175,3 +175,29 @@ programme; this register records evidence only and does not authorise source cha
 5. Findings that cross domains are owned by the reviewer with the most direct evidence, with supporting reviewers named.
 
 *Next action: provision a JDK/Android SDK environment and start R01 (see `REVIEW_PLAN.md` §3).*
+
+## 8. Prompt-2 strict sequential re-review
+
+A second, strictly sequential review cycle began on 2026-11-20 at `aa4a0bc`. Execution position and
+blockers are tracked in `REVIEWER_EXECUTION_STATE.md`; the current-cycle report is
+`review_results/prompt2/REVIEW_01.md`.
+
+| Reviewer | Cycle status | Verdict | Report |
+|---|---|---|---|
+| R01 Architecture & Codebase Integrity | submitted | **FAIL** (build UNVERIFIED) | `review_results/prompt2/REVIEW_01.md` |
+| R02 Android Client | submitted | **FAIL** (escrow success UI; dynamic checks UNVERIFIED) | `review_results/prompt2/REVIEW_02.md` |
+| R03 Backend & Cloud Functions | submitted | **FAIL** (deploy config, handler tests) | `review_results/prompt2/REVIEW_03.md` |
+| R04 Data & Persistence | submitted | **FAIL** (schema export, default PIN, migration coverage) | `review_results/prompt2/REVIEW_04.md` |
+| R05 API & External Integrations | submitted | **FAIL** (SMS stub, FCM registration, currency units) | `review_results/prompt2/REVIEW_05.md` |
+| R06 Authentication & Identity | submitted | **FAIL** (deletion ordering, no Storage cleanup, no linking) | `review_results/prompt2/REVIEW_06.md` |
+| R07 Application Security | submitted | **FAIL** (client-trusted PIN, deletion rules, escrow fields) | `review_results/prompt2/REVIEW_07.md` |
+| R08 Payments & Escrow | submitted | **FAIL** (release does not disburse, device-only ledger) | `review_results/prompt2/REVIEW_08.md` |
+| R09 Privacy & Compliance | submitted | **FAIL** (consent/DSAR unreachable, erasure incomplete, no retention) | `review_results/prompt2/REVIEW_09.md` |
+| R10 Safety & Fraud | submitted | **FAIL** (PIN, reports, SOS claims, no duplicate detection) | `review_results/prompt2/REVIEW_10.md` |
+| R11 QA & Test Engineering | submitted | **FAIL** (no rules/Compose/handler tests, Android not in CI) | `review_results/prompt2/REVIEW_11.md` |
+| R12 UI/UX & Accessibility | submitted | **FAIL** (no localisation, no semantics, deceptive safety copy) | `review_results/prompt2/REVIEW_12.md` |
+| R13 Performance & Reliability | submitted | **FAIL** (inert offline queue, no observability, no paging) | `review_results/prompt2/REVIEW_13.md` |
+| R14 DevOps & Supply Chain | submitted | **FAIL** (committed artifacts, no Android CI, deploy not reproducible) | `review_results/prompt2/REVIEW_14.md` |
+| R15 Documentation & Traceability | submitted | **FAIL** (112 unevidenced completions, 13% traceability, stale onboarding) | `review_results/prompt2/REVIEW_15.md` |
+
+**Prompt-2 cycle complete: 15/15 examined, 15 FAIL.**
