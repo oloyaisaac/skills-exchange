@@ -74,6 +74,9 @@ import {
 } from "./webhookAuth";
 import type { WebhookRateRecord } from "./webhookAuth";
 import { buildConsentRecord, buildDsarEnvelope, sanitiseGuarantorForExport } from "./compliance";
+import { loadSmsConfig, createSmsSender } from "./sms";
+import type { SmsTransport } from "./sms";
+import { planSosDispatch, selectSosRecipients, buildSosMessage } from "./sosDispatch";
 import {
   buildTranscriptionPrompt,
   buildGeminiTranscriptionRequest,
@@ -788,12 +791,80 @@ export const onJobCreated = functions.firestore
 /**
  * MODULE 4: AFRICA'S TALKING / TWILIO SMS INTEGRATION UTILITY
  */
+const smsTransport: SmsTransport = async (url, body, headers) => {
+  const response = await axios.post(url, body, {
+    headers,
+    timeout: 15000,
+    validateStatus: () => true,
+  });
+  return { status: response.status, data: response.data };
+};
+
+/**
+ * REM-034: deliver a real SMS. Returns false — and never claims delivery — when the provider is
+ * unconfigured, rejects the message or cannot be reached. Phone numbers are masked in logs.
+ */
 async function sendSmsAlert(phoneNumber: string, message: string): Promise<boolean> {
-  console.log(`[Africa's Talking SMS API] To: ${phoneNumber} | Msg: ${message}`);
-  // In production, invoke Africa's Talking API endpoint:
-  // POST https://api.africastalking.com/version1/messaging
-  return true;
+  const config = loadSmsConfig(process.env as Record<string, string | undefined>);
+  if (!config) {
+    console.error("SMS not configured (AFRICASTALKING_API_KEY/USERNAME); alert not sent", {
+      phone: maskPhone(phoneNumber),
+    });
+    return false;
+  }
+  const send = createSmsSender(config, smsTransport);
+  const result = await send([phoneNumber], message);
+  if (!result.ok) {
+    console.error("SMS delivery failed", { phone: maskPhone(phoneNumber), error: result.error });
+  }
+  return result.ok;
 }
+
+/**
+ * REM-034 / REM-035: alert platform security and the user's emergency contact when an SOS is
+ * raised, and push to the dispatch topic. Delivery is attempted once per incident; the outcome is
+ * recorded on the incident so the admin queue can see what actually happened.
+ */
+export const onSosIncidentCreated = functions.firestore
+  .document("sosIncidents/{incidentId}")
+  .onCreate(async (snapshot) => {
+    const data = (snapshot.data() || {}) as Record<string, unknown>;
+    if (!planSosDispatch(data).shouldDispatch) return;
+
+    const ownerId = String(data.postedByUid);
+    const profile = await db.collection("users").doc(ownerId).get();
+    const recipients = selectSosRecipients(
+      process.env.SOS_DISPATCH_NUMBERS,
+      profile.get("emergencyContactPhone")
+    );
+    const message = buildSosMessage(data);
+    let delivered = 0;
+    for (const phone of recipients) {
+      if (await sendSmsAlert(phone, message)) delivered += 1;
+    }
+
+    await snapshot.ref.set(
+      {
+        dispatch: {
+          attemptedAt: Date.now(),
+          status: recipients.length === 0 ? "NO_RECIPIENTS" : delivered > 0 ? "SENT" : "FAILED",
+          recipients: recipients.length,
+          delivered,
+        },
+      },
+      { merge: true }
+    );
+
+    try {
+      await admin.messaging().send({
+        topic: "sos_dispatch",
+        notification: { title: "SOS raised", body: message },
+        data: { incidentId: snapshot.id, jobId: String(data.jobId || "") },
+      });
+    } catch (error) {
+      console.error("SOS push failed", (error as Error).message);
+    }
+  });
 
 /**
  * ADMIN-001: Helper to verify caller has admin custom claim.
