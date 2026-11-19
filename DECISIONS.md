@@ -2,6 +2,31 @@
 
 All significant architectural, design, and implementation decisions are recorded here. This allows future agents and developers to understand why specific choices were made.
 
+### D-2026-11-19-1 - Review-Only Assessment Programme; 15 Reviewers; No Source Changes
+
+**Context.** A repository-wide assessment found that the committed HEAD cannot be assumed buildable and contains security-, money- and safety-relevant defects, while master documents (including `prd.json` with 97/97 stories marked completed) assert verified completion. Fixing defects during assessment would destroy the evidence trail and mix remediation with review.
+
+**Decision.**
+1. Keep this phase strictly review-only: no edits to `app/src/**`, `functions/src/**`, rules, build files or tests.
+2. Create the review programme as new artefacts (`ASSESSMENT_REPORT.md`, `REVIEWER_REGISTER.md`, `REVIEW_PLAN.md`, `PRODUCTION_READINESS.md`, `reviewers/*.md`) and extend `prd.json` additively with phase 18 and 15 `RVW-*` stories at `not_started`.
+3. Select 15 reviewers from actual trust boundaries and failure modes (architecture, Android client, backend, data, integrations, auth, security, payments, privacy/KYC, safety/fraud, QA, UI/UX & a11y, performance/reliability, DevOps, documentation); no reviewer without repository evidence.
+4. Treat prior `completed` statuses as unverified historical claims, not as evidence. Do not flip them without reviewer reports.
+5. Record the readiness verdict as **not production-ready** until P0 gates pass with reproducible evidence.
+
+**Consequences.** The programme adds substantial documentation and 15 pending stories; it deliberately does not reduce the existing story count or rewrite history. Reviewers cannot self-waive gates. Remediation requires separate authorisation and new PRD stories. Any commit that changes the baseline re-opens affected reviewers.
+
+---
+
+### D-2026-11-19-2 - Evidence Standard: Executed, Read, Inferred, Unverified
+
+**Context.** The repository contains extensive historical build/test logs and agent narratives ("BUILD SUCCESSFUL", "111 tests pass", "rules deployed") that cannot be attributed to the current commit, and the assessment environment lacks a JDK/Android SDK.
+
+**Decision.** Every review claim must be labelled `OBSERVED` (a command was run), `READ` (source/doc inspected), `INFERRED` (reasoned from evidence) or `UNVERIFIED` (not executed). Historical logs are not admissible as current evidence. A reviewer who could not execute required checks may not issue `PASS`; the maximum verdict is `UNVERIFIED`.
+
+**Consequences.** Some clearly correct-looking work (e.g. the server money core's 111 passing pure-module tests) is accepted only for what it proves; handler, emulator, device and deployment behaviour remain unverified until executed in a provisioned environment.
+
+---
+
 ### D-2026-10-20-1 - AUDIT-A-ARBITRATE: Client Mirrors Dispute Filing to Firestore; `reportedBy` Bound on Create; Resolutions Stay Server-Only
 
 **Context.** The arbitration console reads the admin-gated `getDisputesQueue` callable, which queries the Firestore `disputes` collection — but dispute filing (`submitDispute` → `createDispute`) only wrote the Room row, so the console would always have shown an empty queue at runtime. The established precedent for moving local entities to Firestore is the best-effort `syncJobToFirestore`/`syncProviderToFirestore` mirror. Until now no client wrote the `disputes` collection at all, which is why SEC-006's create rule was permissive.

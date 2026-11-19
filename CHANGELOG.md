@@ -1,5 +1,43 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-19] [ASMT-CYCLE] All 15 specialist reviews executed — 0 PASS / 15 FAIL
+
+- **Reports:** `reviewers/reports/REVIEW_01.md` … `REVIEW_15.md` (all FAIL). Register: 15 submitted,
+  0 accepted; gates G0–G8 closed. Readiness: **0 of 13 domains PASS**.
+- **Critical confirmations:** `jobs`/`messages` world-readable unauthenticated; phone signup never
+  creates a Firebase identity; SOS dispatch is a log-only stub returning `SENT`; escrow release has no
+  client caller and no refund function exists; erasure over-deletes cached jobs, aborts and erases
+  complaints; admin claim unprovisionable; committed Africa's Talking key.
+- **New findings:** F-023…F-037 (15 added; register now 37). Full table in `ASSESSMENT_REPORT.md` §6,
+  cycle summary in §6b, domain re-score in `PRODUCTION_READINESS.md`.
+- **Executed evidence:** Node `npm test` 111/111 pass; `npm run build` exit 2; rules/storage/manifest/
+  Kotlin/TS static analysis. Android build, emulator, device and provider sandbox **not available**;
+  all dynamic claims are `UNVERIFIED`.
+- **Updated:** `ASSESSMENT_REPORT.md`, `PRODUCTION_READINESS.md`, `REVIEWER_REGISTER.md`,
+  `REVIEW_PLAN.md`, `TASKS.md`, `prd.json` (`RVW-002…013`, `RVW-015` completed with
+  `review_verdict: FAIL`), `reviewers/reports/`.
+- **No application source, rules, build scripts or tests changed.** Do not re-issue PASS without a
+  green build transcript and reproducible evidence.
+
+### [2026-11-19] [ASMT-WAVE0] R01 build-integrity review and R14 release/supply-chain review executed
+
+- **Reports:** `reviewers/reports/REVIEW_01.md` (FAIL, gate G0), `reviewers/reports/REVIEW_14.md` (FAIL, gate G1).
+- **R01 evidence:** `SkillsExchangeRepository.kt:579–651` leaves a `JobPostEntity(` constructor unclosed and strands code at file scope; `FirebaseService.kt:709–716` has literal `\n` escapes and a stray brace; `GeminiAudioTranscriptionService.kt:1` starts with `]=package`; `ActiveJobScreen.kt` is dead and non-compiling (invalid import of a `private` symbol, undefined types, malformed `<` call).
+- **R14 evidence:** no CI; `gradle.properties:31–33,38,42` hardcodes `D:/` paths; tests launch on Java 25 while compile targets 11; `gradlew` committed mode 100644; release keystore absent; R8 disabled; 62 MB of APKs and device/log artifacts tracked; `npm run build` exits 2 with 8 TypeScript errors (`index.ts:645–683`); `npm audit --omit=dev` reports 16 production advisories (1 critical, 10 high).
+- **Executed:** `npm ci`, `npm run build` (FAIL), `npm test` (111/111 pass), `npm audit`, `bash gradlew --version` (JAVA_HOME missing), structural scan of 110 Kotlin files.
+- **Updates:** `REVIEWER_REGISTER.md` (2 submitted, gates G0/G1 FAIL), `PRODUCTION_READINESS.md` (review-confirmed), `REVIEW_PLAN.md` (execution status), `prd.json` (`RVW-001`/`RVW-014` completed with `review_verdict: FAIL`), `TASKS.md`, `AGENT_STATE.md`.
+- **No application source changed.** Gate G0 remains closed: no reviewer may issue PASS while the source does not compile.
+
+### [2026-11-19] [ASMT-2026-11-19] Independent repository assessment & 15-reviewer architecture (review-only)
+
+- **Scope:** whole repository. No application source, rules, build scripts or tests changed.
+- **Deliverables:** `ASSESSMENT_REPORT.md`, `REVIEWER_REGISTER.md`, `REVIEW_PLAN.md`, `PRODUCTION_READINESS.md`, `reviewers/` (15 instruction files, `reports/README.md`).
+- **Additive updates:** `prd.json` phase 18 + `RVW-001…RVW-015` (`not_started`), version 1.2; `requirement_file.md` §16; `AGENT_STATE.md`; `TASKS.md`; `DECISIONS.md`; `README.md` status/build sections.
+- **Executed evidence:** `functions && npm test` → 111 pass / 0 fail (Node 22.22.3). Android build/tests not executable here (no JDK/Android SDK).
+- **Findings:** 20 registered at assessment time (F-001…F-020; two more added during Wave 0, see the 2026-11-19 Wave 0 entry), including non-buildable HEAD, committed Africa's Talking key, world-readable `jobs`/`messages`, fabricated SOS SMS and fake payout, incomplete account erasure, missing admin claim provisioning, no CI/observability.
+- **Verdict:** NOT PRODUCTION-READY; all 12 release-relevant domains fail or are unverified. No PRD statuses flipped; prior completion claims remain unverified pending reviewer evidence.
+
+
 ### [2026-10-22] [AUDIT-A-SOS] Firestore rules & Cloud Functions deployment to skills-exchange-f9189
 
 - **Scope:** AUDIT-A-SOS (P0) — Firebase backend deployment completed

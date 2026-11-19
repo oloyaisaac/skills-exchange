@@ -2,6 +2,10 @@
 
 A hyperlocal peer-to-peer services marketplace Android app for East African urban centers (Uganda, Kenya, Tanzania, Rwanda). Connects nearby residents with verified local workers for home repairs, maintenance, technical tasks, personal services, and recurring contracts.
 
+## Project status
+
+> **Pre-production. Not release-ready.** An independent assessment on 2026-11-19 found build-blocking source defects, world-readable job/chat documents, a committed third-party API key, and unverified payment/SOS completion paths. See [`PRODUCTION_READINESS.md`](PRODUCTION_READINESS.md) and [`ASSESSMENT_REPORT.md`](ASSESSMENT_REPORT.md) before attempting a build or release. This README documents intended behaviour, not certified behaviour.
+
 ## Tech Stack
 
 - **Language**: Kotlin
@@ -28,7 +32,7 @@ A hyperlocal peer-to-peer services marketplace Android app for East African urba
 - **Escrow Payments**: Mobile Money escrow lock, verified payouts, material advance disbursement
 - **Doorstep Security**: Dynamic 4-digit PIN verification, ground proof photos, SOS alerts
 - **Real-time Chat**: Firestore chat with phone number masking
-- **Offline Support**: Action queueing with automatic sync on reconnect
+- **Offline Support**: Queued actions persist locally; replay/sync on reconnect is **not implemented** (queue is preserved and logged, not sent)
 - **Ratings & Reviews**: Worker rating aggregation with district-level privacy
 - **Push Notifications**: FCM for job updates, quotes, payments, and verification status
 
@@ -39,29 +43,23 @@ A hyperlocal peer-to-peer services marketplace Android app for East African urba
 - Firebase project with Android app configured
 - Google Maps API key
 - Gemini API key
-- MTN MoMo / Airtel Money sandbox credentials
+- MTN MoMo sandbox credentials (Airtel Money appears only as a UI/channel label; no provider integration)
 
 ## Build & Run
 
 1. Open Android Studio and select **Open**, then choose the project directory
 2. Allow Android Studio to sync the project and install dependencies
-3. Create a `.env` file in the project root with the following keys:
+3. Create a `.env` file in the project root with the client keys (see `.env.example`):
    ```
    GEMINI_API_KEY=your_gemini_api_key
    MAPS_API_KEY=your_google_maps_api_key
-   MOMO_API_KEY=your_mtn_momo_api_key
-   MOMO_API_USER=your_momo_username
-   MOMO_API_PASS=your_momo_password
-   WEBHOOK_SECRET=your_webhook_secret
    ```
-4. Add your Google Maps API key to `app/src/main/AndroidManifest.xml` inside the `<application>` tag:
-   ```xml
-   <meta-data
-       android:name="com.google.android.geo.API_KEY"
-       android:value="YOUR_MAPS_API_KEY" />
-   ```
-5. Connect a physical device or start an emulator with Google Play Services
-6. Run the app using the **Run** button or `./gradlew installDebug`
+4. Do **not** edit the manifest to add a Maps key. `MAPS_API_KEY` is injected at build time by the Secrets Gradle Plugin into the `${MAPS_API_KEY}` placeholder in `app/src/main/AndroidManifest.xml`. A missing/placeholder key renders the map fallback instead of crashing.
+5. Backend configuration belongs to Cloud Functions, not the APK. `functions/src/momoCollection.ts` requires `MOMO_ENVIRONMENT=sandbox`, `MOMO_BASE_URL=https://sandbox.momodeveloper.mtn.com`, `MTN_SUBSCRIPTION_KEY`, `MTN_API_USER` and `MTN_API_KEY`. (Earlier versions of this README listed `MOMO_API_KEY`/`MOMO_API_PASS`/`WEBHOOK_SECRET`; those names are not read by the current code, and the HMAC webhook secret was deliberately removed.) Never commit real keys.
+6. Connect a physical device or start an emulator with Google Play Services
+7. Run the app using the **Run** button or `./gradlew installDebug`
+
+> Build prerequisite: the current `gradle.properties` contains machine-specific Windows paths (`D:/…`) and a pinned local JDK. A clean checkout will not build until those are made portable — see `ASSESSMENT_REPORT.md` F-009. Installation instructions above are therefore **UNVERIFIED** on this commit.
 
 ## Project Structure
 
@@ -78,6 +76,20 @@ A hyperlocal peer-to-peer services marketplace Android app for East African urba
 | Firestore Rules | `firestore.rules` |
 | Storage Rules | `storage.rules` |
 | Unit Tests | `app/src/test/java/com/example/` |
+
+## Repository review architecture
+
+An independent review programme (2026-11-19) defines 15 specialist reviewers covering architecture, Android client, backend, data, integrations, authentication, security, payments, privacy/KYC, safety/fraud, QA, UI/UX & accessibility, performance/reliability, DevOps/release, and documentation.
+
+| Document | Purpose |
+|---|---|
+| [`ASSESSMENT_REPORT.md`](ASSESSMENT_REPORT.md) | Investigation findings, complexity classification, risk register, reviewer rationale |
+| [`REVIEWER_REGISTER.md`](REVIEWER_REGISTER.md) | Reviewer roster, coverage matrix, gates, status tracking |
+| [`REVIEW_PLAN.md`](REVIEW_PLAN.md) | Execution waves, evidence protocol, report template |
+| [`PRODUCTION_READINESS.md`](PRODUCTION_READINESS.md) | Per-domain release gates and blockers |
+| [`reviewers/`](reviewers/) | One instruction file per reviewer + `reports/` output convention |
+
+**Review cycle complete (2026-11-19):** all 15 reviews executed against baseline `6b39a10`; **0 PASS / 15 FAIL**. Readiness: 0 of 13 domains. See [`reviewers/reports/`](reviewers/reports/) and [`PRODUCTION_READINESS.md`](PRODUCTION_READINESS.md).
 
 ## Development Phases
 
@@ -113,6 +125,15 @@ A hyperlocal peer-to-peer services marketplace Android app for East African urba
 # Build release APK
 ./gradlew assembleRelease
 ```
+
+Cloud Functions tests (pure TypeScript modules; no emulator or network):
+
+```bash
+cd functions
+npm test        # 111 tests on Node 22.22.3 at the 2026-11-19 assessment
+```
+
+> The Android commands above could not be executed in the assessment environment (no JDK/Android SDK). Treat historical build logs in the repository as stale until re-run on the current commit.
 
 ## License
 

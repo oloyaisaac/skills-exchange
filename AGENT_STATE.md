@@ -1,3 +1,82 @@
+## 2026-11-19 (final) — ALL 15 REVIEWS EXECUTED: 0 PASS / 15 FAIL
+
+Programme complete. Every specialist review ran against baseline `6b39a10`; every one returned
+**FAIL**. Reports: `reviewers/reports/REVIEW_01.md` … `REVIEW_15.md`. Register: 15 submitted, 0
+accepted (G0/G1 never re-ran green). Readiness re-scored: **0 of 13 domains PASS**, gates G0–G8 all
+closed. No application source, rules, build files or tests were changed.
+
+**Verdicts:** R01 FAIL, R02 FAIL, R03 FAIL, R04 FAIL, R05 FAIL, R06 FAIL, R07 FAIL, R08 FAIL,
+R09 FAIL, R10 FAIL, R11 FAIL, R12 FAIL, R13 FAIL, R14 FAIL, R15 FAIL.
+
+**Findings added this cycle (F-023…F-037, total 37):**
+- **F-023 (S1)** phone signup never obtains a Firebase identity — `verifyOtp` mints a local session
+  from the device's Africa's Talking response (`SkillsExchangeViewModel.kt:2354–2405`); the Firebase
+  phone-auth path is dead and `signInAnonymously()` is uncalled, so `loginUser` fails on a clean install.
+- **F-024 (S2)** duplicate `sosIncidents` blocks (`firestore.rules:156`, `:318`) — OR semantics means
+  the weaker block wins and the `exists(job)` guard is bypassed.
+- **F-025 (S2)** `notifications` and `momo_transactions` creates are open to any authenticated user.
+- **F-026 (S2)** Storage job-photo writes authorize self-asserted metadata; cross-job overwrite possible.
+- **F-027 (S3)** `job_quotes` readable by every authenticated user.
+- **F-028 (S2)** admin "unlock" is `isAdminUnlocked = true` locally (`MainScreen.kt:832`); the claim is
+  never provisioned, so administration is unreachable either way.
+- **F-029 (S1)** deletion derives job IDs from every cached job, is rules-denied, aborts, ignores
+  Storage, deletes complaints against the user, and has no re-auth.
+- **F-030 (S2)** doorstep PIN is rendered to the worker; default `4829`.
+- **F-031 (S1)** no refund function exists at all.
+- **F-032 (S2)** transcription fabricates a result when the key is missing.
+- **F-033 (S2)** backups enabled with empty backup/extraction rules.
+- **F-034 (S1)** `releaseEscrowToWorker` has no client call site — completed jobs cannot pay out.
+- **F-035 (S3)** no crash/ANR/analytics/perf telemetry.
+- **F-036 (S3)** Airtel/card offered as channels with no integration; Maps placeholder key.
+- **F-037 (S2)** abuse reports stay in Room; no `reports` collection rules.
+
+**Updated:** `ASSESSMENT_REPORT.md` (§6 F-023…F-037, §6b cycle results, §8.7), `PRODUCTION_READINESS.md`
+(re-scored 0/13), `REVIEWER_REGISTER.md` (statuses, gate table, ownership, log), `REVIEW_PLAN.md` (§2b),
+`TASKS.md`, `prd.json` (RVW-002…013, RVW-015 completed with `review_verdict: FAIL`; 112/112 stories
+completed, `readiness: FAIL`), `reviewers/reports/` (13 new reports + index).
+
+**Next:** remediation is a separate, explicitly authorised change programme. Priority order: public
+data rules → SOS truthfulness → auth/signup → money release/refund → erasure → build/CI. Do not
+re-issue PASS until a green build transcript and reproducible evidence exist.
+
+---
+
+## 2026-11-19 (later) — WAVE 0 REVIEWS EXECUTED: R01 FAIL, R14 FAIL
+
+Reports: `reviewers/reports/REVIEW_01.md`, `reviewers/reports/REVIEW_14.md`. Register updated: 2 submitted, 13 not started; **gates G0 (build) and G1 (reproducibility) are FAIL**. No source changed.
+
+- **R01 (FAIL):** four production files structurally invalid. `SkillsExchangeRepository.kt:579–651` (unclosed `JobPostEntity(`, orphaned parameter list, brace cascade), `FirebaseService.kt:709–716` (literal `\n` escapes + stray brace), `GeminiAudioTranscriptionService.kt:1` (`]=package`), `ActiveJobScreen.kt` (dead, invalid private import, undefined types, malformed `<` call). Also: ViewModel 2,749 lines / Repository 2,979 lines, no DI, no navigation, `namespace` ≠ `applicationId`, duplicate root manifest.
+- **R14 (FAIL):** no CI/lint/detekt; `gradle.properties:31–33,38,42` hardcodes `D:/`; compile Java 11 vs test launcher Java 25; `gradlew` mode 100644; missing release keystore; R8 disabled; 62 MB APKs + SQLite + logs tracked; `npm run build` exits 2 with 8 TS errors at `index.ts:645–683` while emitting partial `lib/`; no `predeploy`; 16 production advisories (1 critical `protobufjs`, 10 high); Node 18 engine vs `.ts` test imports.
+- **Executed this session:** `npm ci`; `npm run build` → exit 2; `npm test` → 111/111 pass; `npm audit --omit=dev` → 16 advisories; `bash gradlew --version` → JAVA_HOME missing; structural scan of 110 Kotlin files.
+- **Next:** Wave 1 static reviews R07 (security), R10 (safety), R08 (payments), R09 (privacy). R07 may start immediately because its evidence is source/rules-based. Do not issue PASS for any domain while G0/G1 are failed; do not start remediation until authorised.
+
+---
+
+## 2026-11-19 — UNIVERSAL REPOSITORY ASSESSMENT & REVIEW ARCHITECTURE (review-only, no source changes)
+
+**Verdict: NOT PRODUCTION-READY.** Committed HEAD `6b39a10` is not structurally buildable and contains security-relevant defects. This session did **not** modify `app/src/**`, `functions/src/**`, `firestore.rules`, `storage.rules`, build scripts or tests. It created the review programme only.
+
+**Created:** `ASSESSMENT_REPORT.md`, `REVIEWER_REGISTER.md`, `REVIEW_PLAN.md`, `PRODUCTION_READINESS.md`, `reviewers/` (15 instruction files + `reports/README.md`).
+**Updated additively:** `prd.json` (phase 18, 15 `RVW-*` stories `not_started`, 97 prior statuses untouched, version 1.2, `current_story = RVW-001`), `requirement_file.md` (§16 addendum), `TASKS.md` (review track), `CHANGELOG.md`, `DECISIONS.md` (D-2026-11-19-1/-2), `README.md` (status block + review section + corrected build prerequisites).
+
+**Executed evidence:** `cd functions && npm test` → 111 tests, 111 pass, 0 fail on Node 22.22.3. Android build/tests **not executed** (no JDK/Android SDK in this environment); all compile statements are static-analysis findings.
+
+**Blocking findings (details in ASSESSMENT_REPORT.md §6):**
+- F-001 HEAD not buildable: unclosed `JobPostEntity(` and orphaned code at `SkillsExchangeRepository.kt:579–651`; literal `\n` escapes + stray brace at `FirebaseService.kt:709–716`; `GeminiAudioTranscriptionService.kt:1` starts with `]=package`; `ActiveJobScreen.kt` has unresolved types and malformed syntax.
+- F-002 hardcoded Africa's Talking key at `AfricaTalkingService.kt:15`; OTP runs device-side.
+- F-003 `firestore.rules` exposes `jobs` and nested `messages` with `allow read: if true` (address, landmark, MoMo phone, payment channel/escrow, owner UID, all chat).
+- F-004 doorstep PIN default `"4829"`, plaintext, client-supplied expected value, no lockout.
+- F-005 SOS SMS is a logging stub returning `SENT`; no real dispatch and no server FCM send.
+- F-006 escrow release/payout not wired; `MoMoPaymentService` returns fabricated `DISBURSED`; wallet ledger is Room-only.
+- F-007 account deletion orphans data: rules deny `users` delete, so the Firestore cascade aborts at the first statement and Storage KYC/guarantor objects are never deleted, while Auth deletion proceeds.
+- F-008 no admin custom-claim provisioning path.
+- F-009 no CI; `gradle.properties` hardcodes `D:/` paths; Java 25 test launcher; R8 disabled.
+- F-010–F-020: no rules tests/index file, App Check unused, no observability, doc drift, artifact hygiene, localisation/a11y, money `Double`, functions runtime/deploy config, unexported Room schema, fabricated AI fallback, dead code.
+
+**Next:** provision JDK 17 + Android SDK 36/37 + Node 22 + Firebase emulator, then execute R01 (build gate) and R14 (reproducibility gate) per `REVIEW_PLAN.md`. Do not begin remediation or flip PRD statuses until gate evidence exists.
+
+---
+
 ## ✅ DONE 2026-10-20 - AUDIT-A-ARBITRATE ADMIN ARBITRATION CONSOLE COMPLETE (code+unit+full suite, committed 059ca38)
 ## ✅ DONE 2026-10-21 - AUDIT-A-SOS BACKEND FOUNDATION COMPLETE (code+unit+full suite)
 
