@@ -15,6 +15,20 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.admin == true;
     }
 
+    // REM-010: jobs carry the client's exact address, landmark directions and the MoMo
+    // payout number, so no job document may be read anonymously or by unrelated accounts.
+    // Read access is limited to the two parties of the job (owner / assigned provider) and
+    // admins. Provider assignment is recorded as `assignedProviderUid`; the legacy
+    // `assignedProviderId` comparison mirrors the transitions below so documents written
+    // before that column existed stay readable to their worker.
+    function isJobParticipant(jobId) {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/jobs/$(jobId)).data.postedByUid == request.auth.uid ||
+        get(/databases/$(database)/documents/jobs/$(jobId)).data.assignedProviderUid == request.auth.uid ||
+        get(/databases/$(database)/documents/jobs/$(jobId)).data.assignedProviderId == request.auth.uid
+      );
+    }
+
     function isWorkerKycApproved() {
       return isAuthenticated() &&
         exists(/databases/$(database)/documents/worker_kyc/$(request.auth.uid)) &&
@@ -211,9 +225,12 @@ service cloud.firestore {
 
     // Service Providers catalog
     // SEC-001: Enforce document ownership — only the provider (uid == providerId) may write their own profile.
-    // Public profiles remain publicly readable.
+    // REM-010: the catalogue is no longer world-readable. Unauthenticated clients could
+    // enumerate every provider name, neighbourhood and rate; reads now require a signed-in
+    // session. The synced fields (see FirebaseService.syncProviderToFirestore) contain no
+    // phone number, NIN or payout data.
     match /providers/{providerId} {
-      allow read: if true;
+      allow read: if isAuthenticated();
       // Create: authenticated user may create their own provider record (uid must match document id)
       allow create: if isAuthenticated() && request.auth.uid == providerId;
       // Update: only the provider themselves may update their own profile
@@ -224,8 +241,16 @@ service cloud.firestore {
 
     // --- MODULE 1: JOB LIFECYCLE & ESCROW STATE MACHINE ---
     match /jobs/{jobId} {
-      // Allow public read of general list, but gate client GPS coordinates for unverified workers
-      allow read: if true;
+      // REM-010: previously world-readable. A job document contains streetAddress,
+      // apartmentSuite, landmarkDirections and momoPhoneNumber, so reads are now limited to
+      // the owner, the assigned provider and admins. Clients must filter by
+      // postedByUid/assignedProviderUid (an unfiltered collection listen is denied).
+      allow read: if isAdmin() ||
+        (isAuthenticated() && (
+          resource.data.postedByUid == request.auth.uid ||
+          resource.data.assignedProviderUid == request.auth.uid ||
+          resource.data.assignedProviderId == request.auth.uid
+        ));
 
       // C2-2 Fix #4 (F4): `postedByUid` is the authoritative owner of the job. On create it MUST
       // equal the authenticated uid — a client can therefore never post a job on someone else's
@@ -292,7 +317,13 @@ service cloud.firestore {
       //  - delete is denied, preserving the conversation audit trail.
       // `senderName` is display text and is deliberately unconstrained.
       match /messages/{messageId} {
-        allow read: if true;
+        // REM-010: chat was world-readable. Only the author and the job's two parties
+        // (or an admin) may read a message; the parent job is the authority.
+        allow read: if isAdmin() ||
+          (isAuthenticated() && (
+            resource.data.senderId == request.auth.uid ||
+            isJobParticipant(jobId)
+          ));
         allow create: if isAuthenticated() &&
           request.resource.data.senderId == request.auth.uid &&
           request.resource.data.senderName is string;
