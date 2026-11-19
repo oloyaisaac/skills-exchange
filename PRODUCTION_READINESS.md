@@ -3,13 +3,15 @@
 **Assessment:** ASMT-2026-11-19 · **Baseline:** commit `6b39a10` · **Status date:** 2026-11-19
 **Verdict: NOT PRODUCTION-READY. Release is BLOCKED.**
 
+> **Wave 0 result (2026-11-19):** R01 (build integrity) and R14 (release/supply chain) have completed their reviews and both returned **FAIL**. The statuses below are no longer pre-review predictions for those domains; see `reviewers/reports/REVIEW_01.md` and `reviewers/reports/REVIEW_14.md`. Gates G0 and G1 remain closed.
+
 > This document does **not** certify the product. It records why it cannot be released today and what evidence would be required to change that. No reviewer has completed a specialist review yet; all statuses below are the assessor's pre-review determination and are provisional until challenged with evidence.
 
 ## 1. Readiness summary
 
 | # | Domain | Gate | Status | Blocking reason (evidence) |
 |---|---|---|---|---|
-| 1 | Build & code integrity | G0 | **FAIL** | HEAD not structurally buildable: literal `\n` at `FirebaseService.kt:709–716`, `]=package` at `GeminiAudioTranscriptionService.kt:1`, dead/broken `ActiveJobScreen.kt` |
+| 1 | Build & code integrity | G0 | **FAIL** | HEAD not structurally buildable: unclosed `JobPostEntity(` at `SkillsExchangeRepository.kt:579–651`, literal `\n` at `FirebaseService.kt:709–716`, `]=package` at `GeminiAudioTranscriptionService.kt:1`, dead/broken `ActiveJobScreen.kt` |
 | 2 | Release engineering & supply chain | G1 | **FAIL** | No CI; `gradle.properties` hardcodes `D:/` paths; tests on Java 25 vs Java 11 compile; R8 disabled; release key absent |
 | 3 | Application security | G2 | **FAIL** | World-readable `jobs`/`messages` (address, phone, payment channel, chat); committed Africa's Talking key; PIN plaintext with default and no lockout; App Check unused; no rules tests |
 | 4 | Safety & emergency response | G3 | **FAIL** | SOS SMS is a logging stub returning `SENT`; no verified dispatch channel |
@@ -41,7 +43,7 @@ None of these is currently satisfied.
 ## 3. Domain detail
 
 ### 3.1 Build and code integrity — FAIL
-Static scan of 110 Kotlin files found three structurally invalid files. There is no Gradle/JDK/Android SDK in the assessment environment, so the failure is asserted from source structure, not from a build. Historical `build_result*.txt`/`c123_verify_*.log` artifacts cannot be attributed to commit `6b39a10` and must not be used as evidence.
+Static scan of 110 Kotlin files found four structurally invalid production files. R01 (`reviewers/reports/REVIEW_01.md`) records the verdict **FAIL** with `nl` excerpts; R14 confirms the backend `npm run build` fails with 8 TypeScript errors. There is no Gradle/JDK/Android SDK in the assessment environment, so the failure is asserted from source structure, not from a build. Historical `build_result*.txt`/`c123_verify_*.log` artifacts cannot be attributed to commit `6b39a10` and must not be used as evidence.
 
 **To change status:** R01 records a clean `:app:compileDebugKotlin` transcript on this commit and the scan is clean.
 
@@ -77,13 +79,13 @@ Session restore deliberately fails closed on UID mismatch; authoritative UID res
 18 entities, schema 27, 16 migrations and a well-designed local cashout policy. `exportSchema = false` prevents schema diffing; migration coverage is thin; money is `Double`; dual-write has no conflict protocol.
 
 ### 3.9 Backend and integrations — PARTIAL
-16 functions with consistent admin gating and input validation for the reviewed paths; tests are strong for pure modules but do not execute handlers. Node 18 engine conflicts with tests importing `.ts` (needs ≥22.6); no `predeploy` build; `firebase-functions` v4 and `firebase-admin` v11 are outdated; no FCM send; no composite index file for a `status + createdAt` query.
+16 callables plus a webhook and a trigger, with consistent admin gating and input validation for the reviewed paths; pure-module tests are strong (111 pass) but do not execute handlers. **`npm run build` fails with 8 TypeScript errors** (`index.ts:645–683`) while still emitting `lib/`; there is no `predeploy`, so a deploy would ship partial output. Production dependencies carry 16 advisories (1 critical, 10 high). Node 18 engine conflicts with tests importing `.ts` (needs ≥22.6); no `predeploy` build; `firebase-functions` v4 and `firebase-admin` v11 are outdated; no FCM send; no composite index file for a `status + createdAt` query.
 
 ### 3.10 Quality — FAIL
-42 JVM test files and 111 Node tests are real assets. But no Firestore rules tests, one placeholder instrumentation test, no Compose UI tests, no coverage measurement, no CI execution. Master documents assert completed/verified states that the committed source contradicts.
+41 JVM test files and 111 Node tests are real assets. But no Firestore rules tests, one placeholder instrumentation test, no Compose UI tests, no coverage measurement, no CI execution. Master documents assert completed/verified states that the committed source contradicts.
 
 ### 3.11 Performance and reliability — UNVERIFIED
-No startup/jank baselines, no crash or ANR telemetry, no listener/read-cost inventory, no retry/backoff policy, no SLOs. Cannot be assessed as ready without measurement.
+No startup/jank baselines, no crash or ANR telemetry, no listener/read-cost inventory, no retry/backoff policy, no SLOs. Offline durability is also incomplete: `flushPendingActions()` preserves and logs queued actions but never replays them (`SkillsExchangeViewModel.kt:2196–2215`), despite the README claiming automatic sync on reconnect. Cannot be assessed as ready without measurement.
 
 ### 3.12 Accessibility and localisation — FAIL
 0 `stringResource`, 1 string resource, 178 inline `Text("…")`, 59 null content descriptions, English-only for a four-country market, no accessibility testing.

@@ -32,7 +32,7 @@ A hyperlocal peer-to-peer services marketplace Android app for East African urba
 - **Escrow Payments**: Mobile Money escrow lock, verified payouts, material advance disbursement
 - **Doorstep Security**: Dynamic 4-digit PIN verification, ground proof photos, SOS alerts
 - **Real-time Chat**: Firestore chat with phone number masking
-- **Offline Support**: Action queueing with automatic sync on reconnect
+- **Offline Support**: Queued actions persist locally; replay/sync on reconnect is **not implemented** (queue is preserved and logged, not sent)
 - **Ratings & Reviews**: Worker rating aggregation with district-level privacy
 - **Push Notifications**: FCM for job updates, quotes, payments, and verification status
 

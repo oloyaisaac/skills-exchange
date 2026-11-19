@@ -14,7 +14,7 @@ Independent review programme defined after a repository assessment found the com
 
 | ID | Priority | Reviewer | Status | Gate |
 |---|---|---|---|---|
-| RVW-001 | P0 | R01 Architecture & Codebase Integrity | ⬜ Not started | G0 build |
+| RVW-001 | P0 | R01 Architecture & Codebase Integrity | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_01.md`) | G0 build — FAIL |
 | RVW-002 | P1 | R02 Android Client | ⬜ Not started | — |
 | RVW-003 | P0 | R03 Backend & Cloud Functions | ⬜ Not started | — |
 | RVW-004 | P1 | R04 Data & Persistence | ⬜ Not started | — |
@@ -27,7 +27,7 @@ Independent review programme defined after a repository assessment found the com
 | RVW-011 | P1 | R11 QA & Test Engineering | ⬜ Not started | G7 evidence |
 | RVW-012 | P1 | R12 UI/UX & Accessibility | ⬜ Not started | — |
 | RVW-013 | P1 | R13 Performance & Reliability | ⬜ Not started | — |
-| RVW-014 | P0 | R14 DevOps & Release | ⬜ Not started | G1 reproducibility |
+| RVW-014 | P0 | R14 DevOps & Release | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_14.md`) | G1 reproducibility — FAIL |
 | RVW-015 | P1 | R15 Documentation & Traceability | ⬜ Not started | G8 synthesis |
 
 **Known pre-review blockers:** build-blocking source defects (F-001), committed provider credential (F-002), public job/chat reads (F-003), fabricated SOS SMS (F-005), incomplete erasure (F-007). Existing product task statuses below are preserved as historical claims and were **not** re-verified in this session.

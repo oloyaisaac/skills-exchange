@@ -96,7 +96,7 @@
         {
             "id": 18,
             "name": "Independent Repository Review Program (2026-11-19)",
-            "goal": "Run 15 specialist, evidence-based reviews of the Android client, Firebase backend, payment and identity subsystems, and documentation. Review-only scope: no application source changes. Produces ASSESSMENT_REPORT.md, REVIEWER_REGISTER.md, REVIEW_PLAN.md, PRODUCTION_READINESS.md and reviewers/*.md."
+            "goal": "Run 15 specialist, evidence-based reviews of the Android client, Firebase backend, payment and identity subsystems, and documentation. Review-only scope: no application source changes. Produces ASSESSMENT_REPORT.md, REVIEWER_REGISTER.md, REVIEW_PLAN.md, PRODUCTION_READINESS.md and reviewers/*.md. A completed RVW story means the review was performed; `review_verdict` records whether the area passed (a FAIL verdict keeps the release gate closed)."
         }
     ],
     "stories": [
@@ -3635,7 +3635,11 @@
             "phase": 18,
             "title": "Principal Software Architect & Codebase Integrity Review",
             "priority": "P0",
-            "status": "not_started",
+            "status": "completed",
+            "completed_at": "2026-11-19T12:30:00+03:00",
+            "verified_by": "review_report",
+            "review_report": "reviewers/reports/REVIEW_01.md",
+            "review_verdict": "FAIL",
             "depends_on": [],
             "description": "Independent specialist review of the Skills Exchange repository. Scope: Layering, module boundaries, god classes, dead/non-compiling code, buildability of HEAD. Follow the reviewer instruction file exactly; cite file paths and line-level evidence for every finding.",
             "goal": "Produce an evidence-backed verdict for Architecture & Codebase Integrity with blocking findings, residual risks and passing conditions recorded in the reviewer's report.",
@@ -4153,7 +4157,11 @@
             "phase": 18,
             "title": "DevOps, Release Engineering & Supply Chain Review",
             "priority": "P0",
-            "status": "not_started",
+            "status": "completed",
+            "completed_at": "2026-11-19T12:30:00+03:00",
+            "verified_by": "review_report",
+            "review_report": "reviewers/reports/REVIEW_14.md",
+            "review_verdict": "FAIL",
             "depends_on": [
                 "RVW-001"
             ],
@@ -4229,8 +4237,10 @@
             "notes": "Added 2026-11-19 by the independent assessment. Existing 97 stories retain their prior statuses; they were NOT re-verified by this task. ASSESSMENT_REPORT.md F-001 records that committed HEAD contains compile-blocking source defects, so prior 'completed' claims must be treated as unverified until RVW-001/RVW-011 re-check them."
         }
     ],
-    "current_story": "RVW-001",
+    "current_story": "RVW-007",
     "completed_stories": [
+        "RVW-001",
+        "RVW-014",
         "STAB-001",
         "STAB-002",
         "SEC-001",
@@ -4330,5 +4340,5 @@
         "AT-004"
     ],
     "blocked_stories": [],
-    "last_updated": "2026-11-19T12:00:00+03:00"
+    "last_updated": "2026-11-19T12:30:00+03:00"
 }

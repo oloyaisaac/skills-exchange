@@ -1,3 +1,14 @@
+## 2026-11-19 (later) — WAVE 0 REVIEWS EXECUTED: R01 FAIL, R14 FAIL
+
+Reports: `reviewers/reports/REVIEW_01.md`, `reviewers/reports/REVIEW_14.md`. Register updated: 2 submitted, 13 not started; **gates G0 (build) and G1 (reproducibility) are FAIL**. No source changed.
+
+- **R01 (FAIL):** four production files structurally invalid. `SkillsExchangeRepository.kt:579–651` (unclosed `JobPostEntity(`, orphaned parameter list, brace cascade), `FirebaseService.kt:709–716` (literal `\n` escapes + stray brace), `GeminiAudioTranscriptionService.kt:1` (`]=package`), `ActiveJobScreen.kt` (dead, invalid private import, undefined types, malformed `<` call). Also: ViewModel 2,749 lines / Repository 2,979 lines, no DI, no navigation, `namespace` ≠ `applicationId`, duplicate root manifest.
+- **R14 (FAIL):** no CI/lint/detekt; `gradle.properties:31–33,38,42` hardcodes `D:/`; compile Java 11 vs test launcher Java 25; `gradlew` mode 100644; missing release keystore; R8 disabled; 62 MB APKs + SQLite + logs tracked; `npm run build` exits 2 with 8 TS errors at `index.ts:645–683` while emitting partial `lib/`; no `predeploy`; 16 production advisories (1 critical `protobufjs`, 10 high); Node 18 engine vs `.ts` test imports.
+- **Executed this session:** `npm ci`; `npm run build` → exit 2; `npm test` → 111/111 pass; `npm audit --omit=dev` → 16 advisories; `bash gradlew --version` → JAVA_HOME missing; structural scan of 110 Kotlin files.
+- **Next:** Wave 1 static reviews R07 (security), R10 (safety), R08 (payments), R09 (privacy). R07 may start immediately because its evidence is source/rules-based. Do not issue PASS for any domain while G0/G1 are failed; do not start remediation until authorised.
+
+---
+
 ## 2026-11-19 — UNIVERSAL REPOSITORY ASSESSMENT & REVIEW ARCHITECTURE (review-only, no source changes)
 
 **Verdict: NOT PRODUCTION-READY.** Committed HEAD `6b39a10` is not structurally buildable and contains security-relevant defects. This session did **not** modify `app/src/**`, `functions/src/**`, `firestore.rules`, `storage.rules`, build scripts or tests. It created the review programme only.
@@ -8,7 +19,7 @@
 **Executed evidence:** `cd functions && npm test` → 111 tests, 111 pass, 0 fail on Node 22.22.3. Android build/tests **not executed** (no JDK/Android SDK in this environment); all compile statements are static-analysis findings.
 
 **Blocking findings (details in ASSESSMENT_REPORT.md §6):**
-- F-001 HEAD not buildable: literal `\n` escapes + stray brace at `FirebaseService.kt:709–716`; `GeminiAudioTranscriptionService.kt:1` starts with `]=package`; `ActiveJobScreen.kt` has unresolved types and malformed syntax.
+- F-001 HEAD not buildable: unclosed `JobPostEntity(` and orphaned code at `SkillsExchangeRepository.kt:579–651`; literal `\n` escapes + stray brace at `FirebaseService.kt:709–716`; `GeminiAudioTranscriptionService.kt:1` starts with `]=package`; `ActiveJobScreen.kt` has unresolved types and malformed syntax.
 - F-002 hardcoded Africa's Talking key at `AfricaTalkingService.kt:15`; OTP runs device-side.
 - F-003 `firestore.rules` exposes `jobs` and nested `messages` with `allow read: if true` (address, landmark, MoMo phone, payment channel/escrow, owner UID, all chat).
 - F-004 doorstep PIN default `"4829"`, plaintext, client-supplied expected value, no lockout.

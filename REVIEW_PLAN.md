@@ -23,6 +23,16 @@
 - **Preserve history.** Master documents are appended/prepended, never rewritten.
 - **No production claims.** The programme cannot certify readiness on behalf of the business; it can only recommend.
 
+## 2b. Execution status (updated 2026-11-19)
+
+| Reviewer | State | Verdict | Report |
+|---|---|---|---|
+| R01 Architecture & Codebase Integrity | submitted | **FAIL** | `reviewers/reports/REVIEW_01.md` |
+| R14 DevOps & Release | submitted | **FAIL** | `reviewers/reports/REVIEW_14.md` |
+| R02–R13, R15 | not started | — | — |
+
+**Gate status:** G0 FAIL, G1 FAIL. Wave 1 may proceed only as static analysis (R07/R09/R10 are safe to start immediately); no PASS verdict is admissible until G0 is re-run green.
+
 ## 3. Execution waves
 
 ### Wave 0 — Gates (must complete first)

@@ -33,7 +33,7 @@ QA Architect / Test Engineering Lead, Android + serverless test strategy, releas
 ## 6. Relevant Source Files and Components
 | Path | Why |
 |---|---|
-| `app/src/test/java/com/example/**` (42 files, ~7,780 lines) | all JVM/Robolectric tests |
+| `app/src/test/java/com/example/**` (41 files, ~7,780 lines) | all JVM/Robolectric tests |
 | `app/src/test/java/com/example/data/remote/MoMoCredentialLeakSecurityTest.kt` | source-scanning security test (MTN markers only) |
 | `app/src/test/java/com/example/data/*SecurityTest.kt` | authorization suites |
 | `app/src/test/java/com/example/util/*Test.kt` | pure validators |

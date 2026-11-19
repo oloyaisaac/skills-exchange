@@ -49,7 +49,7 @@ skills-exchange/
 │   │   ├── ui/theme/         colour/type/theme
 │   │   ├── ui/viewmodel/     single 2,749-line ViewModel
 │   │   └── util/             16 helpers
-│   ├── src/test/             42 JVM/Robolectric files (~7,780 lines)
+│   ├── src/test/             41 JVM/Robolectric files (~7,780 lines)
 │   └── src/androidTest/      1 placeholder instrumentation test
 ├── functions/                TypeScript Cloud Functions (4,027 lines) + 4 test files
 ├── firestore.rules (340)     Firestore security rules
@@ -118,7 +118,7 @@ skills-exchange/
 - **Notifications:** local Room notifications + FCM receive; no backend `send`/`sendMulticast` call, so push delivery of job/quote/payment events is not evidenced.
 
 ### 2.9 Testing, deployment, CI/CD, documentation
-- 42 JVM test files (7,780 lines) with genuinely valuable security/authorization suites; **1 placeholder instrumented test**; 4 Node test files (111 passing). No Firestore rules tests, no Compose UI tests, no coverage reporting, no CI.
+- 41 JVM test files (7,780 lines) with genuinely valuable security/authorization suites; **1 placeholder instrumented test**; 4 Node test files (111 passing). No Firestore rules tests, no Compose UI tests, no coverage reporting, no CI.
 - Deployment: `firebase.json` + `.firebaserc` (project `skills-exchange-f9189`); rules reportedly deployed historically; functions blocked by the Blaze plan per `AGENT_STATE.md`/`ANALYSIS_SUMMARY.md`. No staging environment, no runbook, no rollback procedure.
 - Documentation is extensive (620 KB of master docs) but drifts from code: 97/97 PRD stories marked `completed`, README `.env` variable names do not match `loadMomoConfig` (`MTN_*`, `MOMO_ENVIRONMENT`, `MOMO_BASE_URL`), and README's manifest key instructions are superseded by the Secrets plugin.
 
@@ -140,7 +140,7 @@ skills-exchange/
 | Admin verification & dispute sheets (in-app) | `AdminQueueSheet`, `AdminDisputeArbitrationSheet` |
 | SOS authorization + incident store + admin callables | `Sos*SecurityTest`, `sosIncidents` rules, `getSosQueue` |
 | Ratings with participant/one-per-job rules | `RatingAuthorizationSecurityTest` |
-| Offline action queue | `PendingActionEntity`, queue tests |
+| Offline action **persistence** | `PendingActionEntity`, queue preservation tests (replay not implemented) |
 | Maps fallback without key/crash | `MapsApiKeyGuard`, `MapsApiKeyFallbackTest` |
 | MTN collection initiation + pull-to-verify confirmation (sandbox) | `momoCollection.ts`, `momoConfirmation.ts`, 111 Node tests |
 
@@ -234,7 +234,7 @@ Severity: **S1** blocker, **S2** high, **S3** medium, **S4** low. These are the 
 
 | ID | Sev | Finding | Evidence |
 |---|---|---|---|
-| F-001 | S1 | **Committed HEAD is not structurally buildable.** Literal `\n` escape sequences and a stray brace at `FirebaseService.kt:709–716`; `GeminiAudioTranscriptionService.kt:1` begins with `]=package`; `ActiveJobScreen.kt` has unresolved types and malformed syntax. No fresh Gradle evidence exists for this commit. | Static scan of 110 Kotlin files; file excerpts; `build_result*.txt` pre-date the corruption |
+| F-001 | S1 | **Committed HEAD is not structurally buildable.** `SkillsExchangeRepository.kt:579–651` leaves a `JobPostEntity(` constructor unclosed and strands a parameter list at file scope; `FirebaseService.kt:709–716` has literal `\n` escapes and a stray brace; `GeminiAudioTranscriptionService.kt:1` begins with `]=package`; `ActiveJobScreen.kt` has unresolved types and malformed syntax. No fresh Gradle evidence exists for this commit. | Static scan of 110 Kotlin files; `nl` excerpts in `reviewers/reports/REVIEW_01.md`; `build_result*.txt` pre-date the corruption |
 | F-002 | S1 | **Third-party API credential committed in client source.** `AFRICASTALKING_API_KEY = "atsk_…"` at `AfricaTalkingService.kt:15`, used in device-side HTTP Basic headers. Key must be treated as compromised regardless of revocation status. | Source line; no secret-scanning in repo; existing leak test scans only MTN markers |
 | F-003 | S1 | **World-readable job and chat data.** `firestore.rules` sets `allow read: if true` for `jobs` and nested `messages`. Mirrored job docs carry street address, suite/landmark, MoMo phone, payment channel/escrow state and ownership; every message body is public. | `firestore.rules:226–228`, `294–295`; `FirebaseService.syncJobToFirestore` (lines 458–500) |
 | F-004 | S2 | **Doorstep PIN is not a security control.** Default `"4829"` in the entity and SQL schema, stored plaintext in Room (included in app backups), rendered in clear text in the UI, and verified against a client-supplied `expectedPin` with no attempt limit — a modified client can bypass the check. It is not currently mirrored to Firestore. | `Entities.kt:259`; `AppDatabase.kt:203`; `SkillsExchangeRepository.kt:871–899`; `MainScreen.kt:598`; `ViewModel.kt:840`; `EscrowAndProofSheet.kt:641–686` |
@@ -250,10 +250,12 @@ Severity: **S1** blocker, **S2** high, **S3** medium, **S4** low. These are the 
 | F-014 | S2 | **Repository ships sensitive/high-volume artifacts.** Two ~31 MB APKs, a device SQLite database, 665 KB logcat dump, heap crash logs, 87 `diag-*` files; `.gitignore` does not exclude them. | repo inventory |
 | F-015 | S2 | **No localisation and weak accessibility.** 0 `stringResource`, 1 string resource, 178 inline strings, 59 null content descriptions, English-only for 4 countries, RTL declared but untested. | source scan |
 | F-016 | S3 | **Money representation and currency inconsistency.** Monetary values are `Double`; `CurrencyUtils` uses fixed USD multipliers; Gemini fallback suggests a USD budget in a UGX flow; no rounding/commission policy. | `Entities.kt`; `CurrencyUtils.kt`; `GeminiAudioTranscriptionService.kt` |
-| F-017 | S3 | **Functions runtime/deploy configuration is incoherent.** Engine `node 18` but tests import `.ts` (requires Node ≥22.6); no `predeploy` build; `tslint` script references an uninstalled package; `firebase-functions` v4/admin v11 outdated. | `functions/package.json`, `tsconfig.json`, `firebase.json` |
+| F-017 | S3 | **Functions runtime/deploy configuration is incoherent.** Engine `node 18` but tests import `.ts` (requires Node ≥22.6); no `predeploy` build; `tslint` script references an uninstalled package; `firebase-functions` v4/admin v11 outdated. Additionally `npm run build` fails with 8 TypeScript errors in `index.ts` (645–683) while still emitting partial `lib/`. | `functions/package.json`, `tsconfig.json`, `firebase.json`; `npm run build` transcript in `REVIEW_14.md` |
 | F-018 | S3 | **Room schema is unexported and migration coverage is thin.** `exportSchema = false` with 16 migrations; only persistence-level version assertions exist. | `AppDatabase.kt`; test inventory |
 | F-019 | S3 | **Fabricated AI content on missing key.** Gemini transcription returns a canned "Emergency Pipe Repair" job instead of failing or asking the user. | `GeminiAudioTranscriptionService.kt:29–40` |
 | F-020 | S4 | **Dead code/deps and duplicate configuration.** Unused `ActiveJobScreen`, deprecated/fake `MoMoPaymentService`, unused Retrofit/Moshi/Navigation deps, duplicate root `AndroidManifest.xml`, `META-INF` committed. | imports/build deps/file inventory |
+| F-021 | S1 | **Backend supply chain is unsafe.** `npm audit --omit=dev` reports 16 vulnerabilities (1 critical, 10 high) in production dependencies; the only fix path is a major `firebase-admin` upgrade. | `npm audit` output in `reviewers/reports/REVIEW_14.md` §2.4 |
+| F-022 | S2 | **Offline "automatic sync" is not implemented.** `flushPendingActions()` takes a snapshot, logs the count, and deletes/executes nothing; queued actions never reach the server. README/PRD claim sync on reconnect. | `SkillsExchangeViewModel.kt:2196–2215`; README features list |
 
 Full analysis and validation of each finding is assigned in `REVIEWER_REGISTER.md`.
 
@@ -309,7 +311,7 @@ See §4 and `REVIEWER_REGISTER.md` coverage matrix; each `reviewers/*.md` file s
 See §10.
 
 ### 8.7 Important risks discovered
-See §7 and §6 (F-001 … F-020). The five that should stop a release today: non-buildable HEAD (F-001), committed credential (F-002), public job/chat data (F-003), fabricated SOS dispatch (F-005), incomplete erasure (F-007).
+See §7 and §6 (F-001 … F-022). The five that should stop a release today: non-buildable HEAD (F-001), committed credential (F-002), public job/chat data (F-003), fabricated SOS dispatch (F-005), incomplete erasure (F-007).
 
 ### 8.8 Recommended review execution order
 **Wave 0 (gates):** R01 → R14.
@@ -383,8 +385,11 @@ git log --oneline -8; git status --short; git ls-files | wc -l
 find app/src -name '*.kt' | wc -l; find app/src -name '*.kt' -exec cat {} + | wc -l
 # structural scan for brace/paren/escape corruption (custom Python tokenizer, strings/comments stripped)
 
-# executable test suite in this environment
-cd functions && npm test        # 111 tests, 111 pass, 0 fail (Node v22.22.3)
+# executable suites in this environment
+cd functions && npm ci
+npm run build                   # exit 2 — 8 TS errors in src/index.ts
+npm test                        # 111 tests, 111 pass, 0 fail (Node v22.22.3)
+npm audit --omit=dev            # 16 vulnerabilities (1 critical, 10 high, 4 moderate, 1 low)
 
 # static security observations
 grep -n 'allow read' firestore.rules
@@ -393,7 +398,7 @@ grep -rn 'sendToDevice\|sendMulticast\|messaging()' functions/src   # no FCM sen
 grep -rn 'releaseEscrowToWorker\|createMoMoPayout' app/src/main     # no callers
 ```
 
-Key metrics: 110 Kotlin files / 35,522 lines (27.7k main, 7.8k test, 1 placeholder androidTest); 4,027 TypeScript lines; 18 Room entities; 16 migrations; 111 passing Node tests; 0 CI workflows; 0 rules tests; 0 `stringResource`; 0 server-side FCM sends; 1 committed provider credential; 2 committed ~31 MB APKs.
+Key metrics: 110 Kotlin files / 35,522 lines (27.7k main, 7.8k test, 1 placeholder androidTest); 4,027 TypeScript lines; 18 Room entities; 16 migrations; 111 passing Node tests but `npm run build` exits 2 with 8 errors; 16 production dependency vulnerabilities (1 critical, 10 high); 0 CI workflows; 0 rules tests; 0 `stringResource`; 0 server-side FCM sends; 1 committed provider credential; 2 committed ~31 MB APKs.
 
 ---
 

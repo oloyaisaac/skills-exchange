@@ -7,8 +7,8 @@
 
 | ID | Professional title | PRD | Priority | Wave | Gate | Instruction file | Status |
 |---|---|---|---|---|---|---|---|
-| R01 | Principal Software Architect & Codebase Integrity Reviewer | RVW-001 | P0 | 0 | **Build gate** | `reviewers/ARCHITECTURE_REVIEWER.md` | `not_started` |
-| R14 | DevOps, Release Engineering & Supply Chain Reviewer | RVW-014 | P0 | 0 | **Reproducibility gate** | `reviewers/DEVOPS_REVIEWER.md` | `not_started` |
+| R01 | Principal Software Architect & Codebase Integrity Reviewer | RVW-001 | P0 | 0 | **Build gate** | `reviewers/ARCHITECTURE_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_01](reviewers/reports/REVIEW_01.md)) |
+| R14 | DevOps, Release Engineering & Supply Chain Reviewer | RVW-014 | P0 | 0 | **Reproducibility gate** | `reviewers/DEVOPS_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_14](reviewers/reports/REVIEW_14.md)) |
 | R07 | Application Security Engineer | RVW-007 | P0 | 1 | Security gate | `reviewers/SECURITY_REVIEWER.md` | `not_started` |
 | R10 | Safety, Trust & Fraud Prevention Reviewer | RVW-010 | P0 | 1 | Safety gate | `reviewers/SAFETY_FRAUD_REVIEWER.md` | `not_started` |
 | R08 | Payments, Escrow & Financial Controls Auditor | RVW-008 | P0 | 1 | Money gate | `reviewers/PAYMENTS_REVIEWER.md` | `not_started` |
@@ -23,7 +23,7 @@
 | R12 | UI/UX & Accessibility Specialist | RVW-012 | P1 | 3 | — | `reviewers/UI_UX_ACCESSIBILITY_REVIEWER.md` | `not_started` |
 | R15 | Documentation & Requirements Traceability Auditor | RVW-015 | P1 | 4 | Synthesis gate | `reviewers/DOCUMENTATION_REVIEWER.md` | `not_started` |
 
-**Totals:** 15 reviewers · 8 P0 · 7 P1 · 0 complete · 0 in progress.
+**Totals:** 15 reviewers · 8 P0 · 7 P1 · **2 submitted (both FAIL)** · 13 not started.
 
 ## 2. Status vocabulary
 
@@ -105,6 +105,8 @@ A gate failure is recorded with a finding ID and an owner; it is never waived si
 | F-018 unexported Room schema | R04 | R11 |
 | F-019 fabricated AI fallback | R05 | R02, R12 |
 | F-020 dead code/duplicate config | R01 | R02, R14 |
+| F-021 backend supply chain (16 advisories) | R14 | R03 |
+| F-022 offline queue never replays | R13 | R02, R11 |
 
 ## 7. Blockers and log
 
@@ -112,8 +114,18 @@ A gate failure is recorded with a finding ID and an owner; it is never waived si
 |---|---|---|---|
 | 2026-11-19 | — | Programme established; 15 instruction files issued | this register |
 | 2026-11-19 | R01 | Pre-review static finding: HEAD not buildable (F-001) | `ASSESSMENT_REPORT.md` §6, §11 |
-| 2026-11-19 | R11 | Pre-review executable suite: functions 111/111 pass | `npm test` transcript |
-| — | — | *No reviewer has submitted a report yet* | — |
+| 2026-11-19 | R01 | **Submitted — FAIL.** Four production source files structurally invalid; `ActiveJobScreen` dead; 2 god classes; no DI/nav. Gradle not executable in environment (UNVERIFIED). | `reviewers/reports/REVIEW_01.md` |
+| 2026-11-19 | R14 | **Submitted — FAIL.** No CI; `D:/` paths; Java 11 vs 25; unexecutable wrapper; missing keystore; R8 off; 62 MB artifacts; `npm run build` exits 2 (8 TS errors); 16 prod vulnerabilities (1 critical). | `reviewers/reports/REVIEW_14.md` |
+| 2026-11-19 | R11 | Executed `npm run build` (FAIL, exit 2) and `npm test` (111/111 pass) after `npm ci`; confirms backend build/test split. | `REVIEW_14.md` §2.3 |
+
+## 7b. Gate status (Wave 0 outcome, 2026-11-19)
+
+| Gate | Owner | Status | Evidence |
+|---|---|---|---|
+| G0 Build | R01 | **FAIL** | `REVIEW_01.md`: `SkillsExchangeRepository.kt:579–651`, `FirebaseService.kt:709–716`, `GeminiAudioTranscriptionService.kt:1`, `ActiveJobScreen.kt` |
+| G1 Reproducibility | R14 | **FAIL** | `REVIEW_14.md`: no CI, `D:/` paths, Java 11/25 split, non-executable wrapper, `tsc` exit 2, 16 prod advisories |
+
+Consequence: **no reviewer may issue a PASS verdict** while G0/G1 are failed. Wave 1 may proceed only as static/provisional analysis (R07, R09, R10 are safe to start); dynamic claims remain `UNVERIFIED`.
 
 ## 8. Register maintenance rules
 
