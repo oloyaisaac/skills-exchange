@@ -1,4 +1,4 @@
-]=package com.example.data.remote
+package com.example.data.remote
 
 import android.util.Base64
 import android.util.Log
