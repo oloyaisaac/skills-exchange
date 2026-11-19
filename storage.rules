@@ -15,19 +15,17 @@ service firebase.storage {
       return isAuthenticated() && request.auth.token.admin == true;
     }
 
-    // Helper function for job photo participant authorization on stored objects
-    function isJobParticipantOnStoredObject() {
-      return resource.metadata != null && (
-        ('jobOwnerId' in resource.metadata && resource.metadata.jobOwnerId == request.auth.uid) ||
-        ('assignedProviderId' in resource.metadata && resource.metadata.assignedProviderId == request.auth.uid)
-      );
+    // REM-014: job-photo authorization is derived from the Firestore job document, never from
+    // client-supplied object metadata. `jobOwnerId`/`assignedProviderId` metadata could be set
+    // to any value by the uploader, which let a stranger write into another job's folder.
+    function jobDoc(jobId) {
+      return firestore.get(/databases/(default)/documents/jobs/$(jobId)).data;
     }
 
-    // Helper function for job photo participant authorization on incoming writes
-    function isJobParticipantOnIncomingWrite() {
-      return request.resource.metadata != null && (
-        ('jobOwnerId' in request.resource.metadata && request.resource.metadata.jobOwnerId == request.auth.uid) ||
-        ('assignedProviderId' in request.resource.metadata && request.resource.metadata.assignedProviderId == request.auth.uid)
+    function isJobParticipant(jobId) {
+      return isAuthenticated() && (
+        jobDoc(jobId).postedByUid == request.auth.uid ||
+        jobDoc(jobId).assignedProviderUid == request.auth.uid
       );
     }
 
@@ -68,26 +66,21 @@ service firebase.storage {
       allow write: if isOwner(userId) || isAdmin();
     }
 
-    // --- SEC-008: JOB BEFORE/AFTER PHOTOS & RECEIPTS ---
-    // SEC-008: Restrict job photo access to job owner, assigned provider, and admin.
-    // Stored and incoming files must include custom metadata: jobOwnerId and assignedProviderId.
-    // Reads use stored resource metadata; writes validate incoming request metadata.
+    // --- SEC-008 / REM-014: JOB BEFORE/AFTER PHOTOS & RECEIPTS ---
+    // Only the job's owner, its assigned provider (by Firebase UID on the job document) and
+    // admins may read or upload evidence. Existing objects are immutable: updates (overwrites)
+    // are denied so submitted proof cannot be swapped after the fact. Deletion is admin-only.
     match /jobs/{jobId}/{allPaths=**} {
-      allow read: if isAuthenticated() && (
-        isAdmin() ||
-        isJobParticipantOnStoredObject()
-      );
-      allow create, update: if isAuthenticated() && (
+      allow read: if isAuthenticated() && (isAdmin() || isJobParticipant(jobId));
+      allow create: if isAuthenticated() && (
         isAdmin() || (
-          isJobParticipantOnIncomingWrite()
+          isJobParticipant(jobId)
           && request.resource.size < 10 * 1024 * 1024
           && request.resource.contentType.matches('image/.*')
         )
       );
-      allow delete: if isAuthenticated() && (
-        isAdmin() ||
-        isJobParticipantOnStoredObject()
-      );
+      allow update: if false;
+      allow delete: if isAdmin();
     }
 
     // --- PUBLIC ASSETS & AVATARS ---
