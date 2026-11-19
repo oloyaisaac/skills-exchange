@@ -850,3 +850,28 @@ This addendum does not replace or amend the requirements above. It records the r
 | Accessibility (TalkBack, contrast, touch targets) | Not audited; 59 null content descriptions | R12 |
 
 **Status rule:** until the relevant reviewer report is accepted, these requirements are `UNVERIFIED`, not complete. See `PRODUCTION_READINESS.md` for the release gate.
+
+## 17. Remediation Requirements derived from Review Findings (2026-11-19)
+
+This section adds requirements; it does not replace or relax any requirement above. Each `REM` task implements exactly one consolidated finding (`MR`) and carries its own tests, acceptance criteria and completion evidence in `IMPLEMENTATION_ROADMAP.md` §4. All tasks are `NOT_STARTED`; nothing here is delivered.
+
+| Requirement group | Tasks | Requirement statement | Status |
+|---|---|---|---|
+| R01 | REM-001, REM-003, REM-004 | Compilation, modular boundaries and removal of dead/duplicate configuration | NOT_STARTED |
+| R02 | REM-054, REM-073 | Android lifecycle, process-death survival, permissions and onboarding wiring | NOT_STARTED |
+| R03 | REM-002, REM-009, REM-021 | Backend build integrity, deploy gating, webhook authentication and reconciliation | NOT_STARTED |
+| R04 | REM-046, REM-047, REM-048, REM-049, REM-050 | Schema export, tested migrations, exact money representation and bounded reads | NOT_STARTED |
+| R05 | REM-051, REM-033, REM-052, REM-053 | Server-held integration secrets, non-fabricated AI output, contract tests and real channels | NOT_STARTED |
+| R06 | REM-022, REM-023, REM-024, REM-025 | Firebase-backed identity, admin claim lifecycle, re-authentication and account linking | NOT_STARTED |
+| R07 | REM-010, REM-011, REM-012, REM-013, REM-014, REM-015, REM-016, REM-017, REM-018, REM-019, REM-020 | Closed public reads, least-privilege rules, bound storage writes, backups and App Check | NOT_STARTED |
+| R08 | REM-026, REM-027, REM-028, REM-029, REM-030, REM-031, REM-032 | Server-authoritative release, refund, fee, escrow transitions, ledger and reconciliation | NOT_STARTED |
+| R09 | REM-041, REM-037, REM-042, REM-043, REM-044, REM-045 | Atomic scoped erasure, truthful notice, retention, consent and NIN minimisation | NOT_STARTED |
+| R10 | REM-034, REM-035, REM-036, REM-038, REM-039, REM-040 | Truthful SOS dispatch, secret PIN, moderator-visible reports and audited escalation | NOT_STARTED |
+| R11 | REM-064, REM-065, REM-066 | Executable test suites, rules/migration/E2E coverage and reproducible evidence | NOT_STARTED |
+| R12 | REM-055, REM-056, REM-057, REM-058 | Labelled controls, readable typography, localisation and consistent formatting | NOT_STARTED |
+| R13 | REM-059, REM-060, REM-061, REM-062, REM-063 | Telemetry, offline replay, push, bounded resources and SLOs | NOT_STARTED |
+| R14 | REM-005, REM-006, REM-007, REM-008 | CI, portable builds, signed releases, dependency hygiene and deploy safety | NOT_STARTED |
+| R15 | REM-067, REM-068, REM-069, REM-070, REM-071, REM-072 | Evidence-backed status, portable documentation and requirement traceability | NOT_STARTED |
+
+**Status rule:** a `REM` task may move to `COMPLETED` only when its roadmap acceptance criteria are met and completion evidence is attached. Runtime-only evidence that cannot be produced must leave the task at `VERIFICATION_PENDING`.
+
