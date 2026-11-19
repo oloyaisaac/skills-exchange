@@ -3,6 +3,7 @@ package com.example.data.remote
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -29,7 +30,7 @@ class AfricaTalkingService(
 
     suspend fun sendOtp(phoneNumber: String, message: String = "Your Skills Exchange verification code is: "): OtpResponse {
         return try {
-            CoroutineScope(Dispatchers.IO).launch {
+            CoroutineScope(Dispatchers.IO).async {
                 val body = JSONObject(mapOf(
                     "username" to username,
                     "phoneNumber" to phoneNumber,
@@ -38,10 +39,10 @@ class AfricaTalkingService(
                 ))
                 val request = Request.Builder()
                     .url(AFRICASTALKING_BASE_URL)
-                    .post(RequestBody.create(body.toString(), JSON))
+                    .post(RequestBody.create(JSON, body.toString()))
                     .addHeader("Accept", "application/json")
                     .addHeader("Cache-Control", "no-cache")
-                    .addHeader("Authorization", "Basic " + java.util.Base64.getEncoder().encodeToString("$apiKey:".toByteArray())
+                    .addHeader("Authorization", "Basic " + java.util.Base64.getEncoder().encodeToString("$apiKey:".toByteArray()))
                     .build()
                 val response = client.newCall(request).execute()
                 if (response.code == 200) {
@@ -63,17 +64,17 @@ class AfricaTalkingService(
 
     suspend fun verifyOtp(phoneNumber: String, code: String, requestId: String? = null): VerificationResponse {
         return try {
-            CoroutineScope(Dispatchers.IO).launch {
+            CoroutineScope(Dispatchers.IO).async {
                 val body = JSONObject(mapOf(
                     "phoneNumber" to phoneNumber,
                     "code" to code
                 ).also { if (requestId != null && !requestId.isEmpty()) it.put("requestId", requestId) })
                 val request = Request.Builder()
                     .url(AFRICASTALKING_VERIFY_URL)
-                    .post(RequestBody.create(body.toString(), JSON))
+                    .post(RequestBody.create(JSON, body.toString()))
                     .addHeader("Accept", "application/json")
                     .addHeader("Cache-Control", "no-cache")
-                    .addHeader("Authorization", "Basic " + java.util.Base64.getEncoder().encodeToString("$apiKey:".toByteArray())
+                    .addHeader("Authorization", "Basic " + java.util.Base64.getEncoder().encodeToString("$apiKey:".toByteArray()))
                     .build()
                 val response = client.newCall(request).execute()
                 if (response.code == 200) {
