@@ -948,3 +948,10 @@ REM-001, which still needs a JDK and Android SDK to verify.
   amount and wallet from its own records and pays once per job.
 - **REM-027:** refunds are provider requests against a settled collection; a failed request is never
   presented as a refund. Verification against the MTN sandbox is outstanding.
+
+### 18.8 Wave 1f: payout and pricing integrity
+
+- **REM-028:** the device no longer fabricates a payout or a DISBURSED status; it reads the server's
+  payout record. Provider confirmation remains unverified here.
+- **REM-029:** the platform fee and grand total are computed and enforced server-side before any
+  collection; the client keeps a display-only estimate.

@@ -154,6 +154,10 @@ export interface JobRecord {
   budget?: number | null;
   momoPhoneNumber?: string | null;
   currency?: string | null;
+  /** REM-029 quote fields; validated against the server calculation when present. */
+  laborTotal?: number | null;
+  materialsSubtotal?: number | null;
+  platformFee?: number | null;
 }
 
 export interface ValidateCollectionInput {
@@ -207,6 +211,28 @@ export function validateCollectionInput(input: ValidateCollectionInput): Validat
       ok: false,
       error: { code: "invalid_job_state", message: `Cannot collect payment for a job in status '${status}'.` },
     };
+  }
+
+  // REM-029: the fee/total on the job must be the server's calculation (see `pricing.ts`).
+  // The arithmetic is repeated here rather than imported so this module stays dependency-free
+  // for `node --test`; `pricing.test.mjs` is the reference implementation.
+  if (job.laborTotal != null) {
+    const labor = Number(job.laborTotal);
+    const materials = Number(job.materialsSubtotal ?? 0);
+    const expectedFee = Math.round(labor * 0.1 * 100) / 100;
+    const expectedTotal = Math.round((labor + materials + expectedFee) * 100) / 100;
+    if (!Number.isFinite(labor) || Number(job.platformFee) !== expectedFee) {
+      return {
+        ok: false,
+        error: { code: "amount_mismatch", message: `Platform fee mismatch: expected ${expectedFee}.` },
+      };
+    }
+    if (Number(job.grandTotal) !== expectedTotal) {
+      return {
+        ok: false,
+        error: { code: "amount_mismatch", message: `Grand total mismatch: expected ${expectedTotal}.` },
+      };
+    }
   }
 
   const trustedAmountRaw = job.grandTotal ?? job.budget ?? null;

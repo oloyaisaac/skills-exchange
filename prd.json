@@ -5375,7 +5375,10 @@
       "phase": 19,
       "title": "Delete the fabricated payout stub",
       "priority": "CRITICAL",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
+      "status_note": "The synthetic device payout is gone: disburseEscrowPayoutToWorker now fails closed and getPayoutStatus reads the real momo_payouts record the server wrote, returning null for another account. Payouts are initiated only server-side. Not verified: no provider sandbox or Android build, so provider status has never been observed.",
+      "independent_verification": "PENDING",
+
       "depends_on": [
         "REM-026"
       ],
@@ -5411,7 +5414,10 @@
       "phase": 19,
       "title": "Make fees and totals server-authoritative",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
+      "status_note": "pricing.ts computes the 10% fee and grand total; validateCollectionInput rejects a job whose stored platformFee/grandTotal disagree with the server calculation before any collection starts. 4 tests. The Android UI still computes a local estimate for display.",
+      "independent_verification": "PENDING",
+
       "depends_on": [
         "REM-002"
       ],
@@ -7114,7 +7120,7 @@
       "review_report": "review_results/R02_ANDROID_CLIENT.md",
       "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
     }],
-    "current_story": "REM-026",
+    "current_story": "REM-028",
   "review_cycle_status": "all_15_reviews_complete_0_pass_15_fail",
   "review_cycle_completed_at": "2026-11-19T18:00:00+03:00",
     "completed_stories": [
@@ -7233,5 +7239,5 @@
     "RVW-013",
     "RVW-015"],
     "blocked_stories": [],
-    "last_updated": "2026-11-20T04:05:00+03:00"
+    "last_updated": "2026-11-20T05:10:00+03:00"
 }
