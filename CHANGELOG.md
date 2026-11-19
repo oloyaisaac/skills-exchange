@@ -1,5 +1,15 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [WAVE-1F] No fabricated payouts; server-validated pricing
+
+- **REM-028 (IN_PROGRESS):** `disburseEscrowPayoutToWorker` no longer invents a payout id or returns
+  `DISBURSED`; it fails closed. New `getPayoutStatus` reads the real `momo_payouts` document and
+  returns null for another account. Payouts are initiated only server-side.
+- **REM-029 (IN_PROGRESS):** `pricing.ts` owns the 10% fee and grand total, and collection refuses a
+  job whose stored fee/total was altered (4 tests). The Android UI keeps a local display estimate.
+- **Verification:** 171/171 backend tests, build exit 0. No provider sandbox and no Android build, so
+  neither a real payout status nor the client screen has been exercised.
+
 ### [2026-11-20] [WAVE-1E] Server-authoritative escrow release and refunds
 
 - **REM-026 (IN_PROGRESS):** the client now calls `releaseEscrowToWorker` when a client completes a

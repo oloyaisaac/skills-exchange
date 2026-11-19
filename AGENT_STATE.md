@@ -1,3 +1,16 @@
+## 2026-11-20 (Wave 1f) - NO FAKE PAYOUTS, SERVER PRICING
+
+- **REM-028 (IN_PROGRESS).** The device payout stub is removed: the old method returned a synthetic
+  DISBURSED; it now throws, and `getPayoutStatus` reads the server payout record (owner-checked).
+- **REM-029 (IN_PROGRESS).** `pricing.ts` computes the fee/total; `validateCollectionInput` rejects a
+  job whose stored quote disagrees before a collection starts (tests in pricing + momoCollection).
+- **Not verified:** MTN sandbox and Android toolchain absent.
+- **Tests:** 171/171 backend tests.
+
+**Next:** R08 REM-030 (escrow transitions client-writable) and REM-031 (device-only ledger).
+
+---
+
 ## 2026-11-20 (Wave 1e) - MONEY PATH: RELEASE AND REFUND
 
 - **REM-026 (IN_PROGRESS).** `escrowRelease.ts` decides release from server records; the callable

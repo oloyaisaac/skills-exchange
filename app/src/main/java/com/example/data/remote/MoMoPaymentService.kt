@@ -74,23 +74,53 @@ class MoMoPaymentService {
     }
 
     /**
-     * Disburses funds from Escrow pool directly to worker's Mobile Money wallet upon job completion release.
+     * REM-028: device-side payout creation is REMOVED. The previous body minted a synthetic
+     * "PAYOUT-UG-..." id, logged a success and returned status DISBURSED without any network call —
+     * a fabricated money movement. Payouts are initiated server-side (`createMoMoPayout` /
+     * `releaseEscrowToWorker`) and only the provider may report that funds left escrow.
      */
+    @Deprecated(
+        "Device payout creation is disabled: use FirebaseService.releaseEscrowToWorker. " +
+            "The provider, not the device, reports DISBURSED."
+    )
     suspend fun disburseEscrowPayoutToWorker(
         workerId: String,
         momoNumber: String,
         amountUgx: Double,
         provider: String = "MTN_MOMO"
     ): MoMoPayoutResponse = withContext(Dispatchers.IO) {
-        val payoutId = "PAYOUT-UG-${System.currentTimeMillis().toString().takeLast(8)}"
-        Log.d("MoMoPaymentService", "Disbursed Escrow payout $payoutId of UGX ${amountUgx.toInt()} to $workerId ($momoNumber)")
-
-        MoMoPayoutResponse(
-            payoutId = payoutId,
-            workerId = workerId,
-            momoNumber = momoNumber,
-            amount = amountUgx,
-            status = "DISBURSED"
+        Log.e("MoMoPaymentService", "Blocked device-side payout for $workerId. Use the server callable.")
+        throw UnsupportedOperationException(
+            "Device-side payouts are disabled (trust boundary). Use releaseEscrowToWorker."
         )
+    }
+
+    /**
+     * REM-028: read the REAL payout record the server wrote. Returns null when the payout does not
+     * exist or belongs to another account (Firestore rules enforce the same ownership).
+     */
+    suspend fun getPayoutStatus(payoutId: String): MoMoPayoutResponse? = withContext(Dispatchers.IO) {
+        val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: return@withContext null
+        try {
+            val snapshot = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                .collection("momo_payouts")
+                .document(payoutId)
+                .get()
+                .await()
+            if (!snapshot.exists()) return@withContext null
+            val workerId = snapshot.getString("workerId") ?: return@withContext null
+            if (workerId != uid) return@withContext null
+            MoMoPayoutResponse(
+                payoutId = payoutId,
+                workerId = workerId,
+                momoNumber = snapshot.getString("workerMomoNumber") ?: "",
+                amount = snapshot.getDouble("amount") ?: 0.0,
+                status = snapshot.getString("status") ?: "QUEUED",
+                timestamp = snapshot.getLong("createdAt") ?: System.currentTimeMillis()
+            )
+        } catch (e: Exception) {
+            Log.e("MoMoPaymentService", "getPayoutStatus failed: ${e.message}")
+            null
+        }
     }
 }

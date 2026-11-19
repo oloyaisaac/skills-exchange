@@ -102,6 +102,34 @@ function makeDeps(overrides = {}) {
 // 1-2. Fail-closed configuration (missing creds, wrong env, wrong host)
 // ---------------------------------------------------------------------------
 
+test("REM-029: a job whose stored fee or total was tampered with is refused", () => {
+  const tampered = eligibleJob({
+    laborTotal: 50000,
+    materialsSubtotal: 10000,
+    platformFee: 500, // should be 5000
+    grandTotal: 60500,
+  });
+  const result = validateCollectionInput({
+    job: tampered,
+    callerUid: OWNER_UID,
+    requestedAmountUgx: 60500,
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.error.code, "amount_mismatch");
+  assert.match(result.error.message, /fee mismatch/i);
+
+  const consistent = eligibleJob({
+    laborTotal: 50000,
+    materialsSubtotal: 10000,
+    platformFee: 5000,
+    grandTotal: 65000,
+  });
+  assert.equal(
+    validateCollectionInput({ job: consistent, callerUid: OWNER_UID, requestedAmountUgx: 65000 }).ok,
+    true
+  );
+});
+
 test("missing sandbox credentials -> config_error and no provider call", async () => {
   const { deps, calls } = makeDeps();
   const result = await initiateCollection(
