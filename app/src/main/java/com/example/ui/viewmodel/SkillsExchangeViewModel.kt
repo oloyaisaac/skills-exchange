@@ -1847,6 +1847,19 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    /** REM-023: true only after the server confirms the signed-in account holds the admin claim. */
+    val isAdminVerified = MutableStateFlow(false)
+
+    fun verifyAdminAccess() {
+        viewModelScope.launch {
+            val verified = repository.checkAdminAccess()
+            isAdminVerified.value = verified
+            if (verified) {
+                loadAdminVerificationQueue()
+            }
+        }
+    }
+
     fun loadAdminVerificationQueue() {
         // AUDIT-A-CONSOLE: guard overlapping refreshes; the callable stays the authorizer.
         if (isAdminQueueLoading.value) return

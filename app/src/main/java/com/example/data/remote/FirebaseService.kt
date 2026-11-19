@@ -979,6 +979,23 @@ class FirebaseService(private val context: Context? = null) {
         }
     }
 
+    /**
+     * REM-023: ask the server whether the signed-in account actually holds the admin claim.
+     * Never trust a local flag for this decision.
+     */
+    suspend fun checkAdminAccess(): Boolean {
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val result = functions.getHttpsCallable("getAdminAccess").call(mapOf<String, Any>()).await()
+            @Suppress("UNCHECKED_CAST")
+            val data = result.data as? Map<String, Any?> ?: return false
+            data["admin"] == true
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "checkAdminAccess failed: ${e.message}")
+            false
+        }
+    }
+
     suspend fun getPendingVerificationQueue(): List<Map<String, Any>> {
         return try {
             val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()

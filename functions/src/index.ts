@@ -77,6 +77,7 @@ import { buildConsentRecord, buildDsarEnvelope, sanitiseGuarantorForExport } fro
 import { loadSmsConfig, createSmsSender } from "./sms";
 import type { SmsTransport } from "./sms";
 import { planSosDispatch, selectSosRecipients, buildSosMessage } from "./sosDispatch";
+import { hasAdminClaim } from "./admin";
 import {
   buildTranscriptionPrompt,
   buildGeminiTranscriptionRequest,
@@ -2312,4 +2313,16 @@ export const exportMyData = functions.https.onCall(async (_data, context) => {
   };
 
   return buildDsarEnvelope(data, Date.now());
+});
+
+// =====================================================================================
+// REM-023: server-verified operator access.
+// =====================================================================================
+
+export const getAdminAccess = functions.https.onCall(async (_data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to check operator access");
+  }
+  // Deliberately returns only the boolean: the client needs a gate, not a claims dump.
+  return { admin: hasAdminClaim(context.auth.token) };
 });

@@ -993,6 +993,11 @@ class SkillsExchangeRepository(
         db.serviceProviderDao().incrementEndorsements(providerId)
     }
 
+    /** REM-023: server-verified admin gate; the UI must not unlock on a local boolean. */
+    suspend fun checkAdminAccess(): Boolean {
+        return firebaseService.checkAdminAccess()
+    }
+
     suspend fun getAdminVerificationQueue(): List<Map<String, Any>> {
         return firebaseService.getPendingVerificationQueue()
     }
