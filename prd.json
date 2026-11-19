@@ -5974,7 +5974,10 @@
       "phase": 19,
       "title": "Add consent records, processor disclosure and DSAR workflow",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
+      "status_note": "Consent receipts (dated version + three grants) are written by the recordConsent callable and read-only to clients; exportMyData returns the account data envelope with third-party guarantor identifiers stripped; processor list and 30-day DSAR procedure published under docs/privacy/. 3 tests. The onboarding UI does not yet call recordConsent or offer the export, so consent is not demonstrable in the app.",
+      "independent_verification": "PENDING",
+
       "depends_on": [],
       "description": "Add consent records, processor disclosure and DSAR workflow. Consent is one boolean and there is no processor list or access-request process.",
       "goal": "Record consent version/time, publish processors, define DSAR SLA and export",
@@ -6164,7 +6167,10 @@
       "phase": 19,
       "title": "Bound and index list reads",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "VERIFICATION_PENDING",
+      "status_note": "All 50 Room list queries now carry explicit LIMIT caps (providers 500, jobs/quotes/disputes 200, chat/audit 500, notifications 200, guarantors 20). scripts/check_query_limits.mjs passes. No query-plan or volume test was run.",
+      "independent_verification": "PENDING",
+
       "depends_on": [],
       "description": "Bound and index list reads. List queries use SELECT * without LIMIT and chat history is unpaginated.",
       "goal": "Add paging, indices and query limits on growth paths",
@@ -7206,5 +7212,5 @@
     "RVW-013",
     "RVW-015"],
     "blocked_stories": [],
-    "last_updated": "2026-11-19T23:55:00+03:00"
+    "last_updated": "2026-11-20T00:40:00+03:00"
 }

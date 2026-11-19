@@ -28,6 +28,7 @@ a verification standpoint.
 | REQ-AUTH-01 | Phone OTP yields a Firebase identity (§3) | `functions/src/otp.ts`, `app/src/main/java/com/example/data/remote/AfricaTalkingService.kt` | `functions/test/otp.test.mjs`, `app/src/test/java/com/example/data/remote/PhoneAuthServiceFailClosedTest.kt` | Implemented; real-project signup test outstanding |
 | REQ-AI-01 | Server-side voice transcription (§9) | `functions/src/transcription.ts`, `app/src/main/java/com/example/data/remote/GeminiAudioTranscriptionService.kt` | `functions/test/transcription.test.mjs` | Implemented; deployment unavailable |
 | REQ-SAFE-01 | SOS raise/acknowledge lifecycle (§10) | `firestore.rules`, `functions/src/index.ts` | `app/src/test/java/com/example/data/SosRaiseAuthorizationSecurityTest.kt` | Partial: dispatch is still a stub |
+| REQ-PRIV-01 | Consent receipts and DSAR export (§8) | `functions/src/compliance.ts`, `docs/privacy/DSAR.md`, `app/src/main/java/com/example/data/remote/FirebaseService.kt` | `functions/test/compliance.test.mjs` | Server and docs implemented; UI not wired |
 | REQ-SEC-01 | Private documents and job evidence (§8) | `storage.rules`, `firestore.rules` | NONE | Rules changed; emulator suite missing (REM-019) |
 | REQ-DOC-01 | Documentation precedence and link integrity (§17) | `docs/DOCUMENT_MAP.md`, `docs/traceability.md` | `scripts/check_document_map.mjs`, `scripts/check_doc_links.mjs`, `scripts/check_traceability.mjs` | Implemented and checked |
 

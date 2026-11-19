@@ -906,3 +906,11 @@ REM-001, which still needs a JDK and Android SDK to verify.
   remain without any automated test (`REQ-ACC-02`, `REQ-LOC-01`, `REQ-TRAIN-01`, `REQ-SEC-01`).
 - **REM-005:** CI covers backend build/tests, documentation checkers and secret scanning; Android
   and rules jobs are not yet part of the pipeline.
+
+### 18.2 Fourth wave-0 increment
+
+- **REM-044:** account consent is recorded server-side with a dated policy version and three
+  grants; the owner can read but never modify the receipt. `exportMyData` provides the DSAR export
+  and strips third-party guarantor identifiers. Processors and the 30-day SLA are published in
+  `docs/privacy/`. In-app consent capture and export UI remain outstanding.
+- **REM-049:** Room list queries are capped and a static checker prevents new unbounded queries.

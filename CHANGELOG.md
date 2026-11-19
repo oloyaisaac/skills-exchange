@@ -1,5 +1,16 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [WAVE-0D] Consent receipts, DSAR export and query limits
+
+- **REM-044:** `recordConsent` writes a dated, server-side consent receipt (terms, privacy, data
+  processing) that clients can read but not forge; `exportMyData` returns the account export and
+  strips third-party guarantor NINs, phones, photos and paths. Processor list and a 30-day DSAR
+  procedure added under `docs/privacy/`. 3 tests. Onboarding UI wiring is still missing.
+- **REM-049:** all 50 Room list queries now carry explicit `LIMIT` caps;
+  `scripts/check_query_limits.mjs` fails on any new unbounded list query. No load test was run.
+- **Verification:** 146/146 backend tests, `tsc` exit 0, link/traceability/query-limit checkers
+  pass. No Android build, Firebase project or volume test.
+
 ### [2026-11-19] [WAVE-0C] Webhook authentication, guarantor risk flags, traceability and CI
 
 - **REM-021:** the MoMo callback now requires a rotated shared secret (`MOMO_WEBHOOK_SECRET`),

@@ -406,7 +406,7 @@ _Last synchronized: 2026-10-11T15:24:11+03:00 â€” Phase 17 documentation st
 
 ## Remediation Track — Prompt 3 (2026-11-19)
 
-Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDINGS.md`. Full task detail, dependencies, tests and acceptance criteria: `IMPLEMENTATION_ROADMAP.md`. **Wave 0 continues (2026-11-19, third slice): REM-069/072 `COMPLETED`; REM-005/011/039 `IN_PROGRESS`; REM-001/002/006/010/012–016/021/022/051/070 `VERIFICATION_PENDING`; the rest `NOT_STARTED`.**
+Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDINGS.md`. Full task detail, dependencies, tests and acceptance criteria: `IMPLEMENTATION_ROADMAP.md`. **Wave 0d (2026-11-20): REM-069/072 `COMPLETED`; REM-044/005/011/039 `IN_PROGRESS`; REM-001/002/006/010/012–016/021/022/049/051/070 `VERIFICATION_PENDING`; the rest `NOT_STARTED`.**
 
 | Task | Priority | Reviewer | Task title | Depends on | Status |
 |---|---|---|---|---|---|
@@ -465,10 +465,10 @@ Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDI
 | REM-038 | MEDIUM | R10 | Add SOS throttling, dedup and admin audit | REM-034; REM-023 | NOT_STARTED |
 | REM-039 | MEDIUM | R10 | Strengthen guarantor and identity checks | - | IN_PROGRESS |
 | REM-040 | MEDIUM | R10 | Make admin escalation reachable | REM-023; REM-035 | NOT_STARTED |
-| REM-044 | MEDIUM | R09 | Add consent records, processor disclosure and DSAR workflow | - | NOT_STARTED |
+| REM-044 | MEDIUM | R09 | Add consent records, processor disclosure and DSAR workflow | - | IN_PROGRESS |
 | REM-045 | MEDIUM | R09 | Minimise and mask NIN data | REM-041 | NOT_STARTED |
 | REM-048 | MEDIUM | R04 | Remove destructive fallback and define dual-write conflict rules | REM-046 | NOT_STARTED |
-| REM-049 | MEDIUM | R04 | Bound and index list reads | - | NOT_STARTED |
+| REM-049 | MEDIUM | R04 | Bound and index list reads | - | VERIFICATION_PENDING |
 | REM-050 | MEDIUM | R04 | Fix chat dual-store ordering | REM-046 | NOT_STARTED |
 | REM-052 | MEDIUM | R05 | Scope integration coroutines | REM-001 | NOT_STARTED |
 | REM-053 | MEDIUM | R05 | Add provider contract tests and a real Maps key | REM-005 | NOT_STARTED |
