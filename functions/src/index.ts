@@ -73,6 +73,7 @@ import {
   evaluateWebhookRate,
 } from "./webhookAuth";
 import type { WebhookRateRecord } from "./webhookAuth";
+import { buildConsentRecord, buildDsarEnvelope, sanitiseGuarantorForExport } from "./compliance";
 import {
   buildTranscriptionPrompt,
   buildGeminiTranscriptionRequest,
@@ -2172,4 +2173,72 @@ export const transcribeVoiceJob = functions.https.onCall(async (data, context) =
     console.error("Gemini transcription response invalid", (error as Error).message);
     throw new functions.https.HttpsError("internal", "Voice transcription could not be understood");
   }
+});
+
+// =====================================================================================
+// REM-044: consent and data-subject access.
+// =====================================================================================
+
+export const recordConsent = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to record consent");
+  }
+  let record;
+  try {
+    record = buildConsentRecord({ version: data?.version, grants: data?.grants }, Date.now());
+  } catch (error) {
+    throw new functions.https.HttpsError("invalid-argument", (error as Error).message);
+  }
+
+  // Server-written: clients may read their consent history but never forge or delete it.
+  await db
+    .collection("users")
+    .doc(context.auth.uid)
+    .collection("consents")
+    .doc(record.version)
+    .set(record, { merge: false });
+
+  return { version: record.version, acceptedAt: record.acceptedAt };
+});
+
+export const exportMyData = functions.https.onCall(async (_data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to export your data");
+  }
+  const uid = context.auth.uid;
+  const LIMIT = 500;
+
+  const [profile, postedJobs, assignedJobs, disputes, reports, notifications, payouts, submissions, guarantors] =
+    await Promise.all([
+      db.collection("users").doc(uid).get(),
+      db.collection("jobs").where("postedByUid", "==", uid).limit(LIMIT).get(),
+      db.collection("jobs").where("assignedProviderUid", "==", uid).limit(LIMIT).get(),
+      db.collection("disputes").where("reportedBy", "==", uid).limit(LIMIT).get(),
+      db.collection("reports").where("reportedBy", "==", uid).limit(LIMIT).get(),
+      db.collection("notifications").where("userId", "==", uid).limit(LIMIT).get(),
+      db.collection("momo_payouts").where("workerId", "==", uid).limit(LIMIT).get(),
+      db.collection("guarantor_submissions").doc(uid).get(),
+      db.collection("guarantors").where("workerKycId", "==", uid).limit(20).get(),
+    ]);
+
+  const toRows = (snapshot: admin.firestore.QuerySnapshot): Array<Record<string, unknown>> =>
+    snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() as Record<string, unknown>) }));
+
+  const data = {
+    profile: profile.exists ? profile.data() : null,
+    jobsPosted: toRows(postedJobs),
+    jobsAssigned: toRows(assignedJobs),
+    disputes: toRows(disputes),
+    reports: toRows(reports),
+    notifications: toRows(notifications),
+    payouts: toRows(payouts),
+    guarantorSubmission: submissions.exists ? submissions.data() : null,
+    // Third-party identifiers are stripped here, not in the client.
+    guarantors: guarantors.docs.map((doc) => sanitiseGuarantorForExport(doc.data() as Record<string, unknown>)),
+    consents: (
+      await db.collection("users").doc(uid).collection("consents").limit(50).get()
+    ).docs.map((doc) => ({ version: doc.id, ...(doc.data() as Record<string, unknown>) })),
+  };
+
+  return buildDsarEnvelope(data, Date.now());
 });

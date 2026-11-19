@@ -939,6 +939,46 @@ class FirebaseService(private val context: Context? = null) {
         return phoneRegex.replace(text) { "[Phone Masked]" }
     }
 
+    /**
+     * REM-044: record the account-level consent receipt server-side. The callable validates the
+     * policy version and all three grants; a client boolean is not accepted as evidence.
+     */
+    suspend fun recordConsent(version: String): Boolean {
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            functions.getHttpsCallable("recordConsent")
+                .call(
+                    mapOf(
+                        "version" to version,
+                        "grants" to mapOf(
+                            "terms" to true,
+                            "privacy" to true,
+                            "dataProcessing" to true
+                        )
+                    )
+                )
+                .await()
+            true
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "recordConsent failed: ${e.message}")
+            false
+        }
+    }
+
+    /** REM-044: download the data-subject access export as JSON. */
+    suspend fun exportMyData(): String? {
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val result = functions.getHttpsCallable("exportMyData").call(mapOf<String, Any>()).await()
+            @Suppress("UNCHECKED_CAST")
+            val data = result.data as? Map<String, Any?> ?: return null
+            org.json.JSONObject(data).toString()
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "exportMyData failed: ${e.message}")
+            null
+        }
+    }
+
     suspend fun getPendingVerificationQueue(): List<Map<String, Any>> {
         return try {
             val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
