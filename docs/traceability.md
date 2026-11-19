@@ -33,7 +33,7 @@ a verification standpoint.
 | REQ-SESS-01 | Fresh authentication for destructive actions and token revocation (§3) | `functions/src/session.ts`, `firestore.rules`, `app/src/main/java/com/example/data/remote/FirebaseService.kt` | `functions/test/session.test.mjs` | Server/rules/client implemented; no project to verify token rejection |
 | REQ-ADMIN-01 | Admin claim provisioning and server-verified operator gate (§10) | `scripts/grant-admin.js`, `functions/src/admin.ts`, `app/src/main/java/com/example/ui/screens/MainScreen.kt` | `functions/test/admin.test.mjs` | Server gate and audit trail implemented; live claim provisioning untested |
 | REQ-SEC-01 | Private documents and job evidence (§8) | `storage.rules`, `firestore.rules` | NONE | Rules changed; emulator suite missing (REM-019) |
-| REQ-DOC-01 | Documentation precedence and link integrity (§17) | `docs/DOCUMENT_MAP.md`, `docs/traceability.md` | `scripts/check_document_map.mjs`, `scripts/check_doc_links.mjs`, `scripts/check_traceability.mjs` | Implemented and checked |
+| REQ-DOC-01 | Documentation precedence and link integrity (§17) | `docs/DOCUMENT_MAP.md`, `docs/traceability.md` | `scripts/check_document_map.mjs`, `scripts/check_doc_links.mjs`, `scripts/check_traceability.mjs`, `scripts/check_readme_claims.mjs` | Implemented and checked |
 
 ## Known gaps
 

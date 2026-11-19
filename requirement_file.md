@@ -936,3 +936,8 @@ REM-001, which still needs a JDK and Android SDK to verify.
 - **REM-024:** destructive owner deletes require authentication within the last five minutes
   (`auth_time`), and logout revokes refresh tokens server-side. The client blocks account deletion
   on a stale session. Verification against a live project is outstanding.
+
+### 18.6 Wave 1d: README accuracy
+
+- **REM-071:** the README no longer claims an Airtel Money integration or a web admin dashboard; the
+  Android console is described as server-claim gated. A checker enforces the caveat and links.

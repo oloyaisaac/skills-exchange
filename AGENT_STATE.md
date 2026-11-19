@@ -1,3 +1,14 @@
+## 2026-11-20 (Wave 1d) - README CLAIMS ALIGNED TO SOURCE
+
+- **REM-071 (IN_PROGRESS).** README no longer advertises an Airtel Money integration or a web admin
+  dashboard; it states the Android, claim-gated console accurately and keeps the pre-production
+  caveat + traceability links. `scripts/check_readme_claims.mjs` guards the claims and runs in CI.
+- Dependency note: REM-023 (server-verified admin gate) is implemented but unverified; REM-033 is
+  untouched, so the task is not marked complete.
+- No backend behaviour changed this slice.
+
+---
+
 ## 2026-11-20 (Wave 1c) - FRESH AUTH AND TOKEN REVOCATION
 
 - **REM-024 (IN_PROGRESS).** `session.ts` defines the five-minute freshness policy; Firestore

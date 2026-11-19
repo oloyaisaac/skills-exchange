@@ -14,12 +14,16 @@ A hyperlocal peer-to-peer services marketplace Android app for East African urba
 - **Local Database**: Room
 - **Backend**: Firebase (Firestore, Auth, Storage, Cloud Messaging)
 - **Serverless**: Firebase Cloud Functions
-- **Payments**: MTN MoMo / Airtel Money Collection & Escrow APIs
+- **Payments**: MTN MoMo collection and escrow, server-side and sandbox-only. **Airtel Money is a UI label only — there is no Airtel integration.**
 - **Maps**: Google Maps Android SDK
 - **AI**: Gemini 2.0 Flash (audio transcription, search grounding)
 - **Build**: Gradle with Kotlin DSL
 
 ## Features
+
+> **Status key:** the list below describes intended product behaviour. For what is implemented, tested
+> or still missing, read [`docs/traceability.md`](docs/traceability.md); for document precedence, see
+> [`docs/DOCUMENT_MAP.md`](docs/DOCUMENT_MAP.md). No feature here is claimed as verified end to end.
 
 - **Unified Account Model**: Single profile supports both Client and Worker modes with seamless switching
 - **Client Onboarding**: Phone registration, GPS location detection, manual district correction
@@ -101,7 +105,7 @@ An independent review programme (2026-11-19) defines 15 specialist reviewers cov
 6. Worker KYC Verification & Guarantor Engine
 7. Verification Lifecycle, Changes-Required & 48h SLA Tracking
 8. Worker Training Tracking & Activation Gating
-9. Admin Operations Dashboard & Verification Queue
+9. Admin verification queue and dispute arbitration console (Android, gated by a server-verified `admin` claim; there is no web dashboard)
 10. Core Marketplace, Quotes & Job Types
 11. Mobile Money Payments & Escrow Engine
 12. Location Privacy, Google Maps & AI Services

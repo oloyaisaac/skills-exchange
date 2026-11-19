@@ -1,5 +1,13 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [WAVE-1D] README claims corrected
+
+- **REM-071 (IN_PROGRESS):** removed the Airtel Money integration claim and the "Admin Operations
+  Dashboard" wording (the console is Android-only and server-claim gated); README keeps the
+  pre-production caveat and links the traceability matrix and document map.
+- `scripts/check_readme_claims.mjs` fails if those claims return; wired into CI alongside the other
+  documentation checks.
+
 ### [2026-11-20] [WAVE-1C] Fresh authentication and session revocation
 
 - **REM-024 (IN_PROGRESS):** owner deletes in `firestore.rules` (worker_kyc, notifications,

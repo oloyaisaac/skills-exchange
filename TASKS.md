@@ -406,7 +406,7 @@ _Last synchronized: 2026-10-11T15:24:11+03:00 â€” Phase 17 documentation st
 
 ## Remediation Track — Prompt 3 (2026-11-19)
 
-Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDINGS.md`. Full task detail, dependencies, tests and acceptance criteria: `IMPLEMENTATION_ROADMAP.md`. **Wave 1c (2026-11-20): REM-069/072 `COMPLETED`; REM-005/011/023/024/039/044 `IN_PROGRESS`; REM-001/002/006/010/012–016/021/022/034/035/049/051/070 `VERIFICATION_PENDING`; the rest `NOT_STARTED`.**
+Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDINGS.md`. Full task detail, dependencies, tests and acceptance criteria: `IMPLEMENTATION_ROADMAP.md`. **Wave 1d (2026-11-20): REM-069/072 `COMPLETED`; REM-005/011/023/024/039/044/071 `IN_PROGRESS`; REM-001/002/006/010/012–016/021/022/034/035/049/051/070 `VERIFICATION_PENDING`; the rest `NOT_STARTED`.**
 
 | Task | Priority | Reviewer | Task title | Depends on | Status |
 |---|---|---|---|---|---|
@@ -480,7 +480,7 @@ Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDI
 | REM-066 | MEDIUM | R11 | Make verification evidence reproducible | REM-005 | NOT_STARTED |
 | REM-069 | MEDIUM | R15 | Make documentation links portable | - | COMPLETED |
 | REM-070 | MEDIUM | R15 | Assign requirement IDs and build a trace matrix | - | VERIFICATION_PENDING |
-| REM-071 | MEDIUM | R15 | Correct README capability claims | REM-033; REM-023 | NOT_STARTED |
+| REM-071 | MEDIUM | R15 | Correct README capability claims | REM-033; REM-023 | IN_PROGRESS |
 | REM-072 | MEDIUM | R15 | Define document precedence | - | COMPLETED |
 | REM-073 | LOW | R02 | Remove unnecessary CALL_PHONE permission | REM-001 | NOT_STARTED |
 
