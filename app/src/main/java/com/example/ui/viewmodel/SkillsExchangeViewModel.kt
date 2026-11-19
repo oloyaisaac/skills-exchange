@@ -120,6 +120,8 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     val isMapsSearching = MutableStateFlow(false)
 
     val audioTranscribedJob = MutableStateFlow<TranscribedVoiceJob?>(null)
+    // REM-051: surfaced when server-side transcription is unavailable; never replaced by canned text.
+    val audioTranscriptionError = MutableStateFlow<String?>(null)
     val isAudioRecording = MutableStateFlow(false)
     val isAudioTranscribing = MutableStateFlow(false)
 
@@ -673,7 +675,11 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         viewModelScope.launch {
             isAudioTranscribing.value = true
             val audioBytes = audioRecorderHelper.stopRecording() ?: audioRecorderHelper.generateSampleWavBytes()
+            audioTranscriptionError.value = null
             val transcribed = geminiAudioService.transcribeAudio(audioBytes)
+            if (transcribed == null) {
+                audioTranscriptionError.value = "Voice transcription is unavailable. Please type the request instead."
+            }
             audioTranscribedJob.value = transcribed
             isAudioTranscribing.value = false
         }

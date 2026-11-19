@@ -406,14 +406,14 @@ _Last synchronized: 2026-10-11T15:24:11+03:00 â€” Phase 17 documentation st
 
 ## Remediation Track — Prompt 3 (2026-11-19)
 
-Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDINGS.md`. Full task detail, dependencies, tests and acceptance criteria: `IMPLEMENTATION_ROADMAP.md`. **Wave 0 implementation has begun (2026-11-19): REM-002 and REM-010 are `VERIFICATION_PENDING`, REM-001 is `VERIFICATION_PENDING`, REM-011 is `IN_PROGRESS`; all other rows remain `NOT_STARTED`.**
+Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDINGS.md`. Full task detail, dependencies, tests and acceptance criteria: `IMPLEMENTATION_ROADMAP.md`. **Wave 0 implementation is underway (2026-11-19, second slice): REM-069 and REM-072 are `COMPLETED`; REM-006, REM-010, REM-012–016, REM-022, REM-051 and REM-001/002 are `VERIFICATION_PENDING`; REM-011 is `IN_PROGRESS` (key revocation outstanding). All other rows remain `NOT_STARTED`.**
 
 | Task | Priority | Reviewer | Task title | Depends on | Status |
 |---|---|---|---|---|---|
 | REM-001 | CRITICAL | R01 | Restore Android compilation | - | VERIFICATION_PENDING |
 | REM-002 | CRITICAL | R03 | Restore the backend build | - | VERIFICATION_PENDING |
 | REM-010 | CRITICAL | R07 | Close public Firestore reads | - | VERIFICATION_PENDING |
-| REM-022 | CRITICAL | R06 | Make OTP produce a Firebase identity | REM-011; REM-002 | NOT_STARTED |
+| REM-022 | CRITICAL | R06 | Make OTP produce a Firebase identity | REM-011; REM-002 | VERIFICATION_PENDING |
 | REM-026 | CRITICAL | R08 | Wire escrow release end-to-end | REM-002; REM-022 | NOT_STARTED |
 | REM-027 | CRITICAL | R08 | Implement refunds | REM-002; REM-026 | NOT_STARTED |
 | REM-028 | CRITICAL | R08 | Delete the fabricated payout stub | REM-026 | NOT_STARTED |
@@ -423,14 +423,14 @@ Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDI
 | REM-064 | CRITICAL | R11 | Make the Android test suite executable | REM-001 | NOT_STARTED |
 | REM-003 | HIGH | R01 | Split god classes and establish module boundaries | REM-001 | NOT_STARTED |
 | REM-005 | HIGH | R14 | Create a CI pipeline | REM-001; REM-002 | NOT_STARTED |
-| REM-006 | HIGH | R14 | Make the build portable | - | NOT_STARTED |
+| REM-006 | HIGH | R14 | Make the build portable | - | VERIFICATION_PENDING |
 | REM-007 | HIGH | R14 | Restore release signing and hardening | REM-001; REM-006 | NOT_STARTED |
 | REM-011 | HIGH | R07 | Remove and rotate the committed SMS/OTP key | - | IN_PROGRESS |
-| REM-012 | HIGH | R07 | Remove duplicate SOS rules | REM-010 | NOT_STARTED |
-| REM-013 | HIGH | R07 | Make notifications and transactions server-only | REM-010 | NOT_STARTED |
-| REM-014 | HIGH | R07 | Bind Storage writes to stored job ownership | REM-010 | NOT_STARTED |
-| REM-015 | HIGH | R07 | Scope quote reads | REM-010 | NOT_STARTED |
-| REM-016 | HIGH | R07 | Fix app backup configuration | - | NOT_STARTED |
+| REM-012 | HIGH | R07 | Remove duplicate SOS rules | REM-010 | VERIFICATION_PENDING |
+| REM-013 | HIGH | R07 | Make notifications and transactions server-only | REM-010 | VERIFICATION_PENDING |
+| REM-014 | HIGH | R07 | Bind Storage writes to stored job ownership | REM-010 | VERIFICATION_PENDING |
+| REM-015 | HIGH | R07 | Scope quote reads | REM-010 | VERIFICATION_PENDING |
+| REM-016 | HIGH | R07 | Fix app backup configuration | - | VERIFICATION_PENDING |
 | REM-017 | HIGH | R07 | Enforce App Check and rate limits | REM-011; REM-022 | NOT_STARTED |
 | REM-023 | HIGH | R06 | Provision admin claims and gate the admin UI | REM-022 | NOT_STARTED |
 | REM-024 | HIGH | R06 | Add re-authentication and token revocation | REM-022 | NOT_STARTED |
@@ -443,7 +443,7 @@ Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDI
 | REM-043 | HIGH | R09 | Implement retention and purge | REM-041 | NOT_STARTED |
 | REM-046 | HIGH | R04 | Export the Room schema and test migrations | REM-001 | NOT_STARTED |
 | REM-047 | HIGH | R04 | Move money to integer minor units | REM-046 | NOT_STARTED |
-| REM-051 | HIGH | R05 | Remove fabricated transcription fallback | - | NOT_STARTED |
+| REM-051 | HIGH | R05 | Remove fabricated transcription fallback | - | VERIFICATION_PENDING |
 | REM-054 | HIGH | R02 | Add saveable state and back handling | REM-001 | NOT_STARTED |
 | REM-055 | HIGH | R12 | Label all interactive controls | REM-001 | NOT_STARTED |
 | REM-056 | HIGH | R12 | Fix typography and add localisation | REM-001 | NOT_STARTED |
@@ -478,10 +478,10 @@ Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDI
 | REM-062 | MEDIUM | R13 | Reduce APK and asset size | REM-020 | NOT_STARTED |
 | REM-063 | MEDIUM | R13 | Add retries, circuit breaking and SLOs | REM-059 | NOT_STARTED |
 | REM-066 | MEDIUM | R11 | Make verification evidence reproducible | REM-005 | NOT_STARTED |
-| REM-069 | MEDIUM | R15 | Make documentation links portable | - | NOT_STARTED |
+| REM-069 | MEDIUM | R15 | Make documentation links portable | - | COMPLETED |
 | REM-070 | MEDIUM | R15 | Assign requirement IDs and build a trace matrix | - | NOT_STARTED |
 | REM-071 | MEDIUM | R15 | Correct README capability claims | REM-033; REM-023 | NOT_STARTED |
-| REM-072 | MEDIUM | R15 | Define document precedence | - | NOT_STARTED |
+| REM-072 | MEDIUM | R15 | Define document precedence | - | COMPLETED |
 | REM-073 | LOW | R02 | Remove unnecessary CALL_PHONE permission | REM-001 | NOT_STARTED |
 
 **Counts:** 73 tasks — 11 CRITICAL, 31 HIGH, 30 MEDIUM, 1 LOW. Source finding `MR-0NN` maps 1:1 to `REM-0NN`.

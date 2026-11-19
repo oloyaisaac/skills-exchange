@@ -1,3 +1,36 @@
+## 2026-11-19 (Wave 0b) - OTP/TRANSCRIPTION MOVED SERVER-SIDE; RULES, BACKUP AND BUILD CONFIG HARDENED
+
+Second wave-0 slice on `arena/037d33dc-skills-exchange` (base `38ed1cf`). Eight tasks implemented,
+two completed with checker evidence, none independently verified.
+
+- **REM-011 / REM-022 (IN_PROGRESS / VERIFICATION_PENDING).** `functions/src/otp.ts` is a pure,
+  tested policy module; `sendOtp` and `verifyOtp` callables own the Africa's Talking credential,
+  throttle per phone and mint a Firebase custom token. The Android service now calls the callables
+  and exchanges the token with `signInWithCustomToken`; the key, Basic-auth header and build-time
+  key field are gone. Outstanding: revoke the old key, deploy and test against a real project.
+- **REM-012 to REM-015 (VERIFICATION_PENDING).** Single SOS rule with `exists(job)`; client creates
+  denied for notifications and the MoMo ledger; storage authorization now reads the Firestore job
+  and forbids overwrites; quotes restricted to author/job owner/admin. No emulator available, so
+  no rules execution evidence.
+- **REM-016 (VERIFICATION_PENDING).** Backups disabled and every data domain excluded from cloud
+  backup and device transfer.
+- **REM-006 (VERIFICATION_PENDING).** Gradle no longer references D:/ paths or a Java 25 test JDK;
+  `gradlew` is executable. No Gradle run in this environment.
+- **REM-051 (VERIFICATION_PENDING).** `transcribeVoiceJob` validates Gemini output and fails
+  visibly; client returns null and the ViewModel sets `audioTranscriptionError`.
+- **REM-069 / REM-072 (COMPLETED).** 61 host-absolute links rewritten; `check_doc_links.mjs` and
+  `check_document_map.mjs` both pass. Reviewer reports were left untouched.
+- **REM-008 remains unresolved.** Upgrading to firebase-admin 14 / firebase-functions 7 changes the
+  callable signature (`(data, context)` to a single request object) and breaks every handler; the
+  upgrade was reverted. It needs a dedicated migration.
+- **No completion declarations were written**, because no reviewer's full assignment is both
+  implemented and verified.
+
+**Next:** REM-023 (audited admin-claim provisioning), REM-024, REM-025, then R08 money tasks. CI
+(REM-005) stays dependent on a compiling Android build.
+
+---
+
 ## 2026-11-19 (Wave 0) - FIRST REMEDIATION COMMITS: BUILD GREEN, PUBLIC READS CLOSED, KEY REMOVED
 
 Wave 0 started on `arena/87f323b5-skills-exchange` (base `f353ebf`). Four tasks touched; **no
@@ -596,7 +629,7 @@ Practical note for the next session: the daemon prints nothing for minutes at a 
 | Step | Result | Evidence / fix |
 |---|---|---|
 | `:app:compileDebugKotlin` (1st attempt) | âŒ FAILED â€” 2 real errors, both REG-002 code | `SkillsExchangeViewModel.kt Unresolved reference 'getValue'` plus "does not call getValue/setValue" for the three `var` state properties; `GuarantorValidators.kt Unresolved reference 'distinct'` â€” a `String` has no `distinct()` |
-| Fixes | âœ… | [SkillsExchangeViewModel.kt](file:///d:/skills%20exchange/app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt) now imports `androidx.compose.runtime.getValue`, `mutableStateOf` and `setValue` (`kotlinx.coroutines.flow.*` covers neither property-delegate operators nor `mutableStateOf`); [GuarantorValidators.kt](file:///d:/skills%20exchange/app/src/main/java/com/example/util/GuarantorValidators.kt) `validateNationalIdNumber()` now uses `value.toSet().size <= 1` â€” the identical rule (reject a NIN of one repeated character), plain stdlib. No test asserts that branch directly (the two NIN tests cover length and the accept path) |
+| Fixes | âœ… | [SkillsExchangeViewModel.kt](app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt) now imports `androidx.compose.runtime.getValue`, `mutableStateOf` and `setValue` (`kotlinx.coroutines.flow.*` covers neither property-delegate operators nor `mutableStateOf`); [GuarantorValidators.kt](app/src/main/java/com/example/util/GuarantorValidators.kt) `validateNationalIdNumber()` now uses `value.toSet().size <= 1` â€” the identical rule (reject a NIN of one repeated character), plain stdlib. No test asserts that branch directly (the two NIN tests cover length and the accept path) |
 | `:app:compileDebugKotlin` (re-run) | âœ… PASSED | "BUILD SUCCESSFUL in 45s", warnings only |
 | `:app:testDebugUnitTest` | âœ… PASSED | **57 tests / 8 suites / 0 failures / 0 errors / 0 skipped**; `GuarantorValidatorsTest` **18/18** (per `build/test-results/testDebugUnitTest/TEST-com.example.util.GuarantorValidatorsTest.xml`); `testReleaseUnitTest` passed too |
 | `:app:assembleDebug` | âœ… PASSED | BUILD SUCCESSFUL in 3m 35s â†’ `app/build/outputs/apk/debug/app-debug.apk` (35,254,412 bytes) |
@@ -654,7 +687,7 @@ mirrors, ViewModel actions) and a **partially written** `GuarantorVerificationSh
 5. **Room schema alignment (found by that session's static cross-check, then confirmed by the 2026-09-27 KSP schema pass)** â€” `MIGRATION_18_19` creates `index_guarantors_phoneNumber ON guarantors(phoneNumber)`
    for duplicate-guarantor lookups, but `GuarantorEntity` only declared `Index(["workerKycId"])`.
    The entity now declares `Index(value = ["workerKycId"]), Index(value = ["phoneNumber"])`
-   ([Entities.kt](file:///d:/skills%20exchange/app/src/main/java/com/example/data/db/Entities.kt))
+   ([Entities.kt](app/src/main/java/com/example/data/db/Entities.kt))
    so the schema Room generates for a fresh install matches the migrated database: the default
    Room index name `index_guarantors_phoneNumber` is exactly the one the migration creates. Left
    undeclared, the physical database would carry an index Room does not know about, which surfaces

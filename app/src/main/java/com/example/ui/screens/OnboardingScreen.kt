@@ -33,7 +33,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.data.remote.AfricaTalkingService
 import com.example.data.remote.AfricaTalkingService.OtpResponse
 import com.example.data.remote.AfricaTalkingService.VerificationResponse
 import com.example.ui.theme.*
@@ -73,7 +72,6 @@ fun OnboardingScreen(
     var selectedDistrict by remember { mutableStateOf("") }
     var resendCooldown by remember { mutableStateOf(0) }
 
-    val africaService = remember { AfricaTalkingService() }
     var phoneNumber by remember { mutableStateOf("") }
     var otpCode by remember { mutableStateOf("") }
     var showOtpInput by remember { mutableStateOf(false) }

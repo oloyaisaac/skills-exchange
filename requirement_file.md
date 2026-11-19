@@ -875,3 +875,22 @@ This section adds requirements; it does not replace or relax any requirement abo
 
 **Status rule:** a `REM` task may move to `COMPLETED` only when its roadmap acceptance criteria are met and completion evidence is attached. Runtime-only evidence that cannot be produced must leave the task at `VERIFICATION_PENDING`.
 
+---
+
+## 18. Remediation Implementation Status (2026-11-19)
+
+This section records implementation evidence only; it does not change any requirement above and
+does not declare the product production-ready.
+
+| Task | Requirement area | Implementation | Verification |
+|---|---|---|---|
+| REM-011 / REM-022 | Phone identity (§3, §13.3) | OTP runs in `sendOtp`/`verifyOtp` callables; successful verification mints a Firebase custom token; no Africa's Talking credential in the client or repo | Server policy unit-tested (128 backend tests); real-project signup test and key revocation outstanding |
+| REM-012–015 | Access control (§8, §10) | Single SOS rule with job guard; notifications/MoMo ledger client-create denied; storage authorized from the job document; quotes limited to participants | Requires rules emulator run |
+| REM-016 | Privacy (§8) | Cloud backup and device transfer disabled/excluded for all data domains | Requires device restore test |
+| REM-006 | Build reproducibility | No machine-local paths; one Java 11 toolchain; executable wrapper | Requires Gradle build |
+| REM-051 | AI transcription (§9) | Server-side callable, validated output, explicit client error | Requires deployment and Android build |
+| REM-069 / REM-072 | Documentation (§17) | Relative links; document precedence map | Checkers pass locally |
+
+Open items from this slice: REM-023–025 (identity/admin), REM-026–032 (money), REM-034–040
+(safety), REM-005/007/008 (CI, signing, dependency advisories) and the Android compilation task
+REM-001, which still needs a JDK and Android SDK to verify.

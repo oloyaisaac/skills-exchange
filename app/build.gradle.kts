@@ -13,15 +13,6 @@ android {
   namespace = "com.example"
   compileSdk = 37
 
-  // REM-011: the Africa's Talking credential is read from the build environment, never from
-  // source. Provide it as -PAFRICASTALKING_API_KEY=... or an AFRICASTALKING_API_KEY env var.
-  // Missing value => empty BuildConfig field => OTP fails closed with a configuration error.
-  val africastalkingApiKey: String = providers.gradleProperty("AFRICASTALKING_API_KEY")
-    .orElse(providers.environmentVariable("AFRICASTALKING_API_KEY"))
-    .getOrElse("")
-    .replace("\\", "\\\\")
-    .replace("\"", "\\\"")
-
   defaultConfig {
     applicationId = "com.aistudio.skillsexchange.nxptvq"
     minSdk = 24
@@ -36,7 +27,6 @@ android {
     // To enable Maps: add MAPS_API_KEY=<your_key> to .env (never commit a real key).
     manifestPlaceholders["MAPS_API_KEY"] = "DEFAULT_MAPS_API_KEY"
 
-    buildConfigField("String", "AFRICASTALKING_API_KEY", "\"$africastalkingApiKey\"")
   }
 
   signingConfigs {
@@ -75,8 +65,10 @@ java {
 }
 
 tasks.withType<Test> {
+  // REM-006: one toolchain for compile and tests (the Java 11 toolchain above). The previous
+  // value (25) required a second, machine-local JDK that no clean clone has.
   javaLauncher = javaToolchains.launcherFor {
-    languageVersion.set(JavaLanguageVersion.of(25))
+    languageVersion.set(JavaLanguageVersion.of(11))
   }
 }
 
