@@ -79,6 +79,8 @@ import type { SmsTransport } from "./sms";
 import { planSosDispatch, selectSosRecipients, buildSosMessage } from "./sosDispatch";
 import { hasAdminClaim } from "./admin";
 import { isFreshAuth, buildRevocationRecord } from "./session";
+import { decideEscrowRelease } from "./escrowRelease";
+import { decideRefund, buildRefundPayload } from "./refund";
 import {
   buildTranscriptionPrompt,
   buildGeminiTranscriptionRequest,
@@ -563,11 +565,13 @@ export const releaseEscrowToWorker = functions.https.onCall(async (data, context
     );
   }
 
-  const { jobId, workerId, workerMomoNumber, amountUgx, provider } = data;
-  if (!jobId || !workerId || !workerMomoNumber || !amountUgx) {
+  // REM-026: the client supplies only identifiers. The wallet and the amount are read from
+  // server-side records, so a modified APK cannot redirect a payout or inflate its value.
+  const { jobId, workerId, provider } = data || {};
+  if (!jobId || !workerId) {
     throw new functions.https.HttpsError(
       "invalid-argument",
-      "Missing required parameters: jobId, workerId, workerMomoNumber, amountUgx."
+      "Missing required parameters: jobId, workerId."
     );
   }
 
@@ -599,24 +603,27 @@ export const releaseEscrowToWorker = functions.https.onCall(async (data, context
     );
   }
 
-  // SEC-004: Validate job state - escrow can only be released for completed jobs
-  const validStates = ["COMPLETED", "WORK_COMPLETED", "IN_PROGRESS"];
-  if (!validStates.includes(jobData?.status)) {
-    throw new functions.https.HttpsError(
-      "failed-precondition",
-      `Escrow cannot be released for job in status: ${jobData?.status}. Job must be completed.`
-    );
+  // REM-026: the amount and wallet are read server-side; the policy is shared with the tests.
+  const workerDoc = await db.collection("users").doc(workerId).get();
+  const workerMomoNumber = String(
+    workerDoc.get("momoNumber") || workerDoc.get("phone") || ""
+  ).trim();
+  const decision = decideEscrowRelease(jobData, workerId, workerMomoNumber);
+  if (decision.kind === "ALREADY_RELEASED") {
+    return {
+      success: true,
+      alreadyReleased: true,
+      payoutRef: decision.payoutRef,
+      message: "Escrow was already released for this job."
+    };
   }
-
-  // SEC-004: Verify workerId matches assigned provider
-  if (jobData?.assignedProvider !== workerId && jobData?.assignedWorkerId !== workerId) {
-    throw new functions.https.HttpsError(
-      "failed-precondition",
-      "Worker ID does not match assigned worker for this job."
-    );
+  if (decision.kind === "REJECT") {
+    throw new functions.https.HttpsError(decision.code, decision.message);
   }
+  const amountUgx = decision.amount;
 
-  const payoutRef = `PAYOUT-${Date.now()}`;
+  // Deterministic id: a retried call cannot create a second payout document.
+  const payoutRef = `PAYOUT-${jobId}`;
   const payoutPayload = {
     payoutId: payoutRef,
     jobId,
@@ -637,6 +644,7 @@ export const releaseEscrowToWorker = functions.https.onCall(async (data, context
     escrowStatus: "RELEASED_TO_WORKER",
     releasedBy: callerUid,
     releasedAt: admin.firestore.FieldValue.serverTimestamp(),
+    releasePayoutRef: payoutRef,
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   });
 
@@ -654,6 +662,116 @@ export const releaseEscrowToWorker = functions.https.onCall(async (data, context
     payoutRef,
     message: `Escrow released. UGX ${amountUgx} payout queued to ${workerMomoNumber}.`
   };
+});
+
+// =====================================================================================
+// REM-027: refunds. Money moves only through the provider; a local status alone never means
+// "refunded". A provider failure records a FAILED refund and leaves escrow untouched.
+// =====================================================================================
+
+async function performEscrowRefund(
+  jobId: string,
+  amount: number,
+  reason: string,
+  actor: string
+): Promise<{ refundRef: string; status: string }> {
+  if (!jobId) throw new functions.https.HttpsError("invalid-argument", "jobId is required.");
+  const config = loadMomoConfig(process.env as Record<string, string | undefined>);
+  if ("error" in config) {
+    throw new functions.https.HttpsError("failed-precondition", config.error);
+  }
+
+  const txSnap = await db.collection("momo_transactions")
+    .where("jobId", "==", jobId)
+    .where("status", "==", "SUCCESS")
+    .limit(1)
+    .get();
+  const transaction = txSnap.empty ? undefined : txSnap.docs[0].data();
+
+  const existing = await db.collection("refunds")
+    .where("jobId", "==", jobId)
+    .where("status", "in", ["PENDING", "SUCCESS"])
+    .limit(1)
+    .get();
+  const decision = decideRefund(transaction, amount, !existing.empty);
+  if (decision.kind === "REJECT") {
+    throw new functions.https.HttpsError("failed-precondition", decision.message);
+  }
+
+  const basic = Buffer.from(`${config.apiUser}:${config.apiKey}`).toString("base64");
+  const tokenResp = await axios.post(`${config.baseUrl}/collection/token/`, {}, {
+    headers: {
+      "Authorization": `Basic ${basic}`,
+      "Ocp-Apim-Subscription-Key": config.subscriptionKey,
+    },
+    timeout: 15000,
+    validateStatus: () => true,
+  });
+  if (tokenResp.status !== 200 || !tokenResp.data?.access_token) {
+    throw new functions.https.HttpsError("unavailable", "Could not authenticate with the refund provider.");
+  }
+
+  const refundRef = crypto.randomUUID();
+  let providerStatus = 0;
+  try {
+    const resp = await axios.post(
+      `${config.baseUrl}/collection/v1_0/requesttopay/${decision.providerReferenceId}/refund`,
+      buildRefundPayload(decision.amount, decision.currency, jobId),
+      {
+        headers: {
+          "Authorization": `Bearer ${String(tokenResp.data.access_token)}`,
+          "X-Reference-Id": refundRef,
+          "X-Target-Environment": config.environment,
+          "Ocp-Apim-Subscription-Key": config.subscriptionKey,
+          "Content-Type": "application/json",
+        },
+        timeout: 20000,
+        validateStatus: () => true,
+      }
+    );
+    providerStatus = resp.status;
+  } catch (e: any) {
+    providerStatus = 0;
+  }
+
+  const accepted = [200, 201, 202].includes(providerStatus);
+  await db.collection("refunds").doc(refundRef).set({
+    refundRef,
+    jobId,
+    amount: decision.amount,
+    currency: decision.currency,
+    providerReferenceId: decision.providerReferenceId,
+    status: accepted ? "PENDING" : "FAILED",
+    reason,
+    requestedBy: actor,
+    providerStatus,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  if (!accepted) {
+    throw new functions.https.HttpsError(
+      "unavailable",
+      `Refund provider returned HTTP ${providerStatus || "network error"}.`
+    );
+  }
+
+  await db.collection("jobs").doc(jobId).update({
+    escrowStatus: "REFUND_PENDING",
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  return { refundRef, status: "PENDING" };
+}
+
+/** Admin-only: request a full or partial refund of a settled escrow collection. */
+export const refundEscrow = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to request a refund.");
+  }
+  if (!hasAdminClaim(context.auth.token)) {
+    throw new functions.https.HttpsError("permission-denied", "Only administrators can refund escrow.");
+  }
+  const { jobId, amount, reason } = data || {};
+  return performEscrowRefund(jobId, Number(amount), String(reason || "Admin refund"), context.auth.uid);
 });
 
 /**
@@ -1381,25 +1499,26 @@ export const resolveDispute = functions.https.onCall(async (data, context) => {
   if (resolutionType === "REFUND_FULL" || resolutionType === "REFUND_PARTIAL") {
     const refundAmount = resolutionAmount || 0;
     if (refundAmount > 0) {
-      // Create refund record
-      await db.collection("momo_payouts").add({
-        payoutId: `REFUND-${Date.now()}`,
-        jobId: disputeData?.jobId,
-        userId: disputeData?.reportedBy,
-        amount: refundAmount,
-        currency: "UGX",
-        provider: "REFUND",
-        status: "QUEUED",
-        reason: `Dispute refund: ${resolutionType}`,
-        disputeId: disputeId,
-        createdAt: now
-      });
-
-      // Update job escrow status
-      await db.collection("jobs").doc(disputeData?.jobId).update({
-        escrowStatus: "REFUNDED",
-        updatedAt: now
-      });
+      // REM-027: ask the provider for the refund. Nothing is marked REFUNDED unless the provider
+      // accepted the request; a failure is recorded on the dispute for the admin to retry.
+      try {
+        const refund = await performEscrowRefund(
+          String(disputeData?.jobId || ""),
+          refundAmount,
+          `Dispute refund: ${resolutionType}`,
+          context.auth?.uid || "admin"
+        );
+        await disputeDoc.ref.update({ refundStatus: "REQUESTED", refundId: refund.refundRef });
+      } catch (e: any) {
+        await disputeDoc.ref.update({
+          refundStatus: "FAILED",
+          refundError: String(e?.message || e),
+        });
+        throw new functions.https.HttpsError(
+          "internal",
+          `Dispute recorded, but the refund failed: ${e?.message || e}`
+        );
+      }
     }
   }
 

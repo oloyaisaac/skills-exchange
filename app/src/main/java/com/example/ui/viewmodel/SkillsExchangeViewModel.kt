@@ -765,6 +765,22 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             // notification for a transition that did not happen.
             if (!transitioned) return@launch
 
+            // REM-026: completing a job as its client releases escrow on the server. The client
+            // never computes the payout amount; it only names the job and worker. A failed release
+            // is surfaced and leaves the local escrow untouched so it can be retried.
+            if (newStatus == "COMPLETED" &&
+                currentJob?.postedByUid == firebaseService.getCurrentUser()?.uid &&
+                !currentJob?.assignedProviderId.isNullOrBlank()
+            ) {
+                val workerId = currentJob?.assignedProviderId!!
+                val (released, message) = firebaseService.releaseEscrowToWorker(jobId, workerId)
+                if (released) {
+                    repository.updateEscrowStatus(jobId, "RELEASED_TO_WORKER")
+                } else {
+                    authError.value = "Job completed, but escrow release failed: $message"
+                }
+            }
+
             val assignedProviderId = currentJob?.assignedProviderId
             if (assignedProviderId != null) {
                 repository.createNotification(

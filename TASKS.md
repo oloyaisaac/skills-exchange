@@ -406,7 +406,7 @@ _Last synchronized: 2026-10-11T15:24:11+03:00 â€” Phase 17 documentation st
 
 ## Remediation Track — Prompt 3 (2026-11-19)
 
-Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDINGS.md`. Full task detail, dependencies, tests and acceptance criteria: `IMPLEMENTATION_ROADMAP.md`. **Wave 1d (2026-11-20): REM-069/072 `COMPLETED`; REM-005/011/023/024/039/044/071 `IN_PROGRESS`; REM-001/002/006/010/012–016/021/022/034/035/049/051/070 `VERIFICATION_PENDING`; the rest `NOT_STARTED`.**
+Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDINGS.md`. Full task detail, dependencies, tests and acceptance criteria: `IMPLEMENTATION_ROADMAP.md`. **Wave 1e (2026-11-20): REM-069/072 `COMPLETED`; REM-005/011/023/024/026/027/039/044/071 `IN_PROGRESS`; REM-001/002/006/010/012–016/021/022/034/035/049/051/070 `VERIFICATION_PENDING`; the rest `NOT_STARTED`.**
 
 | Task | Priority | Reviewer | Task title | Depends on | Status |
 |---|---|---|---|---|---|
@@ -414,8 +414,8 @@ Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDI
 | REM-002 | CRITICAL | R03 | Restore the backend build | - | VERIFICATION_PENDING |
 | REM-010 | CRITICAL | R07 | Close public Firestore reads | - | VERIFICATION_PENDING |
 | REM-022 | CRITICAL | R06 | Make OTP produce a Firebase identity | REM-011; REM-002 | VERIFICATION_PENDING |
-| REM-026 | CRITICAL | R08 | Wire escrow release end-to-end | REM-002; REM-022 | NOT_STARTED |
-| REM-027 | CRITICAL | R08 | Implement refunds | REM-002; REM-026 | NOT_STARTED |
+| REM-026 | CRITICAL | R08 | Wire escrow release end-to-end | REM-002; REM-022 | IN_PROGRESS |
+| REM-027 | CRITICAL | R08 | Implement refunds | REM-002; REM-026 | IN_PROGRESS |
 | REM-028 | CRITICAL | R08 | Delete the fabricated payout stub | REM-026 | NOT_STARTED |
 | REM-034 | CRITICAL | R10 | Implement real SOS dispatch | REM-002; REM-011 | VERIFICATION_PENDING |
 | REM-035 | CRITICAL | R10 | Add server push and escalation | REM-034; REM-023 | VERIFICATION_PENDING |
