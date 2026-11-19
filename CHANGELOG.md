@@ -1,5 +1,15 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-19] [ASMT-2026-11-19] Independent repository assessment & 15-reviewer architecture (review-only)
+
+- **Scope:** whole repository. No application source, rules, build scripts or tests changed.
+- **Deliverables:** `ASSESSMENT_REPORT.md`, `REVIEWER_REGISTER.md`, `REVIEW_PLAN.md`, `PRODUCTION_READINESS.md`, `reviewers/` (15 instruction files, `reports/README.md`).
+- **Additive updates:** `prd.json` phase 18 + `RVW-001…RVW-015` (`not_started`), version 1.2; `requirement_file.md` §16; `AGENT_STATE.md`; `TASKS.md`; `DECISIONS.md`; `README.md` status/build sections.
+- **Executed evidence:** `functions && npm test` → 111 pass / 0 fail (Node 22.22.3). Android build/tests not executable here (no JDK/Android SDK).
+- **Findings:** 20 registered (F-001…F-020), including non-buildable HEAD, committed Africa's Talking key, world-readable `jobs`/`messages`, fabricated SOS SMS and fake payout, incomplete account erasure, missing admin claim provisioning, no CI/observability.
+- **Verdict:** NOT PRODUCTION-READY; all 12 release-relevant domains fail or are unverified. No PRD statuses flipped; prior completion claims remain unverified pending reviewer evidence.
+
+
 ### [2026-10-22] [AUDIT-A-SOS] Firestore rules & Cloud Functions deployment to skills-exchange-f9189
 
 - **Scope:** AUDIT-A-SOS (P0) — Firebase backend deployment completed

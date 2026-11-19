@@ -1,3 +1,28 @@
+## 2026-11-19 — UNIVERSAL REPOSITORY ASSESSMENT & REVIEW ARCHITECTURE (review-only, no source changes)
+
+**Verdict: NOT PRODUCTION-READY.** Committed HEAD `6b39a10` is not structurally buildable and contains security-relevant defects. This session did **not** modify `app/src/**`, `functions/src/**`, `firestore.rules`, `storage.rules`, build scripts or tests. It created the review programme only.
+
+**Created:** `ASSESSMENT_REPORT.md`, `REVIEWER_REGISTER.md`, `REVIEW_PLAN.md`, `PRODUCTION_READINESS.md`, `reviewers/` (15 instruction files + `reports/README.md`).
+**Updated additively:** `prd.json` (phase 18, 15 `RVW-*` stories `not_started`, 97 prior statuses untouched, version 1.2, `current_story = RVW-001`), `requirement_file.md` (§16 addendum), `TASKS.md` (review track), `CHANGELOG.md`, `DECISIONS.md` (D-2026-11-19-1/-2), `README.md` (status block + review section + corrected build prerequisites).
+
+**Executed evidence:** `cd functions && npm test` → 111 tests, 111 pass, 0 fail on Node 22.22.3. Android build/tests **not executed** (no JDK/Android SDK in this environment); all compile statements are static-analysis findings.
+
+**Blocking findings (details in ASSESSMENT_REPORT.md §6):**
+- F-001 HEAD not buildable: literal `\n` escapes + stray brace at `FirebaseService.kt:709–716`; `GeminiAudioTranscriptionService.kt:1` starts with `]=package`; `ActiveJobScreen.kt` has unresolved types and malformed syntax.
+- F-002 hardcoded Africa's Talking key at `AfricaTalkingService.kt:15`; OTP runs device-side.
+- F-003 `firestore.rules` exposes `jobs` and nested `messages` with `allow read: if true` (address, landmark, MoMo phone, payment channel/escrow, owner UID, all chat).
+- F-004 doorstep PIN default `"4829"`, plaintext, client-supplied expected value, no lockout.
+- F-005 SOS SMS is a logging stub returning `SENT`; no real dispatch and no server FCM send.
+- F-006 escrow release/payout not wired; `MoMoPaymentService` returns fabricated `DISBURSED`; wallet ledger is Room-only.
+- F-007 account deletion orphans data: rules deny `users` delete, so the Firestore cascade aborts at the first statement and Storage KYC/guarantor objects are never deleted, while Auth deletion proceeds.
+- F-008 no admin custom-claim provisioning path.
+- F-009 no CI; `gradle.properties` hardcodes `D:/` paths; Java 25 test launcher; R8 disabled.
+- F-010–F-020: no rules tests/index file, App Check unused, no observability, doc drift, artifact hygiene, localisation/a11y, money `Double`, functions runtime/deploy config, unexported Room schema, fabricated AI fallback, dead code.
+
+**Next:** provision JDK 17 + Android SDK 36/37 + Node 22 + Firebase emulator, then execute R01 (build gate) and R14 (reproducibility gate) per `REVIEW_PLAN.md`. Do not begin remediation or flip PRD statuses until gate evidence exists.
+
+---
+
 ## ✅ DONE 2026-10-20 - AUDIT-A-ARBITRATE ADMIN ARBITRATION CONSOLE COMPLETE (code+unit+full suite, committed 059ca38)
 ## ✅ DONE 2026-10-21 - AUDIT-A-SOS BACKEND FOUNDATION COMPLETE (code+unit+full suite)
 

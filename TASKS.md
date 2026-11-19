@@ -8,6 +8,32 @@ Legend: âœ… Completed | ðŸ”„ In Progress | âœ… Completed | ðŸš�
 
 ---
 
+## Review Track — 2026-11-19 (not started)
+
+Independent review programme defined after a repository assessment found the committed code cannot be assumed releasable. See `ASSESSMENT_REPORT.md`, `REVIEWER_REGISTER.md`, `PRODUCTION_READINESS.md`.
+
+| ID | Priority | Reviewer | Status | Gate |
+|---|---|---|---|---|
+| RVW-001 | P0 | R01 Architecture & Codebase Integrity | ⬜ Not started | G0 build |
+| RVW-002 | P1 | R02 Android Client | ⬜ Not started | — |
+| RVW-003 | P0 | R03 Backend & Cloud Functions | ⬜ Not started | — |
+| RVW-004 | P1 | R04 Data & Persistence | ⬜ Not started | — |
+| RVW-005 | P1 | R05 API & Integrations | ⬜ Not started | — |
+| RVW-006 | P0 | R06 Auth & Identity | ⬜ Not started | G6 identity |
+| RVW-007 | P0 | R07 Application Security | ⬜ Not started | G2 security |
+| RVW-008 | P0 | R08 Payments & Financial Controls | ⬜ Not started | G4 money |
+| RVW-009 | P0 | R09 Privacy, KYC & Compliance | ⬜ Not started | G5 compliance |
+| RVW-010 | P0 | R10 Safety, Trust & Fraud | ⬜ Not started | G3 safety |
+| RVW-011 | P1 | R11 QA & Test Engineering | ⬜ Not started | G7 evidence |
+| RVW-012 | P1 | R12 UI/UX & Accessibility | ⬜ Not started | — |
+| RVW-013 | P1 | R13 Performance & Reliability | ⬜ Not started | — |
+| RVW-014 | P0 | R14 DevOps & Release | ⬜ Not started | G1 reproducibility |
+| RVW-015 | P1 | R15 Documentation & Traceability | ⬜ Not started | G8 synthesis |
+
+**Known pre-review blockers:** build-blocking source defects (F-001), committed provider credential (F-002), public job/chat reads (F-003), fabricated SOS SMS (F-005), incomplete erasure (F-007). Existing product task statuses below are preserved as historical claims and were **not** re-verified in this session.
+
+---
+
 ## Phase 1 â€” Baseline, Infrastructure & Test Stabilization
 > Fix broken Robolectric and Roborazzi test suite to establish clean CI/CD build baseline.
 

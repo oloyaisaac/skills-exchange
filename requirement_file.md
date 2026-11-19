@@ -823,3 +823,30 @@ The project backlog is organized into **17 Logical Implementation Phases**:
    - Financial audit view reconciling telecom transaction IDs, pending escrow float, platform commission balances, and completed payouts.
 5. **Dynamic Remote Platform Configuration**:
    - Migrate platform fee percentage (currently hardcoded 10%) and callout fees ($5.00) to Firestore remote config documents.
+
+---
+
+## 16. Independent Review Programme Addendum (2026-11-19)
+
+This addendum does not replace or amend the requirements above. It records the review-only artefacts created on 2026-11-19 and the requirements that evidence shows are **not yet demonstrably met**. Each item must be verified by the named reviewer before it may be treated as delivered.
+
+**Review artefacts:** `ASSESSMENT_REPORT.md`, `REVIEWER_REGISTER.md`, `REVIEW_PLAN.md`, `PRODUCTION_READINESS.md`, `reviewers/*.md`, and PRD phase 18 (`RVW-001`…`RVW-015`).
+
+**Requirements requiring verification (do not assume implemented):**
+
+| Requirement (section) | Observed state | Reviewer |
+|---|---|---|
+| §5 Worker KYC document privacy and retention | Private storage rules exist; erasure of Storage objects on account deletion is absent | R09 |
+| §5/§15.3 Admin review of National ID and guarantor evidence | In-app admin sheets and admin-gated callables exist; no claim-provisioning runbook; no web portal | R06/R15 |
+| §9 Escrow lock and verified payout | Server collection/confirmation core exists; release/payout paths have no client caller; refunds absent | R08 |
+| §9 Doorstep 4-digit PIN | Plaintext Room field with default `4829`, displayed in clear text, verification accepts a client-supplied expected value and has no attempt limit | R10/R07 |
+| §9 Emergency SOS alerts | Incident record and authorization exist; SMS dispatch is a logging stub returning "SENT" | R10 |
+| §10 Admin web dashboard | Not present; only in-app operator sheets | R15 |
+| §14 Notifications (job/quote/payment) | Client receive path exists; no server-side FCM send found | R03 |
+| §15.2 Scheduling, address details, cancellation/refund, re-hire/gratuity | Partial or absent; see TASKS/prd notes | R02/R15 |
+| §15.3 Live SOS desk, financial reconciliation, remote fee configuration | Not implemented | R10/R08/R15 |
+| Privacy notice, consent records, retention schedule | UI copy only; no DPIA/retention artefacts | R09 |
+| Localisation for Uganda/Kenya/Tanzania/Rwanda | English-only inline strings | R12 |
+| Accessibility (TalkBack, contrast, touch targets) | Not audited; 59 null content descriptions | R12 |
+
+**Status rule:** until the relevant reviewer report is accepted, these requirements are `UNVERIFIED`, not complete. See `PRODUCTION_READINESS.md` for the release gate.
