@@ -111,7 +111,7 @@ fun OnboardingScreen(
         // AUTH-002: Diagnose the Google hand-off on-device. OnboardingAuthTag is
         // intentionally surfaced via `adb logcat -s OnboardingAuth` so success,
         // cancellation, and exception paths are never silent.
-        val uidBefore = viewModel.firebaseService.getCurrentUser()?.uid
+        val uidBefore = viewModel.currentAuthenticatedUid()
         Log.d(OnboardingAuthTag, "googleSignInLauncher callback: resultCode=${result.resultCode}, firebaseUid_before=$uidBefore")
         when (result.resultCode) {
             android.app.Activity.RESULT_OK -> {
@@ -130,7 +130,7 @@ fun OnboardingScreen(
                         }
                         viewModel.loginWithGoogle(token, initialRole = selectedRole) { needsOnboarding ->
                             isGoogleSigningIn = false
-                            val uidAfter = viewModel.firebaseService.getCurrentUser()?.uid
+                            val uidAfter = viewModel.currentAuthenticatedUid()
                             Log.d(OnboardingAuthTag, "AUTHENTICATION->PROFILE_SETUP: needsOnboarding=$needsOnboarding, firebaseUid_before=$uidBefore, firebaseUid_after=$uidAfter")
                             if (needsOnboarding) {
                                 currentStep = OnboardingStep.PROFILE_SETUP

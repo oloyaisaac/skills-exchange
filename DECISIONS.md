@@ -2,6 +2,34 @@
 
 All significant architectural, design, and implementation decisions are recorded here. This allows future agents and developers to understand why specific choices were made.
 
+### D-2026-11-20-1 - R01 Remediation: One Firebase Gateway; God-Class Decomposition Roadmap
+
+**Context.** R01 (Prompt-2 cycle) found two `FirebaseService` instances inside
+`SkillsExchangeViewModel` (one for the repository, one exposed to composables), direct UI reads of
+`viewModel.firebaseService` in `OnboardingScreen`, an unused root `AndroidManifest.xml`, and two
+god classes (2,898-line repository, 2,792-line ViewModel) with no agreed split.
+
+**Decision.**
+1. Construct **one** `FirebaseService` before the repository and inject it. The field is private; the
+   UI reads identity through `currentAuthenticatedUid()`.
+2. Delete the root `AndroidManifest.xml`; the only manifest is `app/src/main/AndroidManifest.xml`.
+3. Add `scripts/check_architecture_guards.mjs` to CI so the single-gateway rule cannot regress.
+4. Decompose in slices, each behaviour-preserving and separately testable:
+   - **A. Auth/session** → `AuthSessionCoordinator` (restore, login, logout, deletion, fresh-auth)
+   - **B. Jobs/escrow** → `JobLifecycleCoordinator` (transitions, release, pricing hand-off)
+   - **C. KYC/admin** → `VerificationCoordinator` (queue, reviews, guarantors)
+   - **D. Wallet/cashout** → already mostly in `WorkerCashoutSecurityCore`; move orchestration there
+   - **E. Notifications/SOS** → `SafetyCoordinator`
+   Each slice moves state ownership first, then delegates from the ViewModel; no behaviour change is
+   accepted without the existing security tests still passing. The repository splits along the same
+   seams (auth identity, jobs, KYC, wallet, safety) once the ViewModel slices are stable.
+
+**Consequences.** Auth state now has a single owner. God-class size remains until the slices land;
+this record is the agreed roadmap R01 requires, not evidence that decomposition is complete. Android
+compilation is still unverified in this environment, so R01 cannot be declared complete.
+
+---
+
 ### D-2026-11-19-1 - Review-Only Assessment Programme; 15 Reviewers; No Source Changes
 
 **Context.** A repository-wide assessment found that the committed HEAD cannot be assumed buildable and contains security-, money- and safety-relevant defects, while master documents (including `prd.json` with 97/97 stories marked completed) assert verified completion. Fixing defects during assessment would destroy the evidence trail and mix remediation with review.

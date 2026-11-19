@@ -1,5 +1,16 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [PROMPT-4 / R01] Single Firebase gateway; architecture guards
+
+- **R01-P2-02 (implemented, compile unverified):** `SkillsExchangeViewModel` now constructs one
+  `FirebaseService`, keeps it private, and injects it into the repository. `OnboardingScreen` reads
+  identity through `currentAuthenticatedUid()` instead of touching the gateway.
+- **R01-P2-04/P2-05:** removed the unused root `AndroidManifest.xml`; README test count corrected to
+  171. `scripts/check_architecture_guards.mjs` runs in CI.
+- **R01-P2-03:** decomposition roadmap (five slices) recorded in `DECISIONS.md`; no code split yet.
+- **Blocked:** no JDK/Android SDK, so `:app:compileDebugKotlin` and the JVM suite remain unexecuted.
+  No completion declaration was created.
+
 ### [2026-11-20] [WAVE-1F] No fabricated payouts; server-validated pricing
 
 - **REM-028 (IN_PROGRESS):** `disburseEscrowPayoutToWorker` no longer invents a payout id or returns

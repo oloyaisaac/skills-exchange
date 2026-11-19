@@ -22,7 +22,7 @@ be corrected rather than followed.
 | `review_results/`, `review_results/prompt2/` | Independent review reports and cycle matrices | 14 (snapshot; not current state) | Review lead | Append-only; never rewritten to change a verdict |
 | `docs/DOCUMENT_MAP.md` | This precedence map | 0 (meta) | Engineering lead | Updated whenever a document is added, removed or changes role |
 | `SECURITY.md` | Security policy and reporting | 13 | Security lead | Changed only with a security decision |
-| `ASSESSMENT_REPORT.md`, `PRODUCTION_READINESS.md`, `ANALYSIS_SUMMARY.md`, `AUDIT_PREP.md`, `AUDIT_THREE_PERSONAS.md`, `REVIEW_PLAN.md`, `REVIEWER_REGISTER.md`, `REVIEWER_EXECUTION_STATE.md`, `TXT_FILE_AUDIT.md` | Point-in-time audits and review operations | 14 (snapshot; not current state) | Review lead | Left as evidence of the date they were produced; current status is read from `prd.json` |
+| `ASSESSMENT_REPORT.md`, `PRODUCTION_READINESS.md`, `ANALYSIS_SUMMARY.md`, `AUDIT_PREP.md`, `AUDIT_THREE_PERSONAS.md`, `REVIEW_PLAN.md`, `REVIEWER_REGISTER.md`, `REVIEWER_EXECUTION_STATE.md`, `REVIEWER_IMPLEMENTATION_STATE.md`, `TXT_FILE_AUDIT.md` | Point-in-time audits and review operations | 14 (snapshot; not current state) | Review lead | Left as evidence of the date they were produced; current status is read from `prd.json` |
 
 ## Conflict examples
 

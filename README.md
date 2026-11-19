@@ -134,7 +134,7 @@ Cloud Functions tests (pure TypeScript modules; no emulator or network):
 
 ```bash
 cd functions
-npm test        # 111 tests on Node 22.22.3 at the 2026-11-19 assessment
+npm test        # 171 tests on Node 22.22.3 (2026-11-20; the count grows with each new suite)
 ```
 
 > The Android commands above could not be executed in the assessment environment (no JDK/Android SDK). Treat historical build logs in the repository as stale until re-run on the current commit.

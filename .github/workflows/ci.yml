@@ -43,6 +43,7 @@ jobs:
       - run: node scripts/check_document_map.mjs
       - run: node scripts/check_traceability.mjs
       - run: node scripts/check_readme_claims.mjs
+      - run: node scripts/check_architecture_guards.mjs
       - run: node scripts/check_query_limits.mjs
       - run: node scripts/secret_scan.mjs
 

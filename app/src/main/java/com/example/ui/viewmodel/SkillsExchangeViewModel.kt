@@ -69,13 +69,15 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     private val appContext: Application = application
     private val db = AppDatabase.getDatabase(application)
-    // FirebaseService is given the application context so the Firestore identity mirror
-    // (AUTH-002/AUTH-006) and FirebaseApp initialization are always available.
-    private val repository = SkillsExchangeRepository(db, FirebaseService(application))
+    // REM-023/R01: ONE Firebase gateway per ViewModel. It is constructed before the repository and
+    // injected into it, so authentication state has a single owner. A second instance used to be
+    // created for the UI; each kept its own auth listener, which is how "who is signed in" could
+    // disagree with itself. The gateway is no longer exposed to composables.
+    private val firebaseService = FirebaseService(application)
+    private val repository = SkillsExchangeRepository(db, firebaseService)
     private val sessionManager = com.example.data.local.SessionManager(application)
 
-    // Remote Services for Firebase, Maps AI Grounding, Audio AI, MoMo, and SMS
-    val firebaseService = FirebaseService(application)
+    // Remote services for Maps AI grounding, audio AI and SMS. Firebase is repository-owned.
     val geminiMapsService = GeminiMapsGroundingService()
     val geminiAudioService = GeminiAudioTranscriptionService()
     val audioRecorderHelper = AudioRecorderHelper(application)
