@@ -4314,7 +4314,8 @@
       "phase": 19,
       "title": "Restore Android compilation",
       "priority": "CRITICAL",
-      "status": "NOT_STARTED",
+      "status": "VERIFICATION_PENDING",
+      "status_note": "Source repaired on branch arena/87f323b5: duplicated addJobPost block removed, JobPostEntity constructor closed, FirebaseService upload rewritten, Gemini package restored, unreferenced ActiveJobScreen deleted. Structural scan balanced; NOT compiled (no JDK/Android SDK in the environment). The module also still has pre-existing non-compiling OTP response matching (see REM-011/REM-022), so compilation is not yet claimed as restored.",
       "depends_on": [],
       "description": "Restore Android compilation. Four production files contain syntax errors, so no build or test can run.",
       "goal": "Repair the four files, delete or rewrite ActiveJobScreen, and compile debug",
@@ -4353,7 +4354,8 @@
       "phase": 19,
       "title": "Restore the backend build",
       "priority": "CRITICAL",
-      "status": "NOT_STARTED",
+      "status": "VERIFICATION_PENDING",
+      "status_note": "npm ci + npm run build exit 0 from a clean lib/ (lib deleted first); npm test 111/111 pass. Added functions.https.Request annotation and npm overrides so firebase-functions uses the root @types/express. Evidence is a local log; the required CI log cannot exist until REM-005 creates CI.",
       "depends_on": [],
       "description": "Restore the backend build. `processMoMoWebhook` uses DOM Request/Response instead of Cloud Functions types, so tsc exits 2.",
       "goal": "Use `functions.https.Request/Response`, fail the build on error, and stop emitting on failure",
@@ -4657,7 +4659,8 @@
       "phase": 19,
       "title": "Close public Firestore reads",
       "priority": "CRITICAL",
-      "status": "NOT_STARTED",
+      "status": "VERIFICATION_PENDING",
+      "status_note": "firestore.rules: removed all three allow read: if true. jobs limited to owner (postedByUid), assigned provider (assignedProviderUid / legacy assignedProviderId) and admins; messages limited to author or job participants/admins; providers now require authentication. NOT emulator-tested (no Firebase CLI or JDK in the environment) and NOT deployed.",
       "depends_on": [],
       "description": "Close public Firestore reads. `jobs`, `messages` and `providers` use `allow read: if true`.",
       "goal": "Scope reads to participants/admin and gate sensitive fields",
@@ -4690,7 +4693,8 @@
       "phase": 19,
       "title": "Remove and rotate the committed SMS/OTP key",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
+      "status_note": "Key literal removed from AfricaTalkingService.kt; it is now read from a Gradle property/env var into BuildConfig and a blank value makes OTP fail closed. The old key remains in git history and MUST be revoked by the operator. Outstanding: send/verify callables, client wiring, and keeping the key out of the APK entirely.",
       "depends_on": [],
       "description": "Remove and rotate the committed SMS/OTP key. The Africa's Talking key ships in the APK and OTP runs from the device.",
       "goal": "Revoke the key, move OTP/SMS behind callables, load secrets from env/Secret Manager",
@@ -7040,7 +7044,7 @@
       "review_report": "review_results/R02_ANDROID_CLIENT.md",
       "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
     }],
-    "current_story": "REM-001",
+    "current_story": "REM-011",
   "review_cycle_status": "all_15_reviews_complete_0_pass_15_fail",
   "review_cycle_completed_at": "2026-11-19T18:00:00+03:00",
     "completed_stories": [
@@ -7157,5 +7161,5 @@
     "RVW-013",
     "RVW-015"],
     "blocked_stories": [],
-    "last_updated": "2026-11-19T19:30:00+03:00"
+    "last_updated": "2026-11-19T21:10:00+03:00"
 }

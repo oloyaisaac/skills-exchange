@@ -1,5 +1,28 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-19] [WAVE-0] Remediation started — build restored, public reads closed, key removed from source
+
+- **REM-002 (VERIFICATION_PENDING):** `functions.https.Request` annotation plus npm `overrides`
+  (`@types/express`/`@types/express-serve-static-core`) so `firebase-functions` no longer resolves
+  its stale nested Express types. From a deleted `lib/`: `npm ci` → `npm run build` exit 0,
+  `npm test` 111/111 pass. CI evidence still pending REM-005.
+- **REM-001 (VERIFICATION_PENDING):** repaired the four corrupted Kotlin regions (repository
+  duplicated block + unclosed constructor, `FirebaseService.uploadJobPostPhoto`, Gemini package
+  line) and deleted the unreferenced, non-compiling `ActiveJobScreen.kt`. All remaining Kotlin files
+  are structurally balanced; **not compiled** — no JDK/Android SDK here. Pre-existing non-compiling
+  OTP response matching remains (REM-011/REM-022).
+- **REM-010 (VERIFICATION_PENDING):** removed all three `allow read: if true` in
+  `firestore.rules`. Jobs: owner / assigned provider / admin only. Messages: author, job
+  participant or admin. Providers: any authenticated user. Not emulator-tested (no Firebase CLI or
+  JDK) and not deployed.
+- **REM-011 (IN_PROGRESS):** deleted the committed Africa's Talking key literal; the service now
+  reads `BuildConfig.AFRICASTALKING_API_KEY`, populated from `-PAFRICASTALKING_API_KEY` or an env
+  var, and fails closed when blank. The old key is still in git history and **must be revoked**.
+  Server-side callables, client wiring and removal of the key from the APK are still outstanding.
+- **Docs:** `prd.json` (`REM-001/002/010` → `VERIFICATION_PENDING`, `REM-011` → `IN_PROGRESS`,
+  `current_story` = `REM-011`), `TASKS.md`, `AGENT_STATE.md`. Product remains **not**
+  production-ready.
+
 ### [2026-11-19] [ASMT-CYCLE] All 15 specialist reviews executed — 0 PASS / 15 FAIL
 
 - **Reports:** `reviewers/reports/REVIEW_01.md` … `REVIEW_15.md` (all FAIL). Register: 15 submitted,
