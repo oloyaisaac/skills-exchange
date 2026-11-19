@@ -78,6 +78,7 @@ import { loadSmsConfig, createSmsSender } from "./sms";
 import type { SmsTransport } from "./sms";
 import { planSosDispatch, selectSosRecipients, buildSosMessage } from "./sosDispatch";
 import { hasAdminClaim } from "./admin";
+import { isFreshAuth, buildRevocationRecord } from "./session";
 import {
   buildTranscriptionPrompt,
   buildGeminiTranscriptionRequest,
@@ -2325,4 +2326,22 @@ export const getAdminAccess = functions.https.onCall(async (_data, context) => {
   }
   // Deliberately returns only the boolean: the client needs a gate, not a claims dump.
   return { admin: hasAdminClaim(context.auth.token) };
+});
+
+// =====================================================================================
+// REM-024: session revocation.
+// =====================================================================================
+
+export const revokeMyTokens = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to end the session");
+  }
+  const record = buildRevocationRecord(
+    context.auth.uid,
+    data?.reason === "ACCOUNT_DELETION" ? "ACCOUNT_DELETION" : "LOGOUT",
+    Date.now()
+  );
+  await admin.auth().revokeRefreshTokens(record.uid);
+  console.info("Refresh tokens revoked", { uid: record.uid, reason: record.reason });
+  return { revoked: true, at: record.revokedAt };
 });

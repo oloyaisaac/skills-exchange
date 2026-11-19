@@ -258,6 +258,27 @@ class FirebaseService(private val context: Context? = null) {
         }
     }
 
+    /** REM-024: true when the last sign-in is recent enough for a destructive action. */
+    fun hasFreshAuthentication(maxAgeMs: Long = 5 * 60_000L): Boolean {
+        val user = auth?.currentUser ?: return false
+        val lastSignIn = user.metadata?.lastSignInTimestamp ?: return false
+        return System.currentTimeMillis() - lastSignIn in 0..maxAgeMs
+    }
+
+    /** REM-024: revoke refresh tokens server-side so a copied session cannot outlive logout. */
+    suspend fun revokeMyTokens(reason: String = "LOGOUT"): Boolean {
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            functions.getHttpsCallable("revokeMyTokens")
+                .call(mapOf("reason" to reason))
+                .await()
+            true
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "revokeMyTokens failed: ${e.message}")
+            false
+        }
+    }
+
     suspend fun deleteCurrentUser(): Boolean {
         val authInstance = auth ?: return false
         return try {
