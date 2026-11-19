@@ -1,3 +1,39 @@
+## 2026-11-19 (Prompt 3) — MASTER FINDINGS CONSOLIDATED INTO 73-TASK REMEDIATION PLAN
+
+Consolidation complete. All 73 master findings (`MR-001`…`MR-073`) were validated against the 15
+executed reports and converted into **73 tasks** (`REM-001`…`REM-073`, 1:1 with the master IDs).
+**All tasks are `NOT_STARTED`; no application source, rules, build file or test was changed.**
+
+**Priorities:** 11 CRITICAL, 31 HIGH, 30 MEDIUM, 1 LOW. **Dependency waves:** 5 (13 / 22 / 19 / 9 / 10
+tasks). No dependency cycles. Nine tasks can be implemented now but only verified with external
+resources (MoMo sandbox, provider refund/payout endpoints, SMS credits, Firebase project/FCM, Admin
+credentials, Maps key); they are recorded as verification-blocked, not implementation-blocked.
+
+**Created:** `IMPLEMENTATION_ROADMAP.md` — every task with owner, root cause, affected files, required
+correction, dependencies, required tests, acceptance criteria and completion evidence, grouped by
+reviewer and ordered by dependency wave.
+
+**Updated additively:**
+- `prd.json` — phase 19 with 73 `REM-*` stories, each `NOT_STARTED`, with `source_finding`,
+  `depends_on`, acceptance criteria, verification and evidence fields. Existing 112 stories and phase
+  18 untouched.
+- `TASKS.md` — remediation track table (73 rows) appended; existing tasks and review track preserved.
+- `requirement_file.md` — §17 remediation requirements, 15 reviewer groups covering all 73 tasks.
+- `review_results/MASTER_REVIEW_FINDINGS.md` — unchanged by this phase (source of truth for findings).
+
+**Validation performed:** 73/73 findings mapped to exactly one task; every task priority matches its
+master severity; all dependency IDs exist; DFS found no cycles; JSON parses; existing PRD story IDs and
+historical statuses preserved.
+
+**Not done here:** no remediation, no fixes, no re-scoring of gates, no task marked complete. The
+product remains NOT production-ready.
+
+**Next:** begin at dependency wave 0 — `REM-001`, `REM-002`, `REM-006`, `REM-010`, `REM-011`,
+`REM-016`, `REM-039`, `REM-044`, `REM-049`, `REM-051`, `REM-069`, `REM-070`, `REM-072` — under a
+separately authorised implementation change.
+
+---
+
 ## 2026-11-19 (final) — ALL 15 REVIEWS EXECUTED: 0 PASS / 15 FAIL
 
 Programme complete. Every specialist review ran against baseline `6b39a10`; every one returned

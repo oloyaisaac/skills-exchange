@@ -401,3 +401,88 @@ Full finding text (A1â€“A8, B1â€“B9, G1â€“G7, D1â€“D11, N1â
 _This file is synchronized with `prd.json`. Always update both when story status changes._
 _Last synchronized: 2026-10-11T15:24:11+03:00 â€” Phase 17 documentation stories REG-001, LOC-005, MAP-002, MAP-003, LEGAL-001, LEGAL-002 and AUTH-012 completed. All seven are **documentation-only** stories whose stated goal is to record a future requirement *without implementation*; none of them required or received a source-code change, so no unit-test or build claim is made for them. Each was verified against its own `acceptance_criteria` by inspecting `requirement_file.md` (REG-001 Â§13.2, LOC-005 Â§13.6, MAP-002 Â§13.7, MAP-003 Â§13.8, LEGAL-001 Â§13.11, LEGAL-002 Â§13.12, AUTH-012 Â§13.13) and, for AUTH-012, against the live auth/onboarding code (`OnboardingScreen.kt` `OnboardingStep`, `SkillsExchangeViewModel.restoreSession()`, `setUserRoleMode()` + `canAccessWorkerFeatures()`). A prior session had flipped these same seven to `completed` with a `complete_stories.ps1` script while leaving TASKS.md/AGENT_STATE.md/CHANGELOG.md/DECISIONS.md unsynchronised and MAP-003 absent from `requirement_file.md`; `prd.json` was restored from HEAD and re-applied with verified notes. `complete_stories.ps1` was removed. No APK build and no device run._
 
+
+---
+
+## Remediation Track — Prompt 3 (2026-11-19)
+
+Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDINGS.md`. Full task detail, dependencies, tests and acceptance criteria: `IMPLEMENTATION_ROADMAP.md`. **All tasks are `NOT_STARTED`; no implementation has begun.**
+
+| Task | Priority | Reviewer | Task title | Depends on | Status |
+|---|---|---|---|---|---|
+| REM-001 | CRITICAL | R01 | Restore Android compilation | - | NOT_STARTED |
+| REM-002 | CRITICAL | R03 | Restore the backend build | - | NOT_STARTED |
+| REM-010 | CRITICAL | R07 | Close public Firestore reads | - | NOT_STARTED |
+| REM-022 | CRITICAL | R06 | Make OTP produce a Firebase identity | REM-011; REM-002 | NOT_STARTED |
+| REM-026 | CRITICAL | R08 | Wire escrow release end-to-end | REM-002; REM-022 | NOT_STARTED |
+| REM-027 | CRITICAL | R08 | Implement refunds | REM-002; REM-026 | NOT_STARTED |
+| REM-028 | CRITICAL | R08 | Delete the fabricated payout stub | REM-026 | NOT_STARTED |
+| REM-034 | CRITICAL | R10 | Implement real SOS dispatch | REM-002; REM-011 | NOT_STARTED |
+| REM-035 | CRITICAL | R10 | Add server push and escalation | REM-034; REM-023 | NOT_STARTED |
+| REM-041 | CRITICAL | R09 | Rewrite account erasure server-side | REM-022; REM-024 | NOT_STARTED |
+| REM-064 | CRITICAL | R11 | Make the Android test suite executable | REM-001 | NOT_STARTED |
+| REM-003 | HIGH | R01 | Split god classes and establish module boundaries | REM-001 | NOT_STARTED |
+| REM-005 | HIGH | R14 | Create a CI pipeline | REM-001; REM-002 | NOT_STARTED |
+| REM-006 | HIGH | R14 | Make the build portable | - | NOT_STARTED |
+| REM-007 | HIGH | R14 | Restore release signing and hardening | REM-001; REM-006 | NOT_STARTED |
+| REM-011 | HIGH | R07 | Remove and rotate the committed SMS/OTP key | - | NOT_STARTED |
+| REM-012 | HIGH | R07 | Remove duplicate SOS rules | REM-010 | NOT_STARTED |
+| REM-013 | HIGH | R07 | Make notifications and transactions server-only | REM-010 | NOT_STARTED |
+| REM-014 | HIGH | R07 | Bind Storage writes to stored job ownership | REM-010 | NOT_STARTED |
+| REM-015 | HIGH | R07 | Scope quote reads | REM-010 | NOT_STARTED |
+| REM-016 | HIGH | R07 | Fix app backup configuration | - | NOT_STARTED |
+| REM-017 | HIGH | R07 | Enforce App Check and rate limits | REM-011; REM-022 | NOT_STARTED |
+| REM-023 | HIGH | R06 | Provision admin claims and gate the admin UI | REM-022 | NOT_STARTED |
+| REM-024 | HIGH | R06 | Add re-authentication and token revocation | REM-022 | NOT_STARTED |
+| REM-029 | HIGH | R08 | Make fees and totals server-authoritative | REM-002 | NOT_STARTED |
+| REM-030 | HIGH | R08 | Enforce escrow state transitions server-side | REM-029 | NOT_STARTED |
+| REM-031 | HIGH | R08 | Create a server-side ledger and settlement record | REM-026 | NOT_STARTED |
+| REM-036 | HIGH | R10 | Harden the doorstep PIN | REM-022 | NOT_STARTED |
+| REM-037 | HIGH | R09 | Preserve complaints when deleting an account | REM-041 | NOT_STARTED |
+| REM-042 | HIGH | R09 | Correct the privacy notice | REM-041; REM-044 | NOT_STARTED |
+| REM-043 | HIGH | R09 | Implement retention and purge | REM-041 | NOT_STARTED |
+| REM-046 | HIGH | R04 | Export the Room schema and test migrations | REM-001 | NOT_STARTED |
+| REM-047 | HIGH | R04 | Move money to integer minor units | REM-046 | NOT_STARTED |
+| REM-051 | HIGH | R05 | Remove fabricated transcription fallback | - | NOT_STARTED |
+| REM-054 | HIGH | R02 | Add saveable state and back handling | REM-001 | NOT_STARTED |
+| REM-055 | HIGH | R12 | Label all interactive controls | REM-001 | NOT_STARTED |
+| REM-056 | HIGH | R12 | Fix typography and add localisation | REM-001 | NOT_STARTED |
+| REM-059 | HIGH | R13 | Add crash, ANR and performance telemetry | REM-001; REM-007 | NOT_STARTED |
+| REM-060 | HIGH | R13 | Implement offline replay | REM-001; REM-031 | NOT_STARTED |
+| REM-065 | HIGH | R11 | Add coverage and critical-path E2E | REM-064 | NOT_STARTED |
+| REM-067 | HIGH | R15 | Replace unverifiable build claims | REM-001; REM-002 | NOT_STARTED |
+| REM-068 | HIGH | R15 | Reconcile PRD status with evidence | REM-067 | NOT_STARTED |
+| REM-004 | MEDIUM | R01 | Remove dead code and duplicate configuration | REM-001 | NOT_STARTED |
+| REM-008 | MEDIUM | R14 | Remediate vulnerable and mismatched dependencies | REM-002 | NOT_STARTED |
+| REM-009 | MEDIUM | R03 | Add predeploy, staging and rollback | REM-002; REM-005 | NOT_STARTED |
+| REM-018 | MEDIUM | R07 | Persist abuse reports for moderators | REM-010; REM-023 | NOT_STARTED |
+| REM-019 | MEDIUM | R07 | Add Firestore and Storage rules tests | REM-010; REM-012; REM-013; REM-014; REM-015; REM-018 | NOT_STARTED |
+| REM-020 | MEDIUM | R07 | Harden the release APK | REM-001 | NOT_STARTED |
+| REM-021 | MEDIUM | R03 | Authenticate and throttle the MoMo webhook | REM-002; REM-011 | NOT_STARTED |
+| REM-025 | MEDIUM | R06 | Link phone and Google identities | REM-022 | NOT_STARTED |
+| REM-032 | MEDIUM | R08 | Add reconciliation and stuck-escrow alerting | REM-031 | NOT_STARTED |
+| REM-033 | MEDIUM | R05 | Remove or implement non-functional payment channels | REM-026 | NOT_STARTED |
+| REM-038 | MEDIUM | R10 | Add SOS throttling, dedup and admin audit | REM-034; REM-023 | NOT_STARTED |
+| REM-039 | MEDIUM | R10 | Strengthen guarantor and identity checks | - | NOT_STARTED |
+| REM-040 | MEDIUM | R10 | Make admin escalation reachable | REM-023; REM-035 | NOT_STARTED |
+| REM-044 | MEDIUM | R09 | Add consent records, processor disclosure and DSAR workflow | - | NOT_STARTED |
+| REM-045 | MEDIUM | R09 | Minimise and mask NIN data | REM-041 | NOT_STARTED |
+| REM-048 | MEDIUM | R04 | Remove destructive fallback and define dual-write conflict rules | REM-046 | NOT_STARTED |
+| REM-049 | MEDIUM | R04 | Bound and index list reads | - | NOT_STARTED |
+| REM-050 | MEDIUM | R04 | Fix chat dual-store ordering | REM-046 | NOT_STARTED |
+| REM-052 | MEDIUM | R05 | Scope integration coroutines | REM-001 | NOT_STARTED |
+| REM-053 | MEDIUM | R05 | Add provider contract tests and a real Maps key | REM-005 | NOT_STARTED |
+| REM-057 | MEDIUM | R12 | Standardise money and error presentation | REM-056 | NOT_STARTED |
+| REM-058 | MEDIUM | R12 | Add UI test hooks and screenshot tests | REM-001; REM-005 | NOT_STARTED |
+| REM-061 | MEDIUM | R13 | Replace polling with push where possible | REM-035 | NOT_STARTED |
+| REM-062 | MEDIUM | R13 | Reduce APK and asset size | REM-020 | NOT_STARTED |
+| REM-063 | MEDIUM | R13 | Add retries, circuit breaking and SLOs | REM-059 | NOT_STARTED |
+| REM-066 | MEDIUM | R11 | Make verification evidence reproducible | REM-005 | NOT_STARTED |
+| REM-069 | MEDIUM | R15 | Make documentation links portable | - | NOT_STARTED |
+| REM-070 | MEDIUM | R15 | Assign requirement IDs and build a trace matrix | - | NOT_STARTED |
+| REM-071 | MEDIUM | R15 | Correct README capability claims | REM-033; REM-023 | NOT_STARTED |
+| REM-072 | MEDIUM | R15 | Define document precedence | - | NOT_STARTED |
+| REM-073 | LOW | R02 | Remove unnecessary CALL_PHONE permission | REM-001 | NOT_STARTED |
+
+**Counts:** 73 tasks — 11 CRITICAL, 31 HIGH, 30 MEDIUM, 1 LOW. Source finding `MR-0NN` maps 1:1 to `REM-0NN`.
+

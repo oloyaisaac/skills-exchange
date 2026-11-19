@@ -100,7 +100,12 @@
             "name": "Independent Repository Review Program (2026-11-19)",
             "goal": "Run 15 specialist, evidence-based reviews of the Android client, Firebase backend, payment and identity subsystems, and documentation. Review-only scope: no application source changes. Produces ASSESSMENT_REPORT.md, REVIEWER_REGISTER.md, REVIEW_PLAN.md, PRODUCTION_READINESS.md and reviewers/*.md. A completed RVW story means the review was performed; `review_verdict` records whether the area passed (a FAIL verdict keeps the release gate closed)."
         }
-    ],
+    ,
+    {
+      "id": 19,
+      "name": "Remediation Programme (2026-11-19)",
+      "goal": "Implement the 73 tasks derived from the consolidated review findings. Every task maps 1:1 to a master finding (REM-0NN -> MR-0NN) and starts at NOT_STARTED. Planning only until a task's acceptance criteria and completion evidence are met; no task may be marked COMPLETED on assertion."
+    }],
     "stories": [
         {
             "id": "STAB-001",
@@ -4303,8 +4308,2739 @@
             "reviewer_file": "reviewers/DOCUMENTATION_REVIEWER.md",
             "notes": "Added 2026-11-19 by the independent assessment. Existing 97 stories retain their prior statuses; they were NOT re-verified by this task. ASSESSMENT_REPORT.md F-001 records that committed HEAD contains compile-blocking source defects, so prior 'completed' claims must be treated as unverified until RVW-001/RVW-011 re-check them."
         }
-    ],
-    "current_story": "RVW-015",
+    ,
+    {
+      "id": "REM-001",
+      "phase": 19,
+      "title": "Restore Android compilation",
+      "priority": "CRITICAL",
+      "status": "NOT_STARTED",
+      "depends_on": [],
+      "description": "Restore Android compilation. Four production files contain syntax errors, so no build or test can run.",
+      "goal": "Repair the four files, delete or rewrite ActiveJobScreen, and compile debug",
+      "scope": {
+        "include": [
+          "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt",
+          "app/src/main/java/com/example/data/remote/FirebaseService.kt",
+          "app/src/main/java/com/example/data/remote/GeminiAudioTranscriptionService.kt",
+          "app/src/main/java/com/example/ui/screens/ActiveJobScreen.kt"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt",
+        "app/src/main/java/com/example/data/remote/FirebaseService.kt",
+        "app/src/main/java/com/example/data/remote/GeminiAudioTranscriptionService.kt",
+        "app/src/main/java/com/example/ui/screens/ActiveJobScreen.kt"
+      ],
+      "acceptance_criteria": [
+        "Compile exits 0",
+        "355 unit tests execute",
+        "no syntax or unresolved-reference errors"
+      ],
+      "verification": "`:app:compileDebugKotlin`; full JVM unit suite; lint",
+      "evidence_required": "CI log with compile, test and lint output at the fixing commit",
+      "source_finding": "MR-001",
+      "reviewer": "R01",
+      "review_report": "review_results/R01_ARCHITECTURE.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-002",
+      "phase": 19,
+      "title": "Restore the backend build",
+      "priority": "CRITICAL",
+      "status": "NOT_STARTED",
+      "depends_on": [],
+      "description": "Restore the backend build. `processMoMoWebhook` uses DOM Request/Response instead of Cloud Functions types, so tsc exits 2.",
+      "goal": "Use `functions.https.Request/Response`, fail the build on error, and stop emitting on failure",
+      "scope": {
+        "include": [
+          "functions/src/index.ts"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Build exits 0",
+        "111 tests pass",
+        "`lib/` produced only from a clean build"
+      ],
+      "verification": "`npm ci && npm run build`; `npm test`",
+      "evidence_required": "CI log with build and test output",
+      "source_finding": "MR-002",
+      "reviewer": "R03",
+      "review_report": "review_results/R03_BACKEND.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-003",
+      "phase": 19,
+      "title": "Split god classes and establish module boundaries",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-001"
+      ],
+      "description": "Split god classes and establish module boundaries. Repository, ViewModel and escrow sheet accumulated unrelated responsibilities.",
+      "goal": "Extract feature modules, introduce DI and typed navigation, reduce class size",
+      "scope": {
+        "include": [
+          "SkillsExchangeRepository.kt",
+          "SkillsExchangeViewModel.kt",
+          "EscrowAndProofSheet.kt",
+          "settings.gradle.kts"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "SkillsExchangeRepository.kt",
+        "SkillsExchangeViewModel.kt",
+        "EscrowAndProofSheet.kt",
+        "settings.gradle.kts"
+      ],
+      "acceptance_criteria": [
+        "No production class over 800 lines",
+        "modules build independently",
+        "navigation typed"
+      ],
+      "verification": "Module compile; per-module unit tests; architecture/import checks",
+      "evidence_required": "Module graph and class-size report in CI",
+      "source_finding": "MR-003",
+      "reviewer": "R01",
+      "review_report": "review_results/R01_ARCHITECTURE.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-004",
+      "phase": 19,
+      "title": "Remove dead code and duplicate configuration",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-001"
+      ],
+      "description": "Remove dead code and duplicate configuration. Dead screen, duplicate root manifest and unused dependencies remained after refactors.",
+      "goal": "Delete dead screen, duplicate manifest and unused deps; keep one manifest",
+      "scope": {
+        "include": [
+          "ActiveJobScreen.kt",
+          "AndroidManifest.xml (root)",
+          "app/build.gradle.kts"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "ActiveJobScreen.kt",
+        "AndroidManifest.xml (root)",
+        "app/build.gradle.kts"
+      ],
+      "acceptance_criteria": [
+        "Scan reports zero dead files and unused deps",
+        "one manifest"
+      ],
+      "verification": "Dead-code/dependency scan; assemble debug",
+      "evidence_required": "Scan output and APK build",
+      "source_finding": "MR-004",
+      "reviewer": "R01",
+      "review_report": "review_results/R01_ARCHITECTURE.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-005",
+      "phase": 19,
+      "title": "Create a CI pipeline",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-001",
+        "REM-002"
+      ],
+      "description": "Create a CI pipeline. No automated build, test or security gate exists.",
+      "goal": "Add CI for Android build/tests, functions build/tests, rules tests and secret scan",
+      "scope": {
+        "include": [
+          ".github/workflows/ci.yml (new)",
+          "gradle files",
+          "functions/package.json"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        ".github/workflows/ci.yml (new)",
+        "gradle files",
+        "functions/package.json"
+      ],
+      "acceptance_criteria": [
+        "Required checks green on a clean clone",
+        "red build blocks merge"
+      ],
+      "verification": "Pipeline run on PR and main; deliberate failing commit blocked",
+      "evidence_required": "CI run URL and branch-protection settings",
+      "source_finding": "MR-005",
+      "reviewer": "R14",
+      "review_report": "review_results/R14_DEVOPS.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-006",
+      "phase": 19,
+      "title": "Make the build portable",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [],
+      "description": "Make the build portable. Absolute D:/ paths, Java 11/25 mismatch and non-executable wrapper tie the build to one machine.",
+      "goal": "Remove absolute paths, pin one JDK, restore wrapper execute bit, use toolchains",
+      "scope": {
+        "include": [
+          "gradle.properties",
+          "gradlew",
+          "app/build.gradle.kts",
+          "build.gradle.kts"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "gradle.properties",
+        "gradlew",
+        "app/build.gradle.kts",
+        "build.gradle.kts"
+      ],
+      "acceptance_criteria": [
+        "Build succeeds on Linux CI with no D:/ references"
+      ],
+      "verification": "Clean Linux clone build; wrapper version check",
+      "evidence_required": "CI log on a clean runner and grep for D:/",
+      "source_finding": "MR-006",
+      "reviewer": "R14",
+      "review_report": "review_results/R14_DEVOPS.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-007",
+      "phase": 19,
+      "title": "Restore release signing and hardening",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-001",
+        "REM-006"
+      ],
+      "description": "Restore release signing and hardening. R8 disabled, keystore absent, and large build artefacts are committed.",
+      "goal": "Enable R8/shrinking, externalise signing, remove APK/SQLite/log artefacts",
+      "scope": {
+        "include": [
+          "app/build.gradle.kts",
+          ".gitignore",
+          "repository root"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "app/build.gradle.kts",
+        ".gitignore",
+        "repository root"
+      ],
+      "acceptance_criteria": [
+        "Signed minified AAB/APK produced by CI",
+        "no build artefacts tracked"
+      ],
+      "verification": "Signed release build; APK inspection",
+      "evidence_required": "Signing config record (no secrets) and artefact hash",
+      "source_finding": "MR-007",
+      "reviewer": "R14",
+      "review_report": "review_results/R14_DEVOPS.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-008",
+      "phase": 19,
+      "title": "Remediate vulnerable and mismatched dependencies",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-002"
+      ],
+      "description": "Remediate vulnerable and mismatched dependencies. 16 production advisories and a Node 18 engine against modern test tooling.",
+      "goal": "Upgrade firebase-admin/functions, pin supported Node LTS, add audit gate",
+      "scope": {
+        "include": [
+          "functions/package.json",
+          "functions/package-lock.json",
+          "app/build.gradle.kts"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "functions/package.json",
+        "functions/package-lock.json",
+        "app/build.gradle.kts"
+      ],
+      "acceptance_criteria": [
+        "Zero critical/high advisories",
+        "supported runtime",
+        "tests pass"
+      ],
+      "verification": "`npm audit --omit=dev`; dependency review; full test suite",
+      "evidence_required": "Audit report and lockfile diff",
+      "source_finding": "MR-008",
+      "reviewer": "R14",
+      "review_report": "review_results/R14_DEVOPS.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-009",
+      "phase": 19,
+      "title": "Add predeploy, staging and rollback",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-002",
+        "REM-005"
+      ],
+      "description": "Add predeploy, staging and rollback. firebase.json has no predeploy and there is no staging target.",
+      "goal": "Add predeploy build/test, staging project and rollback runbook",
+      "scope": {
+        "include": [
+          "firebase.json",
+          ".firebaserc"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "firebase.json",
+        ".firebaserc"
+      ],
+      "acceptance_criteria": [
+        "Predeploy blocks a broken build",
+        "staging deploy succeeds",
+        "rollback documented"
+      ],
+      "verification": "Deploy dry run; staged deploy; rollback drill",
+      "evidence_required": "Deploy logs and runbook",
+      "source_finding": "MR-009",
+      "reviewer": "R03",
+      "review_report": "review_results/R03_BACKEND.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-010",
+      "phase": 19,
+      "title": "Close public Firestore reads",
+      "priority": "CRITICAL",
+      "status": "NOT_STARTED",
+      "depends_on": [],
+      "description": "Close public Firestore reads. `jobs`, `messages` and `providers` use `allow read: if true`.",
+      "goal": "Scope reads to participants/admin and gate sensitive fields",
+      "scope": {
+        "include": [
+          "firestore.rules"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "firestore.rules"
+      ],
+      "acceptance_criteria": [
+        "Anonymous read denied",
+        "participant read allowed",
+        "field policy enforced"
+      ],
+      "verification": "Rules emulator tests for owner, provider, admin and anonymous",
+      "evidence_required": "Rules test output",
+      "source_finding": "MR-010",
+      "reviewer": "R07",
+      "review_report": "review_results/R07_SECURITY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-011",
+      "phase": 19,
+      "title": "Remove and rotate the committed SMS/OTP key",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [],
+      "description": "Remove and rotate the committed SMS/OTP key. The Africa's Talking key ships in the APK and OTP runs from the device.",
+      "goal": "Revoke the key, move OTP/SMS behind callables, load secrets from env/Secret Manager",
+      "scope": {
+        "include": [
+          "AfricaTalkingService.kt",
+          "SkillsExchangeViewModel.kt",
+          "functions/src/index.ts"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "AfricaTalkingService.kt",
+        "SkillsExchangeViewModel.kt",
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "No secret in repo or APK",
+        "OTP works via callable",
+        "old key revoked"
+      ],
+      "verification": "Secret scan; callable OTP flow test; old-key rejection check",
+      "evidence_required": "Secret-scan log and provider revocation confirmation",
+      "source_finding": "MR-011",
+      "reviewer": "R07",
+      "review_report": "review_results/R07_SECURITY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-012",
+      "phase": 19,
+      "title": "Remove duplicate SOS rules",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-010"
+      ],
+      "description": "Remove duplicate SOS rules. Two match blocks for the same path make the weaker rule win.",
+      "goal": "Delete the legacy block and keep one stricter rule with job-existence check",
+      "scope": {
+        "include": [
+          "firestore.rules"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "firestore.rules"
+      ],
+      "acceptance_criteria": [
+        "Single block",
+        "SOS for missing job denied",
+        "provider-only field rejected"
+      ],
+      "verification": "Rules tests: missing job denied; legacy field not accepted",
+      "evidence_required": "Rules test output",
+      "source_finding": "MR-012",
+      "reviewer": "R07",
+      "review_report": "review_results/R07_SECURITY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-013",
+      "phase": 19,
+      "title": "Make notifications and transactions server-only",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-010"
+      ],
+      "description": "Make notifications and transactions server-only. Any authenticated user can create notifications and momo_transactions.",
+      "goal": "Bind creates to server paths or deny client writes",
+      "scope": {
+        "include": [
+          "firestore.rules",
+          "functions/src/index.ts"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "firestore.rules",
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Client create denied for both collections",
+        "server writes still succeed"
+      ],
+      "verification": "Rules tests for forged payloads",
+      "evidence_required": "Rules test output",
+      "source_finding": "MR-013",
+      "reviewer": "R07",
+      "review_report": "review_results/R07_SECURITY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-014",
+      "phase": 19,
+      "title": "Bind Storage writes to stored job ownership",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-010"
+      ],
+      "description": "Bind Storage writes to stored job ownership. Job-photo writes authorize self-asserted custom metadata.",
+      "goal": "Validate against Firestore job ownership and make uploads immutable/versioned",
+      "scope": {
+        "include": [
+          "storage.rules",
+          "FirebaseService.kt"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "storage.rules",
+        "FirebaseService.kt"
+      ],
+      "acceptance_criteria": [
+        "Only job participants can write",
+        "overwrite of existing evidence denied"
+      ],
+      "verification": "Storage emulator tests: cross-job write and overwrite denied",
+      "evidence_required": "Rules test output",
+      "source_finding": "MR-014",
+      "reviewer": "R07",
+      "review_report": "review_results/R07_SECURITY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-015",
+      "phase": 19,
+      "title": "Scope quote reads",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-010"
+      ],
+      "description": "Scope quote reads. Every authenticated user can read all job quotes.",
+      "goal": "Restrict reads to job owner and the quoting worker",
+      "scope": {
+        "include": [
+          "firestore.rules"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "firestore.rules"
+      ],
+      "acceptance_criteria": [
+        "Unrelated authenticated read denied",
+        "owner and author allowed"
+      ],
+      "verification": "Rules tests for unrelated user and admin",
+      "evidence_required": "Rules test output",
+      "source_finding": "MR-015",
+      "reviewer": "R07",
+      "review_report": "review_results/R07_SECURITY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-016",
+      "phase": 19,
+      "title": "Fix app backup configuration",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [],
+      "description": "Fix app backup configuration. Backups are enabled with empty include/exclude rules.",
+      "goal": "Disable backup or exclude auth tokens, DataStore, DB and KYC caches",
+      "scope": {
+        "include": [
+          "AndroidManifest.xml",
+          "res/xml/backup_rules.xml",
+          "res/xml/data_extraction_rules.xml"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "AndroidManifest.xml",
+        "res/xml/backup_rules.xml",
+        "res/xml/data_extraction_rules.xml"
+      ],
+      "acceptance_criteria": [
+        "Sensitive stores excluded",
+        "restore leaves no credentials"
+      ],
+      "verification": "Backup/restore test; manifest inspection",
+      "evidence_required": "Backup XML diff and restore log",
+      "source_finding": "MR-016",
+      "reviewer": "R07",
+      "review_report": "review_results/R07_SECURITY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-017",
+      "phase": 19,
+      "title": "Enforce App Check and rate limits",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-011",
+        "REM-022"
+      ],
+      "description": "Enforce App Check and rate limits. App Check is declared but never initialised or enforced; callables are unthrottled.",
+      "goal": "Initialise App Check, set `enforceAppCheck`, add per-uid limits",
+      "scope": {
+        "include": [
+          "app/build.gradle.kts",
+          "FirebaseService.kt",
+          "functions/src/index.ts"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "app/build.gradle.kts",
+        "FirebaseService.kt",
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Unattested calls denied",
+        "limits trigger on abuse"
+      ],
+      "verification": "Unverified-client request rejected; throttle test",
+      "evidence_required": "Function logs and test output",
+      "source_finding": "MR-017",
+      "reviewer": "R07",
+      "review_report": "review_results/R07_SECURITY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-018",
+      "phase": 19,
+      "title": "Persist abuse reports for moderators",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-010",
+        "REM-023"
+      ],
+      "description": "Persist abuse reports for moderators. Reports are written only to Room and no rules exist for a reports collection.",
+      "goal": "Add a reports collection with participant-bound create and admin-only read; build moderator queue",
+      "scope": {
+        "include": [
+          "SkillsExchangeRepository.kt",
+          "firestore.rules",
+          "functions/src/index.ts"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "SkillsExchangeRepository.kt",
+        "firestore.rules",
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Report visible to admin",
+        "reporter can create",
+        "others cannot read"
+      ],
+      "verification": "Report-to-queue E2E; rules tests",
+      "evidence_required": "E2E log and rules test output",
+      "source_finding": "MR-018",
+      "reviewer": "R07",
+      "review_report": "review_results/R07_SECURITY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-019",
+      "phase": 19,
+      "title": "Add Firestore and Storage rules tests",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-010",
+        "REM-012",
+        "REM-013",
+        "REM-014",
+        "REM-015",
+        "REM-018"
+      ],
+      "description": "Add Firestore and Storage rules tests. Zero rules tests exist, so regressions ship silently.",
+      "goal": "Add emulator-based rules suites covering every collection and actor",
+      "scope": {
+        "include": [
+          "app/src/test or firebase emulator test project",
+          "package.json"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "app/src/test or firebase emulator test project",
+        "package.json"
+      ],
+      "acceptance_criteria": [
+        "Suite covers all collections",
+        "deliberate regression fails"
+      ],
+      "verification": "Emulator suite in CI",
+      "evidence_required": "CI log",
+      "source_finding": "MR-019",
+      "reviewer": "R07",
+      "review_report": "review_results/R07_SECURITY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-020",
+      "phase": 19,
+      "title": "Harden the release APK",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-001"
+      ],
+      "description": "Harden the release APK. R8 is disabled and there is no network security policy.",
+      "goal": "Enable R8, add network security config, consider pinning",
+      "scope": {
+        "include": [
+          "app/build.gradle.kts",
+          "res/xml/network_security_config.xml (new)",
+          "AndroidManifest.xml"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "app/build.gradle.kts",
+        "res/xml/network_security_config.xml (new)",
+        "AndroidManifest.xml"
+      ],
+      "acceptance_criteria": [
+        "R8 enabled",
+        "cleartext denied",
+        "policy documented"
+      ],
+      "verification": "Release build inspection; TLS policy test",
+      "evidence_required": "Release build report",
+      "source_finding": "MR-020",
+      "reviewer": "R07",
+      "review_report": "review_results/R07_SECURITY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-021",
+      "phase": 19,
+      "title": "Authenticate and throttle the MoMo webhook",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-002",
+        "REM-011"
+      ],
+      "description": "Authenticate and throttle the MoMo webhook. The public webhook has no signature, timestamp or rate limit.",
+      "goal": "Verify provider signature/allow-list, enforce timestamp window and throttle",
+      "scope": {
+        "include": [
+          "functions/src/index.ts"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Unsigned and stale callbacks rejected",
+        "valid callback still confirms"
+      ],
+      "verification": "Forged callback rejected; replay rejected; valid callback accepted",
+      "evidence_required": "Test output and provider signature docs",
+      "source_finding": "MR-021",
+      "reviewer": "R03",
+      "review_report": "review_results/R03_BACKEND.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-022",
+      "phase": 19,
+      "title": "Make OTP produce a Firebase identity",
+      "priority": "CRITICAL",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-011",
+        "REM-002"
+      ],
+      "description": "Make OTP produce a Firebase identity. `verifyOtp` mints a local session and `loginUser` needs a UID that was never created.",
+      "goal": "Verify OTP in a callable that mints a custom token, or use Firebase phone auth; never set auth locally",
+      "scope": {
+        "include": [
+          "SkillsExchangeViewModel.kt",
+          "FirebaseService.kt",
+          "functions/src/index.ts",
+          "OnboardingScreen.kt"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "SkillsExchangeViewModel.kt",
+        "FirebaseService.kt",
+        "functions/src/index.ts",
+        "OnboardingScreen.kt"
+      ],
+      "acceptance_criteria": [
+        "User can register, sign in and restore a session with a real UID"
+      ],
+      "verification": "Clean-install signup test asserting `auth.currentUser`",
+      "evidence_required": "Instrumented signup log and Firebase user record",
+      "source_finding": "MR-022",
+      "reviewer": "R06",
+      "review_report": "review_results/R06_AUTH.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-023",
+      "phase": 19,
+      "title": "Provision admin claims and gate the admin UI",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-022"
+      ],
+      "description": "Provision admin claims and gate the admin UI. No `setCustomUserClaims` path exists and the UI unlock is a local boolean.",
+      "goal": "Add an audited claim-provisioning script and server-backed UI gating",
+      "scope": {
+        "include": [
+          "functions/src/index.ts",
+          "MainScreen.kt",
+          "scripts/admin-claim.js (new)",
+          "firestore.rules"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "functions/src/index.ts",
+        "MainScreen.kt",
+        "scripts/admin-claim.js (new)",
+        "firestore.rules"
+      ],
+      "acceptance_criteria": [
+        "Admin can load queues",
+        "non-admin denied",
+        "unlock requires server check"
+      ],
+      "verification": "Admin/non-admin callable tests; UI gate test",
+      "evidence_required": "Provisioning log and test output",
+      "source_finding": "MR-023",
+      "reviewer": "R06",
+      "review_report": "review_results/R06_AUTH.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-024",
+      "phase": 19,
+      "title": "Add re-authentication and token revocation",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-022"
+      ],
+      "description": "Add re-authentication and token revocation. Deletion and sensitive changes run on stale sessions; logout does not revoke tokens.",
+      "goal": "Require fresh auth for destructive actions; revoke refresh tokens on logout/deletion",
+      "scope": {
+        "include": [
+          "SkillsExchangeViewModel.kt",
+          "FirebaseService.kt",
+          "SessionManager.kt"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "SkillsExchangeViewModel.kt",
+        "FirebaseService.kt",
+        "SessionManager.kt"
+      ],
+      "acceptance_criteria": [
+        "Stale session cannot delete",
+        "revoked token rejected"
+      ],
+      "verification": "Re-auth flow test; revocation test",
+      "evidence_required": "Test transcript and token check",
+      "source_finding": "MR-024",
+      "reviewer": "R06",
+      "review_report": "review_results/R06_AUTH.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-025",
+      "phase": 19,
+      "title": "Link phone and Google identities",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-022"
+      ],
+      "description": "Link phone and Google identities. The two sign-in paths create separate UIDs.",
+      "goal": "Link credentials to one account with a tested merge policy",
+      "scope": {
+        "include": [
+          "FirebaseService.kt",
+          "SkillsExchangeViewModel.kt"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "FirebaseService.kt",
+        "SkillsExchangeViewModel.kt"
+      ],
+      "acceptance_criteria": [
+        "One UID per person",
+        "histories merged or explicitly separated"
+      ],
+      "verification": "Link flow test; duplicate-identity check",
+      "evidence_required": "E2E link log",
+      "source_finding": "MR-025",
+      "reviewer": "R06",
+      "review_report": "review_results/R06_AUTH.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-026",
+      "phase": 19,
+      "title": "Wire escrow release end-to-end",
+      "priority": "CRITICAL",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-002",
+        "REM-022"
+      ],
+      "description": "Wire escrow release end-to-end. `releaseEscrowToWorker` exists but has no client caller.",
+      "goal": "Call the callable on completion and render server outcome",
+      "scope": {
+        "include": [
+          "SkillsExchangeRepository.kt",
+          "SkillsExchangeViewModel.kt",
+          "EscrowAndProofSheet.kt"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "SkillsExchangeRepository.kt",
+        "SkillsExchangeViewModel.kt",
+        "EscrowAndProofSheet.kt"
+      ],
+      "acceptance_criteria": [
+        "Funds release after verified completion",
+        "failure surfaced honestly"
+      ],
+      "verification": "Sandbox E2E complete \u2192 release \u2192 payout status; negative auth tests",
+      "evidence_required": "Sandbox transaction references and logs",
+      "source_finding": "MR-026",
+      "reviewer": "R08",
+      "review_report": "review_results/R08_PAYMENTS.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-027",
+      "phase": 19,
+      "title": "Implement refunds",
+      "priority": "CRITICAL",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-002",
+        "REM-026"
+      ],
+      "description": "Implement refunds. No refund function or callable exists.",
+      "goal": "Implement idempotent refund callable and wire cancellation/dispute outcomes",
+      "scope": {
+        "include": [
+          "functions/src/index.ts",
+          "SkillsExchangeRepository.kt",
+          "firestore.rules"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "functions/src/index.ts",
+        "SkillsExchangeRepository.kt",
+        "firestore.rules"
+      ],
+      "acceptance_criteria": [
+        "Cancelled/disputed job returns funds",
+        "duplicate refund blocked"
+      ],
+      "verification": "Sandbox refund E2E; idempotency and authorization tests",
+      "evidence_required": "Provider refund reference and ledger entry",
+      "source_finding": "MR-027",
+      "reviewer": "R08",
+      "review_report": "review_results/R08_PAYMENTS.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-028",
+      "phase": 19,
+      "title": "Delete the fabricated payout stub",
+      "priority": "CRITICAL",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-026"
+      ],
+      "description": "Delete the fabricated payout stub. `disburseEscrowPayoutToWorker` returns DISBURSED without a provider call.",
+      "goal": "Remove the stub and use the payout callable plus status polling",
+      "scope": {
+        "include": [
+          "MoMoPaymentService.kt",
+          "SkillsExchangeViewModel.kt"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "MoMoPaymentService.kt",
+        "SkillsExchangeViewModel.kt"
+      ],
+      "acceptance_criteria": [
+        "No synthetic success",
+        "UI reflects real provider status"
+      ],
+      "verification": "Payout flow test asserting provider reference",
+      "evidence_required": "Provider response captured in test",
+      "source_finding": "MR-028",
+      "reviewer": "R08",
+      "review_report": "review_results/R08_PAYMENTS.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-029",
+      "phase": 19,
+      "title": "Make fees and totals server-authoritative",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-002"
+      ],
+      "description": "Make fees and totals server-authoritative. The 10% fee and grand total are computed on the client.",
+      "goal": "Compute fee/total server-side from stored quote and catalogue; reject mismatches",
+      "scope": {
+        "include": [
+          "SkillsExchangeRepository.kt",
+          "functions/src/index.ts"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "SkillsExchangeRepository.kt",
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Server rejects altered totals",
+        "fee identical across clients"
+      ],
+      "verification": "Tampered-client test; fee computation tests",
+      "evidence_required": "Test output and stored quote diff",
+      "source_finding": "MR-029",
+      "reviewer": "R08",
+      "review_report": "review_results/R08_PAYMENTS.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-030",
+      "phase": 19,
+      "title": "Enforce escrow state transitions server-side",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-029"
+      ],
+      "description": "Enforce escrow state transitions server-side. Escrow status strings are written by the client and not pinned per actor.",
+      "goal": "Move transitions into callables and enforce an allowed transition map",
+      "scope": {
+        "include": [
+          "firestore.rules",
+          "functions/src/index.ts",
+          "SkillsExchangeRepository.kt"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "firestore.rules",
+        "functions/src/index.ts",
+        "SkillsExchangeRepository.kt"
+      ],
+      "acceptance_criteria": [
+        "Only valid transitions succeed",
+        "client direct writes denied"
+      ],
+      "verification": "State-machine tests; direct-write denial tests",
+      "evidence_required": "Rules and callable test output",
+      "source_finding": "MR-030",
+      "reviewer": "R08",
+      "review_report": "review_results/R08_PAYMENTS.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-031",
+      "phase": 19,
+      "title": "Create a server-side ledger and settlement record",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-026"
+      ],
+      "description": "Create a server-side ledger and settlement record. Cashout balance lives only in Room with no server settlement.",
+      "goal": "Persist server ledger entries and settlement references; reconcile device cache",
+      "scope": {
+        "include": [
+          "functions/src/index.ts",
+          "Entities.kt",
+          "SkillsExchangeRepository.kt"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "functions/src/index.ts",
+        "Entities.kt",
+        "SkillsExchangeRepository.kt"
+      ],
+      "acceptance_criteria": [
+        "Server balance matches device",
+        "reinstall preserves payable balance"
+      ],
+      "verification": "Reinstall test; balance parity test",
+      "evidence_required": "Ledger report and parity test",
+      "source_finding": "MR-031",
+      "reviewer": "R08",
+      "review_report": "review_results/R08_PAYMENTS.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-032",
+      "phase": 19,
+      "title": "Add reconciliation and stuck-escrow alerting",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-031"
+      ],
+      "description": "Add reconciliation and stuck-escrow alerting. No reconciliation job, report or alert exists.",
+      "goal": "Add daily provider reconciliation and alerts on stuck escrow",
+      "scope": {
+        "include": [
+          "functions/src/index.ts",
+          "ops runbook"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "functions/src/index.ts",
+        "ops runbook"
+      ],
+      "acceptance_criteria": [
+        "Daily totals match provider",
+        "mismatch and stuck escrow alert"
+      ],
+      "verification": "Reconciliation job test with fixture statement; alert firing test",
+      "evidence_required": "Reconciliation report and alert log",
+      "source_finding": "MR-032",
+      "reviewer": "R08",
+      "review_report": "review_results/R08_PAYMENTS.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-033",
+      "phase": 19,
+      "title": "Remove or implement non-functional payment channels",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-026"
+      ],
+      "description": "Remove or implement non-functional payment channels. Airtel and card are offered but have no integration.",
+      "goal": "Either integrate providers or remove them from UI, copy and docs",
+      "scope": {
+        "include": [
+          "EscrowAndProofSheet.kt",
+          "README.md",
+          "requirements"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "EscrowAndProofSheet.kt",
+        "README.md",
+        "requirements"
+      ],
+      "acceptance_criteria": [
+        "No unsupported channel selectable",
+        "docs list only working providers"
+      ],
+      "verification": "Channel selection E2E per supported provider; UI copy check",
+      "evidence_required": "Screenshot and provider config",
+      "source_finding": "MR-033",
+      "reviewer": "R05",
+      "review_report": "review_results/R05_INTEGRATIONS.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-034",
+      "phase": 19,
+      "title": "Implement real SOS dispatch",
+      "priority": "CRITICAL",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-002",
+        "REM-011"
+      ],
+      "description": "Implement real SOS dispatch. `dispatchEmergencySosAlert` logs and returns SENT without sending.",
+      "goal": "Send via a server-side provider with delivery result; never fabricate success",
+      "scope": {
+        "include": [
+          "SmsNotificationService.kt",
+          "SkillsExchangeRepository.kt",
+          "functions/src/index.ts"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "SmsNotificationService.kt",
+        "SkillsExchangeRepository.kt",
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Alert received with provider ID",
+        "failure is reported to the user"
+      ],
+      "verification": "Real delivery to test handset; failure-path test",
+      "evidence_required": "Delivery receipt and callable log",
+      "source_finding": "MR-034",
+      "reviewer": "R10",
+      "review_report": "review_results/R10_SAFETY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-035",
+      "phase": 19,
+      "title": "Add server push and escalation",
+      "priority": "CRITICAL",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-034",
+        "REM-023"
+      ],
+      "description": "Add server push and escalation. No `admin.messaging` send exists and SOS is silent when no profile resolves.",
+      "goal": "Add FCM to on-call plus fallback SMS and explicit per-channel results",
+      "scope": {
+        "include": [
+          "functions/src/index.ts",
+          "NotificationRouting.kt"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "functions/src/index.ts",
+        "NotificationRouting.kt"
+      ],
+      "acceptance_criteria": [
+        "Push and fallback sent",
+        "unauthenticated raise still escalates or fails loudly"
+      ],
+      "verification": "On-call device receives SOS; profile-missing path test",
+      "evidence_required": "FCM delivery log and test transcript",
+      "source_finding": "MR-035",
+      "reviewer": "R10",
+      "review_report": "review_results/R10_SAFETY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-036",
+      "phase": 19,
+      "title": "Harden the doorstep PIN",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-022"
+      ],
+      "description": "Harden the doorstep PIN. PIN defaults to 4829, is shown to the worker and has no attempt limit.",
+      "goal": "Generate per job server-side, show only to resident, verify server-side with throttling",
+      "scope": {
+        "include": [
+          "Entities.kt",
+          "EscrowAndProofSheet.kt",
+          "SkillsExchangeRepository.kt",
+          "functions/src/index.ts"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "Entities.kt",
+        "EscrowAndProofSheet.kt",
+        "SkillsExchangeRepository.kt",
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Worker cannot read PIN",
+        "wrong attempts locked",
+        "server verifies"
+      ],
+      "verification": "PIN lifecycle tests; attempt-limit test; UI disclosure test",
+      "evidence_required": "Test output and screenshot",
+      "source_finding": "MR-036",
+      "reviewer": "R10",
+      "review_report": "review_results/R10_SAFETY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-037",
+      "phase": 19,
+      "title": "Preserve complaints when deleting an account",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-041"
+      ],
+      "description": "Preserve complaints when deleting an account. Deletion removes disputes where the user is the reported party.",
+      "goal": "Retain disputes and anonymise only where policy allows",
+      "scope": {
+        "include": [
+          "FirebaseService.kt",
+          "SkillsExchangeViewModel.kt",
+          "firestore.rules"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "FirebaseService.kt",
+        "SkillsExchangeViewModel.kt",
+        "firestore.rules"
+      ],
+      "acceptance_criteria": [
+        "Complaints remain after deletion",
+        "no personal data exposed"
+      ],
+      "verification": "Deletion test asserts complaint survives; rules test",
+      "evidence_required": "Deletion audit log",
+      "source_finding": "MR-037",
+      "reviewer": "R09",
+      "review_report": "review_results/R09_PRIVACY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-038",
+      "phase": 19,
+      "title": "Add SOS throttling, dedup and admin audit",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-034",
+        "REM-023"
+      ],
+      "description": "Add SOS throttling, dedup and admin audit. No rate limit, duplicate suppression or admin action log.",
+      "goal": "Throttle raises, suppress duplicates, append immutable admin audit entries",
+      "scope": {
+        "include": [
+          "firestore.rules",
+          "functions/src/index.ts",
+          "admin UI"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "firestore.rules",
+        "functions/src/index.ts",
+        "admin UI"
+      ],
+      "acceptance_criteria": [
+        "Duplicate SOS suppressed",
+        "admin actions recorded immutably"
+      ],
+      "verification": "Abuse/dedup tests; audit-log inspection",
+      "evidence_required": "Rules test and audit sample",
+      "source_finding": "MR-038",
+      "reviewer": "R10",
+      "review_report": "review_results/R10_SAFETY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-039",
+      "phase": 19,
+      "title": "Strengthen guarantor and identity checks",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [],
+      "description": "Strengthen guarantor and identity checks. No cross-worker reuse detection; NIN validation is format-only.",
+      "goal": "Detect reused guarantors, add stronger identity verification and liveness where feasible",
+      "scope": {
+        "include": [
+          "GuarantorValidators.kt",
+          "functions/src/index.ts",
+          "Entities.kt"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "GuarantorValidators.kt",
+        "functions/src/index.ts",
+        "Entities.kt"
+      ],
+      "acceptance_criteria": [
+        "Reuse flagged",
+        "invalid NIN rejected",
+        "review queue shows risk flags"
+      ],
+      "verification": "Collusion fixture test; NIN validation tests",
+      "evidence_required": "Test fixtures and queue output",
+      "source_finding": "MR-039",
+      "reviewer": "R10",
+      "review_report": "review_results/R10_SAFETY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-040",
+      "phase": 19,
+      "title": "Make admin escalation reachable",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-023",
+        "REM-035"
+      ],
+      "description": "Make admin escalation reachable. Escalation depends on a claim that cannot be provisioned.",
+      "goal": "Depends on claim provisioning and on-call routing",
+      "scope": {
+        "include": [
+          "MainScreen.kt",
+          "functions/src/index.ts"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "MainScreen.kt",
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Named on-call receives and acknowledges SOS"
+      ],
+      "verification": "Admin login receives SOS end-to-end",
+      "evidence_required": "E2E escalation log",
+      "source_finding": "MR-040",
+      "reviewer": "R10",
+      "review_report": "review_results/R10_SAFETY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-041",
+      "phase": 19,
+      "title": "Rewrite account erasure server-side",
+      "priority": "CRITICAL",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-022",
+        "REM-024"
+      ],
+      "description": "Rewrite account erasure server-side. Deletion enumerates every cached job, aborts on rules denial and never deletes Storage.",
+      "goal": "Implement one re-authenticated server job over owned data, including Storage, with atomic reporting",
+      "scope": {
+        "include": [
+          "SkillsExchangeViewModel.kt",
+          "FirebaseService.kt",
+          "functions/src/index.ts",
+          "storage.rules"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "SkillsExchangeViewModel.kt",
+        "FirebaseService.kt",
+        "functions/src/index.ts",
+        "storage.rules"
+      ],
+      "acceptance_criteria": [
+        "All owned stores cleared",
+        "other users unaffected",
+        "failures reported"
+      ],
+      "verification": "Per-store deletion tests; partial-failure retry test; other-user job test",
+      "evidence_required": "Deletion audit report and test output",
+      "source_finding": "MR-041",
+      "reviewer": "R09",
+      "review_report": "review_results/R09_PRIVACY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-042",
+      "phase": 19,
+      "title": "Correct the privacy notice",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-041",
+        "REM-044"
+      ],
+      "description": "Correct the privacy notice. Notice claims encryption, coarse-only location, full export and 24/7 arbitration that are not implemented.",
+      "goal": "Rewrite to match implemented behaviour and disclose processors/transfers",
+      "scope": {
+        "include": [
+          "AccountComplianceDialog.kt",
+          "README.md",
+          "privacy policy doc"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "AccountComplianceDialog.kt",
+        "README.md",
+        "privacy policy doc"
+      ],
+      "acceptance_criteria": [
+        "Every claim maps to implemented behaviour or is removed"
+      ],
+      "verification": "Copy-to-code review; legal sign-off checklist",
+      "evidence_required": "Signed copy matrix",
+      "source_finding": "MR-042",
+      "reviewer": "R09",
+      "review_report": "review_results/R09_PRIVACY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-043",
+      "phase": 19,
+      "title": "Implement retention and purge",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-041"
+      ],
+      "description": "Implement retention and purge. No retention schedule or purge job exists.",
+      "goal": "Define retention periods and an automated purge job with audit",
+      "scope": {
+        "include": [
+          "functions/src/index.ts",
+          "policy doc",
+          "Firestore rules"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "functions/src/index.ts",
+        "policy doc",
+        "Firestore rules"
+      ],
+      "acceptance_criteria": [
+        "Expired data purged",
+        "holds respected",
+        "audit recorded"
+      ],
+      "verification": "Age-based purge test; legal-hold exclusion test",
+      "evidence_required": "Purge job log",
+      "source_finding": "MR-043",
+      "reviewer": "R09",
+      "review_report": "review_results/R09_PRIVACY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-044",
+      "phase": 19,
+      "title": "Add consent records, processor disclosure and DSAR workflow",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [],
+      "description": "Add consent records, processor disclosure and DSAR workflow. Consent is one boolean and there is no processor list or access-request process.",
+      "goal": "Record consent version/time, publish processors, define DSAR SLA and export",
+      "scope": {
+        "include": [
+          "Entities.kt",
+          "AccountComplianceDialog.kt",
+          "docs/privacy"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "Entities.kt",
+        "AccountComplianceDialog.kt",
+        "docs/privacy"
+      ],
+      "acceptance_criteria": [
+        "Consent demonstrable",
+        "DSAR fulfilled within SLA",
+        "processors listed"
+      ],
+      "verification": "Consent audit test; DSAR dry run",
+      "evidence_required": "Consent records and DSAR log",
+      "source_finding": "MR-044",
+      "reviewer": "R09",
+      "review_report": "review_results/R09_PRIVACY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-045",
+      "phase": 19,
+      "title": "Minimise and mask NIN data",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-041"
+      ],
+      "description": "Minimise and mask NIN data. Full NIN is stored and the masking helper is not applied to storage.",
+      "goal": "Collect only what is needed, mask at rest/in UI, restrict field access",
+      "scope": {
+        "include": [
+          "Entities.kt",
+          "admin UI",
+          "FirebaseService.kt"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "Entities.kt",
+        "admin UI",
+        "FirebaseService.kt"
+      ],
+      "acceptance_criteria": [
+        "NIN masked in UI/logs",
+        "access limited to authorised roles"
+      ],
+      "verification": "Field-access audit; masking test",
+      "evidence_required": "Audit output and screenshot",
+      "source_finding": "MR-045",
+      "reviewer": "R09",
+      "review_report": "review_results/R09_PRIVACY.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-046",
+      "phase": 19,
+      "title": "Export the Room schema and test migrations",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-001"
+      ],
+      "description": "Export the Room schema and test migrations. `exportSchema=false` and 16 migrations have no tests.",
+      "goal": "Enable schema export, commit JSON, add MigrationTestHelper per version",
+      "scope": {
+        "include": [
+          "AppDatabase.kt",
+          "app/schemas/",
+          "app/src/androidTest"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "AppDatabase.kt",
+        "app/schemas/",
+        "app/src/androidTest"
+      ],
+      "acceptance_criteria": [
+        "Schema JSON committed",
+        "every migration path tested"
+      ],
+      "verification": "Migration tests from every version; schema diff check",
+      "evidence_required": "CI migration test log",
+      "source_finding": "MR-046",
+      "reviewer": "R04",
+      "review_report": "review_results/R04_DATA.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-047",
+      "phase": 19,
+      "title": "Move money to integer minor units",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-046"
+      ],
+      "description": "Move money to integer minor units. 33 money fields use Double.",
+      "goal": "Migrate to Long minor units with a tested conversion migration",
+      "scope": {
+        "include": [
+          "Entities.kt",
+          "DAOs",
+          "repository",
+          "UI formatters"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "Entities.kt",
+        "DAOs",
+        "repository",
+        "UI formatters"
+      ],
+      "acceptance_criteria": [
+        "No Double money fields",
+        "totals exact",
+        "migration preserves values"
+      ],
+      "verification": "Migration test with monetary fixtures; arithmetic tests",
+      "evidence_required": "Migration test output",
+      "source_finding": "MR-047",
+      "reviewer": "R04",
+      "review_report": "review_results/R04_DATA.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-048",
+      "phase": 19,
+      "title": "Remove destructive fallback and define dual-write conflict rules",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-046"
+      ],
+      "description": "Remove destructive fallback and define dual-write conflict rules. Release builds can destructively migrate; Room and Firestore have no conflict protocol.",
+      "goal": "Gate destructive fallback to debug, add sync metadata and conflict resolution",
+      "scope": {
+        "include": [
+          "AppDatabase.kt",
+          "repository sync code"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "AppDatabase.kt",
+        "repository sync code"
+      ],
+      "acceptance_criteria": [
+        "Release never destructive",
+        "conflicts resolved deterministically"
+      ],
+      "verification": "Upgrade test; conflict-resolution tests",
+      "evidence_required": "Test output",
+      "source_finding": "MR-048",
+      "reviewer": "R04",
+      "review_report": "review_results/R04_DATA.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-049",
+      "phase": 19,
+      "title": "Bound and index list reads",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [],
+      "description": "Bound and index list reads. List queries use SELECT * without LIMIT and chat history is unpaginated.",
+      "goal": "Add paging, indices and query limits on growth paths",
+      "scope": {
+        "include": [
+          "Daos.kt",
+          "repository",
+          "UI lists"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "Daos.kt",
+        "repository",
+        "UI lists"
+      ],
+      "acceptance_criteria": [
+        "No unbounded list query on hot paths",
+        "p95 within budget"
+      ],
+      "verification": "Query-plan check; load test with volume data",
+      "evidence_required": "Query plans and load report",
+      "source_finding": "MR-049",
+      "reviewer": "R04",
+      "review_report": "review_results/R04_DATA.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-050",
+      "phase": 19,
+      "title": "Fix chat dual-store ordering",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-046"
+      ],
+      "description": "Fix chat dual-store ordering. Messages are stored twice with only timestamp for ordering.",
+      "goal": "Add server sequence/ID dedup and reconciliation",
+      "scope": {
+        "include": [
+          "FirebaseService.kt",
+          "Daos.kt",
+          "Entities.kt"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "FirebaseService.kt",
+        "Daos.kt",
+        "Entities.kt"
+      ],
+      "acceptance_criteria": [
+        "No duplicates or reordering after reconnect"
+      ],
+      "verification": "Reconnect/ordering tests; duplicate-suppression test",
+      "evidence_required": "Test transcript",
+      "source_finding": "MR-050",
+      "reviewer": "R04",
+      "review_report": "review_results/R04_DATA.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-051",
+      "phase": 19,
+      "title": "Remove fabricated transcription fallback",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [],
+      "description": "Remove fabricated transcription fallback. Missing Gemini key returns canned content and the key is called from the device.",
+      "goal": "Return an explicit error and move the call server-side",
+      "scope": {
+        "include": [
+          "GeminiAudioTranscriptionService.kt",
+          "build config",
+          "functions"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "GeminiAudioTranscriptionService.kt",
+        "build config",
+        "functions"
+      ],
+      "acceptance_criteria": [
+        "No fabricated output",
+        "key server-side"
+      ],
+      "verification": "Missing-key test shows error; key absent from APK",
+      "evidence_required": "Test output and secret scan",
+      "source_finding": "MR-051",
+      "reviewer": "R05",
+      "review_report": "review_results/R05_INTEGRATIONS.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-052",
+      "phase": 19,
+      "title": "Scope integration coroutines",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-001"
+      ],
+      "description": "Scope integration coroutines. Each AT call creates a `CoroutineScope(Dispatchers.IO).async`.",
+      "goal": "Inject application scope and expose suspend functions",
+      "scope": {
+        "include": [
+          "AfricaTalkingService.kt",
+          "DI graph"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "AfricaTalkingService.kt",
+        "DI graph"
+      ],
+      "acceptance_criteria": [
+        "No ad-hoc scopes",
+        "cancellation propagates"
+      ],
+      "verification": "Cancellation test; leak check",
+      "evidence_required": "Static check and test",
+      "source_finding": "MR-052",
+      "reviewer": "R05",
+      "review_report": "review_results/R05_INTEGRATIONS.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-053",
+      "phase": 19,
+      "title": "Add provider contract tests and a real Maps key",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-005"
+      ],
+      "description": "Add provider contract tests and a real Maps key. No contract tests; Maps uses DEFAULT_MAPS_API_KEY.",
+      "goal": "Add recorded-fixture contract tests and per-environment Maps key",
+      "scope": {
+        "include": [
+          "app/build.gradle.kts",
+          "test suite",
+          "CI secrets"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "app/build.gradle.kts",
+        "test suite",
+        "CI secrets"
+      ],
+      "acceptance_criteria": [
+        "Contracts verified",
+        "map renders with injected key"
+      ],
+      "verification": "Contract tests against sandbox; map render test",
+      "evidence_required": "CI log and screenshot",
+      "source_finding": "MR-053",
+      "reviewer": "R05",
+      "review_report": "review_results/R05_INTEGRATIONS.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-054",
+      "phase": 19,
+      "title": "Add saveable state and back handling",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-001"
+      ],
+      "description": "Add saveable state and back handling. 0 `rememberSaveable`, 0 `BackHandler`, 29 sheets.",
+      "goal": "Use rememberSaveable/SavedStateHandle and BackHandler for sheets/navigation",
+      "scope": {
+        "include": [
+          "ui/screens",
+          "ui/components"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "ui/screens",
+        "ui/components"
+      ],
+      "acceptance_criteria": [
+        "State survives recreation",
+        "back closes sheets"
+      ],
+      "verification": "Rotation and process-death tests; back-navigation test",
+      "evidence_required": "Instrumentation log",
+      "source_finding": "MR-054",
+      "reviewer": "R02",
+      "review_report": "review_results/R02_ANDROID_CLIENT.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-055",
+      "phase": 19,
+      "title": "Label all interactive controls",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-001"
+      ],
+      "description": "Label all interactive controls. 59 content descriptions are null and there are no semantics blocks.",
+      "goal": "Add contentDescription/semantics to every icon-only action, especially SOS",
+      "scope": {
+        "include": [
+          "ui/components",
+          "ui/screens"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "ui/components",
+        "ui/screens"
+      ],
+      "acceptance_criteria": [
+        "All controls have labels",
+        "scanner has no critical issues"
+      ],
+      "verification": "TalkBack traversal; accessibility scanner",
+      "evidence_required": "Scanner report and recording",
+      "source_finding": "MR-055",
+      "reviewer": "R12",
+      "review_report": "review_results/R12_UI_UX_A11Y.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-056",
+      "phase": 19,
+      "title": "Fix typography and add localisation",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-001"
+      ],
+      "description": "Fix typography and add localisation. Text runs 8\u201311sp and all copy is inline English.",
+      "goal": "Raise body text to \u226512sp, externalise strings, add Luganda locale",
+      "scope": {
+        "include": [
+          "ui/theme",
+          "ui/screens",
+          "res/values/strings.xml"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "ui/theme",
+        "ui/screens",
+        "res/values/strings.xml"
+      ],
+      "acceptance_criteria": [
+        "Minimum sizes met at 200%",
+        "zero hardcoded UI strings",
+        "locale works"
+      ],
+      "verification": "Font-scale test; lint HardcodedText; locale switch",
+      "evidence_required": "Screenshots and lint log",
+      "source_finding": "MR-056",
+      "reviewer": "R12",
+      "review_report": "review_results/R12_UI_UX_A11Y.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-057",
+      "phase": 19,
+      "title": "Standardise money and error presentation",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-056"
+      ],
+      "description": "Standardise money and error presentation. Payout truncates with toInt and raw exception messages reach users.",
+      "goal": "Central formatters for money and mapped, actionable error copy",
+      "scope": {
+        "include": [
+          "ui/components",
+          "util formatters"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "ui/components",
+        "util formatters"
+      ],
+      "acceptance_criteria": [
+        "Amounts grouped and exact",
+        "no raw exceptions in UI"
+      ],
+      "verification": "Formatter unit tests; error-copy review",
+      "evidence_required": "Unit test output and screenshots",
+      "source_finding": "MR-057",
+      "reviewer": "R12",
+      "review_report": "review_results/R12_UI_UX_A11Y.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-058",
+      "phase": 19,
+      "title": "Add UI test hooks and screenshot tests",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-001",
+        "REM-005"
+      ],
+      "description": "Add UI test hooks and screenshot tests. 0 testTag and one orphan screenshot.",
+      "goal": "Add testTags and a screenshot test suite for critical screens",
+      "scope": {
+        "include": [
+          "ui/screens",
+          "ui/components",
+          "app/src/test"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "ui/screens",
+        "ui/components",
+        "app/src/test"
+      ],
+      "acceptance_criteria": [
+        "Critical controls selectable",
+        "visual diffs gated"
+      ],
+      "verification": "UI tests in CI; screenshot baseline",
+      "evidence_required": "CI log",
+      "source_finding": "MR-058",
+      "reviewer": "R12",
+      "review_report": "review_results/R12_UI_UX_A11Y.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-059",
+      "phase": 19,
+      "title": "Add crash, ANR and performance telemetry",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-001",
+        "REM-007"
+      ],
+      "description": "Add crash, ANR and performance telemetry. No telemetry SDK is present.",
+      "goal": "Add Crashlytics/Sentry, non-PII analytics and perf traces with alerts",
+      "scope": {
+        "include": [
+          "app/build.gradle.kts",
+          "Application class",
+          "CI config"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "app/build.gradle.kts",
+        "Application class",
+        "CI config"
+      ],
+      "acceptance_criteria": [
+        "Field crashes and ANRs visible within minutes",
+        "alerts configured"
+      ],
+      "verification": "Crash and ANR visible in dashboard; event schema review",
+      "evidence_required": "Dashboard link and event schema",
+      "source_finding": "MR-059",
+      "reviewer": "R13",
+      "review_report": "review_results/R13_PERFORMANCE.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-060",
+      "phase": 19,
+      "title": "Implement offline replay",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-001",
+        "REM-031"
+      ],
+      "description": "Implement offline replay. Queued actions are logged and never executed; no WorkManager.",
+      "goal": "Drain queue with WorkManager, idempotency keys and backoff",
+      "scope": {
+        "include": [
+          "SkillsExchangeViewModel.kt",
+          "repository",
+          "app/build.gradle.kts"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "SkillsExchangeViewModel.kt",
+        "repository",
+        "app/build.gradle.kts"
+      ],
+      "acceptance_criteria": [
+        "Queued action syncs once on reconnect",
+        "failures retry with backoff"
+      ],
+      "verification": "Airplane-mode E2E; duplicate-delivery test",
+      "evidence_required": "E2E log and queue metrics",
+      "source_finding": "MR-060",
+      "reviewer": "R13",
+      "review_report": "review_results/R13_PERFORMANCE.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-061",
+      "phase": 19,
+      "title": "Replace polling with push where possible",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-035"
+      ],
+      "description": "Replace polling with push where possible. Collection status is polled and no FCM send exists.",
+      "goal": "Send push on status change and keep bounded polling as fallback",
+      "scope": {
+        "include": [
+          "SkillsExchangeViewModel.kt",
+          "functions/src/index.ts"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "SkillsExchangeViewModel.kt",
+        "functions/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "Status arrives via push",
+        "polling bounded"
+      ],
+      "verification": "Latency and battery measurement",
+      "evidence_required": "Push log and measurement",
+      "source_finding": "MR-061",
+      "reviewer": "R13",
+      "review_report": "review_results/R13_PERFORMANCE.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-062",
+      "phase": 19,
+      "title": "Reduce APK and asset size",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-020"
+      ],
+      "description": "Reduce APK and asset size. 31 MB APK, three large JPEGs and R8 disabled.",
+      "goal": "Enable R8, convert/downscale assets, add size budget",
+      "scope": {
+        "include": [
+          "res/drawable",
+          "app/build.gradle.kts"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "res/drawable",
+        "app/build.gradle.kts"
+      ],
+      "acceptance_criteria": [
+        "APK under 15 MB",
+        "assets under 150 KB each"
+      ],
+      "verification": "APK size check in CI",
+      "evidence_required": "Size report",
+      "source_finding": "MR-062",
+      "reviewer": "R13",
+      "review_report": "review_results/R13_PERFORMANCE.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-063",
+      "phase": 19,
+      "title": "Add retries, circuit breaking and SLOs",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-059"
+      ],
+      "description": "Add retries, circuit breaking and SLOs. Provider calls rely on defaults and no SLO or alerting exists.",
+      "goal": "Add bounded retry/backoff, breaker, DLQ and SLO definitions",
+      "scope": {
+        "include": [
+          "SkillsExchangeViewModel.kt",
+          "functions/src/index.ts",
+          "ops runbook"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "SkillsExchangeViewModel.kt",
+        "functions/src/index.ts",
+        "ops runbook"
+      ],
+      "acceptance_criteria": [
+        "Outage degrades gracefully",
+        "SLO alert fires"
+      ],
+      "verification": "Failure-injection tests; alert firing",
+      "evidence_required": "Test log and alert config",
+      "source_finding": "MR-063",
+      "reviewer": "R13",
+      "review_report": "review_results/R13_PERFORMANCE.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-064",
+      "phase": 19,
+      "title": "Make the Android test suite executable",
+      "priority": "CRITICAL",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-001"
+      ],
+      "description": "Make the Android test suite executable. 355 unit tests cannot run because the module does not compile.",
+      "goal": "Fix build then run full JVM and instrumentation suites in CI",
+      "scope": {
+        "include": [
+          "app/src/test",
+          "app/src/androidTest",
+          "CI"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "app/src/test",
+        "app/src/androidTest",
+        "CI"
+      ],
+      "acceptance_criteria": [
+        "355 tests execute",
+        "a deliberate regression fails"
+      ],
+      "verification": "Full suite run; failure detection",
+      "evidence_required": "CI test report",
+      "source_finding": "MR-064",
+      "reviewer": "R11",
+      "review_report": "review_results/R11_QA.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-065",
+      "phase": 19,
+      "title": "Add coverage and critical-path E2E",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-064"
+      ],
+      "description": "Add coverage and critical-path E2E. No coverage tool and no E2E for signup/pay/rate/SOS.",
+      "goal": "Add JaCoCo/Kover, coverage floor and E2E journeys",
+      "scope": {
+        "include": [
+          "app/build.gradle.kts",
+          "app/src/androidTest",
+          "CI"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "app/build.gradle.kts",
+        "app/src/androidTest",
+        "CI"
+      ],
+      "acceptance_criteria": [
+        "Coverage measured",
+        "critical journeys pass end-to-end"
+      ],
+      "verification": "Coverage report; E2E suite",
+      "evidence_required": "Coverage and E2E reports",
+      "source_finding": "MR-065",
+      "reviewer": "R11",
+      "review_report": "review_results/R11_QA.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-066",
+      "phase": 19,
+      "title": "Make verification evidence reproducible",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-005"
+      ],
+      "description": "Make verification evidence reproducible. Device logs, APK and SQLite are committed without commands.",
+      "goal": "Adopt dated evidence logs with commands, commit and environment",
+      "scope": {
+        "include": [
+          "docs/evidence/",
+          "TASKS.md"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "docs/evidence/",
+        "TASKS.md"
+      ],
+      "acceptance_criteria": [
+        "Every verification claim links to a dated log"
+      ],
+      "verification": "Evidence audit",
+      "evidence_required": "Evidence index",
+      "source_finding": "MR-066",
+      "reviewer": "R11",
+      "review_report": "review_results/R11_QA.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-067",
+      "phase": 19,
+      "title": "Replace unverifiable build claims",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-001",
+        "REM-002"
+      ],
+      "description": "Replace unverifiable build claims. 81 BUILD SUCCESSFUL entries contradict the source.",
+      "goal": "Annotate or remove unsupported claims; link to CI evidence",
+      "scope": {
+        "include": [
+          "AGENT_STATE.md",
+          "CHANGELOG.md"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "AGENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "No unsupported success claim remains"
+      ],
+      "verification": "Claim audit against CI logs",
+      "evidence_required": "Audit report",
+      "source_finding": "MR-067",
+      "reviewer": "R15",
+      "review_report": "review_results/R15_DOCUMENTATION.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-068",
+      "phase": 19,
+      "title": "Reconcile PRD status with evidence",
+      "priority": "HIGH",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-067"
+      ],
+      "description": "Reconcile PRD status with evidence. 112/112 stories are completed despite failing features.",
+      "goal": "Re-status stories with evidence links; keep history",
+      "scope": {
+        "include": [
+          "prd.json",
+          "TASKS.md"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "prd.json",
+        "TASKS.md"
+      ],
+      "acceptance_criteria": [
+        "Every completed story has evidence or is re-statused"
+      ],
+      "verification": "Story-by-story audit",
+      "evidence_required": "Audit matrix",
+      "source_finding": "MR-068",
+      "reviewer": "R15",
+      "review_report": "review_results/R15_DOCUMENTATION.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-069",
+      "phase": 19,
+      "title": "Make documentation links portable",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [],
+      "description": "Make documentation links portable. 67 host-absolute file:///d:/ links.",
+      "goal": "Convert to repo-relative links or remove",
+      "scope": {
+        "include": [
+          "All Markdown"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "All Markdown"
+      ],
+      "acceptance_criteria": [
+        "Zero broken or host-absolute links"
+      ],
+      "verification": "Link checker",
+      "evidence_required": "Link-check log",
+      "source_finding": "MR-069",
+      "reviewer": "R15",
+      "review_report": "review_results/R15_DOCUMENTATION.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-070",
+      "phase": 19,
+      "title": "Assign requirement IDs and build a trace matrix",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [],
+      "description": "Assign requirement IDs and build a trace matrix. Only 6 requirement IDs exist and no requirement\u2192code\u2192test map.",
+      "goal": "Assign IDs and generate a trace matrix",
+      "scope": {
+        "include": [
+          "requirement_file.md",
+          "docs/traceability.md"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "requirement_file.md",
+        "docs/traceability.md"
+      ],
+      "acceptance_criteria": [
+        "Every feature maps to a requirement, code and test"
+      ],
+      "verification": "Matrix coverage check",
+      "evidence_required": "Matrix report",
+      "source_finding": "MR-070",
+      "reviewer": "R15",
+      "review_report": "review_results/R15_DOCUMENTATION.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-071",
+      "phase": 19,
+      "title": "Correct README capability claims",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-033",
+        "REM-023"
+      ],
+      "description": "Correct README capability claims. README advertises Airtel and an admin dashboard that do not exist.",
+      "goal": "Correct feature list and status; keep caveats consistent",
+      "scope": {
+        "include": [
+          "README.md"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "README.md"
+      ],
+      "acceptance_criteria": [
+        "No advertised capability without implementation"
+      ],
+      "verification": "Doc-to-code review",
+      "evidence_required": "Reviewed README diff",
+      "source_finding": "MR-071",
+      "reviewer": "R15",
+      "review_report": "review_results/R15_DOCUMENTATION.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-072",
+      "phase": 19,
+      "title": "Define document precedence",
+      "priority": "MEDIUM",
+      "status": "NOT_STARTED",
+      "depends_on": [],
+      "description": "Define document precedence. Seven master documents overlap without precedence.",
+      "goal": "Publish one precedence rule per document type",
+      "scope": {
+        "include": [
+          "README.md",
+          "AGENTS.md",
+          "DECISIONS.md",
+          "AGENT_STATE.md",
+          "TASKS.md",
+          "prd.json",
+          "requirement_file.md"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "README.md",
+        "AGENTS.md",
+        "DECISIONS.md",
+        "AGENT_STATE.md",
+        "TASKS.md",
+        "prd.json",
+        "requirement_file.md"
+      ],
+      "acceptance_criteria": [
+        "Each document has a stated role and owner"
+      ],
+      "verification": "Documentation map review",
+      "evidence_required": "Docs map section",
+      "source_finding": "MR-072",
+      "reviewer": "R15",
+      "review_report": "review_results/R15_DOCUMENTATION.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    },
+    {
+      "id": "REM-073",
+      "phase": 19,
+      "title": "Remove unnecessary CALL_PHONE permission",
+      "priority": "LOW",
+      "status": "NOT_STARTED",
+      "depends_on": [
+        "REM-001"
+      ],
+      "description": "Remove unnecessary CALL_PHONE permission. SOS dialling can use ACTION_DIAL without a dangerous permission.",
+      "goal": "Use ACTION_DIAL and remove CALL_PHONE unless direct call is required",
+      "scope": {
+        "include": [
+          "AndroidManifest.xml",
+          "SOS UI"
+        ],
+        "exclude": [
+          "Unrelated refactors",
+          "Changes outside the finding's stated files"
+        ]
+      },
+      "files_likely_affected": [
+        "AndroidManifest.xml",
+        "SOS UI"
+      ],
+      "acceptance_criteria": [
+        "Permission removed",
+        "dialler opens correctly"
+      ],
+      "verification": "Manifest review; dial intent test",
+      "evidence_required": "Manifest diff and test",
+      "source_finding": "MR-073",
+      "reviewer": "R02",
+      "review_report": "review_results/R02_ANDROID_CLIENT.md",
+      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+    }],
+    "current_story": "REM-001",
   "review_cycle_status": "all_15_reviews_complete_0_pass_15_fail",
   "review_cycle_completed_at": "2026-11-19T18:00:00+03:00",
     "completed_stories": [
@@ -4421,5 +7157,5 @@
     "RVW-013",
     "RVW-015"],
     "blocked_stories": [],
-    "last_updated": "2026-11-19T12:30:00+03:00"
+    "last_updated": "2026-11-19T19:30:00+03:00"
 }
