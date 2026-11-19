@@ -5,10 +5,10 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ServiceProviderDao {
-    @Query("SELECT * FROM service_providers")
+    @Query("SELECT * FROM service_providers LIMIT 500")
     fun getAllProviders(): Flow<List<ServiceProviderEntity>>
 
-    @Query("SELECT * FROM service_providers WHERE id = :providerId")
+    @Query("SELECT * FROM service_providers WHERE id = :providerId LIMIT 500")
     suspend fun getProviderById(providerId: String): ServiceProviderEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -26,7 +26,7 @@ interface ServiceProviderDao {
 
 @Dao
 interface SkillEndorsementDao {
-    @Query("SELECT * FROM skill_endorsements WHERE providerId = :providerId")
+    @Query("SELECT * FROM skill_endorsements WHERE providerId = :providerId LIMIT 100")
     fun getEndorsementsForProvider(providerId: String): Flow<List<SkillEndorsementEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -38,17 +38,17 @@ interface SkillEndorsementDao {
 
 @Dao
 interface JobPostDao {
-    @Query("SELECT * FROM job_posts WHERE postedByUid = :uid ORDER BY createdTimestamp DESC")
+    @Query("SELECT * FROM job_posts WHERE postedByUid = :uid ORDER BY createdTimestamp DESC LIMIT 200")
     fun getJobsPostedBy(uid: String): Flow<List<JobPostEntity>>
 
     /**
      * C2-2 Fix #4 (F4): jobs with NO trustworthy owner (created before the `postedByUid` column
      * existed). They belong to nobody and must never surface as "my jobs" for any account.
      */
-    @Query("SELECT * FROM job_posts WHERE postedByUid IS NULL ORDER BY createdTimestamp DESC")
+    @Query("SELECT * FROM job_posts WHERE postedByUid IS NULL ORDER BY createdTimestamp DESC LIMIT 200")
     fun getJobsWithUnknownOwner(): Flow<List<JobPostEntity>>
 
-    @Query("SELECT * FROM job_posts ORDER BY createdTimestamp DESC")
+    @Query("SELECT * FROM job_posts ORDER BY createdTimestamp DESC LIMIT 200")
     fun getAllJobs(): Flow<List<JobPostEntity>>
 
     /**
@@ -110,10 +110,10 @@ interface JobPostDao {
  */
 @Dao
 interface JobQuoteDao {
-    @Query("SELECT * FROM job_quotes WHERE jobId = :jobId ORDER BY totalQuote ASC")
+    @Query("SELECT * FROM job_quotes WHERE jobId = :jobId ORDER BY totalQuote ASC LIMIT 200")
     fun getQuotesForJob(jobId: String): Flow<List<JobQuoteEntity>>
 
-    @Query("SELECT * FROM job_quotes WHERE workerId = :workerId ORDER BY submittedAt DESC")
+    @Query("SELECT * FROM job_quotes WHERE workerId = :workerId ORDER BY submittedAt DESC LIMIT 200")
     fun getQuotesByWorker(workerId: String): Flow<List<JobQuoteEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -128,7 +128,7 @@ interface JobQuoteDao {
     @Query("SELECT COUNT(*) FROM job_quotes WHERE jobId = :jobId AND workerId = :workerId AND status = 'PENDING'")
     suspend fun countPendingQuotesForWorkerAndJob(jobId: String, workerId: String): Int
 
-    @Query("SELECT * FROM job_quotes WHERE id = :quoteId")
+    @Query("SELECT * FROM job_quotes WHERE id = :quoteId LIMIT 200")
     suspend fun getQuoteById(quoteId: String): JobQuoteEntity?
 
     @Query("DELETE FROM job_quotes")
@@ -140,10 +140,10 @@ interface JobQuoteDao {
  */
 @Dao
 interface PendingActionDao {
-    @Query("SELECT * FROM pending_actions WHERE status = 'PENDING' ORDER BY createdAt ASC")
+    @Query("SELECT * FROM pending_actions WHERE status = 'PENDING' ORDER BY createdAt ASC LIMIT 100")
     fun getPendingActions(): Flow<List<PendingActionEntity>>
 
-    @Query("SELECT * FROM pending_actions WHERE status = 'PENDING' ORDER BY createdAt ASC")
+    @Query("SELECT * FROM pending_actions WHERE status = 'PENDING' ORDER BY createdAt ASC LIMIT 100")
     suspend fun getPendingActionsList(): List<PendingActionEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -164,10 +164,10 @@ interface PendingActionDao {
 
 @Dao
 interface ChatMessageDao {
-    @Query("SELECT * FROM chat_messages WHERE jobId = :jobId ORDER BY id ASC")
+    @Query("SELECT * FROM chat_messages WHERE jobId = :jobId ORDER BY id ASC LIMIT 500")
     fun getMessagesForJob(jobId: String): Flow<List<ChatMessageEntity>>
 
-    @Query("SELECT * FROM chat_messages WHERE senderId = :uid ORDER BY id ASC")
+    @Query("SELECT * FROM chat_messages WHERE senderId = :uid ORDER BY id ASC LIMIT 500")
     fun getMessagesAuthoredBy(uid: String): Flow<List<ChatMessageEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -185,7 +185,7 @@ interface ChatMessageDao {
  */
 @Dao
 interface GuarantorDao {
-    @Query("SELECT * FROM guarantors WHERE workerKycId = :workerKycId")
+    @Query("SELECT * FROM guarantors WHERE workerKycId = :workerKycId LIMIT 20")
     fun getGuarantorsForWorker(workerKycId: String): Flow<List<GuarantorEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -204,14 +204,14 @@ interface GuarantorDao {
      * REG-002: non-reactive read used by the submission flow (build the payload, verify
      * the stored pair, restore the sheet for editing).
      */
-    @Query("SELECT * FROM guarantors WHERE workerKycId = :workerKycId ORDER BY createdAt ASC")
+    @Query("SELECT * FROM guarantors WHERE workerKycId = :workerKycId ORDER BY createdAt ASC LIMIT 20")
     suspend fun getGuarantorsForWorkerOnce(workerKycId: String): List<GuarantorEntity>
 
     /**
      * REG-002 / SEC-010: contact-number lookup used to detect a guarantor who is already
      * listed for another worker. Returns rows only — no caller-side write is possible.
      */
-    @Query("SELECT * FROM guarantors WHERE phoneNumber = :phoneNumber")
+    @Query("SELECT * FROM guarantors WHERE phoneNumber = :phoneNumber LIMIT 20")
     suspend fun findGuarantorsByPhone(phoneNumber: String): List<GuarantorEntity>
 
     /**
@@ -231,7 +231,7 @@ interface GuarantorDao {
  */
 @Dao
 interface WorkerKycDao {
-    @Query("SELECT * FROM worker_kyc WHERE userId = :userId")
+    @Query("SELECT * FROM worker_kyc WHERE userId = :userId LIMIT 10")
     fun getWorkerKyc(userId: String): Flow<WorkerKycEntity?>
 
     @Query("SELECT * FROM worker_kyc LIMIT 1")
@@ -247,7 +247,7 @@ interface WorkerKycDao {
     suspend fun updateKycReview(userId: String, status: String, reviewedAt: Long = System.currentTimeMillis(), feedback: String = "")
 
     /** REG-002: non-reactive read used by the guarantor submission + status refresh flow. */
-    @Query("SELECT * FROM worker_kyc WHERE userId = :userId")
+    @Query("SELECT * FROM worker_kyc WHERE userId = :userId LIMIT 10")
     suspend fun getWorkerKycOnce(userId: String): WorkerKycEntity?
 
     /**
@@ -278,7 +278,7 @@ interface WorkerKycDao {
  */
 @Dao
 interface UserProfileDao {
-    @Query("SELECT * FROM user_profiles WHERE id = :userId")
+    @Query("SELECT * FROM user_profiles WHERE id = :userId LIMIT 10")
     fun getUserProfile(userId: String): Flow<UserProfileEntity?>
 
     /**
@@ -341,7 +341,7 @@ interface UserProfileDao {
  */
 @Dao
 interface WorkerTrainingDao {
-    @Query("SELECT * FROM worker_training WHERE userId = :userId")
+    @Query("SELECT * FROM worker_training WHERE userId = :userId LIMIT 10")
     fun getTrainingForUser(userId: String): Flow<WorkerTrainingEntity?>
 
     @Query("SELECT * FROM worker_training LIMIT 1")
@@ -366,16 +366,16 @@ interface WorkerTrainingDao {
 // DISP-001: Dispute Data Access Object
 @Dao
 interface DisputeDao {
-    @Query("SELECT * FROM disputes ORDER BY createdAt DESC")
+    @Query("SELECT * FROM disputes ORDER BY createdAt DESC LIMIT 200")
     fun getAllDisputes(): Flow<List<DisputeEntity>>
 
-    @Query("SELECT * FROM disputes WHERE reportedBy = :userId OR reportedUserId = :userId ORDER BY createdAt DESC")
+    @Query("SELECT * FROM disputes WHERE reportedBy = :userId OR reportedUserId = :userId ORDER BY createdAt DESC LIMIT 200")
     fun getDisputesForUser(userId: String): Flow<List<DisputeEntity>>
 
-    @Query("SELECT * FROM disputes WHERE jobId = :jobId")
+    @Query("SELECT * FROM disputes WHERE jobId = :jobId LIMIT 200")
     suspend fun getDisputeForJob(jobId: String): DisputeEntity?
 
-    @Query("SELECT * FROM disputes WHERE status = :status ORDER BY createdAt DESC")
+    @Query("SELECT * FROM disputes WHERE status = :status ORDER BY createdAt DESC LIMIT 200")
     suspend fun getDisputesByStatus(status: String): List<DisputeEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -391,16 +391,16 @@ interface DisputeDao {
 // RATE-001: Rating Data Access Object
 @Dao
 interface RatingDao {
-    @Query("SELECT * FROM ratings ORDER BY createdAt DESC")
+    @Query("SELECT * FROM ratings ORDER BY createdAt DESC LIMIT 200")
     fun getAllRatings(): Flow<List<RatingEntity>>
 
-    @Query("SELECT * FROM ratings WHERE toUserId = :userId ORDER BY createdAt DESC")
+    @Query("SELECT * FROM ratings WHERE toUserId = :userId ORDER BY createdAt DESC LIMIT 200")
     fun getRatingsForUser(userId: String): Flow<List<RatingEntity>>
 
-    @Query("SELECT * FROM ratings WHERE jobId = :jobId")
+    @Query("SELECT * FROM ratings WHERE jobId = :jobId LIMIT 200")
     suspend fun getRatingForJob(jobId: String): RatingEntity?
 
-    @Query("SELECT * FROM ratings WHERE fromUserId = :fromUserId AND toUserId = :toUserId AND jobId = :jobId")
+    @Query("SELECT * FROM ratings WHERE fromUserId = :fromUserId AND toUserId = :toUserId AND jobId = :jobId LIMIT 200")
     suspend fun getRatingFromToJob(fromUserId: String, toUserId: String, jobId: String): RatingEntity?
 
     @Query("SELECT AVG(rating) FROM ratings WHERE toUserId = :userId")
@@ -416,10 +416,10 @@ interface RatingDao {
 // NOTIF-001: Notification Data Access Object
 @Dao
 interface NotificationDao {
-    @Query("SELECT * FROM notifications WHERE userId = :userId ORDER BY createdAt DESC")
+    @Query("SELECT * FROM notifications WHERE userId = :userId ORDER BY createdAt DESC LIMIT 200")
     fun getNotificationsForUser(userId: String): Flow<List<NotificationEntity>>
 
-    @Query("SELECT * FROM notifications WHERE userId = :userId AND isRead = 0 ORDER BY createdAt DESC")
+    @Query("SELECT * FROM notifications WHERE userId = :userId AND isRead = 0 ORDER BY createdAt DESC LIMIT 200")
     fun getUnreadNotificationsForUser(userId: String): Flow<List<NotificationEntity>>
 
     @Query("SELECT COUNT(*) FROM notifications WHERE userId = :userId AND isRead = 0")
@@ -447,10 +447,10 @@ interface NotificationDao {
 // JOB-005: Job Status Audit Trail DAO
 @Dao
 interface JobStatusAuditDao {
-    @Query("SELECT * FROM job_status_audit WHERE jobId = :jobId ORDER BY changedAt ASC")
+    @Query("SELECT * FROM job_status_audit WHERE jobId = :jobId ORDER BY changedAt ASC LIMIT 500")
     suspend fun getAuditTrailForJob(jobId: String): List<JobStatusAuditEntity>
 
-    @Query("SELECT * FROM job_status_audit ORDER BY changedAt DESC")
+    @Query("SELECT * FROM job_status_audit ORDER BY changedAt DESC LIMIT 500")
     fun getAllAuditEntries(): Flow<List<JobStatusAuditEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -463,16 +463,16 @@ interface JobStatusAuditDao {
 // DISP-004: User/Worker Reporting DAO
 @Dao
 interface ReportDao {
-    @Query("SELECT * FROM reports ORDER BY createdAt DESC")
+    @Query("SELECT * FROM reports ORDER BY createdAt DESC LIMIT 200")
     fun getAllReports(): Flow<List<ReportEntity>>
 
-    @Query("SELECT * FROM reports WHERE reportedBy = :userId ORDER BY createdAt DESC")
+    @Query("SELECT * FROM reports WHERE reportedBy = :userId ORDER BY createdAt DESC LIMIT 200")
     fun getReportsByUser(userId: String): Flow<List<ReportEntity>>
 
-    @Query("SELECT * FROM reports WHERE reportedUserId = :userId ORDER BY createdAt DESC")
+    @Query("SELECT * FROM reports WHERE reportedUserId = :userId ORDER BY createdAt DESC LIMIT 200")
     fun getReportsForUser(userId: String): Flow<List<ReportEntity>>
 
-    @Query("SELECT * FROM reports WHERE status = :status ORDER BY createdAt DESC")
+    @Query("SELECT * FROM reports WHERE status = :status ORDER BY createdAt DESC LIMIT 200")
     suspend fun getReportsByStatus(status: String): List<ReportEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -493,10 +493,10 @@ interface ReportDao {
  */
 @Dao
 interface WalletLedgerDao {
-    @Query("SELECT * FROM wallet_ledger WHERE workerId = :workerId ORDER BY createdAt ASC")
+    @Query("SELECT * FROM wallet_ledger WHERE workerId = :workerId ORDER BY createdAt ASC LIMIT 500")
     suspend fun getEntriesForWorker(workerId: String): List<WalletLedgerEntity>
 
-    @Query("SELECT * FROM wallet_ledger WHERE workerId = :workerId ORDER BY createdAt DESC")
+    @Query("SELECT * FROM wallet_ledger WHERE workerId = :workerId ORDER BY createdAt DESC LIMIT 500")
     fun observeEntriesForWorker(workerId: String): Flow<List<WalletLedgerEntity>>
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
@@ -521,10 +521,10 @@ interface WalletLedgerDao {
  */
 @Dao
 interface WalletWithdrawalDao {
-    @Query("SELECT * FROM wallet_withdrawals WHERE workerId = :workerId ORDER BY createdAt DESC")
+    @Query("SELECT * FROM wallet_withdrawals WHERE workerId = :workerId ORDER BY createdAt DESC LIMIT 200")
     suspend fun getWithdrawalsForWorker(workerId: String): List<WalletWithdrawalEntity>
 
-    @Query("SELECT * FROM wallet_withdrawals WHERE workerId = :workerId ORDER BY createdAt DESC")
+    @Query("SELECT * FROM wallet_withdrawals WHERE workerId = :workerId ORDER BY createdAt DESC LIMIT 200")
     fun observeWithdrawalsForWorker(workerId: String): Flow<List<WalletWithdrawalEntity>>
 
     @Query("SELECT * FROM wallet_withdrawals WHERE id = :id LIMIT 1")
@@ -539,7 +539,7 @@ interface WalletWithdrawalDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     fun insertWithdrawalSync(withdrawal: WalletWithdrawalEntity)
 
-    @Query("SELECT * FROM wallet_withdrawals WHERE workerId = :workerId ORDER BY createdAt DESC")
+    @Query("SELECT * FROM wallet_withdrawals WHERE workerId = :workerId ORDER BY createdAt DESC LIMIT 200")
     fun getWithdrawalsForWorkerSync(workerId: String): List<WalletWithdrawalEntity>
 
     // Narrow, typed state transitions driven ONLY by the repository's state machine. `ABORT` on
@@ -565,7 +565,7 @@ interface SosIncidentDao {
     @Query("SELECT * FROM sos_incidents WHERE jobId = :jobId LIMIT 1")
     suspend fun getSosIncidentByJobId(jobId: String): SosIncidentEntity?
 
-    @Query("SELECT * FROM sos_incidents WHERE status = 'ACTIVE' ORDER BY raisedAt DESC")
+    @Query("SELECT * FROM sos_incidents WHERE status = 'ACTIVE' ORDER BY raisedAt DESC LIMIT 200")
     fun getActiveSosIncidents(): Flow<List<SosIncidentEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

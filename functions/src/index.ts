@@ -73,6 +73,10 @@ import {
   evaluateWebhookRate,
 } from "./webhookAuth";
 import type { WebhookRateRecord } from "./webhookAuth";
+import { buildConsentRecord, buildDsarEnvelope, sanitiseGuarantorForExport } from "./compliance";
+import { loadSmsConfig, createSmsSender } from "./sms";
+import type { SmsTransport } from "./sms";
+import { planSosDispatch, selectSosRecipients, buildSosMessage } from "./sosDispatch";
 import {
   buildTranscriptionPrompt,
   buildGeminiTranscriptionRequest,
@@ -787,12 +791,80 @@ export const onJobCreated = functions.firestore
 /**
  * MODULE 4: AFRICA'S TALKING / TWILIO SMS INTEGRATION UTILITY
  */
+const smsTransport: SmsTransport = async (url, body, headers) => {
+  const response = await axios.post(url, body, {
+    headers,
+    timeout: 15000,
+    validateStatus: () => true,
+  });
+  return { status: response.status, data: response.data };
+};
+
+/**
+ * REM-034: deliver a real SMS. Returns false — and never claims delivery — when the provider is
+ * unconfigured, rejects the message or cannot be reached. Phone numbers are masked in logs.
+ */
 async function sendSmsAlert(phoneNumber: string, message: string): Promise<boolean> {
-  console.log(`[Africa's Talking SMS API] To: ${phoneNumber} | Msg: ${message}`);
-  // In production, invoke Africa's Talking API endpoint:
-  // POST https://api.africastalking.com/version1/messaging
-  return true;
+  const config = loadSmsConfig(process.env as Record<string, string | undefined>);
+  if (!config) {
+    console.error("SMS not configured (AFRICASTALKING_API_KEY/USERNAME); alert not sent", {
+      phone: maskPhone(phoneNumber),
+    });
+    return false;
+  }
+  const send = createSmsSender(config, smsTransport);
+  const result = await send([phoneNumber], message);
+  if (!result.ok) {
+    console.error("SMS delivery failed", { phone: maskPhone(phoneNumber), error: result.error });
+  }
+  return result.ok;
 }
+
+/**
+ * REM-034 / REM-035: alert platform security and the user's emergency contact when an SOS is
+ * raised, and push to the dispatch topic. Delivery is attempted once per incident; the outcome is
+ * recorded on the incident so the admin queue can see what actually happened.
+ */
+export const onSosIncidentCreated = functions.firestore
+  .document("sosIncidents/{incidentId}")
+  .onCreate(async (snapshot) => {
+    const data = (snapshot.data() || {}) as Record<string, unknown>;
+    if (!planSosDispatch(data).shouldDispatch) return;
+
+    const ownerId = String(data.postedByUid);
+    const profile = await db.collection("users").doc(ownerId).get();
+    const recipients = selectSosRecipients(
+      process.env.SOS_DISPATCH_NUMBERS,
+      profile.get("emergencyContactPhone")
+    );
+    const message = buildSosMessage(data);
+    let delivered = 0;
+    for (const phone of recipients) {
+      if (await sendSmsAlert(phone, message)) delivered += 1;
+    }
+
+    await snapshot.ref.set(
+      {
+        dispatch: {
+          attemptedAt: Date.now(),
+          status: recipients.length === 0 ? "NO_RECIPIENTS" : delivered > 0 ? "SENT" : "FAILED",
+          recipients: recipients.length,
+          delivered,
+        },
+      },
+      { merge: true }
+    );
+
+    try {
+      await admin.messaging().send({
+        topic: "sos_dispatch",
+        notification: { title: "SOS raised", body: message },
+        data: { incidentId: snapshot.id, jobId: String(data.jobId || "") },
+      });
+    } catch (error) {
+      console.error("SOS push failed", (error as Error).message);
+    }
+  });
 
 /**
  * ADMIN-001: Helper to verify caller has admin custom claim.
@@ -2172,4 +2244,72 @@ export const transcribeVoiceJob = functions.https.onCall(async (data, context) =
     console.error("Gemini transcription response invalid", (error as Error).message);
     throw new functions.https.HttpsError("internal", "Voice transcription could not be understood");
   }
+});
+
+// =====================================================================================
+// REM-044: consent and data-subject access.
+// =====================================================================================
+
+export const recordConsent = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to record consent");
+  }
+  let record;
+  try {
+    record = buildConsentRecord({ version: data?.version, grants: data?.grants }, Date.now());
+  } catch (error) {
+    throw new functions.https.HttpsError("invalid-argument", (error as Error).message);
+  }
+
+  // Server-written: clients may read their consent history but never forge or delete it.
+  await db
+    .collection("users")
+    .doc(context.auth.uid)
+    .collection("consents")
+    .doc(record.version)
+    .set(record, { merge: false });
+
+  return { version: record.version, acceptedAt: record.acceptedAt };
+});
+
+export const exportMyData = functions.https.onCall(async (_data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to export your data");
+  }
+  const uid = context.auth.uid;
+  const LIMIT = 500;
+
+  const [profile, postedJobs, assignedJobs, disputes, reports, notifications, payouts, submissions, guarantors] =
+    await Promise.all([
+      db.collection("users").doc(uid).get(),
+      db.collection("jobs").where("postedByUid", "==", uid).limit(LIMIT).get(),
+      db.collection("jobs").where("assignedProviderUid", "==", uid).limit(LIMIT).get(),
+      db.collection("disputes").where("reportedBy", "==", uid).limit(LIMIT).get(),
+      db.collection("reports").where("reportedBy", "==", uid).limit(LIMIT).get(),
+      db.collection("notifications").where("userId", "==", uid).limit(LIMIT).get(),
+      db.collection("momo_payouts").where("workerId", "==", uid).limit(LIMIT).get(),
+      db.collection("guarantor_submissions").doc(uid).get(),
+      db.collection("guarantors").where("workerKycId", "==", uid).limit(20).get(),
+    ]);
+
+  const toRows = (snapshot: admin.firestore.QuerySnapshot): Array<Record<string, unknown>> =>
+    snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() as Record<string, unknown>) }));
+
+  const data = {
+    profile: profile.exists ? profile.data() : null,
+    jobsPosted: toRows(postedJobs),
+    jobsAssigned: toRows(assignedJobs),
+    disputes: toRows(disputes),
+    reports: toRows(reports),
+    notifications: toRows(notifications),
+    payouts: toRows(payouts),
+    guarantorSubmission: submissions.exists ? submissions.data() : null,
+    // Third-party identifiers are stripped here, not in the client.
+    guarantors: guarantors.docs.map((doc) => sanitiseGuarantorForExport(doc.data() as Record<string, unknown>)),
+    consents: (
+      await db.collection("users").doc(uid).collection("consents").limit(50).get()
+    ).docs.map((doc) => ({ version: doc.id, ...(doc.data() as Record<string, unknown>) })),
+  };
+
+  return buildDsarEnvelope(data, Date.now());
 });

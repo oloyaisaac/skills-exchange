@@ -1,3 +1,44 @@
+## 2026-11-20 (Wave 1a) - REAL SOS DISPATCH (SMS + FCM)
+
+- **REM-034 (VERIFICATION_PENDING).** `sms.ts` builds the Africa's Talking messaging request,
+  validates recipients, parses per-recipient status and treats network/provider errors as failures.
+  `sosDispatch.ts` decides eligibility (active, owned, not previously attempted), merges the
+  emergency contact with `SOS_DISPATCH_NUMBERS`, and builds a message with job, district and
+  coordinates. `onSosIncidentCreated` sends once and writes `dispatch {status, recipients,
+  delivered}`. Logs are masked. Eleven tests. **Not verified:** no SMS credits/handset.
+- **REM-035 (VERIFICATION_PENDING).** Push to the `sos_dispatch` topic via `admin.messaging()`;
+  failures are logged, not fatal. **Not verified:** no Firebase project/device.
+- `sendSmsAlert` is no longer a stub, so the existing job-created SMS path now really calls the
+  provider and fails honestly when unconfigured.
+- **Build/tests:** 155/155 pass. No Android, provider or Firebase execution.
+
+**Next:** REM-036 (SOS call tree), REM-038/040, then money (REM-026-032).
+
+---
+
+## 2026-11-20 (Wave 0d) - CONSENT RECEIPTS, DSAR EXPORT, QUERY LIMITS
+
+Fourth wave-0 slice on `arena/2451db06-skills-exchange` (base `0f790d2`).
+
+- **REM-044 (IN_PROGRESS).** `recordConsent` validates a dated policy version and all three grants,
+  then writes `users/{uid}/consents/{version}` with the Admin SDK; the new rules block makes the
+  receipt read-only for the owner and invisible to everyone else. `exportMyData` returns profile,
+  jobs, disputes, reports, notifications, payouts, the guarantor submission, consent history and
+  sanitised guarantor rows (no NIN, phone, photo or storage path). `docs/privacy/PROCESSORS.md`
+  names Google, Africa's Talking, MTN, Gemini and Maps; `DSAR.md` sets a 30-day SLA and procedure.
+  Three unit tests. **Gap:** the Android onboarding screen does not call `recordConsent` and there
+  is no export button, so consent is not yet demonstrable in-app.
+- **REM-049 (VERIFICATION_PENDING).** 50 DAO list queries capped (providers 500; jobs, quotes,
+  disputes, notifications, ratings, withdrawals 200; chat and audit 500; guarantors 20).
+  `scripts/check_query_limits.mjs` guards the invariant. No query-plan or load test.
+- **Verification:** 146/146 backend tests, build exit 0, traceability/link/query-limit checks pass.
+  Nothing ran on Android or a Firebase project.
+
+**Next eligible:** REM-023 admin claim provisioning (needs the audit trail and server gate), then
+REM-024/025. Money (R08) and safety (R10) still untouched.
+
+---
+
 ## 2026-11-19 (Wave 0c) - WEBHOOK AUTH, GUARANTOR RISK, TRACEABILITY AND CI
 
 Third wave-0 slice on `arena/111454bc-skills-exchange` (base `3fe9a11`). Three tasks implemented,
