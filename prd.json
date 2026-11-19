@@ -5585,7 +5585,10 @@
       "phase": 19,
       "title": "Implement real SOS dispatch",
       "priority": "CRITICAL",
-      "status": "NOT_STARTED",
+      "status": "VERIFICATION_PENDING",
+      "status_note": "SOS incidents now trigger real dispatch: SMS to the user emergency contact and SOS_DISPATCH_NUMBERS through the Africa's Talking messaging API, with provider response parsing, masked logs, at-most-once attempt and a recorded SENT/FAILED/NO_RECIPIENTS outcome. 11 tests. Requires SMS credits and a handset to verify.",
+      "independent_verification": "PENDING",
+
       "depends_on": [
         "REM-002",
         "REM-011"
@@ -5624,7 +5627,10 @@
       "phase": 19,
       "title": "Add server push and escalation",
       "priority": "CRITICAL",
-      "status": "NOT_STARTED",
+      "status": "VERIFICATION_PENDING",
+      "status_note": "The same trigger sends an FCM notification/data message to the sos_dispatch topic and records push failures without failing the incident. Needs a Firebase project and a registered device.",
+      "independent_verification": "PENDING",
+
       "depends_on": [
         "REM-034",
         "REM-023"
@@ -7093,7 +7099,7 @@
       "review_report": "review_results/R02_ANDROID_CLIENT.md",
       "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
     }],
-    "current_story": "REM-044",
+    "current_story": "REM-034",
   "review_cycle_status": "all_15_reviews_complete_0_pass_15_fail",
   "review_cycle_completed_at": "2026-11-19T18:00:00+03:00",
     "completed_stories": [
@@ -7212,5 +7218,5 @@
     "RVW-013",
     "RVW-015"],
     "blocked_stories": [],
-    "last_updated": "2026-11-20T00:40:00+03:00"
+    "last_updated": "2026-11-20T01:30:00+03:00"
 }

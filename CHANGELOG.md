@@ -1,5 +1,16 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [WAVE-1A] Real SOS dispatch by SMS and FCM
+
+- **REM-034:** replaced the log-only `sendSmsAlert` stub with the Africa's Talking messaging API
+  (provider payload/response parsing, masked logs, honest failure). Raising an SOS now alerts the
+  user's emergency contact and `SOS_DISPATCH_NUMBERS`, records `SENT`/`FAILED`/`NO_RECIPIENTS` on
+  the incident and never claims delivery when the provider rejects it. 11 new tests.
+- **REM-035:** the same trigger pushes to the `sos_dispatch` FCM topic. A push failure is logged
+  and does not corrupt the SMS outcome.
+- **Verification:** 155/155 backend tests, build exit 0. No SMS credits, Firebase project or
+  handset, so neither channel is confirmed end to end.
+
 ### [2026-11-20] [WAVE-0D] Consent receipts, DSAR export and query limits
 
 - **REM-044:** `recordConsent` writes a dated, server-side consent receipt (terms, privacy, data
