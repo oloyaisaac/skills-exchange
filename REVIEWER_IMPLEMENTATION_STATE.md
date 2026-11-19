@@ -28,11 +28,19 @@
 - Execute `./gradlew :app:compileDebugKotlin` and `:app:testDebugUnitTest` on a provisioned machine.
 - Split the ViewModel/repository along the recorded slices (A–E), keeping the security tests green.
 
+## Shared-component change (supporting R14, not R14 remediation)
+
+- CI pinned Node 20 while every `.mjs` suite imports `../src/*.ts` (type stripping requires Node 22),
+  so `npm test` could never pass in CI. CI now uses Node 22 and `functions/package.json` says `>=22`
+  instead of the untrue `18`. Recorded for R14 to reconcile fully.
+
 ## Verification evidence
 
 - `node scripts/check_architecture_guards.mjs` → passed (single gateway, no UI bypass, no duplicate manifest).
 - `node scripts/check_readme_claims.mjs`, `check_doc_links.mjs` → passed.
 - Backend unchanged; last run at `aa4a0bc` was build exit 0, 171/171 tests.
+- CI `Backend build and tests`: previously red on Node 20 (`ERR_UNKNOWN_FILE_EXTENSION`); after the
+  Node 22 pin the same command passes locally (171/171) and is being re-run by CI.
 - Android compilation: **not executed** — no JDK/Android SDK.
 
 ## Blockers

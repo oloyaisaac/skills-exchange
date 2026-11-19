@@ -1,5 +1,13 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [CI] Run the backend suite on the Node version the tests require
+
+- The `.mjs` suites import `../src/*.ts` and rely on Node's built-in type stripping, which needs
+  Node 22. CI pinned Node 20, so `npm test` failed with `ERR_UNKNOWN_FILE_EXTENSION` on every run
+  (`main` has been red since at least `aa4a0bc`).
+- CI now uses Node 22 and `functions/package.json` declares `>=22` instead of the untrue `18`.
+- Supporting change only; formal runtime/CI alignment remains owed to R14.
+
 ### [2026-11-20] [PROMPT-4 / R01] Single Firebase gateway; architecture guards
 
 - **R01-P2-02 (implemented, compile unverified):** `SkillsExchangeViewModel` now constructs one
