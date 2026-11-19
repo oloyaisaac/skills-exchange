@@ -1,5 +1,26 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-19] [WAVE-0B] OTP and transcription moved server-side; rules, backup and build config hardened
+
+- **REM-011 / REM-022:** new `sendOtp` / `verifyOtp` callables own the Africa's Talking key
+  (env only), enforce a 60 s cooldown, 5 sends/hour, 10-minute TTL and 5 attempts, and mint a
+  Firebase custom token after verification. Android exchanges it with `signInWithCustomToken`;
+  no credential remains in the APK or the repo. Old key still requires revocation.
+- **REM-012–015:** one `sosIncidents` block with a job-existence guard and admin-only lifecycle
+  updates; client creates denied for `notifications` / `momo_transactions`; storage job-photo
+  authorization reads the Firestore job instead of self-asserted metadata and denies overwrites;
+  `job_quotes` reads limited to author, job owner and admin.
+- **REM-016:** `allowBackup=false` and all backup/transfer domains excluded.
+- **REM-006:** D:/ paths and the second (Java 25) test JDK removed; wrapper executable.
+- **REM-051:** `transcribeVoiceJob` callable owns the Gemini key and validates the model output;
+  the client returns null and surfaces an error instead of posting a fabricated job.
+- **REM-069 / REM-072:** 61 `file:///d:/` links rewritten; link and document-map checkers added
+  and passing (`scripts/check_doc_links.mjs`, `scripts/check_document_map.mjs`).
+- **Verified here:** 128/128 backend tests, TypeScript build exit 0, both documentation checkers.
+  **Not verified:** Android compile/build, Firestore rules emulator, deployed callables, backup
+  restore, key revocation. No task is claimed independently verified; product remains not
+  production-ready.
+
 ### [2026-11-19] [WAVE-0] Remediation started — build restored, public reads closed, key removed from source
 
 - **REM-002 (VERIFICATION_PENDING):** `functions.https.Request` annotation plus npm `overrides`

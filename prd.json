@@ -4506,7 +4506,10 @@
       "phase": 19,
       "title": "Make the build portable",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "VERIFICATION_PENDING",
+      "status_note": "Gradle configuration now has no machine-local paths and one Java 11 toolchain. Not built: no JDK/Android SDK in this environment.",
+      "independent_verification": "PENDING",
+
       "depends_on": [],
       "description": "Make the build portable. Absolute D:/ paths, Java 11/25 mismatch and non-executable wrapper tie the build to one machine.",
       "goal": "Remove absolute paths, pin one JDK, restore wrapper execute bit, use toolchains",
@@ -4694,7 +4697,8 @@
       "title": "Remove and rotate the committed SMS/OTP key",
       "priority": "HIGH",
       "status": "IN_PROGRESS",
-      "status_note": "Key literal removed from AfricaTalkingService.kt; it is now read from a Gradle property/env var into BuildConfig and a blank value makes OTP fail closed. The old key remains in git history and MUST be revoked by the operator. Outstanding: send/verify callables, client wiring, and keeping the key out of the APK entirely.",
+      "status_note": "Implemented: OTP callables own the Africa's Talking key, the Android client calls them and holds no credential, and neither repo nor APK contains a secret. Not complete: the old key must still be revoked in the provider console and the callable flow has not run against a real Firebase project.",
+      "independent_verification": "PENDING",
       "depends_on": [],
       "description": "Remove and rotate the committed SMS/OTP key. The Africa's Talking key ships in the APK and OTP runs from the device.",
       "goal": "Revoke the key, move OTP/SMS behind callables, load secrets from env/Secret Manager",
@@ -4731,7 +4735,10 @@
       "phase": 19,
       "title": "Remove duplicate SOS rules",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "VERIFICATION_PENDING",
+      "status_note": "Single sosIncidents block with job-existence check; lifecycle updates admin-only. Not emulator-tested or deployed.",
+      "independent_verification": "PENDING",
+
       "depends_on": [
         "REM-010"
       ],
@@ -4766,7 +4773,10 @@
       "phase": 19,
       "title": "Make notifications and transactions server-only",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "VERIFICATION_PENDING",
+      "status_note": "Client creates denied for notifications and momo_transactions; Admin SDK writes unaffected. Not emulator-tested.",
+      "independent_verification": "PENDING",
+
       "depends_on": [
         "REM-010"
       ],
@@ -4802,7 +4812,10 @@
       "phase": 19,
       "title": "Bind Storage writes to stored job ownership",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "VERIFICATION_PENDING",
+      "status_note": "Storage rules authorize from the Firestore job document and deny overwrites; metadata self-assertion removed. Not emulator-tested.",
+      "independent_verification": "PENDING",
+
       "depends_on": [
         "REM-010"
       ],
@@ -4838,7 +4851,10 @@
       "phase": 19,
       "title": "Scope quote reads",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "VERIFICATION_PENDING",
+      "status_note": "job_quotes reads limited to author, job owner and admin. Not emulator-tested.",
+      "independent_verification": "PENDING",
+
       "depends_on": [
         "REM-010"
       ],
@@ -4872,7 +4888,10 @@
       "phase": 19,
       "title": "Fix app backup configuration",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "VERIFICATION_PENDING",
+      "status_note": "allowBackup=false plus cloud-backup and device-transfer exclusions for all data domains. No device/emulator restore test available.",
+      "independent_verification": "PENDING",
+
       "depends_on": [],
       "description": "Fix app backup configuration. Backups are enabled with empty include/exclude rules.",
       "goal": "Disable backup or exclude auth tokens, DataStore, DB and KYC caches",
@@ -5102,7 +5121,10 @@
       "phase": 19,
       "title": "Make OTP produce a Firebase identity",
       "priority": "CRITICAL",
-      "status": "NOT_STARTED",
+      "status": "VERIFICATION_PENDING",
+      "status_note": "verifyOtp creates/loads the phone user, returns a custom token, and the client exchanges it with signInWithCustomToken. Server logic is unit-tested; the clean-install signup test needs a Firebase project.",
+      "independent_verification": "PENDING",
+
       "depends_on": [
         "REM-011",
         "REM-002"
@@ -6206,7 +6228,10 @@
       "phase": 19,
       "title": "Remove fabricated transcription fallback",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "VERIFICATION_PENDING",
+      "status_note": "transcribeVoiceJob callable owns GEMINI_API_KEY and validates the response; the client no longer fabricates output. Needs a deployed function and Android build to verify end to end.",
+      "independent_verification": "PENDING",
+
       "depends_on": [],
       "description": "Remove fabricated transcription fallback. Missing Gemini key returns canned content and the key is called from the device.",
       "goal": "Return an explicit error and move the call server-side",
@@ -6872,7 +6897,10 @@
       "phase": 19,
       "title": "Make documentation links portable",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "COMPLETED",
+      "status_note": "61 host-absolute file:///d:/ links rewritten to repo-relative paths; scripts/check_doc_links.mjs passes (115 relative links resolve, no host-absolute targets). Reviewer reports were left untouched as historical evidence.",
+      "independent_verification": "PENDING",
+
       "depends_on": [],
       "description": "Make documentation links portable. 67 host-absolute file:///d:/ links.",
       "goal": "Convert to repo-relative links or remove",
@@ -6970,7 +6998,10 @@
       "phase": 19,
       "title": "Define document precedence",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "COMPLETED",
+      "status_note": "docs/DOCUMENT_MAP.md states role, precedence and owner for all 19 documents; scripts/check_document_map.mjs passes.",
+      "independent_verification": "PENDING",
+
       "depends_on": [],
       "description": "Define document precedence. Seven master documents overlap without precedence.",
       "goal": "Publish one precedence rule per document type",
@@ -7044,10 +7075,12 @@
       "review_report": "review_results/R02_ANDROID_CLIENT.md",
       "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
     }],
-    "current_story": "REM-011",
+    "current_story": "REM-023",
   "review_cycle_status": "all_15_reviews_complete_0_pass_15_fail",
   "review_cycle_completed_at": "2026-11-19T18:00:00+03:00",
     "completed_stories": [
+    "REM-069",
+    "REM-072",
         "RVW-001",
         "RVW-014",
         "STAB-001",
@@ -7161,5 +7194,5 @@
     "RVW-013",
     "RVW-015"],
     "blocked_stories": [],
-    "last_updated": "2026-11-19T21:10:00+03:00"
+    "last_updated": "2026-11-19T22:40:00+03:00"
 }

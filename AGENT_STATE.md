@@ -1,3 +1,36 @@
+## 2026-11-19 (Wave 0b) - OTP/TRANSCRIPTION MOVED SERVER-SIDE; RULES, BACKUP AND BUILD CONFIG HARDENED
+
+Second wave-0 slice on `arena/037d33dc-skills-exchange` (base `38ed1cf`). Eight tasks implemented,
+two completed with checker evidence, none independently verified.
+
+- **REM-011 / REM-022 (IN_PROGRESS / VERIFICATION_PENDING).** `functions/src/otp.ts` is a pure,
+  tested policy module; `sendOtp` and `verifyOtp` callables own the Africa's Talking credential,
+  throttle per phone and mint a Firebase custom token. The Android service now calls the callables
+  and exchanges the token with `signInWithCustomToken`; the key, Basic-auth header and build-time
+  key field are gone. Outstanding: revoke the old key, deploy and test against a real project.
+- **REM-012 to REM-015 (VERIFICATION_PENDING).** Single SOS rule with `exists(job)`; client creates
+  denied for notifications and the MoMo ledger; storage authorization now reads the Firestore job
+  and forbids overwrites; quotes restricted to author/job owner/admin. No emulator available, so
+  no rules execution evidence.
+- **REM-016 (VERIFICATION_PENDING).** Backups disabled and every data domain excluded from cloud
+  backup and device transfer.
+- **REM-006 (VERIFICATION_PENDING).** Gradle no longer references D:/ paths or a Java 25 test JDK;
+  `gradlew` is executable. No Gradle run in this environment.
+- **REM-051 (VERIFICATION_PENDING).** `transcribeVoiceJob` validates Gemini output and fails
+  visibly; client returns null and the ViewModel sets `audioTranscriptionError`.
+- **REM-069 / REM-072 (COMPLETED).** 61 host-absolute links rewritten; `check_doc_links.mjs` and
+  `check_document_map.mjs` both pass. Reviewer reports were left untouched.
+- **REM-008 remains unresolved.** Upgrading to firebase-admin 14 / firebase-functions 7 changes the
+  callable signature (`(data, context)` to a single request object) and breaks every handler; the
+  upgrade was reverted. It needs a dedicated migration.
+- **No completion declarations were written**, because no reviewer's full assignment is both
+  implemented and verified.
+
+**Next:** REM-023 (audited admin-claim provisioning), REM-024, REM-025, then R08 money tasks. CI
+(REM-005) stays dependent on a compiling Android build.
+
+---
+
 ## 2026-11-19 (Wave 0) - FIRST REMEDIATION COMMITS: BUILD GREEN, PUBLIC READS CLOSED, KEY REMOVED
 
 Wave 0 started on `arena/87f323b5-skills-exchange` (base `f353ebf`). Four tasks touched; **no
