@@ -13,7 +13,7 @@ not verdicts.
 | Metric | Value |
 |---|---|
 | Reviewers assigned / completed | 15 / 15 |
-| Individual issues raised (raw) | 91 |
+| Individual issues raised (raw) | 94 |
 | Consolidated master issues | 73 |
 | CRITICAL | 11 |
 | HIGH | 31 |
@@ -60,10 +60,10 @@ not verdicts.
 | MR-029 | HIGH | Fee and total computed client-side | Pricing | `platformFee = laborTotal * 0.10` (`repository:565/660`) | R08-04 | Verified failing |
 | MR-030 | HIGH | Escrow status transitions are client-writable | Rules/repository | Status strings written by client; no per-actor transition rule | R08-05 | Verified failing |
 | MR-031 | HIGH | Ledger is device-only with no server settlement | Room/cashout | Local ledger/balance; no settlement record | R08-06 | Verified failing |
-| MR-032 | MEDIUM | No reconciliation or stuck-escrow alerting | Operations | No recon job/report/alert | R08-07 | Not implemented |
+| MR-032 | MEDIUM | No reconciliation or stuck-escrow alerting | Operations | No recon job/report/alert | R08-07, R03-06 | Not implemented |
 | MR-033 | MEDIUM | Airtel and card offered without integration | Payment UI | `EscrowAndProofSheet.kt:972`; no provider code | R05-05, R08-08 | Not implemented |
 | MR-034 | CRITICAL | SOS dispatch is a log-only stub that returns `SENT` | SMS service | `SmsNotificationService.kt:60+` | R10-01 | Verified failing |
-| MR-035 | CRITICAL | No server FCM/escalation; SOS silent when no profile resolves | Functions/SOS | 0 `admin.messaging`; conditional dispatch | R10-02 | Not implemented |
+| MR-035 | CRITICAL | No server FCM/escalation; SOS silent when no profile resolves | Functions/SOS | 0 `admin.messaging`; conditional dispatch | R10-02, R03-04 | Not implemented |
 | MR-036 | HIGH | Doorstep PIN disclosed to worker; fixed default; no lockout | Escrow sheet/data | `EscrowAndProofSheet.kt:641,649`; `Entities.kt:259` `"4829"` | R10-03, R02-04 | Verified failing |
 | MR-037 | HIGH | Account deletion removes complaints made against the user | Disputes | `FirebaseService.kt:295–299` | R09-02, R10-05 | Verified failing |
 | MR-038 | MEDIUM | No SOS throttle, dedup or admin audit trail | Safety ops | No rate limit; no audit log | R10-06 | Not implemented |

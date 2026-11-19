@@ -3,6 +3,7 @@
 | Field | Value |
 |---|---|
 | Reviewer | R07 — Application Security (P0, Gate G2) |
+| Assignment | `reviewers/SECURITY_REVIEWER.md` (read in full) |
 | Executed | 2026-11-19 |
 | Source reviewed | HEAD `06ff649` |
 | Areas | Firestore/Storage rules, secrets, manifest, backups, abuse controls |
@@ -48,6 +49,14 @@ job-photo storage, app backup, admin gates.
 | R07-09 | MEDIUM | There are zero rules tests. | Test suite | 0 rules test files/emulator config | Regression tests per rule | Rules defects ship silently | Add emulator rules suite to CI | Tests fail on intentional rule regression |
 | R07-10 | MEDIUM | Release APK is unminified with no network hardening. | Build config | `isMinifyEnabled=false` (`:44`); no network security config or pinning | R8 + TLS policy | Easier reverse engineering/MITM | Enable R8, add network security config | Release build inspection |
 | R07-11 | HIGH | A live-looking Africa's Talking key ships in the APK. | Client | `AfricaTalkingService.kt:15` (value redacted) | Server-held secret | SMS/OTP account abuse | Rotate and move server-side | Secret scan + revocation evidence |
+
+## Outcome classification
+
+- **Verified working:** see "Verified working functionality" above.
+- **Verified failing:** R07-01, R07-02, R07-03, R07-04, R07-05, R07-06, R07-10, R07-11.
+- **Not implemented:** R07-07, R07-08, R07-09.
+- **Partially implemented:** none.
+- **Unable to verify:** runtime-only checks listed under "Limitations / unable to verify".
 
 ## Missing functionality
 Field-level GPS policy, server-only collections, storage ownership binding, rules tests, App Check,

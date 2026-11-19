@@ -3,6 +3,7 @@
 | Field | Value |
 |---|---|
 | Reviewer | R04 — Data / Persistence (P1) |
+| Assignment | `reviewers/DATA_REVIEWER.md` (read in full) |
 | Executed | 2026-11-19 |
 | Source reviewed | HEAD `06ff649` |
 | Areas | Room schema, migrations, money storage, transactions, dual-write |
@@ -40,6 +41,14 @@ notifications, ratings, reports.
 | R04-03 | MEDIUM | Destructive fallback and dual-write have no conflict protocol. | Database/repository | `fallbackToDestructiveMigration` not debug-gated; Room and Firestore written independently | Safe migrations; deterministic reconciliation | Silent wipe risk; divergence undetected | Remove release fallback; define sync/conflict rules | Upgrade test from v26; conflict tests |
 | R04-04 | MEDIUM | Several list reads are unbounded or unindexed on growth paths. | DAOs | `SELECT *` list queries without `LIMIT`; message history unpaginated | Bounded queries and indices | Memory/scan growth with data volume | Add paging and indices, verify with query plans | Load test with volume dataset |
 | R04-05 | MEDIUM | Chat is stored twice with only `timestamp` for ordering. | Room + Firestore | Local rows and Firestore subcollection; snapshot listener maps by timestamp only | Single source of truth or dedup key | Duplicate/lost messages on reconnect and clock skew | Add server sequence/ID dedup and reconciliation | Reconnect/ordering tests |
+
+## Outcome classification
+
+- **Verified working:** see "Verified working functionality" above.
+- **Verified failing:** R04-01, R04-02, R04-03, R04-04.
+- **Not implemented:** none.
+- **Partially implemented:** R04-05.
+- **Unable to verify:** runtime-only checks listed under "Limitations / unable to verify".
 
 ## Missing functionality
 - Schema export, migration tests, reconciliation job, retention/purge, conflict resolution.

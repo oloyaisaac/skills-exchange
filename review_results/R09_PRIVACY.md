@@ -3,11 +3,12 @@
 | Field | Value |
 |---|---|
 | Reviewer | R09 — Privacy, KYC & Compliance (P0, Gate G5) |
+| Assignment | `reviewers/PRIVACY_COMPLIANCE_REVIEWER.md` (read in full) |
 | Executed | 2026-11-19 |
 | Source reviewed | HEAD `06ff649` |
 | Areas | Data inventory, KYC, consent, erasure, retention, notices, processors |
 | Verdict | **FAIL** — G5 not met |
-| Issues | 7 (1 CRITICAL, 3 HIGH, 3 MEDIUM) |
+| Issues | 7 (1 CRITICAL, 4 HIGH, 2 MEDIUM) |
 
 ## Areas examined
 Personal data collected and where it lives, KYC/guarantor storage, consent records, deletion cascade,
@@ -44,6 +45,14 @@ dialogs, job photos and chat, admin access to identity documents.
 | R09-05 | MEDIUM | Consent, processor disclosure and DSAR workflow are missing. | Compliance ops | Consent is one boolean (`Entities.kt:476`); no processor list/transfer statement; no DSAR SLA | Demonstrable consent, disclosed processors, DSAR process | Cannot demonstrate consent or handle access requests | Add consent records (version/time), processor list, DSAR runbook | Consent audit + DSAR dry run |
 | R09-06 | MEDIUM | NIN is over-collected and unmasked at rest. | KYC | Full NIN in Firestore; masking helper not applied to storage | Minimal, masked where possible | Plaintext identifiers retained | Data-minimise, mask, restrict access | Field-level access audit |
 | R09-07 | HIGH | Backups are enabled with empty rules. | Manifest/XML | `allowBackup=true`; sample backup XML with no excludes | Credentials/PII excluded | Session, DB and PII eligible for cloud backup | Disable or exclude sensitive stores | Backup inspection |
+
+## Outcome classification
+
+- **Verified working:** see "Verified working functionality" above.
+- **Verified failing:** R09-01, R09-02, R09-03, R09-07.
+- **Not implemented:** R09-04, R09-05.
+- **Partially implemented:** R09-06.
+- **Unable to verify:** runtime-only checks listed under "Limitations / unable to verify".
 
 ## Missing functionality
 Server-side erasure, retention, DSAR/export coverage, consent lifecycle, processor disclosure, DPIA.

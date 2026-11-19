@@ -19,23 +19,23 @@ Everything here is review evidence; **no application source, rules, build file o
 
 | # | Reviewer | Verdict | Issues |
 |---|---|---|---|
-| R01 | Architecture & Codebase Integrity | FAIL | 3 |
-| R02 | Android Client | FAIL | 6 |
-| R03 | Backend & Cloud Functions | FAIL | 6 |
-| R04 | Data & Persistence | FAIL | 5 |
-| R05 | Integrations | FAIL | 5 |
-| R06 | Authentication & Authorization | FAIL | 4 |
-| R07 | Application Security | FAIL | 11 |
-| R08 | Payments & Escrow | FAIL | 9 |
-| R09 | Privacy, KYC & Compliance | FAIL | 7 |
-| R10 | Safety, Trust & Fraud | FAIL | 7 |
-| R11 | QA & Test Engineering | FAIL | 6 |
-| R12 | UI/UX & Accessibility | FAIL | 5 |
-| R13 | Performance & Reliability | FAIL | 6 |
-| R14 | DevOps & Release Engineering | FAIL | 5 |
-| R15 | Documentation & Traceability | FAIL | 6 |
+| R01 | [Architecture & Codebase Integrity](R01_ARCHITECTURE.md) | FAIL | 3 |
+| R02 | [Android Client](R02_ANDROID_CLIENT.md) | FAIL | 6 |
+| R03 | [Backend & Cloud Functions](R03_BACKEND.md) | FAIL | 6 |
+| R04 | [Data & Persistence](R04_DATA.md) | FAIL | 5 |
+| R05 | [Integrations](R05_INTEGRATIONS.md) | FAIL | 5 |
+| R06 | [Authentication & Authorization](R06_AUTH.md) | FAIL | 4 |
+| R07 | [Application Security](R07_SECURITY.md) | FAIL | 11 |
+| R08 | [Payments & Escrow](R08_PAYMENTS.md) | FAIL | 9 |
+| R09 | [Privacy, KYC & Compliance](R09_PRIVACY.md) | FAIL | 7 |
+| R10 | [Safety, Trust & Fraud](R10_SAFETY.md) | FAIL | 8 |
+| R11 | [QA & Test Engineering](R11_QA.md) | FAIL | 6 |
+| R12 | [UI/UX & Accessibility](R12_UI_UX_A11Y.md) | FAIL | 6 |
+| R13 | [Performance & Reliability](R13_PERFORMANCE.md) | FAIL | 7 |
+| R14 | [DevOps & Release Engineering](R14_DEVOPS.md) | FAIL | 5 |
+| R15 | [Documentation & Traceability](R15_DOCUMENTATION.md) | FAIL | 6 |
 
-**15 FAIL · 0 PASS · 0 PASS WITH CONDITIONS · 0 BLOCKED.** 91 individual issues → 73 consolidated
+**15 FAIL · 0 PASS · 0 PASS WITH CONDITIONS · 0 BLOCKED.** 94 individual issues → 73 consolidated
 (11 CRITICAL, 31 HIGH, 30 MEDIUM, 1 LOW).
 
 ## Execution method (honest account)

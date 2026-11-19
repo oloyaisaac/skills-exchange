@@ -3,11 +3,12 @@
 | Field | Value |
 |---|---|
 | Reviewer | R10 — Safety, Trust & Fraud (P0, Gate G3) |
+| Assignment | `reviewers/SAFETY_FRAUD_REVIEWER.md` (read in full) |
 | Executed | 2026-11-19 |
 | Source reviewed | HEAD `06ff649` |
 | Areas | SOS, doorstep PIN, reports/disputes, verification, admin arbitration, abuse controls |
 | Verdict | **FAIL** — G3 not met |
-| Issues | 7 (2 CRITICAL, 3 HIGH, 2 MEDIUM) |
+| Issues | 8 (2 CRITICAL, 3 HIGH, 3 MEDIUM) |
 
 ## Areas examined
 SOS raise and dispatch, alert delivery, PIN generation/verification/display, abuse reporting, dispute
@@ -45,6 +46,15 @@ guarantor submission/review, admin queue/arbitration, job ratings.
 | R10-05 | HIGH | Account deletion erases complaints against the user. | Disputes | `FirebaseService.kt:295–299` | Evidence preserved | Complaints disappear with the account | Retain/anonymise disputes | Deletion preserves complaint |
 | R10-06 | MEDIUM | No SOS throttling, dedup or admin audit trail. | Safety ops | No rate limit on SOS create; no audit log for admin decisions | Throttled, audited actions | Alert fatigue; insider actions untraceable | Add throttles and immutable audit log | Abuse + audit tests |
 | R10-07 | MEDIUM | Guarantor/identity controls are weak against collusion. | Verification | Reuse across workers not detected; NIN format-only; no liveness/registry check | Cross-worker reuse detection, stronger identity proof | Collusive rings pass | Add reuse detection and stronger KYC | Synthetic collusion test |
+| R10-08 | MEDIUM | Admin/SOS escalation is unreachable because no admin can hold the claim and the UI gate is client-side. | Admin queue/escalation | 0 `setCustomUserClaims`; `isAdminUnlocked = true` (`MainScreen.kt:832`) | On-call admin receives and acts on SOS | No provisionable admin; unlock is cosmetic | Provision claims via audited path; server-gate UI; add on-call routing | Admin login receives SOS end-to-end |
+
+## Outcome classification
+
+- **Verified working:** see "Verified working functionality" above.
+- **Verified failing:** R10-01, R10-03, R10-05, R10-08.
+- **Not implemented:** R10-02, R10-04, R10-06.
+- **Partially implemented:** R10-07.
+- **Unable to verify:** runtime-only checks listed under "Limitations / unable to verify".
 
 ## Missing functionality
 Real emergency dispatch, on-call escalation, moderator queue, PIN hardening, audit log, abuse throttles.

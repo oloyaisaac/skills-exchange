@@ -3,11 +3,12 @@
 | Field | Value |
 |---|---|
 | Reviewer | R12 — UI/UX & Accessibility (P1) |
+| Assignment | `reviewers/UI_UX_ACCESSIBILITY_REVIEWER.md` (read in full) |
 | Executed | 2026-11-19 |
 | Source reviewed | HEAD `06ff649` |
 | Areas | Semantics, labels, typography, localisation, UX states, formatting |
 | Verdict | **FAIL** |
-| Issues | 5 (2 HIGH, 3 MEDIUM) |
+| Issues | 6 (3 HIGH, 3 MEDIUM) |
 
 ## Areas examined
 Screen structure, state feedback, accessibility labels and semantics, text sizing, contrast, localisation,
@@ -42,6 +43,15 @@ error states.
 | R12-03 | HIGH | No localisation: all copy is inline English. | Strings | 0 `stringResource`; only `app_name` in `strings.xml`; 178 `Text("` literals | Resource strings + locale(s) | English-only for a multi-language market | Externalise strings; add Luganda | Locale switch + lint clean |
 | R12-04 | MEDIUM | Money and error presentation are inconsistent. | UI formatting | Payout uses `amountUgx.toInt()`; no `NumberFormat`; raw `e.message` surfaced | Grouped, rounded currency; actionable errors | Truncated amounts; developer text | Central formatters and error mapping | Formatting unit tests + screenshot review |
 | R12-05 | MEDIUM | Sheet/back behaviour is unpredictable. | Navigation/state | 0 `BackHandler`; 29 `ModalBottomSheet`; 0 `rememberSaveable` | Back closes sheet, state survives | Back exits with sheet open | Add `BackHandler` and saveable state | Rotation/back instrumentation |
+| R12-06 | MEDIUM | No UI automation hooks or screenshot suite. | Testability | 0 `testTag`; one orphan `screenshots/greeting.png` with no framework | Stable selectors and visual regression suite | Critical UI cannot be automated | Add `testTag`s and a screenshot test suite | Compose UI tests run in CI |
+
+## Outcome classification
+
+- **Verified working:** see "Verified working functionality" above.
+- **Verified failing:** R12-01, R12-02, R12-03, R12-04, R12-05.
+- **Not implemented:** R12-06.
+- **Partially implemented:** none.
+- **Unable to verify:** runtime-only checks listed under "Limitations / unable to verify".
 
 ## Missing functionality
 Localisation, labelled controls, minimum typography, consistent formatters, UI test hooks.

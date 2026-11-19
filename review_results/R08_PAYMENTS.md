@@ -3,6 +3,7 @@
 | Field | Value |
 |---|---|
 | Reviewer | R08 — Payments & Escrow (P0, Gate G4) |
+| Assignment | `reviewers/PAYMENTS_REVIEWER.md` (read in full) |
 | Executed | 2026-11-19 |
 | Source reviewed | HEAD `06ff649` |
 | Areas | Collection, escrow, release, refund, payout, cashout, ledger, reconciliation |
@@ -46,6 +47,14 @@ worker cashout, material advance, payout status, dispute resolution.
 | R08-07 | MEDIUM | No reconciliation or stuck-escrow alerting. | Operations | No reconciliation job, settlement report or alert | Daily reconciliation with alerts | Stuck/double-counted money undetected | Add reconciliation + alerting | Recon report matches provider statement |
 | R08-08 | MEDIUM | Airtel and card are offered as payment channels without integration. | Payment UI | `EscrowAndProofSheet.kt:972`; no provider code | Only functional channels offered | User can select a dead channel | Integrate or remove | Channel E2E |
 | R08-09 | MEDIUM | Money is `Double` end-to-end. | Entities/UI | 33 `: Double` fields; `toInt()` truncation in payout stub | Integer minor units | Rounding/truncation drift | Migrate to minor units | Arithmetic + migration tests |
+
+## Outcome classification
+
+- **Verified working:** see "Verified working functionality" above.
+- **Verified failing:** R08-03, R08-04, R08-05, R08-06, R08-09.
+- **Not implemented:** R08-01, R08-02, R08-07, R08-08.
+- **Partially implemented:** none.
+- **Unable to verify:** runtime-only checks listed under "Limitations / unable to verify".
 
 ## Missing functionality
 Release wiring, refunds, real disbursement, server ledger, settlement, reconciliation, production config.

@@ -3,6 +3,7 @@
 | Field | Value |
 |---|---|
 | Reviewer | R06 — Authentication & Authorization (P0) |
+| Assignment | `reviewers/AUTH_REVIEWER.md` (read in full) |
 | Executed | 2026-11-19 |
 | Source reviewed | HEAD `06ff649` |
 | Areas | OTP, session restore, Firebase identity, admin claims, re-auth, linking |
@@ -43,6 +44,14 @@ logout, role switching.
 | R06-02 | HIGH | Admin role can never be provisioned and the UI gate is cosmetic. | Claims + admin UI | 0 `setCustomUserClaims`; `isAdminUnlocked = true` locally (`MainScreen.kt:832`) | Audited claim provisioning; server-verified UI gate | No admin can be created; unlock is a boolean | Provision claims via audited script; gate UI on server response | Callable admin test with/without claim |
 | R06-03 | HIGH | Deletion and sensitive changes lack re-authentication and token revocation. | Auth lifecycle | Deletion calls `deleteCurrentUser()` without fresh auth; logout clears DataStore only; no `revokeRefreshTokens` | Recent-auth requirement; revocable sessions | Stale token remains valid; deletion can fail after local wipe | Require fresh auth; revoke tokens on logout/deletion | Re-auth + revocation tests |
 | R06-04 | MEDIUM | Google and phone identities are never linked. | Auth | Separate flows; no `linkWithCredential`/account linking | One UID per person | Duplicate identities and histories | Implement linking and merge rules | Linked-account E2E |
+
+## Outcome classification
+
+- **Verified working:** see "Verified working functionality" above.
+- **Verified failing:** R06-01, R06-02.
+- **Not implemented:** R06-03, R06-04.
+- **Partially implemented:** none.
+- **Unable to verify:** runtime-only checks listed under "Limitations / unable to verify".
 
 ## Missing functionality
 Admin bootstrap, re-authentication, token revocation, account linking, OTP abuse throttling.

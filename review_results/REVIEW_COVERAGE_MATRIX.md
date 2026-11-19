@@ -20,14 +20,14 @@ actually executed. Remaining examinations are runtime checks blocked by the envi
 | R07 | Application Security | Rules, secrets, storage, manifest, abuse | `firestore.rules`, `storage.rules`, manifest, backups | Rule-by-rule analysis; secret/App Check grep | Emulator exploit tests, live project probes | COMPLETE (static) | 11 |
 | R08 | Payments & Escrow | Collection, release, refund, payout, ledger | Repository, payout service, callables | Call-site trace; Node money tests (111/111) | MoMo sandbox E2E, settlement, reconciliation | COMPLETE (partial execution) | 9 |
 | R09 | Privacy, KYC & Compliance | PII, KYC, consent, erasure, retention, notices | Deletion path, KYC storage, notice, consent | Deletion trace; retention/processor grep | Legal review, DSR dry run, backup/restore | COMPLETE (static) | 7 |
-| R10 | Safety, Trust & Fraud | SOS, PIN, reports, disputes, verification | SOS service, escrow sheet, rules, validators | Dispatch trace; rules/read analysis | Real alert delivery, drill, moderator queue | COMPLETE (static) | 7 |
+| R10 | Safety, Trust & Fraud | SOS, PIN, reports, disputes, verification | SOS service, escrow sheet, rules, validators | Dispatch trace; rules/read analysis | Real alert delivery, drill, moderator queue | COMPLETE (static) | 8 |
 | R11 | QA & Test Engineering | Tests, coverage, rules/migration/UI, CI | 41 JVM files, 1 androidTest, Node tests | Counted 356 tests; `npm test` 111/111; build exit 2 | Android suite, rules/migration/UI/E2E suites | COMPLETE (partial execution) | 6 |
-| R12 | UI/UX & Accessibility | Semantics, type, localisation, formatting | Screens/components, theme, strings | Static token/size counts | TalkBack, contrast, font scale, screenshots | COMPLETE (static) | 5 |
-| R13 | Performance & Reliability | Telemetry, offline, polling, size, SLOs | ViewModel, listeners, deps, assets | Dependency/asset measurement | Profiling, macrobenchmark, battery, load | COMPLETE (static) | 6 |
+| R12 | UI/UX & Accessibility | Semantics, type, localisation, formatting | Screens/components, theme, strings | Static token/size counts | TalkBack, contrast, font scale, screenshots | COMPLETE (static) | 6 |
+| R13 | Performance & Reliability | Telemetry, offline, polling, size, SLOs | ViewModel, listeners, deps, assets | Dependency/asset measurement | Profiling, macrobenchmark, battery, load | COMPLETE (static) | 7 |
 | R14 | DevOps & Supply Chain | CI, portability, signing, artifacts, deps | Gradle, wrapper, firebase.json, package files | `npm ci`, `npm audit`, build, `gradlew` attempt | Android release build, signing, deploy drill | COMPLETE (partial execution) | 5 |
 | R15 | Documentation & Traceability | Status honesty, PRD, links, traceability | 13 root docs + PRD + reports | Counts (81 build claims, 67 links, 112 stories, 6 IDs); link check | Historical build reconstruction | COMPLETE (static) | 6 |
 
-**Totals:** 15 reviewers, **91 individual issues** raised, 73 consolidated master issues.
+**Totals:** 15 reviewers, **94 individual issues** raised, 73 consolidated master issues.
 No reviewer was skipped; every assignment file in `reviewers/` was read and mapped to a report.
 
 ## 2. Responsibility coverage detail

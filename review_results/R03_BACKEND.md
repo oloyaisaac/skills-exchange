@@ -3,11 +3,12 @@
 | Field | Value |
 |---|---|
 | Reviewer | R03 — Backend / Cloud Functions (P0) |
+| Assignment | `reviewers/BACKEND_REVIEWER.md` (read in full) |
 | Executed | 2026-11-19 |
 | Source reviewed | HEAD `06ff649` |
 | Areas | 18 exported functions, authorization, webhook, deployability, FCM, idempotency |
 | Verdict | **FAIL** |
-| Issues | 6 (2 CRITICAL, 1 HIGH, 2 MEDIUM, 1 LOW) |
+| Issues | 6 (2 CRITICAL, 1 HIGH, 3 MEDIUM) |
 
 ## Areas examined
 All 4,027 lines of TypeScript: callables, scheduled jobs, Firestore trigger, HTTP webhook, shared money
@@ -43,6 +44,14 @@ queues, dispute/SOS resolution, job-created trigger, MoMo webhook.
 | R03-04 | CRITICAL | No push notification is ever sent by the backend. | Functions | 0 `admin.messaging` calls; `onJobCreated` only logs/radius logic | FCM on job/quote/payment/SOS events | No push delivery exists | Implement FCM send with token cleanup and failure logging | Device receives event-driven push |
 | R03-05 | MEDIUM | MoMo webhook is unauthenticated and unthrottled. | `processMoMoWebhook` | Public HTTP handler, no signature/timestamp/allow-list (`index.ts:643`) | Signed, time-bounded, rate-limited callback | Any caller can force provider re-checks | Add signature/IP allow-list and throttle | Forged-callback test rejected |
 | R03-06 | MEDIUM | Scheduled payout/refund jobs have no executor, dead-letter or alerting. | Scheduled functions | No refund executor; no dead-letter/alert path | Failures retried and surfaced | Stuck escrow possible with no signal | Implement executor + DLQ + alert | Failure-injection test |
+
+## Outcome classification
+
+- **Verified working:** see "Verified working functionality" above.
+- **Verified failing:** R03-01, R03-05.
+- **Not implemented:** R03-02, R03-03, R03-04, R03-06.
+- **Partially implemented:** none.
+- **Unable to verify:** runtime-only checks listed under "Limitations / unable to verify".
 
 ## Missing functionality
 - Refund executor, FCM send, webhook authentication, rate limiting, dead-letter handling, staging deploy.

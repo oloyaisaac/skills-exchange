@@ -3,6 +3,7 @@
 | Field | Value |
 |---|---|
 | Reviewer | R02 — Android Client (P1) |
+| Assignment | `reviewers/ANDROID_CLIENT_REVIEWER.md` (read in full) |
 | Executed | 2026-11-19 |
 | Source reviewed | HEAD `06ff649`; code baseline `6b39a10` |
 | Areas | Compose screens, lifecycle, state, permissions, process death, onboarding |
@@ -43,6 +44,14 @@ account deletion, notification handling, offline reconnect.
 | R02-04 | HIGH | Doorstep PIN is rendered to the worker in the job sheet. | Escrow sheet | `EscrowAndProofSheet.kt:641,649` print `job.doorstepPin`; default `"4829"` (`Entities.kt:259`) | Resident-only secret, blind entry by worker | Both parties see the PIN | Generate per job server-side; show only to resident; verify server-side | UI test + server-side PIN verification |
 | R02-05 | HIGH | All copy is inline; no localisation or scalable copy governance. | UI layer | 0 `stringResource`; only `app_name` in `strings.xml`; 178 `Text("` literals | String resources with locale support | English literals across UI | Externalise strings and add a locale | Lint `HardcodedText` clean; locale switch test |
 | R02-06 | LOW | `CALL_PHONE` is requested although dialling can use `ACTION_DIAL` without permission. | Manifest | `AndroidManifest.xml:12` | Least-privilege permissions | Dangerous permission for SOS call | Use `ACTION_DIAL` and remove `CALL_PHONE` unless direct-call is required | Manifest review + Play policy check |
+
+## Outcome classification
+
+- **Verified working:** see "Verified working functionality" above.
+- **Verified failing:** R02-01, R02-02, R02-03, R02-04, R02-05, R02-06.
+- **Not implemented:** none.
+- **Partially implemented:** none.
+- **Unable to verify:** runtime-only checks listed under "Limitations / unable to verify".
 
 ## Missing functionality
 - No process-death handling, no back handling for 29 bottom sheets, no offline replay, no localisation.

@@ -3,6 +3,7 @@
 | Field | Value |
 |---|---|
 | Reviewer | R11 — QA & Test Strategy (P1, Gate G7) |
+| Assignment | `reviewers/QA_REVIEWER.md` (read in full) |
 | Executed | 2026-11-19 |
 | Source reviewed | HEAD `06ff649` |
 | Areas | Test inventory, executability, rules/migration/UI coverage, CI, evidence integrity |
@@ -44,6 +45,14 @@ commands documented in the repo.
 | R11-04 | HIGH | No Room migration tests. | Database tests | 16 migrations; 0 `MigrationTestHelper` | Per-version migration tests | Data-loss regressions unverified | Add migration tests | Upgrade test per version |
 | R11-05 | MEDIUM | No UI automation hooks. | UI tests | 0 `testTag`; 1 orphan screenshot PNG and no framework | Stable selectors + screenshot suite | UI cannot be automated | Add `testTag`s and screenshot tests | UI suite runs in CI |
 | R11-06 | MEDIUM | Device evidence is not reproducible. | Evidence | `_device_test/` logs, 31 MB APK, SQLite dump; no dated command/output | Reproducible evidence convention | Claims cannot be re-derived | Store dated logs and commands | Evidence audit |
+
+## Outcome classification
+
+- **Verified working:** see "Verified working functionality" above.
+- **Verified failing:** R11-01, R11-04.
+- **Not implemented:** R11-02, R11-03, R11-05.
+- **Partially implemented:** R11-06.
+- **Unable to verify:** runtime-only checks listed under "Limitations / unable to verify".
 
 ## Missing functionality
 Executable Android suite, rules tests, migration tests, coverage, E2E, CI gate.

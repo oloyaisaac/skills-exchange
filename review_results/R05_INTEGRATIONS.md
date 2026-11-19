@@ -3,11 +3,12 @@
 | Field | Value |
 |---|---|
 | Reviewer | R05 — Integrations (P1) |
+| Assignment | `reviewers/API_INTEGRATION_REVIEWER.md` (read in full) |
 | Executed | 2026-11-19 |
 | Source reviewed | HEAD `06ff649` |
 | Areas | Africa's Talking, MTN MoMo, Gemini, Maps, FCM, channel claims |
 | Verdict | **FAIL** |
-| Issues | 5 (2 HIGH, 2 MEDIUM, 1 LOW) |
+| Issues | 5 (2 HIGH, 3 MEDIUM) |
 
 ## Areas examined
 Every outbound integration from call site to transport, credential handling, failure behaviour, and
@@ -41,6 +42,14 @@ Airtel/card payment channels.
 | R05-03 | MEDIUM | Integration calls run in unmanaged coroutine scopes. | Africa's Talking client | `CoroutineScope(Dispatchers.IO).async` per call | Lifecycle-scoped suspend calls | Work leaks/uncancellable; errors lost | Use injected scope / `suspend` with caller scope | Cancellation test |
 | R05-04 | MEDIUM | No contract tests and Maps uses a placeholder key. | Integrations | No provider fixtures/contract tests; `MAPS_API_KEY=DEFAULT_MAPS_API_KEY` (`build.gradle.kts:28`) | Tested contracts; real map or graceful absence | Payload drift and blank maps undetected | Add sandbox contract tests; inject Maps key per env | Recorded-fixture tests + map render |
 | R05-05 | MEDIUM | Airtel Money and card are offered but not integrated. | Payment UI | `EscrowAndProofSheet.kt:972` lists `AIRTEL_MONEY`/`CARD`; no provider code; README advertises Airtel APIs | Only working channels offered | Users can select non-functional payment | Integrate or remove from UI/copy | Channel selection E2E per provider |
+
+## Outcome classification
+
+- **Verified working:** see "Verified working functionality" above.
+- **Verified failing:** R05-01, R05-02, R05-03.
+- **Not implemented:** R05-04, R05-05.
+- **Partially implemented:** none.
+- **Unable to verify:** runtime-only checks listed under "Limitations / unable to verify".
 
 ## Missing functionality
 - Airtel/card processor, real Maps key, server-side OTP/SMS, transcription error surface, contract tests.

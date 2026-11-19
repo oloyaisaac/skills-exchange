@@ -3,11 +3,12 @@
 | Field | Value |
 |---|---|
 | Reviewer | R13 — Performance & Reliability (P0, Gate G4) |
+| Assignment | `reviewers/PERFORMANCE_RELIABILITY_REVIEWER.md` (read in full) |
 | Executed | 2026-11-19 |
 | Source reviewed | HEAD `06ff649` |
 | Areas | Telemetry, offline replay, polling/listeners, memory, APK size, retries, SLOs |
 | Verdict | **FAIL** |
-| Issues | 6 (2 HIGH, 4 MEDIUM) |
+| Issues | 7 (2 HIGH, 5 MEDIUM) |
 
 ## Areas examined
 Startup/init path, coroutine lifetimes, listener and polling behaviour, offline queue, APK/assets,
@@ -43,6 +44,15 @@ scheduled functions.
 | R13-04 | MEDIUM | APK and drawable assets are oversized. | Packaging | 31 MB APK; JPEGs 696/380/916 KB; R8 off | <15 MB, WebP/downscaled | Large download/install | Enable R8, compress assets | APK size budget in CI |
 | R13-05 | MEDIUM | Integration work uses unmanaged scopes. | Coroutines | `CoroutineScope(Dispatchers.IO).async` per AT call | Lifecycle-scoped work | Leaks/lost errors | Inject scopes | Cancellation test |
 | R13-06 | MEDIUM | No retry budget, circuit breaker or SLOs. | Reliability | Provider calls rely on OkHttp defaults; no DLQ | Bounded retries + alerts | Outages surface as generic errors | Add backoff, breaker, DLQ, SLOs | Failure-injection test |
+| R13-07 | MEDIUM | No retry budget, circuit breaker or SLOs. | Reliability | OkHttp defaults only; no DLQ or SLO definitions | Bounded retries with alerting | Outages surface as generic errors | Add backoff/breaker/DLQ and SLOs | Failure-injection test and alert firing |
+
+## Outcome classification
+
+- **Verified working:** see "Verified working functionality" above.
+- **Verified failing:** R13-02, R13-03, R13-04, R13-05, R13-06.
+- **Not implemented:** R13-01, R13-07.
+- **Partially implemented:** none.
+- **Unable to verify:** runtime-only checks listed under "Limitations / unable to verify".
 
 ## Missing functionality
 Telemetry, offline replay, push, retry/backoff, SLOs, memory/pagination limits.
