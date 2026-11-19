@@ -54,6 +54,26 @@ import type {
   ProviderPayoutStatusResult,
 } from "./momoDisbursement";
 import type { DocumentBody, MintedUrl } from "./guarantorReview";
+import {
+  normalizeUgandanPhone,
+  otpDocId,
+  maskPhone,
+  evaluateSendRate,
+  evaluateVerifyRate,
+  parseSendOtpResponse,
+  parseVerifyOtpResponse,
+  OTP_MESSAGE_PREFIX,
+  OTP_TTL_MS,
+} from "./otp";
+import type { OtpRateRecord } from "./otp";
+import {
+  buildTranscriptionPrompt,
+  buildGeminiTranscriptionRequest,
+  extractGeminiText,
+  extractJsonObject,
+  validateTranscribedJob,
+  MAX_AUDIO_BASE64_LENGTH,
+} from "./transcription";
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -1887,4 +1907,218 @@ export const getMoMoPayoutStatus = functions.https.onCall(async (data, context) 
     reason,
     message: payoutMessageFor(newStatus),
   };
+});
+
+// =====================================================================================
+// REM-011 / REM-022: server-side phone OTP.
+//
+// The Africa's Talking API key is read from the Functions environment
+// (AFRICASTALKING_API_KEY, AFRICASTALKING_USERNAME) and never leaves the server. Verification
+// mints a Firebase custom token so the Android client can call signInWithCustomToken and obtain
+// a real UID. Both callables are intentionally callable before sign-in.
+// =====================================================================================
+
+const ATT_OTP_URL = "https://api.africastalking.com/version1/otps";
+
+async function callAfricaTalkingOtp(
+  path: string,
+  payload: Record<string, unknown>
+): Promise<{ status: number; body: unknown }> {
+  const apiKey = process.env.AFRICASTALKING_API_KEY;
+  const username = process.env.AFRICASTALKING_USERNAME || "SkillsExchange";
+  if (!apiKey) {
+    // Fail closed rather than attempting an unauthenticated provider call.
+    throw new functions.https.HttpsError("failed-precondition", "Phone verification is not configured");
+  }
+  try {
+    const response = await axios.post(
+      `${ATT_OTP_URL}${path}`,
+      { username, ...payload },
+      {
+        headers: {
+          apiKey,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        timeout: 15000,
+        validateStatus: () => true,
+      }
+    );
+    return { status: response.status, body: response.data };
+  } catch (error) {
+    console.error("Africa's Talking OTP request failed", (error as Error).message);
+    throw new functions.https.HttpsError("unavailable", "Phone verification is temporarily unavailable");
+  }
+}
+
+async function findOrCreateUserByPhone(phone: string): Promise<{ uid: string; isNewUser: boolean }> {
+  try {
+    const existing = await admin.auth().getUserByPhoneNumber(phone);
+    return { uid: existing.uid, isNewUser: false };
+  } catch (error) {
+    if ((error as { code?: string }).code !== "auth/user-not-found") {
+      throw error;
+    }
+    const created = await admin.auth().createUser({ phoneNumber: phone });
+    return { uid: created.uid, isNewUser: true };
+  }
+}
+
+export const sendOtp = functions.https.onCall(async (data) => {
+  let phone: string;
+  try {
+    phone = normalizeUgandanPhone((data ?? {}).phoneNumber);
+  } catch {
+    throw new functions.https.HttpsError("invalid-argument", "Enter a valid Ugandan phone number");
+  }
+
+  const challengeRef = db.collection("otp_challenges").doc(otpDocId(phone));
+  const now = Date.now();
+
+  const decision = await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(challengeRef);
+    const result = evaluateSendRate(snapshot.exists ? (snapshot.data() as OtpRateRecord) : undefined, now);
+    if (result.allowed) {
+      transaction.set(
+        challengeRef,
+        { phoneNumber: phone, ...result.next, updatedAt: now },
+        { merge: true }
+      );
+    }
+    return result;
+  });
+
+  if (!decision.allowed) {
+    throw new functions.https.HttpsError("resource-exhausted", "Please wait before requesting another code");
+  }
+
+  const provider = await callAfricaTalkingOtp("", {
+    phoneNumber: phone,
+    message: OTP_MESSAGE_PREFIX,
+  });
+  const parsed = parseSendOtpResponse(provider.status, provider.body);
+  if (!parsed.valid || !parsed.requestId) {
+    console.error("OTP send rejected", { status: parsed.statusCode, phone: maskPhone(phone) });
+    throw new functions.https.HttpsError("unavailable", "Could not send the verification code");
+  }
+
+  await challengeRef.set(
+    { requestId: parsed.requestId, sentAt: now, attempts: 0, verified: false },
+    { merge: true }
+  );
+
+  return {
+    requestId: parsed.requestId,
+    expiresIn: parsed.expiresIn ?? Math.floor(OTP_TTL_MS / 1000),
+  };
+});
+
+export const verifyOtp = functions.https.onCall(async (data) => {
+  const code = (data ?? {}).code;
+  if (typeof code !== "string" || !/^\d{4,8}$/.test(code)) {
+    throw new functions.https.HttpsError("invalid-argument", "Enter the code from the SMS");
+  }
+
+  let phone: string;
+  try {
+    phone = normalizeUgandanPhone((data ?? {}).phoneNumber);
+  } catch {
+    throw new functions.https.HttpsError("invalid-argument", "Enter a valid Ugandan phone number");
+  }
+
+  const challengeRef = db.collection("otp_challenges").doc(otpDocId(phone));
+  const snapshot = await challengeRef.get();
+  const now = Date.now();
+  const challenge = snapshot.exists ? (snapshot.data() as OtpRateRecord) : undefined;
+  const decision = evaluateVerifyRate(challenge, now);
+
+  if (!decision.allowed) {
+    const message =
+      decision.reason === "expired" ? "That code has expired. Request a new one." :
+      decision.reason === "attempts_exhausted" ? "Too many attempts. Request a new code." :
+      "Request a verification code first.";
+    throw new functions.https.HttpsError("failed-precondition", message);
+  }
+
+  // Count the attempt before calling the provider so a hung request cannot be retried freely.
+  await challengeRef.set({ attempts: decision.next.attempts, updatedAt: now }, { merge: true });
+
+  const provider = await callAfricaTalkingOtp("/verify", {
+    phoneNumber: phone,
+    code,
+    requestId: challenge?.requestId,
+  });
+  const parsed = parseVerifyOtpResponse(provider.status, provider.body);
+  if (!parsed.valid) {
+    throw new functions.https.HttpsError("invalid-argument", "That code is not valid");
+  }
+
+  await challengeRef.set({ verified: true, verifiedAt: now }, { merge: true });
+
+  const user = await findOrCreateUserByPhone(phone);
+  const token = await admin.auth().createCustomToken(user.uid);
+
+  return { token, uid: user.uid, isNewUser: user.isNewUser };
+});
+
+// =====================================================================================
+// REM-051: server-side voice transcription. The Gemini key stays in the Functions
+// environment; a failure or missing configuration is returned as an error instead of the
+// fabricated "example job" the client used to produce.
+// =====================================================================================
+
+export const transcribeVoiceJob = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to transcribe a voice request");
+  }
+
+  const audioBase64 = (data ?? {}).audioBase64;
+  const mimeType = typeof (data ?? {}).mimeType === "string" ? String(data.mimeType) : "audio/mp4";
+  if (typeof audioBase64 !== "string" || audioBase64.length === 0) {
+    throw new functions.https.HttpsError("invalid-argument", "Audio is required");
+  }
+  if (audioBase64.length > MAX_AUDIO_BASE64_LENGTH) {
+    throw new functions.https.HttpsError("invalid-argument", "Voice note is too large");
+  }
+  if (!/^audio\/[a-z0-9.+-]+$/i.test(mimeType)) {
+    throw new functions.https.HttpsError("invalid-argument", "Unsupported audio type");
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new functions.https.HttpsError("failed-precondition", "Voice transcription is not configured");
+  }
+
+  let response;
+  try {
+    response = await axios.post(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+      buildGeminiTranscriptionRequest(audioBase64, mimeType, buildTranscriptionPrompt()),
+      {
+        headers: {
+          "x-goog-api-key": apiKey,
+          "Content-Type": "application/json",
+        },
+        timeout: 60000,
+        maxBodyLength: 12 * 1024 * 1024,
+        validateStatus: () => true,
+      }
+    );
+  } catch (error) {
+    console.error("Gemini transcription request failed", (error as Error).message);
+    throw new functions.https.HttpsError("unavailable", "Voice transcription is temporarily unavailable");
+  }
+
+  if (response.status < 200 || response.status >= 300) {
+    console.error("Gemini transcription rejected", { status: response.status });
+    throw new functions.https.HttpsError("unavailable", "Voice transcription failed");
+  }
+
+  try {
+    const text = extractGeminiText(response.data);
+    return validateTranscribedJob(extractJsonObject(text));
+  } catch (error) {
+    console.error("Gemini transcription response invalid", (error as Error).message);
+    throw new functions.https.HttpsError("internal", "Voice transcription could not be understood");
+  }
 });
