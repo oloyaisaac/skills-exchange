@@ -406,7 +406,7 @@ _Last synchronized: 2026-10-11T15:24:11+03:00 â€” Phase 17 documentation st
 
 ## Remediation Track — Prompt 3 (2026-11-19)
 
-Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDINGS.md`. Full task detail, dependencies, tests and acceptance criteria: `IMPLEMENTATION_ROADMAP.md`. **Wave 0 implementation is underway (2026-11-19, second slice): REM-069 and REM-072 are `COMPLETED`; REM-006, REM-010, REM-012–016, REM-022, REM-051 and REM-001/002 are `VERIFICATION_PENDING`; REM-011 is `IN_PROGRESS` (key revocation outstanding). All other rows remain `NOT_STARTED`.**
+Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDINGS.md`. Full task detail, dependencies, tests and acceptance criteria: `IMPLEMENTATION_ROADMAP.md`. **Wave 0 continues (2026-11-19, third slice): REM-069/072 `COMPLETED`; REM-005/011/039 `IN_PROGRESS`; REM-001/002/006/010/012–016/021/022/051/070 `VERIFICATION_PENDING`; the rest `NOT_STARTED`.**
 
 | Task | Priority | Reviewer | Task title | Depends on | Status |
 |---|---|---|---|---|---|
@@ -422,7 +422,7 @@ Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDI
 | REM-041 | CRITICAL | R09 | Rewrite account erasure server-side | REM-022; REM-024 | NOT_STARTED |
 | REM-064 | CRITICAL | R11 | Make the Android test suite executable | REM-001 | NOT_STARTED |
 | REM-003 | HIGH | R01 | Split god classes and establish module boundaries | REM-001 | NOT_STARTED |
-| REM-005 | HIGH | R14 | Create a CI pipeline | REM-001; REM-002 | NOT_STARTED |
+| REM-005 | HIGH | R14 | Create a CI pipeline | REM-001; REM-002 | IN_PROGRESS |
 | REM-006 | HIGH | R14 | Make the build portable | - | VERIFICATION_PENDING |
 | REM-007 | HIGH | R14 | Restore release signing and hardening | REM-001; REM-006 | NOT_STARTED |
 | REM-011 | HIGH | R07 | Remove and rotate the committed SMS/OTP key | - | IN_PROGRESS |
@@ -458,12 +458,12 @@ Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDI
 | REM-018 | MEDIUM | R07 | Persist abuse reports for moderators | REM-010; REM-023 | NOT_STARTED |
 | REM-019 | MEDIUM | R07 | Add Firestore and Storage rules tests | REM-010; REM-012; REM-013; REM-014; REM-015; REM-018 | NOT_STARTED |
 | REM-020 | MEDIUM | R07 | Harden the release APK | REM-001 | NOT_STARTED |
-| REM-021 | MEDIUM | R03 | Authenticate and throttle the MoMo webhook | REM-002; REM-011 | NOT_STARTED |
+| REM-021 | MEDIUM | R03 | Authenticate and throttle the MoMo webhook | REM-002; REM-011 | VERIFICATION_PENDING |
 | REM-025 | MEDIUM | R06 | Link phone and Google identities | REM-022 | NOT_STARTED |
 | REM-032 | MEDIUM | R08 | Add reconciliation and stuck-escrow alerting | REM-031 | NOT_STARTED |
 | REM-033 | MEDIUM | R05 | Remove or implement non-functional payment channels | REM-026 | NOT_STARTED |
 | REM-038 | MEDIUM | R10 | Add SOS throttling, dedup and admin audit | REM-034; REM-023 | NOT_STARTED |
-| REM-039 | MEDIUM | R10 | Strengthen guarantor and identity checks | - | NOT_STARTED |
+| REM-039 | MEDIUM | R10 | Strengthen guarantor and identity checks | - | IN_PROGRESS |
 | REM-040 | MEDIUM | R10 | Make admin escalation reachable | REM-023; REM-035 | NOT_STARTED |
 | REM-044 | MEDIUM | R09 | Add consent records, processor disclosure and DSAR workflow | - | NOT_STARTED |
 | REM-045 | MEDIUM | R09 | Minimise and mask NIN data | REM-041 | NOT_STARTED |
@@ -479,7 +479,7 @@ Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDI
 | REM-063 | MEDIUM | R13 | Add retries, circuit breaking and SLOs | REM-059 | NOT_STARTED |
 | REM-066 | MEDIUM | R11 | Make verification evidence reproducible | REM-005 | NOT_STARTED |
 | REM-069 | MEDIUM | R15 | Make documentation links portable | - | COMPLETED |
-| REM-070 | MEDIUM | R15 | Assign requirement IDs and build a trace matrix | - | NOT_STARTED |
+| REM-070 | MEDIUM | R15 | Assign requirement IDs and build a trace matrix | - | VERIFICATION_PENDING |
 | REM-071 | MEDIUM | R15 | Correct README capability claims | REM-033; REM-023 | NOT_STARTED |
 | REM-072 | MEDIUM | R15 | Define document precedence | - | COMPLETED |
 | REM-073 | LOW | R02 | Remove unnecessary CALL_PHONE permission | REM-001 | NOT_STARTED |

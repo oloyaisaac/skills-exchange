@@ -894,3 +894,15 @@ does not declare the product production-ready.
 Open items from this slice: REM-023–025 (identity/admin), REM-026–032 (money), REM-034–040
 (safety), REM-005/007/008 (CI, signing, dependency advisories) and the Android compilation task
 REM-001, which still needs a JDK and Android SDK to verify.
+
+### 18.1 Third wave-0 increment
+
+- **REM-021:** callback authentication (shared secret header `x-momo-webhook-secret` or
+  `x-callback-secret`), five-minute freshness window and per-reference rate limit. Configuration:
+  `MOMO_WEBHOOK_SECRET` may hold a comma-separated rotation list; without it callbacks are refused.
+- **REM-039:** guarantor reuse flags are returned by `getPendingVerificationQueue` under
+  `riskFlags`; the admin UI still has to display them.
+- **REM-070:** `docs/traceability.md` maps 18 requirement IDs to code and tests; four requirements
+  remain without any automated test (`REQ-ACC-02`, `REQ-LOC-01`, `REQ-TRAIN-01`, `REQ-SEC-01`).
+- **REM-005:** CI covers backend build/tests, documentation checkers and secret scanning; Android
+  and rules jobs are not yet part of the pipeline.
