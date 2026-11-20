@@ -220,7 +220,7 @@ class SosRaiseAuthorizationSecurityTest {
         for (never in listOf(null, "", "   ", "system", "unknown", "user_default_me", "John Doe", "You (Nakawa)")) {
             assertEquals(
                 SosRaiseResult.NotAuthorized,
-                repository.triggerSosAlertInternal("job_1", never)
+                repository.triggerSosAlertInternal("job_1", never ?: "")
             )
         }
     }

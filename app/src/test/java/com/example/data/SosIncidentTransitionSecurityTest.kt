@@ -8,6 +8,7 @@ import com.example.data.db.JobPostEntity
 import com.example.data.db.SosIncidentEntity
 import com.example.data.remote.FirebaseService
 import com.example.data.remote.SmsNotificationService
+import com.example.data.repository.SkillsExchangeRepository
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
