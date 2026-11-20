@@ -109,8 +109,19 @@ proves both refusals fire. It runs in the `documentation` CI job.
 R8 and resource shrinking were already enabled in R07; what was missing was any evidence that a release
 build works. The new `release-build` job in `.github/workflows/android.yml` generates a throwaway
 keystore, assembles `:app:assembleRelease`, and fails unless an APK and a non-empty R8 mapping file are
-produced. It publishes the APK size and the uncompressed `res/` payload so the shrink is measured, not
-asserted.
+produced. Because the artefact API is not reachable from this environment, the job also commits its
+summary to the `ci-metrics` branch, so the number can be read with `git show`. Measured in run
+**44799912835**:
+
+| Release measurement | Value |
+|---|---|
+| APK | **6.3 MB** (6,562,525 bytes) — REM-062's criterion is under 15 MB |
+| R8 mapping | 679,287 lines |
+| Uncompressed `res/` inside the APK | 599.8 KB |
+
+The first two runs of this job **failed**, and both failures were real: a release compile error
+(`public property exposes its internal type argument PendingDrainReport`) that only a release compile
+surfaces, and a relative `KEYSTORE_PATH` that resolved inside `app/` instead of the workspace root.
 
 **Baseline Profiles: not added.** A Baseline Profile is generated on a device by the Macrobenchmark
 library and consumed as a checked-in artefact; producing one requires an emulator or phone with the app

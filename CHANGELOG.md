@@ -1,5 +1,42 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [PROMPT-4 / R13] Performance, scale and reliability: queues that drain, listeners that stop, money that is not retried twice
+
+- **The offline queue could only grow (R13-P2-01, HIGH).** `flushPendingActions()` snapshotted the queue,
+  logged "N pending" and returned: nothing was executed, nothing was deleted. `drainPendingActionQueue()`
+  now runs the one action the app produces (the SOS mirror retry), retries to `maxRetries`, marks
+  `FAILED` with the payload intact instead of deleting an unexecuted row, retires an unknown action type
+  the same way, and reports what it did. The pending count is shown in the offline banner — "N update(s)
+  waiting to sync" — so a user is told work is queued and told when it is still queued.
+- **The client could have streamed every job on the platform (R13-P2-03, MEDIUM).** A listener on the
+  whole `jobs` collection had no caller — dead code one line away from live, and one the rules would have
+  denied. It is deleted. The one live listener, a job's chat, streamed its entire history; it now reads
+  the last 200 messages, and the query guard refuses any client listener without a bound.
+- **Every function ran on defaults, including the ones that move money (R13-P2-05, MEDIUM).** All 43
+  callables declared no timeout or memory. `functions/src/runtime.ts` now declares a default (60 s /
+  256 MB, written down rather than inherited) and a provider runtime (120 s / 512 MB) used by the nine
+  callables that reach MTN, Africa's Talking or Gemini and by the two SMS triggers.
+- **A provider blip was reported as "we don't know about your payment" (R13-P2-07, LOW).** Provider
+  *reads* now retry with exponential jittered backoff — 3 attempts, 250 ms rising to 2 s, transport
+  errors, timeouts, 429 and 5xx only. Writes are never retried: a collection, payout, refund or SMS
+  carries a provider reference, and repeating one risks a second transaction. Applied to the MoMo status
+  query, whose per-attempt timeout dropped from 20 s to 15 s so the worst case fits the runtime.
+- **Three sample photos were 80 % of the app's resources (R13-P2-06, MEDIUM).** 895 KB, 680 KB and
+  371 KB of JPEG in `res/drawable`, re-encoded to **68 KB, 41 KB and 16 KB** (`res/` 2.0 MB → 181 KB).
+  The review's other claim — R8 disabled — was stale; it was enabled in R07. What was missing was proof
+  the release variant builds, so CI now assembles it with a throwaway key: **APK 6.3 MB**, R8 mapping
+  679,287 lines, and a `check_asset_budget.mjs` guard that refuses a resource over 150 KB or a `res/`
+  tree over 1 MB.
+- **Telemetry is still absent, and now says so (R13-P2-02, HIGH — partial).**
+  `docs/ops/RELIABILITY_AND_PERFORMANCE.md` records the finding by finding, the seven SLIs and proposed
+  SLOs with the measurement each needs, the error-budget policy, and everything unmeasured as a gap. No
+  crash, ANR, startup or latency figure is claimed. Paging 3 is a recorded decision with the size that
+  would reverse it, and the circuit breaker is a recorded omission with its reason.
+- **Evidence:** backend 318/318, Android **494/494** (runs 44799076234 and the release run 44799912835),
+  CI **7/7** (run 44799913154), 13 static guards with 4 self-tests. The Android suite failed twice on the
+  way and both failures were real — a `public property exposes its internal type` error surfaced only by
+  the release compile, and a foreign key the new tests had guessed past.
+
 ### [2026-11-20] [PROMPT-4 / R12] UI/UX: copy that can be translated, screens a reader can navigate
 
 - **Screens are navigable now, and the claim is a test (R12-P2-02, HIGH).** The app had no semantics

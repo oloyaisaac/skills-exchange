@@ -11,16 +11,19 @@ remediation sandbox it is marked **UNVERIFIED** rather than estimated.
 
 | Layer | Suite | Command | Count | Runs in | Blocking |
 |---|---|---|---|---|---|
-| Backend units (pure TypeScript cores) | `functions/test/*.test.mjs` | `cd functions && npm test` | **310** in 32 files | local + CI (`Backend build and tests`) | yes |
-| Backend coverage floor | same files | `npm run test:coverage` | 310 | CI, same job | yes |
+| Backend units (pure TypeScript cores) | `functions/test/*.test.mjs` | `cd functions && npm test` | **318** in 33 files | local + CI (`Backend build and tests`), 318/318 in run 44799076234 | yes |
+| Backend coverage floor | same files | `npm run test:coverage` | 318 | CI, same job | yes |
 | Callable handlers | `functions/test/handlers.emulator.mjs` | `npm run test:handlers` under `firebase emulators:exec --only firestore` | **19** | CI (`Backend handler tests`), 19/19 in run 44789646720 | yes |
 | Firestore rules (emulator) | `rules-test/firestore.rules.test.mjs` | `npm --prefix rules-test test` under the emulator | **26** | CI (`Firestore rules tests`) | yes |
 | Storage rules | `rules-test/storage.rules.check.mjs` | `node rules-test/storage.rules.check.mjs` | static | CI (same job) | yes |
-| Android JVM + Robolectric + Compose | `app/src/test` (64 files) | `./gradlew :app:testDebugUnitTest` | **489** | CI (`Compile and unit tests`), 489/489 in run 44795261468 | yes |
+| Android JVM + Robolectric + Compose | `app/src/test` (65 files) | `./gradlew :app:testDebugUnitTest` | **494** | CI (`Compile and unit tests`), 494/494 in run 44799076234 | yes |
 | Android coverage | `:app:jacocoTestReport` / `:app:jacocoTestCoverageVerification` | `./gradlew :app:jacocoTestReport :app:jacocoTestCoverageVerification` | measured per run | CI, uploaded as `android-coverage` | yes (floor) |
 | Accessibility semantics | `app/src/test/java/com/example/ui/AccessibilitySemanticsTest.kt` | part of the Android unit suite | **7** | CI (`Compile and unit tests`) | yes |
 | Colour contrast (WCAG maths, no rendering) | `app/src/test/java/com/example/ui/theme/ContrastTest.kt` | part of the Android unit suite | **4** | CI, same job | yes |
-| Documentation and static guarantees | `scripts/check_*.mjs`, `scripts/secret_scan.mjs` | see `docs/DOCUMENT_MAP.md` | 12 guards | CI (`Documentation checks`, `Secret scan`) | yes |
+| Offline queue drain | `app/src/test/java/com/example/data/PendingActionDrainTest.kt` | part of the Android unit suite | **5** | CI, same job, after two rounds of failures it caught | yes |
+| Provider retry rule | `functions/test/providerRetry.test.mjs` | `cd functions && npm test` | **7** | CI (`Backend build and tests`) | yes |
+| Release build (R8 + shrink) | `.github/workflows/android.yml` `release-build` | `./gradlew :app:assembleRelease` | not a test — a gate | CI, run 44799912835: APK 6.3 MB, mapping 679,287 lines | yes |
+| Documentation and static guarantees | `scripts/check_*.mjs`, `scripts/secret_scan.mjs` | see `docs/DOCUMENT_MAP.md` | 13 guards (4 with `--selftest`) | CI (`Documentation checks`, `Secret scan`) | yes |
 | Instrumented (device) tests | `app/src/androidTest` | — | 1 template | nowhere | **no** — see §7 |
 
 The backend suite count is asserted nowhere by hand: `npm test` discovers `test/*.test.mjs`, and
@@ -144,7 +147,7 @@ Claims found in the repository that the committed code did not support, and what
 | Claim | Where it was | What was true | Resolution |
 |---|---|---|---|
 | "171 tests" (backend) | `README.md` | 310 at the time of this round | README no longer states a count; it names the command |
-| "355 tests" (Android) | `README.md` | 478 at R11, 489 after the R12 suites | same |
+| "355 tests" (Android) | `README.md` | 478 at R11, 489 after the R12 suites, 494 after R13 | same |
 | "The Android job is intentionally absent until REM-001…" | `ci.yml` header | the Android job has existed since R01 | header rewritten |
 | "The rules job arrives with REM-019" | `ci.yml` header | arrived in R07 | header rewritten |
 | Build logs and APKs in the repository root used as evidence | root `*.log`, `*.apk`, `diag-*.txt`, `ui-*.xml` | described commits that no longer exist; two 32 MB APKs | removed in R11; the README says where evidence actually comes from |

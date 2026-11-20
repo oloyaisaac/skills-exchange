@@ -31,8 +31,19 @@ I finished the work for this reviewer.
   (`181 KB total, largest 68 KB`) with its selftest, and the extended `check_query_limits.mjs`
   (`53 list queries all carry LIMIT; 1 client listener(s) all bounded`). The listener rule was proved
   able to fail by running it against a fixture with an unbounded listener (exit 1).
-- Documentation: 30 documents and 41 requirements (`REQ-PERF-01`…`05` added); the Android and
-  release-build jobs in this PR are the executable evidence for the Kotlin side.
+- Android CI, run **44799076234**: `Compile and unit tests` green with **494/494** unit tests (489
+  before this round, plus the 5 drain tests). The suite failed twice before it passed, and both
+  failures were real: a `public property exposes its internal type argument` error that only a release
+  compile surfaces, then three drain tests inserting a job whose `assignedProviderId` named no
+  `service_providers` row — a real foreign key. CI compiled and caught both; this environment has no JDK
+  and cannot.
+- Release CI, run **44799912835**: `Release build (R8 + shrink)` green — APK **6.3 MB** (6,562,525
+  bytes), R8 mapping 679,287 lines, 599.8 KB of uncompressed `res/`. Under REM-062's 15 MB criterion,
+  measured rather than asserted. The job publishes to `ci-metrics` because artefacts are unreachable here.
+- CI run **44799913154**: all 7 jobs green — Backend build and tests (318/318), Backend handler tests,
+  Firestore rules tests, Documentation checks, Secret scan, Compile and unit tests, Release build.
+- Documentation: 30 documents and 41 requirements (`REQ-PERF-01`…`05` added); 13 static guards (4 with
+  `--selftest`).
 
 ## Not claimed
 

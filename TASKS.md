@@ -176,7 +176,30 @@ such: the escrow in-flight states (R02) and `FLAG_SECURE` (R02). Evidence: Andro
 44795261468), eleven static guards plus the UI-copy guard and self-test. Not verified: no TalkBack or
 Accessibility Scanner run, no native-speaker translation review, no screenshot baseline, no dark-theme
 contrast, no RTL, nothing on a device.
-R13–R15 awaiting.
+**R13 — COMPLETE.** The app was bounded, and nobody had checked what the bounds were. One finding was
+worse than reported: `flushPendingActions()` took a snapshot of the offline queue, logged the count and
+deleted nothing, so every queued row stayed forever — `SkillsExchangeRepository.drainPendingActionQueue()`
+now executes the one action type the app produces (the SOS mirror retry), retries to `maxRetries`,
+dead-letters an unknown type **with its payload intact** rather than deleting it, and returns a
+`PendingDrainReport` whose `remaining` the offline banner shows. One finding was stale: R8 and resource
+shrinking were already enabled in R07. The rest were real. The unfiltered `jobs` listener was dead code
+one call from live and is deleted; the live chat listener now reads the last 200 messages and
+`check_query_limits.mjs` refuses any client listener without a bound. All 43 callables ran on platform
+defaults; `functions/src/runtime.ts` declares a 60 s/256 MB default and a 120 s/512 MB provider preset,
+applied to 9 provider-reaching callables and 2 SMS triggers, and the backend test fails if a callable
+declares neither. Provider reads retry with jittered exponential backoff (3 attempts, 250 ms→2 s) while
+writes never do — a repeated payout is a second payment, not a retry. Three sample JPEGs were 80 % of
+`res/`; they are 68 KB, 41 KB and 16 KB now (`res/` 2.0 MB → 181 KB), a budget guard enforces it, and a
+new CI job builds the R8 variant: **APK 6.3 MB, mapping 679,287 lines**. Telemetry is the one finding
+left open: there is no Crashlytics, no Performance and no alert, and `docs/ops/RELIABILITY_AND_PERFORMANCE.md`
+§7 records the seven SLIs, proposed SLOs and the error-budget policy so what remains is configuration,
+not design. Paging 3 is deliberately absent, with the size that would reverse the decision in §6.
+Evidence: backend **318/318**, Android **494/494** (runs 44799076234, 44799912835), CI **7/7** (run
+44799913154), 13 static guards with 4 self-tests. The Android suite failed twice and both failures were
+real — a release-only visibility error and a foreign key the tests had guessed past. Not verified: no
+deployment, no device, no crash/ANR/startup figure, no Baseline Profile, no circuit breaker, no region
+pinning.
+R14–R15 awaiting.
 
 ## Review Track — 2026-11-19 (not started)
 

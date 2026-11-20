@@ -1,17 +1,17 @@
 # REVIEWER IMPLEMENTATION STATE — Prompt 4 (strict one-reviewer-at-a-time)
 
 **Programme:** ASMT-2026-11-19 · **Cycle:** Prompt-4 remediation
-**Updated:** 2026-11-20 · **Branch:** `arena/e2ab81c4-skills-exchange`
+**Updated:** 2026-11-20 · **Branch:** `arena/b2e695fc-skills-exchange`
 
 ## Position
 
 | Field | Value |
 |---|---|
 | Total original reviewers | **15** |
-| Current reviewer | **R12 — COMPLETE** (evidence below) |
-| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R11, R12 (12 of 15)** |
-| Reviewers awaiting implementation | R13 … R15 |
-| Next reviewer number | **13** |
+| Current reviewer | **R13 — COMPLETE** (evidence below) |
+| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R11, R12, R13 (13 of 15)** |
+| Reviewers awaiting implementation | R14, R15 |
+| Next reviewer number | **14** |
 
 ## R01 — COMPLETE (gate passed)
 
@@ -537,6 +537,44 @@ with no rendering). Two findings had already moved under later rounds and are re
 - No screenshot baseline, no dark-theme contrast assertions, no RTL evidence.
 - `REM-055` … `REM-058` stay `IN_PROGRESS` for exactly those reasons.
 
+## R13 — COMPLETE (gate passed)
+
+Source: `review_results/prompt2/REVIEW_13.md` (verdict **FAIL**, 7 findings, written against `94362a1`
+with no deployment, no device and no profile). One finding was stale; one was worse than reported:
+
+- **R13-P2-06** — half **STALE**: R8 and resource shrinking were already enabled in R07.
+- **R13-P2-01** — **worse than reported**: the queue did not merely fail to flush, it could only grow.
+
+| Finding | Required correction | Status | Evidence |
+|---|---|---|---|
+| R13-P2-01 | Queued offline actions are never executed | **IMPLEMENTED AND VERIFIED** | `drainPendingActionQueue()` executes the supported action once, retries to `maxRetries`, dead-letters `FAILED` with the payload intact, retires unknown types the same way; `PendingDrainReport` surfaced as `pendingActionCount` in the offline banner; `PendingActionDrainTest` (5) |
+| R13-P2-02 | No crash, ANR or performance telemetry | **PARTIAL: specified, not wired** | `docs/ops/RELIABILITY_AND_PERFORMANCE.md` §7 records 7 SLIs, proposed 28-day SLOs, the measurement each needs and an error-budget policy. No SDK: it needs a Firebase project and real devices. No figure claimed |
+| R13-P2-03 | Unfiltered `jobs` listener streams the collection | **IMPLEMENTED AND VERIFIED** | Listener deleted (it had no caller); chat listener bounded to `limitToLast(200)`; `check_query_limits.mjs` refuses a client listener without a bound and was proved to fail on a fixture |
+| R13-P2-04 | No Paging 3 | **ACCEPTED WITH A THRESHOLD** | DAO caps (200 jobs / 500 providers / 200 quotes) with `LazyColumn`; §6 names the volume at which the cap stops being enough and Paging becomes required |
+| R13-P2-05 | No function timeout, memory or region | **IMPLEMENTED (timeout/memory)** | `functions/src/runtime.ts` presets 60 s/256 MB and 120 s/512 MB, used by 33 + 9 callables and both SMS triggers; `appCheck.test.mjs` fails a callable that declares neither. Region left to the deploy runbook, stated as a gap |
+| R13-P2-06 | Unminified release, no Baseline Profile, huge drawables | **PARTIAL: measured, not profiled** | Assets 895/680/371 KB → 68/41/16 KB (`res/` 2.0 MB → 181 KB), `check_asset_budget.mjs` + selftest, CI `release-build` green: **APK 6.3 MB**, mapping 679,287 lines. No Baseline Profile (needs a device) |
+| R13-P2-07 | No retry, backoff or circuit breaker on provider calls | **IMPLEMENTED for reads** | `providerRetry.ts`: 3 attempts, 250 ms→2 s jittered, transport/timeout/429/5xx only; writes never retried; applied to the MoMo status query (20 s → 15 s per attempt); 7 tests. No circuit breaker, with the reason recorded |
+
+### Verification evidence (executed)
+
+- Backend: `tsc` clean, **318/318** unit tests (311 before this round), handler suite and rules suite
+  green in CI run **44799913154** (7/7 jobs).
+- Android: **494/494** unit tests (run **44799076234**); **release build** with R8 and shrinking green
+  (run **44799912835**) — APK 6.3 MB, mapping 679,287 lines, 599.8 KB of uncompressed resources.
+- The Android suite failed twice before passing, and both failures were real: `public property exposes
+  its internal type argument PendingDrainReport` (surfaced only by the release compile) and a foreign
+  key on `job_posts.assignedProviderId` that the new tests had guessed past.
+- 13 static guards (4 with `--selftest`); 30 documents; 41 requirements (`REQ-PERF-01`…`05`).
+
+### Not claimed
+
+- No deployment: no runtime preset, retry rule or listener change has run in a Firebase project.
+- No device: no crash, ANR, startup, frame or battery figure, no Baseline Profile, nothing profiled.
+- The CI release APK is signed with a key generated and discarded inside the job; it is not distributable.
+- No circuit breaker (needs shared state and an operator policy), no region pinning, no Paging 3.
+- `REM-059`, `REM-060`, `REM-062`, `REM-063` stay `IN_PROGRESS`; `REM-061` (push over polling) was not
+  part of this round's findings and stays `NOT_STARTED`.
+
 ## Completion declarations
 
 - `reviewer_completions/REVIEWER_01_DONE.md`
@@ -551,7 +589,8 @@ with no rendering). Two findings had already moved under later rounds and are re
 - `reviewer_completions/REVIEWER_10_DONE.md`
 - `reviewer_completions/REVIEWER_11_DONE.md`
 - `reviewer_completions/REVIEWER_12_DONE.md`
+- `reviewer_completions/REVIEWER_13_DONE.md`
 
 ## Blockers
 
-None. R01–R12 complete; R13 is next.
+None. R01–R13 complete; R14 is next.
