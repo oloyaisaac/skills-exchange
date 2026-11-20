@@ -68,7 +68,7 @@ tasks.withType<Test> {
   // R01-P2-01: one toolchain for compile and tests. Java 11 cannot run Robolectric's
   // Android sandbox (SDK 34+ requires 17), so the whole project pins 17.
   javaLauncher = javaToolchains.launcherFor {
-    languageVersion.set(JavaLanguageVersion.of(17))
+    languageVersion.set(JavaLanguageVersion.of(21))
   }
 }
 
