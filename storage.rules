@@ -91,8 +91,10 @@ service firebase.storage {
       allow write: if isAdmin();
     }
 
+    // R07-P2-07: avatars were world-readable, so anyone holding a URL could retrieve a user's
+    // photo. Every surface that shows an avatar is behind sign-in, so reads now require a session.
     match /avatars/{userId}/{allPaths=**} {
-      allow read: if true;
+      allow read: if isAuthenticated();
       allow write: if isAdmin() || (
         isOwner(userId)
         && request.resource.size < 5 * 1024 * 1024
@@ -104,7 +106,7 @@ service firebase.storage {
     // prefix (public read for profile display, admin-or-owner write, owner
     // uploads constrained to images < 5MB, fail closed otherwise).
     match /users/{userId}/avatars/{allPaths=**} {
-      allow read: if true;
+      allow read: if isAuthenticated();
       allow write: if isAdmin() || (
         isOwner(userId)
         && request.resource.size < 5 * 1024 * 1024

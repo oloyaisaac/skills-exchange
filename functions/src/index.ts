@@ -106,6 +106,17 @@ import { hasAdminClaim } from "./admin";
 import { isFreshAuth, buildRevocationRecord } from "./session";
 import { decideEscrowRelease } from "./escrowRelease";
 import { decideRefund, buildRefundPayload } from "./refund";
+import { APP_CHECK, withAppCheck } from "./appCheck";
+import {
+  isValidPin,
+  newSalt,
+  hashPin,
+  pinMatches,
+  attemptStateOf,
+  lockRemainingMs,
+  applyAttempt,
+  refusalMessage,
+} from "./doorstepPin";
 import {
   FRESH_AUTH_WINDOW_SECONDS,
   SINGLE_DOC_COLLECTIONS,
@@ -181,7 +192,7 @@ const STORAGE_BUCKET_NAME = process.env.GS_STORAGE_BUCKET || "";
  * `amountUgx`/`phoneNumber` are hints only — the trusted `jobs/{id}` document wins, and a
  * disagreeing client amount is rejected (amount_mismatch), never overridden.
  */
-export const createMoMoCollection = functions.https.onCall(async (data, context) => {
+export const createMoMoCollection = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -537,7 +548,7 @@ function buildConfirmationDeps(): ConfirmationDeps {
  * user's transaction. The status returned always comes from the provider re-query
  * (or the stored terminal state), never from the client.
  */
-export const getMoMoCollectionStatus = functions.https.onCall(async (data, context) => {
+export const getMoMoCollectionStatus = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -702,7 +713,7 @@ async function performEscrowRelease(
   };
 }
 
-export const releaseEscrowToWorker = functions.https.onCall(async (data, context) => {
+export const releaseEscrowToWorker = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -819,7 +830,7 @@ async function performEscrowRefund(
 }
 
 /** Admin-only: request a full or partial refund of a settled escrow collection. */
-export const refundEscrow = functions.https.onCall(async (data, context) => {
+export const refundEscrow = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Sign in to request a refund.");
   }
@@ -1084,7 +1095,7 @@ function authorizeAdmin(context: functions.https.CallableContext): string {
  *    `worker_kyc` into Firestore yet (blocker recorded in AGENT_STATE.md).
  *  - only Storage *paths* are ever emitted, never URLs.
  */
-export const getPendingVerificationQueue = functions.https.onCall(async (data, context) => {
+export const getPendingVerificationQueue = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   if (!isAdmin(context)) {
     throw new functions.https.HttpsError(
       "permission-denied",
@@ -1168,7 +1179,7 @@ export const getPendingVerificationQueue = functions.https.onCall(async (data, c
  * ADMIN-003: Review Worker Application
  * Accepts decision ('APPROVE' | 'REJECT' | 'CHANGES_REQUIRED') and feedback reason.
  */
-export const reviewWorkerApplication = functions.https.onCall(async (data, context) => {
+export const reviewWorkerApplication = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   if (!isAdmin(context)) {
     throw new functions.https.HttpsError(
       "permission-denied",
@@ -1232,7 +1243,7 @@ export const reviewWorkerApplication = functions.https.onCall(async (data, conte
  * ADMIN-004: Set Worker Activation Status
  * Activate or suspend worker bidding privileges.
  */
-export const setWorkerActivationStatus = functions.https.onCall(async (data, context) => {
+export const setWorkerActivationStatus = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   if (!isAdmin(context)) {
     throw new functions.https.HttpsError(
       "permission-denied",
@@ -1363,7 +1374,7 @@ async function mintPrivatePhotoUrls(
  * only to an object inside `users/{workerId}/guarantors/**` — never to another worker's
  * prefix, never to an absolute URL, and only for `PHOTO_URL_TTL_SECONDS`.
  */
-export const getGuarantorSubmission = functions.https.onCall(async (data, context) => {
+export const getGuarantorSubmission = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   authorizeAdmin(context);
 
   const workerIdResult = readWorkerId(data);
@@ -1429,7 +1440,7 @@ export const getGuarantorSubmission = functions.https.onCall(async (data, contex
  * the Firestore server clock, so neither can be forged by the caller. Only admin-owned
  * fields are written, and `firestore.rules` already forbids the worker from touching them.
  */
-export const reviewGuarantorSubmission = functions.https.onCall(async (data, context) => {
+export const reviewGuarantorSubmission = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   const adminUid = authorizeAdmin(context);
 
   const validated = validateGuarantorReviewInput(data, adminUid);
@@ -1511,7 +1522,7 @@ export const reviewGuarantorSubmission = functions.https.onCall(async (data, con
  * DISP-003: Resolve Dispute
  * Admin-only function to resolve disputes with optional refund.
  */
-export const resolveDispute = functions.https.onCall(async (data, context) => {
+export const resolveDispute = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   if (!isAdmin(context)) {
     throw new functions.https.HttpsError(
       "permission-denied",
@@ -1639,7 +1650,7 @@ export const resolveDispute = functions.https.onCall(async (data, context) => {
  * DISP-003: Get Disputes Queue
  * Admin-only function to retrieve disputes for review.
  */
-export const getDisputesQueue = functions.https.onCall(async (data, context) => {
+export const getDisputesQueue = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   if (!isAdmin(context)) {
     throw new functions.https.HttpsError(
       "permission-denied",
@@ -1667,7 +1678,7 @@ export const getDisputesQueue = functions.https.onCall(async (data, context) => 
  * AUDIT-A-SOS: Get SOS Queue
  * Admin-only function to retrieve SOS incidents for the dispatch desk.
  */
-export const getSosQueue = functions.https.onCall(async (data, context) => {
+export const getSosQueue = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   if (!isAdmin(context)) {
     throw new functions.https.HttpsError(
       "permission-denied",
@@ -1693,7 +1704,7 @@ export const getSosQueue = functions.https.onCall(async (data, context) => {
 
 /** AUDIT-A-SOS: acknowledge an ACTIVE incident as reviewed. Admin-only — caller must hold the
  * verified `admin` claim from a verified ID token (never a client-supplied role). */
-export const acknowledgeSos = functions.https.onCall(async (data, context) => {
+export const acknowledgeSos = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   const caller = checkAdminCaller(context);
   if (!caller.ok) {
     throw new functions.https.HttpsError(caller.code, caller.message);
@@ -1724,7 +1735,7 @@ export const acknowledgeSos = functions.https.onCall(async (data, context) => {
 
 /** AUDIT-A-SOS: resolve an ACTIVE incident as complete. Admin-only — caller must hold the
  * verified `admin` claim from a verified ID token (never a client-supplied role). */
-export const resolveSosIncident = functions.https.onCall(async (data, context) => {
+export const resolveSosIncident = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   const caller = checkAdminCaller(context);
   if (!caller.ok) {
     throw new functions.https.HttpsError(caller.code, caller.message);
@@ -1898,7 +1909,7 @@ function buildPayoutDeps(): PayoutDeps {
  * to [performEscrowRelease]: client-supplied amount and wallet are ignored, the job and the worker's
  * stored wallet decide.
  */
-export const createMoMoPayout = functions.https.onCall(async (data, context) => {
+export const createMoMoPayout = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -1941,7 +1952,7 @@ export const createMoMoPayout = functions.https.onCall(async (data, context) => 
  * source of truth. A second invocation with the same `jobId` sees the
  * already-queued advance and fails closed with ALREADY_PENDING.
  */
-export const createMoMoMaterialAdvance = functions.https.onCall(
+export const createMoMoMaterialAdvance = functions.runWith(APP_CHECK).https.onCall(
   async (data, context) => {
     if (!context.auth) {
       throw new functions.https.HttpsError(
@@ -2099,7 +2110,7 @@ export const createMoMoMaterialAdvance = functions.https.onCall(
  * only query payouts bound to their own uid (the stored `clientUid`) or a job
  * they own (`postedByUid`).
  */
-export const getMoMoPayoutStatus = functions.https.onCall(async (data, context) => {
+export const getMoMoPayoutStatus = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -2336,7 +2347,7 @@ async function sendUserPush(
  * devices and a signed-out device cannot register against somebody else's account. The client never
  * sends a uid; it is taken from the verified auth context.
  */
-export const registerPushToken = functions.https.onCall(async (data, context) => {
+export const registerPushToken = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -2362,7 +2373,7 @@ export const registerPushToken = functions.https.onCall(async (data, context) =>
 const OTP_IP_WINDOW_MS = 60 * 60 * 1000;
 const OTP_IP_MAX_SENDS = 20;
 
-export const sendOtp = functions.runWith({ secrets: AFRICA_TALKING_SECRETS }).https.onCall(async (data, context) => {
+export const sendOtp = functions.runWith(withAppCheck({ secrets: AFRICA_TALKING_SECRETS })).https.onCall(async (data, context) => {
   let phone: string;
   try {
     phone = normalizeUgandanPhone((data ?? {}).phoneNumber);
@@ -2439,7 +2450,7 @@ export const sendOtp = functions.runWith({ secrets: AFRICA_TALKING_SECRETS }).ht
   };
 });
 
-export const verifyOtp = functions.runWith({ secrets: AFRICA_TALKING_SECRETS }).https.onCall(async (data) => {
+export const verifyOtp = functions.runWith(withAppCheck({ secrets: AFRICA_TALKING_SECRETS })).https.onCall(async (data) => {
   const code = (data ?? {}).code;
   if (typeof code !== "string" || !/^\d{4,8}$/.test(code)) {
     throw new functions.https.HttpsError("invalid-argument", "Enter the code from the SMS");
@@ -2493,7 +2504,7 @@ export const verifyOtp = functions.runWith({ secrets: AFRICA_TALKING_SECRETS }).
 // fabricated "example job" the client used to produce.
 // =====================================================================================
 
-export const transcribeVoiceJob = functions.runWith({ secrets: GEMINI_SECRETS }).https.onCall(async (data, context) => {
+export const transcribeVoiceJob = functions.runWith(withAppCheck({ secrets: GEMINI_SECRETS })).https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Sign in to transcribe a voice request");
   }
@@ -2565,7 +2576,7 @@ const PLACES_MAX_ATTEMPTS = 2;
 const PLACES_RETRY_BASE_MS = 400;
 
 export const searchLocalPlaces = functions
-  .runWith({ secrets: GEMINI_SECRETS })
+  .runWith(withAppCheck({ secrets: GEMINI_SECRETS }))
   .https.onCall(async (data, context) => {
     if (!context.auth) {
       throw new functions.https.HttpsError(
@@ -2637,7 +2648,7 @@ export const searchLocalPlaces = functions
 // REM-044: consent and data-subject access.
 // =====================================================================================
 
-export const recordConsent = functions.https.onCall(async (data, context) => {
+export const recordConsent = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Sign in to record consent");
   }
@@ -2659,7 +2670,7 @@ export const recordConsent = functions.https.onCall(async (data, context) => {
   return { version: record.version, acceptedAt: record.acceptedAt };
 });
 
-export const exportMyData = functions.https.onCall(async (_data, context) => {
+export const exportMyData = functions.runWith(APP_CHECK).https.onCall(async (_data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Sign in to export your data");
   }
@@ -2705,7 +2716,7 @@ export const exportMyData = functions.https.onCall(async (_data, context) => {
 // REM-023: server-verified operator access.
 // =====================================================================================
 
-export const getAdminAccess = functions.https.onCall(async (_data, context) => {
+export const getAdminAccess = functions.runWith(APP_CHECK).https.onCall(async (_data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Sign in to check operator access");
   }
@@ -2717,7 +2728,7 @@ export const getAdminAccess = functions.https.onCall(async (_data, context) => {
 // REM-024: session revocation.
 // =====================================================================================
 
-export const revokeMyTokens = functions.https.onCall(async (data, context) => {
+export const revokeMyTokens = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Sign in to end the session");
   }
@@ -2767,7 +2778,7 @@ async function purgeStoragePrefix(
   return { deleted, pending };
 }
 
-export const deleteMyAccount = functions.https.onCall(async (data, context) => {
+export const deleteMyAccount = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Sign in to delete your account.");
   }
@@ -2898,7 +2909,7 @@ export const deleteMyAccount = functions.https.onCall(async (data, context) => {
  * Called before sign-out, because once the session is gone the client can no longer prove it owns
  * the token record and the phone would keep receiving another person's notifications.
  */
-export const clearMyPushTokens = functions.https.onCall(async (data, context) => {
+export const clearMyPushTokens = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Sign in to clear push tokens.");
   }
@@ -2917,4 +2928,162 @@ export const clearMyPushTokens = functions.https.onCall(async (data, context) =>
       code: "PUSH_CLEAR_FAILED",
     });
   }
+});
+
+// ============ R07-P2-01: server-held doorstep PIN ============
+//
+// The PIN proves that the resident and the worker are standing at the same door. It used to be
+// verified on the phone against a value the caller supplied (`verifyDoorstepPin(jobId, entered,
+// expected)`), stored in plaintext in the job document, defaulted to "4829" and had no attempt
+// limit — so a modified client could simply pass `expected == entered`, and could guess freely.
+//
+// It is now registered once by the resident, stored as a salted SHA-256 hash in `job_secrets/{jobId}`
+// (a collection no client can read or write), verified server-side with a constant-time comparison,
+// and protected by five attempts followed by a fifteen-minute lockout. Only the owner or the
+// assigned provider may attempt it, and a success is what moves the job into IN_PROGRESS.
+
+function readJobId(data: any): string {
+  const jobId = typeof data?.jobId === "string" ? data.jobId.trim() : "";
+  if (!/^[A-Za-z0-9_-]{3,64}$/.test(jobId)) {
+    throw new functions.https.HttpsError("invalid-argument", "A valid job id is required.");
+  }
+  return jobId;
+}
+
+/** True when the caller is one of the two parties of the job. */
+function isJobParty(jobData: Record<string, unknown> | undefined, uid: string): boolean {
+  if (!jobData) return false;
+  return jobData["postedByUid"] === uid ||
+    jobData["assignedProviderUid"] === uid ||
+    jobData["assignedProviderId"] === uid;
+}
+
+/**
+ * R07-P2-01: register (or re-register) the doorstep PIN for a job the caller owns.
+ *
+ * The plaintext PIN never leaves the device in readable form elsewhere: it is hashed here with a
+ * fresh salt, and the job document is never touched (rules forbid client writes to PIN fields, and
+ * this function writes only `job_secrets`).
+ */
+export const setDoorstepPin = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to register a doorstep PIN.");
+  }
+  const jobId = readJobId(data);
+  const pin = typeof data?.pin === "string" ? data.pin.trim() : "";
+  if (!isValidPin(pin)) {
+    throw new functions.https.HttpsError("invalid-argument", "The doorstep PIN must be exactly four digits.");
+  }
+
+  const jobDoc = await db.collection("jobs").doc(jobId).get();
+  if (!jobDoc.exists) {
+    throw new functions.https.HttpsError("not-found", "That job does not exist.");
+  }
+  const jobData = (jobDoc.data() || {}) as Record<string, unknown>;
+  if (jobData["postedByUid"] !== context.auth.uid) {
+    throw new functions.https.HttpsError("permission-denied", "Only the resident who posted the job can set its PIN.");
+  }
+  if (jobData["isDoorstepVerified"] === true) {
+    throw new functions.https.HttpsError("failed-precondition", "This job's doorstep PIN has already been verified.");
+  }
+
+  const salt = newSalt();
+  await db
+    .collection("job_secrets")
+    .doc(jobId)
+    .set(
+      {
+        jobId,
+        uid: context.auth.uid,
+        salt,
+        pinHash: hashPin(pin, salt),
+        attempts: 0,
+        lockedUntil: 0,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
+      { merge: true }
+    );
+  return { ok: true };
+});
+
+/**
+ * R07-P2-01: verify the doorstep PIN and, on success, start the job.
+ *
+ * Returns counts only — never the hash, the salt or a comparison result that could be used as an
+ * oracle beyond the explicit `remainingAttempts`. A wrong PIN is `permission-denied` with a message
+ * the UI can show verbatim.
+ */
+export const verifyDoorstepPin = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to verify the doorstep PIN.");
+  }
+  const uid = context.auth.uid;
+  const jobId = readJobId(data);
+  const pin = typeof data?.pin === "string" ? data.pin.trim() : "";
+
+  const jobRef = db.collection("jobs").doc(jobId);
+  const jobDoc = await jobRef.get();
+  if (!jobDoc.exists) {
+    throw new functions.https.HttpsError("not-found", "That job does not exist.");
+  }
+  const jobData = (jobDoc.data() || {}) as Record<string, unknown>;
+  if (!isJobParty(jobData, uid)) {
+    throw new functions.https.HttpsError("permission-denied", "Only the resident or the assigned worker can verify this PIN.");
+  }
+
+  const secretRef = db.collection("job_secrets").doc(jobId);
+  const secretDoc = await secretRef.get();
+  if (!secretDoc.exists) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "This job has no doorstep PIN on file yet.",
+      { code: "PIN_NOT_REGISTERED" }
+    );
+  }
+  const secret = secretDoc.data() || {};
+  const now = Date.now();
+  const state = attemptStateOf(secret as Record<string, unknown>);
+
+  const lockedFor = lockRemainingMs(state, now);
+  if (lockedFor > 0) {
+    const outcome = applyAttempt(state, false, now);
+    throw new functions.https.HttpsError("resource-exhausted", refusalMessage(outcome), {
+      code: "PIN_LOCKED",
+      retryAfterMs: outcome.retryAfterMs,
+    });
+  }
+
+  const success = isValidPin(pin) && pinMatches(pin, secret["salt"], secret["pinHash"]);
+  const outcome = applyAttempt(state, success, now);
+
+  if (!success) {
+    await secretRef.set(
+      { attempts: outcome.attempts, lockedUntil: outcome.lockedUntil, updatedAt: now },
+      { merge: true }
+    );
+    throw new functions.https.HttpsError(
+      outcome.locked ? "resource-exhausted" : "permission-denied",
+      refusalMessage(outcome),
+      {
+        code: outcome.locked ? "PIN_LOCKED" : "PIN_INCORRECT",
+        remainingAttempts: outcome.remainingAttempts,
+        retryAfterMs: outcome.retryAfterMs,
+      }
+    );
+  }
+
+  await secretRef.set({ attempts: 0, lockedUntil: 0, verifiedAt: now, verifiedBy: uid, updatedAt: now }, { merge: true });
+  // The success path is the only place a job may move to IN_PROGRESS on a PIN event.
+  const updates: Record<string, unknown> = {
+    isDoorstepVerified: true,
+    doorstepPinVerifiedAt: now,
+    doorstepPinVerifiedBy: uid,
+  };
+  if (jobData["status"] === "ACCEPTED_FUNDED") {
+    updates["status"] = "IN_PROGRESS";
+    updates["escrowStatus"] = "WORK_IN_PROGRESS";
+  }
+  await jobRef.update(updates);
+  return { ok: true };
 });

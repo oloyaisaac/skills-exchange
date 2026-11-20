@@ -90,6 +90,15 @@ object CallableContracts {
             name = "deleteMyAccount",
             optional = mapOf("jobIds" to CallableValueType.LIST)
         ),
+        // R07-P2-01: the doorstep PIN is registered and verified server-side.
+        CallableContract(
+            name = "setDoorstepPin",
+            required = mapOf("jobId" to CallableValueType.STRING, "pin" to CallableValueType.STRING)
+        ),
+        CallableContract(
+            name = "verifyDoorstepPin",
+            required = mapOf("jobId" to CallableValueType.STRING, "pin" to CallableValueType.STRING)
+        ),
         // R06-P2-04: drop this device's push token before sign-out.
         CallableContract(
             name = "clearMyPushTokens",

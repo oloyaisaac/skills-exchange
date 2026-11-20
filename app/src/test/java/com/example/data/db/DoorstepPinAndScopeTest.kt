@@ -1,9 +1,10 @@
 package com.example.data.db
 
 import android.content.Context
+import java.io.File
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.example.util.DoorstepPinPolicy
+import com.example.data.remote.DoorstepPinRules
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -21,8 +22,10 @@ import org.robolectric.annotation.Config
  * user-facing reads).
  *
  * P2-03: the entity used to default `doorstepPin` to the literal "4829". Any job row written without
- * an explicit PIN therefore accepted a well-known code. The default is now empty and
- * [DoorstepPinPolicy] fails closed, so "no PIN" can never mean "any PIN".
+ * an explicit PIN therefore accepted a well-known code. The default is now empty.
+ *
+ * R07-P2-01 later removed the client-side comparison entirely: the PIN is verified by the server
+ * against a salted hash, so this file asserts the format rule and that no local comparator returned.
  *
  * P2-06: the browse lists were fed by `SELECT *` with no viewer at all. The DAO now exposes an
  * approved-provider feed and a viewer-scoped job feed; both are asserted here against a real
@@ -72,23 +75,26 @@ class DoorstepPinAndScopeTest {
     }
 
     @Test
-    fun `pin comparison fails closed on blank and malformed input`() {
-        assertFalse("blank vs blank must not match", DoorstepPinPolicy.matches("", ""))
-        assertFalse(DoorstepPinPolicy.matches(" ", " "))
-        assertFalse("unknown expected pin", DoorstepPinPolicy.matches("1234", ""))
-        assertFalse("unknown entered pin", DoorstepPinPolicy.matches("", "1234"))
-        assertFalse("three digits", DoorstepPinPolicy.matches("123", "123"))
-        assertFalse("five digits", DoorstepPinPolicy.matches("12345", "12345"))
-        assertFalse("letters", DoorstepPinPolicy.matches("abcd", "abcd"))
-        assertFalse("wrong pin", DoorstepPinPolicy.matches("1234", "4321"))
+    fun `pin format fails closed on blank and malformed input`() {
+        assertFalse(DoorstepPinRules.isWellFormed(""))
+        assertFalse(DoorstepPinRules.isWellFormed(" "))
+        assertFalse(DoorstepPinRules.isWellFormed("123"))
+        assertFalse(DoorstepPinRules.isWellFormed("12345"))
+        assertFalse(DoorstepPinRules.isWellFormed("abcd"))
+        assertFalse(DoorstepPinRules.isWellFormed(null))
+        assertTrue(DoorstepPinRules.isWellFormed("1234"))
+        assertTrue("surrounding whitespace is trimmed", DoorstepPinRules.isWellFormed(" 1234 "))
+        assertTrue(DoorstepPinRules.isWellFormed("0000"))
     }
 
     @Test
-    fun `pin comparison accepts a matching four digit code`() {
-        assertTrue(DoorstepPinPolicy.matches("1234", "1234"))
-        assertTrue("surrounding whitespace is trimmed", DoorstepPinPolicy.matches(" 1234 ", "1234"))
-        assertTrue(DoorstepPinPolicy.isValid("0000"))
-        assertFalse(DoorstepPinPolicy.isValid(""))
+    fun `the client no longer compares pins locally`() {
+        // R07-P2-01: comparison happens in `verifyDoorstepPin` (Cloud Function) against a salted
+        // hash. A local comparator is how the original defect survived, so its absence is asserted.
+        val repo = repoFile("app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt").readText()
+        assertFalse("no client-side comparator", File("app/src/main/java/com/example/util/DoorstepPinPolicy.kt").exists())
+        assertFalse("no caller-supplied expected pin", repo.contains("expectedPin: String"))
+        assertTrue("the typed pin goes to the server", repo.contains("verifyDoorstepPinWithServer"))
     }
 
     // ---- R04-P2-06 -------------------------------------------------------------------------
@@ -184,3 +190,12 @@ class DoorstepPinAndScopeTest {
         kycStatus = kycStatus
     )
 }
+
+    private fun repoFile(relative: String): java.io.File {
+        var dir: java.io.File? = java.io.File(System.getProperty("user.dir") ?: ".").absoluteFile
+        while (dir != null) {
+            if (java.io.File(dir, "settings.gradle.kts").exists()) return java.io.File(dir, relative)
+            dir = dir.parentFile
+        }
+        return java.io.File(relative)
+    }
