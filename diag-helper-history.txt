@@ -1,2 +1,0 @@
-785820f feat: initialize project structure with Firebase authentication and Google Sign-In support
-fatal: bad revision 'fc00964'

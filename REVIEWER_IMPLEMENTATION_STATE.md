@@ -1,17 +1,17 @@
 # REVIEWER IMPLEMENTATION STATE — Prompt 4 (strict one-reviewer-at-a-time)
 
 **Programme:** ASMT-2026-11-19 · **Cycle:** Prompt-4 remediation
-**Updated:** 2026-11-20 · **Branch:** `arena/a19ae51b-skills-exchange`
+**Updated:** 2026-11-20 · **Branch:** `arena/f11c33ea-skills-exchange`
 
 ## Position
 
 | Field | Value |
 |---|---|
 | Total original reviewers | **15** |
-| Current reviewer | **R10 — COMPLETE** (evidence below) |
-| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05, R06, R07, R08, R09, R10 (10 of 15)** |
-| Reviewers awaiting implementation | R11 … R15 |
-| Next reviewer number | **11** |
+| Current reviewer | **R11 — COMPLETE** (evidence below) |
+| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R11 (11 of 15)** |
+| Reviewers awaiting implementation | R12 … R15 |
+| Next reviewer number | **12** |
 
 ## R01 — COMPLETE (gate passed)
 
@@ -450,6 +450,55 @@ moved under later rounds and are recorded as such rather than re-fixed:
 - **Off-platform-contact detection** (review §6) carried no finding id and is not implemented; it is not
   presented as done.
 
+## R11 — COMPLETE (gate passed)
+
+Source: `review_results/prompt2/REVIEW_11.md` (verdict **FAIL**, 7 findings, written against an earlier
+commit). The reviewer's point was that the test programme was a claim: nothing proved which suites ran,
+nothing measured coverage, and the evidence in the repository described builds that no longer existed.
+Four findings had already been closed by earlier rounds and are recorded as stale rather than re-fixed:
+
+- **R11-P2-01 (CRITICAL)** — `rules-test/firestore.rules.test.mjs` holds 26 emulator tests, run by the
+  `Firestore rules tests` job since **R07**, with `# fail 0` asserted.
+- **R11-P2-02 (CRITICAL)** — seven Compose tests in three files (`OnboardingComposeTest`,
+  `EscrowGatingComposeTest`, `CriticalFlowComposeTest`) landed in **R02** and run in the Android job.
+- **R11-P2-03 (HIGH)** — the Android job has existed since **R01** and executes 478 unit tests; the
+  stale `ci.yml` header that claimed it was "intentionally absent" is corrected here, since a comment
+  contradicting the workflow is how the finding kept being raised.
+
+| Finding | Required correction | Status | Evidence |
+|---|---|---|---|
+| R11-P2-04 | HIGH: suites are hand-listed, so a test file can exist and never run | **IMPLEMENTED AND VERIFIED** | `functions/package.json` `test` = `node --test test/*.test.mjs`; `scripts/check_test_registration.mjs` rejects a test file no script runs, a `test:coverage` that covers a different set, and CI that stops invoking a suite; `--selftest` proves it can fail; wired into the documentation job |
+| R11-P2-05 | HIGH: no coverage tool and no coverage floor | **IMPLEMENTED (backend measured locally; client measured in CI)** | Backend `test:coverage` floors 90/80/90 against measured 96.38/85.94/96.81, and a `99` run fails. Client JaCoCo 0.8.12: `jacocoTestReport`, `jacocoTestCoverageVerification` (LINE 0.20), generated code excluded, both run in `android.yml` with `android-coverage` uploaded |
+| R11-P2-06 | HIGH: handler/E2E layer is thin and nothing repeats a run | **IMPLEMENTED AND VERIFIED** | `handlers.emulator.mjs` 5 → 19 tests (fileReport, queue, resolve, submitRating, dispatch status, metrics); CI asserts `# pass 19` and the job passes **19/19** (run 44789646720); backend suite run three times per PR with an identical count (310 three times locally). The first execution of the new tests failed on one wrong assertion, so the gate demonstrably bites |
+| R11-P2-07 | MEDIUM: README counts and stale artefacts contradict the code | **IMPLEMENTED AND VERIFIED** | 190 files / 74 MB deleted (`build.log`, `c123_verify_*.log`, `diag-*.txt`, `ui-*.xml`, two 32 MB APKs, `res/`, `META-INF/`); README no longer states counts, it names the command; new `docs/qa/TEST_STRATEGY.md` |
+| (beyond findings) | the document-map guard read only one level of `docs/` | **IMPLEMENTED AND VERIFIED** | recursive walk; 22 → 28 documents verified; a stray `docs/**` file fails the check |
+
+### Verification evidence (executed)
+
+- Backend: `npm run build && npm test` in `functions/` — **310/310**, three consecutive runs with an
+  identical pass count (the flake gate this round added).
+- Backend coverage: **96.38 % lines / 85.94 % branches / 96.81 % functions** over `lib/**/*.js` on
+  Node 22.22.3; the same command with `--test-coverage-lines=99` fails, so the floor is enforced.
+- Static guards: doc links, document map (28 documents), traceability (**32** requirements, 2 without
+  a test), README claims, architecture guards, query limits, consent version, backup policy,
+  no-PII-logs, secret scan and `check_test_registration` — all pass, plus both self-tests.
+- Firestore rules: 26 emulator tests (unchanged this round).
+- Handler tests: **19/19** on the Firestore emulator (run **44789646720**). Their first run failed on
+  an assertion that treated `breachingSla` as an envelope field; fixed in the same round.
+- Android: 478 unit tests and the JaCoCo tasks run in CI — run **44789646910** passes `Unit-test
+  coverage (JaCoCo)`, `Summarise coverage` and `Upload coverage report`. The coverage figure lives in
+  the `android-coverage` artifact, which this sandbox cannot download, so no number is quoted.
+- CI for this round: **7/7 checks pass** (runs **44789646720**, **44789646910**).
+
+### Not claimed
+
+- No instrumented device test exists (`app/src/androidTest` is the template), so `REM-065` stays
+  `IN_PROGRESS`.
+- No coverage figure for `lib/index.js`; only the 19 handler tests touch it.
+- No flake evidence for the Android or rules suites.
+- Provider sandboxes remain untested; `REM-066` stays `IN_PROGRESS`.
+- Nothing is deployed and no test has run against a real Firebase project, handset or provider.
+
 ## Completion declarations
 
 - `reviewer_completions/REVIEWER_01_DONE.md`
@@ -462,7 +511,8 @@ moved under later rounds and are recorded as such rather than re-fixed:
 - `reviewer_completions/REVIEWER_08_DONE.md`
 - `reviewer_completions/REVIEWER_09_DONE.md`
 - `reviewer_completions/REVIEWER_10_DONE.md`
+- `reviewer_completions/REVIEWER_11_DONE.md`
 
 ## Blockers
 
-None. R09 and R10 complete; R11 is next.
+None. R01–R11 complete; R12 is next.

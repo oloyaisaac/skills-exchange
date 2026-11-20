@@ -33,10 +33,20 @@ for (const entry of fs.readdirSync(ROOT, { withFileTypes: true })) {
   if (entry.isFile() && entry.name.endsWith(".md")) actual.add(entry.name);
 }
 const docsDir = path.join(ROOT, "docs");
+// R11: walk `docs/` recursively. The first version of this check looked one level deep, so a document
+// in `docs/privacy/`, `docs/safety/` or `docs/qa/` could be added without ever appearing in the map —
+// a completeness check that could not see most of the directory it was checking.
 if (fs.existsSync(docsDir)) {
-  for (const entry of fs.readdirSync(docsDir, { withFileTypes: true })) {
-    if (entry.isFile() && entry.name.endsWith(".md")) actual.add(`docs/${entry.name}`);
-  }
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.isFile() && entry.name.endsWith(".md")) {
+        actual.add(path.relative(ROOT, full).split(path.sep).join("/"));
+      }
+    }
+  };
+  walk(docsDir);
 }
 
 const problems = [];

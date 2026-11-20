@@ -1,8 +1,0 @@
-﻿
-
-Algorithm : SHA256
-Hash      : F5497194E64BC72B1E195B287C6A0ABE3B4B62FE60420440555BAA99F7E009EB
-Path      : D:\skills exchange\app\build\outputs\apk\debug\app-debug.apk
-
-
-

@@ -5,6 +5,13 @@
 
 ---
 
+> **Artifacts removed on 2026-11-20 (R11).** This report describes a run of the 2026-09-29 build, which
+> is not the committed code. The files it cites as evidence — `installed-base.apk`, `installed-check.apk`,
+> `ui.xml`, the logcat captures and the heap-crash log — were deleted in R11 (74 MB of build and device
+> output that could not be evidence for any later commit; see `docs/qa/TEST_STRATEGY.md`). What remains
+> is this written record plus the screenshots and the pulled SQLite file. Treat every claim below as
+> **historical and unreproducible** from the current tree: it is context, not verification.
+
 ## 1. Verdict
 
 | # | Area | Result | Evidence |

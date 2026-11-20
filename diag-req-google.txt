@@ -1,4 +1,0 @@
-﻿29: 3. **Mandatory Worker Verification Pipeline**: Collect Uganda National ID (front & back), full legal name, DOB, gender, and exactly **two guarantors** with complete ID documents.
-101: - Full Legal Name
-118: - **Identity**: Full legal name as shown on National ID, National ID Number, Phone Number, Date of Birth, Gender.
-422: - **AUTH-01 (CONFIRMED)**: Phone authentication and Google Sign-In are simulated with local state flags.

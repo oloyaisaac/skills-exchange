@@ -131,7 +131,34 @@ Kampala city-centre coordinates), and the residual shared PIN default is closed 
 and `docs/safety/SAFETY_DESK_RUNBOOK.md`. Evidence: backend 310/310, rules 26/26, 10 static guards
 green, CI 7/7 (run 44784548015). Not verified: deployment, live dispatch, any human triage; the desk is single-operator with no
 dual control, stated as a gap.
-R11–R15 awaiting.
+
+**R11 — COMPLETE.** The test programme was a claim, not a gate. Four of the reviewer's seven findings
+had already been closed by earlier rounds (the rules suite, the Compose UI tests and the Android CI
+job all exist and run), so they are recorded as stale rather than re-implemented. What was actually
+missing is now measured: `npm test` discovers every `test/*.test.mjs` instead of running a hand-listed
+set, `scripts/check_test_registration.mjs` (with a self-test that proves it can fail) refuses a test
+file that no script runs and refuses CI that stops invoking a suite, and the backend gained a
+coverage floor — lines 90 / branches 80 / functions 90 against a measured 96.38/85.94/96.81 on Node
+22.22.3. The client gained JaCoCo (`jacocoTestReport`, `jacocoTestCoverageVerification` at a 20 % line
+floor, report uploaded per run) and the Android workflow now runs both. The handler suite grew from 5
+to 19 tests, covering fileReport, the reports queue, resolveReport, submitRating, the SOS dispatch
+status and the safety metrics, with the CI step asserting the exact count so a suite that runs
+nothing fails. `docs/qa/TEST_STRATEGY.md` states what runs where, the gates, the floors, the flake
+policy (the backend suite is repeated three times per PR), a critical-path matrix and the seven gaps
+that remain — device tests, `lib/index.js` coverage, flake evidence for Android and rules, provider
+contracts, no screenshot baseline, a low Android floor, no load testing. 190 tracked artefacts
+(74 MB: `build.log`, `build_result*`, `diag-*.txt`, `ui-*.xml`, two 32 MB APKs, stray `res/` and
+`META-INF/` build output) that described commits which no longer exist were deleted, and README no
+longer states test counts it cannot keep true. The document-map guard was found checking only one
+directory level and now walks `docs/` recursively (22 → 28 documents verified). Evidence: backend
+310/310 three times, rules 26/26, 10 static guards + 2 self-tests green, backend coverage measured;
+Android 478 tests and the JaCoCo tasks are CI-executed only (no JDK here) and the 14 new handler tests
+are CI-executed (no JDK, no emulator here). Evidence: backend 310/310 three times locally and three
+times per PR, backend coverage floors met, handler tests **19/19** on the emulator (run 44789646720),
+rules 26/26, 10 static guards + 2 self-tests, Android `Compile and unit tests` green with JaCoCo in run
+44789646910, CI **7/7**. The new handler gate failed on its first execution — one assertion treated
+`breachingSla` as an envelope field — and the exact-count assertion is what surfaced it.
+R12–R15 awaiting.
 
 ## Review Track — 2026-11-19 (not started)
 

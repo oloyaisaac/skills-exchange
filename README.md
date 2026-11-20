@@ -130,22 +130,37 @@ An independent review programme (2026-11-19) defines 15 specialist reviewers cov
 ./gradlew assembleRelease
 ```
 
-Cloud Functions tests (pure TypeScript modules; no emulator or network):
+Cloud Functions tests (pure TypeScript modules; no emulator or network). `npm test` discovers every
+`test/*.test.mjs`, so a new suite is picked up without editing a list:
 
 ```bash
 cd functions
-npm test        # 171 tests on Node 22.22.3 (2026-11-20; the count grows with each new suite)
+npm test            # unit suites
+npm run test:coverage  # same suites with a coverage floor (lines 90, branches 80, functions 90)
+```
+
+Callable handlers against the Firestore emulator (needs `firebase-tools`; this is what CI runs):
+
+```bash
+cd functions
+npm run test:handlers
 ```
 
 Android unit tests (Robolectric, run on JDK 21 in CI):
 
 ```bash
-./gradlew :app:testDebugUnitTest   # 355 tests, 0 failures (2026-11-20)
+./gradlew :app:testDebugUnitTest
+./gradlew :app:jacocoTestReport :app:jacocoTestCoverageVerification
 ```
 
-> The assessment sandbox had no JDK/Android SDK, so the Android build is executed by the
+> Test counts are deliberately not stated here. They move with every round, and a number in a README
+> is a claim nobody re-checks: the current counts are the ones printed by the command you just ran.
+> `docs/qa/TEST_STRATEGY.md` lists the suites, the release gates and the coverage floors.
+
+> The assessment sandbox has no JDK/Android SDK, so the Android build is executed by the
 > `Android build` GitHub workflow on every push and pull request; that is the evidence for a given
-> commit. Treat local historical logs in the repository as stale.
+> commit. Historical logs and device screenshots that used to sit in the repository root were removed
+> in R11: they described older commits and could not be evidence for this one.
 
 ## License
 

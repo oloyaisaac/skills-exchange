@@ -1,3 +1,45 @@
+## 2026-11-20 (Prompt-4 R11 COMPLETE) - QA GATE PASSED
+
+- R11 closed on `arena/f11c33ea-skills-exchange`. The review
+  (`review_results/prompt2/REVIEW_11.md`) said the test programme was a claim. Four of its seven
+  findings were already closed by earlier rounds and are recorded as stale, not re-implemented: the
+  rules suite (26 emulator tests, R07), the Compose tests (7 in 3 files, R02) and the Android CI job
+  (478 tests, R01). The stale `ci.yml` header claiming that job was "intentionally absent" is fixed.
+- Suites can no longer exist and never run. `functions/package.json` `test` is the glob
+  `node --test test/*.test.mjs`; `scripts/check_test_registration.mjs` fails the build when a test
+  file is executed by no script, when `test:coverage` covers a different set, or when CI stops calling
+  a suite. Its `--selftest` plants an unregistered suite and proves the guard refuses it.
+- Coverage is measured and gated. Backend `test:coverage` enforces 90 lines / 80 branches / 90
+  functions against a measured 96.38 / 85.94 / 96.81 on Node 22.22.3 (a `--test-coverage-lines=99`
+  run fails, so the floor is enforced). Client: JaCoCo 0.8.12, `jacocoTestReport` and
+  `jacocoTestCoverageVerification` (LINE 0.20, generated code excluded), both invoked by
+  `android.yml`, with the LINE total printed per run and `android-coverage` uploaded.
+- The emulator handler suite grew from 5 to 19 tests (fileReport, reports queue, resolveReport,
+  submitRating, getSosDispatchStatus, getSafetyMetrics); the CI step asserts `# pass 19` so a suite
+  that runs nothing fails. The backend unit suite is repeated three times per PR with an identical
+  pass count: 310/310 three times locally.
+- Stale evidence is gone: 190 tracked artefacts (74 MB), including `build.log`, `c123_verify_*.log`,
+  `diag-*.txt`, `ui-*.xml`, two 32 MB APKs and stray `res/`/`META-INF/` output, described commits that
+  no longer exist. README now names the command instead of stating counts (it said 171 backend / 355
+  Android against 310 / 478), and `docs/qa/TEST_STRATEGY.md` records inventory, gates, floors, flake
+  policy, a critical-path matrix and seven gaps by risk.
+- Beyond the findings: `check_document_map.mjs` read only one directory level, so documents under
+  `docs/privacy/`, `docs/safety/` and `docs/qa/` could be added unseen. It walks the tree now: 22 to
+  28 documents verified.
+- Evidence: backend 310/310 three times, coverage floors met, rules 26, eleven static guards plus two
+  self-tests green, traceability at 32 requirements (2 without a test). CI **7/7** (runs 44789646720
+  and 44789646910): handler tests 19/19 on the emulator, Android job green with the JaCoCo steps. The
+  new handler gate failed its first execution, on an assertion that treated `breachingSla` as an
+  envelope field; the exact-count assertion surfaced it, and the fix is in the same round. Android's
+  coverage figure is in the `android-coverage` artifact, which this sandbox cannot download, so no
+  number is quoted here.
+- Not verified, and said so in the docs: no instrumented device test (`app/src/androidTest` is the
+  template), no coverage number for `lib/index.js`, no flake evidence for the Android or rules suites,
+  no provider sandbox tests, no screenshot baseline, no load testing. Nothing is deployed. `REM-065`
+  and `REM-066` stay `IN_PROGRESS` for those reasons. R12 is next.
+
+---
+
 ## 2026-11-20 (Prompt-4 R10 COMPLETE) - SAFETY GATE PASSED
 
 - R10 closed on `arena/a19ae51b-skills-exchange`. The review (`review_results/prompt2/REVIEW_10.md`,
