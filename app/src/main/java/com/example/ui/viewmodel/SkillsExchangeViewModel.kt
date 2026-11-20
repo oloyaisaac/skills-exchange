@@ -188,6 +188,12 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     // Pending actions queue for offline actions
     val pendingActions = MutableStateFlow<List<com.example.data.db.PendingActionEntity>>(emptyList())
 
+    /** R13-P2-01: how much work is still queued, so the banner can say so. */
+    val pendingActionCount = MutableStateFlow(0)
+
+    /** The outcome of the last drain pass; the UI shows the count, tests read the detail. */
+    val lastDrainReport = MutableStateFlow(com.example.data.repository.SkillsExchangeRepository.PendingDrainReport())
+
     /**
      * STEP 0 (offline queue data-loss fix): single-flight guard for [flushPendingActions].
      * Reconnect events must never run overlapping flushes against the same Room queue.
@@ -2778,30 +2784,34 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     /**
-     * STEP 0 (offline queue data-loss fix): preserve every queued item.
+     * R13-P2-01: the queue now drains instead of being counted.
      *
-     * The previous implementation collected the endless [repository.getPendingActions] Flow
-     * and called `markActionCompleted` (Room DELETE) for each row without executing the
-     * action or obtaining any server confirmation — queued work was silently discarded on
-     * every reconnect. Actual execution + server-confirmed completion arrive in a later
-     * step, so this method takes a one-time snapshot and deletes NOTHING. A [Mutex]
-     * single-flight guard ([flushMutex]) skips overlapping reconnect triggers.
+     * History: the first version deleted rows without executing them (silent data loss); "STEP 0"
+     * then preserved them and executed nothing, so the queue could only grow. This runs the drain —
+     * supported actions once, unknown ones against their retry cap and then dead-lettered — and
+     * publishes what is left, so the banner can say how much is waiting instead of the app quietly
+     * holding work forever. A [Mutex] single-flight guard keeps reconnect triggers from overlapping.
      */
     fun flushPendingActions() {
         viewModelScope.launch {
             if (!flushMutex.tryLock()) return@launch
             try {
-                // One-shot snapshot: Flow.collect never completes and must not drive a flush.
-                val snapshot = repository.getPendingActionsSnapshot()
-                // STEP 0 intentionally performs no execution and no deletion. Each item is
-                // preserved until a later step can execute it and confirm it server-side.
-                // Logging the retained count keeps reconnect behavior observable in logcat.
-                if (snapshot.isNotEmpty()) {
+                val report = repository.drainPendingActionQueue()
+                pendingActionCount.value = report.remaining
+                lastDrainReport.value = report
+                if (!report.didNothing) {
                     android.util.Log.d(
                         "SkillsExchangeViewModel",
-                        "flushPendingActions (STEP 0): preserving ${snapshot.size} pending action(s); execution not yet implemented"
+                        "queue drain: attempted=${report.attempted} succeeded=${report.succeeded} " +
+                            "retry=${report.retryScheduled} abandoned=${report.abandoned} " +
+                            "unsupported=${report.unsupported} remaining=${report.remaining}"
                     )
                 }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                // A drain failure must never take the reconnect path down with it.
+                android.util.Log.e("SkillsExchangeViewModel", "queue drain failed", error)
             } finally {
                 flushMutex.unlock()
             }

@@ -369,7 +369,8 @@ fun MainScreen(
                 .background(Slate50)
         ) {
             // Real-Time Offline Network Indicator
-            OfflineStatusBar(isOnline = isOnline)
+            val queuedActions by viewModel.pendingActionCount.collectAsStateWithLifecycle()
+            OfflineStatusBar(isOnline = isOnline, queuedActions = queuedActions)
 
             // Automatic GPS Geolocation Soft Banner / Pre-Prompt
             GpsLocationBanner(

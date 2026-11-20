@@ -50,6 +50,9 @@ private const val CONSENT_FAILURE =
 private const val WITHDRAWAL_FAILURE =
     "We could not record the withdrawal. Nothing changed; please try again."
 
+/** R13-P2-03: bound on the live chat tail. Documented in docs/ops/RELIABILITY_AND_PERFORMANCE.md. */
+private const val CHAT_STREAM_LIMIT = 200L
+
 class FirebaseService(private val context: Context? = null) {
 
     companion object {
@@ -1049,33 +1052,6 @@ class FirebaseService(private val context: Context? = null) {
         }
     }
 
-    fun streamJobsFromFirestore(): Flow<List<Map<String, Any>>> = callbackFlow {
-        val db = firestore
-        if (db == null) {
-            awaitClose { }
-            return@callbackFlow
-        }
-        try {
-            val listener = db.collection("jobs")
-                .addSnapshotListener { snapshot, error ->
-                    if (error != null) {
-                        Log.d("FirebaseService", "Firestore jobs snapshot: ${error.message}")
-                        return@addSnapshotListener
-                    }
-                    if (snapshot != null) {
-                        val jobsList = snapshot.documents.mapNotNull { doc ->
-                            doc.data?.plus("docId" to doc.id)
-                        }
-                        trySend(jobsList)
-                    }
-                }
-            awaitClose { listener.remove() }
-        } catch (e: Exception) {
-            Log.d("FirebaseService", "Firestore stream listener: ${e.message}")
-            awaitClose { }
-        }
-    }
-
     suspend fun uploadKycDocument(userId: String, docType: String, fileBytes: ByteArray): String? {
         val storageInstance = storage ?: return null
         return try {
@@ -1361,6 +1337,11 @@ class FirebaseService(private val context: Context? = null) {
                 .document(jobId)
                 .collection("messages")
                 .orderBy("timestamp")
+                // R13-P2-03: a job's chat is the one listener still in the client, and it was
+                // unbounded — a long-running job streamed its whole history into memory on every
+                // attach. The last 200 messages are what the screen shows; older ones are a scroll
+                // back to a fetch, not a live tail.
+                .limitToLast(CHAT_STREAM_LIMIT)
                 .addSnapshotListener { snapshot, error ->
                     if (error != null) {
                         Log.d("FirebaseService", "Firestore chat snapshot: ${error.message}")

@@ -34,4 +34,45 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-console.log(`Query-limit check passed: ${checked} list queries all carry LIMIT.`);
+
+
+// R13-P2-03: the same rule for the client's Firestore listeners. A snapshot listener without a bound
+// streams the whole collection into memory on attach and keeps it there; the review found one on
+// `jobs` (dead, and denied by the rules) and one on a job's messages (live, unbounded).
+const CLIENT_ROOT = path.join(process.cwd(), "app/src/main/java");
+const listenerProblems = [];
+let listeners = 0;
+
+function walkClient(dir) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) walkClient(full);
+    else if (entry.isFile() && entry.name.endsWith(".kt")) checkListeners(full);
+  }
+}
+
+function checkListeners(file) {
+  const source = fs.readFileSync(file, "utf8");
+  let index = source.indexOf(".addSnapshotListener");
+  while (index !== -1) {
+    listeners += 1;
+    const before = source.slice(Math.max(0, index - 600), index);
+    if (!/\.(limit|limitToLast)\(/.test(before)) {
+      const line = source.slice(0, index).split("\n").length;
+      listenerProblems.push(
+        `${path.relative(process.cwd(), file)}:${line}: listener has no limit( / limitToLast( within 600 chars`
+      );
+    }
+    index = source.indexOf(".addSnapshotListener", index + 1);
+  }
+}
+
+if (fs.existsSync(CLIENT_ROOT)) walkClient(CLIENT_ROOT);
+
+if (listenerProblems.length > 0) {
+  console.error(`Listener-bound check failed (${listenerProblems.length} problem(s)):`);
+  for (const problem of listenerProblems) console.error(`  - ${problem}`);
+  process.exit(1);
+}
+
+console.log(`Query-limit check passed: ${checked} list queries all carry LIMIT; ${listeners} client listener(s) all bounded.`);

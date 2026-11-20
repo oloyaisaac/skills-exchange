@@ -22,6 +22,7 @@
     <string name="escrow_release_failed">Release failed: %1$s</string>
 
     <string name="offline_banner">Offline — showing saved data. Changes queue automatically.</string>
+    <string name="offline_banner_queued">%1$d change(s) waiting to reach the server. They are kept on this device until they do.</string>
 
     <string name="onboarding_role_question">What describes you?</string>
     <string name="onboarding_profile_title">Complete Profile Information</string>

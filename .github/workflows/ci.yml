@@ -156,6 +156,9 @@ jobs:
       # R12: locale parity, the inline-copy baseline and the palette's text tones.
       - run: node scripts/check_ui_copy.mjs --selftest
       - run: node scripts/check_ui_copy.mjs
+      # R13: install and cold-start budget — no single resource over 150 KB, res/ under 1 MB.
+      - run: node scripts/check_asset_budget.mjs --selftest
+      - run: node scripts/check_asset_budget.mjs
       - run: node scripts/secret_scan.mjs
 
   secret-scan:
