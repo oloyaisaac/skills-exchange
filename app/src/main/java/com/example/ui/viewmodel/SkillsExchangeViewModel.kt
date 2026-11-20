@@ -1690,7 +1690,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     /** Shared teardown for sign-out and completed deletion; never runs before the server agrees. */
-    private fun clearLocalStateAfterSignOut() {
+    private suspend fun clearLocalStateAfterSignOut() {
         repository.clearAllUserData()
         sessionManager.clearSession()
         authState.value = AuthState.SignedOut
