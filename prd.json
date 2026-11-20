@@ -4354,7 +4354,7 @@
       "phase": 19,
       "title": "Restore the backend build",
       "priority": "CRITICAL",
-      "status": "VERIFICATION_PENDING",
+      "status": "COMPLETED",
       "status_note": "npm ci + npm run build exit 0 from a clean lib/ (lib deleted first); npm test 111/111 pass. Added functions.https.Request annotation and npm overrides so firebase-functions uses the root @types/express. Evidence is a local log; the required CI log cannot exist until REM-005 creates CI.",
       "depends_on": [],
       "description": "Restore the backend build. `processMoMoWebhook` uses DOM Request/Response instead of Cloud Functions types, so tsc exits 2.",
@@ -4381,7 +4381,7 @@
       "source_finding": "MR-002",
       "reviewer": "R03",
       "review_report": "review_results/R03_BACKEND.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "notes": "Prompt-4 R03: `npm run build` clean; 172 unit tests and 5 Firestore-emulator handler tests pass in CI (run 44709995723); runtime pinned to Node 22."
     },
     {
       "id": "REM-003",
@@ -4627,7 +4627,7 @@
       "phase": 19,
       "title": "Add predeploy, staging and rollback",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "depends_on": [
         "REM-002",
         "REM-005"
@@ -4658,7 +4658,7 @@
       "source_finding": "MR-009",
       "reviewer": "R03",
       "review_report": "review_results/R03_BACKEND.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "notes": "Prompt-4 R03: `functions.predeploy` build and `firestore.indexes.json` are in place. Staging/rollback deployments and a real `firebase deploy` remain unverified (no Firebase project available)."
     },
     {
       "id": "REM-010",
@@ -5120,7 +5120,7 @@
       "source_finding": "MR-021",
       "reviewer": "R03",
       "review_report": "review_results/R03_BACKEND.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "notes": "Prompt-4 R03: the webhook re-queries the stored transaction before any mutation and is authenticated; per-IP throttling was added to OTP sends (20/hour), a webhook-level throttle is still open."
     },
     {
       "id": "REM-022",
@@ -7239,5 +7239,5 @@
     "RVW-013",
     "RVW-015"],
     "blocked_stories": [],
-    "last_updated": "2026-11-20T10:10:00+03:00"
+    "last_updated": "2026-11-20T12:30:00+03:00"
 }

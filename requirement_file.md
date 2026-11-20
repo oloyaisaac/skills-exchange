@@ -859,7 +859,7 @@ This section adds requirements; it does not replace or relax any requirement abo
 |---|---|---|---|
 | R01 | REM-001, REM-003, REM-004 | Compilation, modular boundaries and removal of dead/duplicate configuration | NOT_STARTED |
 | R02 | REM-054, REM-073 | Android lifecycle, process-death survival, permissions and onboarding wiring | NOT_STARTED |
-| R03 | REM-002, REM-009, REM-021 | Backend build integrity, deploy gating, webhook authentication and reconciliation | NOT_STARTED |
+| R03 | REM-002, REM-009, REM-021 | Backend build integrity, deploy gating, webhook authentication and reconciliation | IMPLEMENTED (REM-002 complete; REM-009 predeploy done, deploys unverified; webhook auth/re-query in place, webhook throttle open) |
 | R04 | REM-046, REM-047, REM-048, REM-049, REM-050 | Schema export, tested migrations, exact money representation and bounded reads | NOT_STARTED |
 | R05 | REM-051, REM-033, REM-052, REM-053 | Server-held integration secrets, non-fabricated AI output, contract tests and real channels | NOT_STARTED |
 | R06 | REM-022, REM-023, REM-024, REM-025 | Firebase-backed identity, admin claim lifecycle, re-authentication and account linking | NOT_STARTED |

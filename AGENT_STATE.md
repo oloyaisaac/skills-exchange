@@ -4,7 +4,9 @@
 - Cash settlement records CASH_SETTLEMENT_ACKNOWLEDGED, no "funds locked" claim.
 - Single-flight on escrow release and SOS; onboarding uses rememberSaveable; SOS fallback coords removed.
 - SecureScreen (FLAG_SECURE) on escrow/PIN, guarantor and account surfaces.
-- Four Compose flow tests run on the JVM; 362/362 tests. R02 gate passed; R03 not started.
+- Four Compose flow tests run on the JVM; 362/362 tests. R02 gate passed.
+- R03 gate passed: 172/172 backend tests plus 5/5 Firestore-emulator handler tests (run 44709995723);
+  deploy and live provider traffic remain UNVERIFIED. R04 is next.
 
 ---
 
