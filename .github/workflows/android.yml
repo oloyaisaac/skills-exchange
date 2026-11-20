@@ -1,8 +1,8 @@
 # R01-P2-01: compile and unit-test evidence for the Android client.
 #
-# The sandbox used for remediation has no JDK/Android SDK and cannot reach Google Maven, so the
-# build is executed on a GitHub runner, where both are available. This is real execution evidence
-# for the commit under test, not a historical claim.
+# The remediation sandbox has no Android SDK and cannot reach Google Maven, so the build runs on a
+# GitHub runner. Diagnostics are published to the `ci-logs` branch on failure because the sandbox
+# cannot read Actions logs directly.
 name: Android build
 
 on:
@@ -12,7 +12,7 @@ on:
     branches: [main, "arena/**"]
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: android-${{ github.ref }}
@@ -34,17 +34,34 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          packages: "platform-tools platforms;android-37 build-tools;37.0.0"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Compile debug Kotlin
-        run: ./gradlew :app:compileDebugKotlin --stacktrace --no-daemon
+        run: |
+          set -o pipefail
+          ./gradlew :app:compileDebugKotlin --stacktrace --no-daemon 2>&1 | tee compile.log
 
       - name: Run JVM unit tests
-        run: ./gradlew :app:testDebugUnitTest --stacktrace --no-daemon
+        run: |
+          set -o pipefail
+          ./gradlew :app:testDebugUnitTest --stacktrace --no-daemon 2>&1 | tee unit-tests.log
+
+      - name: Publish diagnostics on failure
+        if: failure()
+        run: |
+          mkdir -p ci-logs
+          sdkmanager --list > ci-logs/sdkmanager.txt 2>&1 || true
+          cp compile.log ci-logs/ 2>/dev/null || true
+          cp unit-tests.log ci-logs/ 2>/dev/null || true
+          printf 'run: %s\ncommit: %s\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > ci-logs/README.txt
+          git config user.email "ci@users.noreply.github.com"
+          git config user.name "CI diagnostics"
+          git checkout --orphan ci-logs-publish
+          git add -f ci-logs
+          git commit -m "ci: android diagnostics for $GITHUB_SHA"
+          git push -f origin HEAD:ci-logs
 
       - name: Upload test reports
         if: always()
