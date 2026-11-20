@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import com.example.util.SecureScreen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -41,6 +42,8 @@ fun AccountDeletionDialog(
     onDismiss: () -> Unit,
     onConfirmDeleteAccount: () -> Unit
 ) {
+    // R02-P2-06: account/identity surface — block screenshots and recents preview.
+    SecureScreen()
     if (!isOpen) return
 
     var confirmationText by remember { mutableStateOf("") }
@@ -142,6 +145,8 @@ fun PrivacyAndTermsSheet(
     isOpen: Boolean,
     onDismiss: () -> Unit
 ) {
+    // R02-P2-06: account/identity surface — block screenshots and recents preview.
+    SecureScreen()
     if (!isOpen) return
 
     ModalBottomSheet(

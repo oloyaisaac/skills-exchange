@@ -777,7 +777,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 val workerId = currentJob?.assignedProviderId!!
                 val (released, message) = firebaseService.releaseEscrowToWorker(jobId, workerId)
                 if (released) {
-                    repository.updateEscrowStatus(jobId, "RELEASED_TO_WORKER")
+                    repository.applyServerConfirmedEscrowRelease(jobId, message)
                 } else {
                     authError.value = "Job completed, but escrow release failed: $message"
                 }
@@ -821,7 +821,53 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         return repository.getJobAuditTrail(jobId)
     }
 
+    /** R02-P2-01: the release has its own visible state, driven by the server's answer. */
+    sealed class EscrowReleaseState {
+        object Idle : EscrowReleaseState()
+        object Releasing : EscrowReleaseState()
+        data class Released(val message: String) : EscrowReleaseState()
+        data class Failed(val message: String) : EscrowReleaseState()
+    }
+
+    val escrowReleaseState = MutableStateFlow<EscrowReleaseState>(EscrowReleaseState.Idle)
+
+    fun resetEscrowReleaseState() {
+        escrowReleaseState.value = EscrowReleaseState.Idle
+    }
+
+    /**
+     * R02-P2-01/P2-02: release through the `releaseEscrowToWorker` callable and only then record
+     * the local status. Single-flight: a second tap while a release is running is ignored.
+     */
+    fun releaseEscrow(jobId: String) {
+        if (escrowReleaseState.value is EscrowReleaseState.Releasing) return
+        viewModelScope.launch {
+            escrowReleaseState.value = EscrowReleaseState.Releasing
+            val job = repository.jobs.first().find { it.id == jobId }
+            val workerId = job?.assignedProviderId
+            if (job == null) {
+                escrowReleaseState.value = EscrowReleaseState.Failed("Job not found on this device.")
+                return@launch
+            }
+            if (workerId.isNullOrBlank()) {
+                escrowReleaseState.value = EscrowReleaseState.Failed("No worker is assigned to this job.")
+                return@launch
+            }
+            val (released, message) = firebaseService.releaseEscrowToWorker(jobId, workerId)
+            if (released) {
+                repository.applyServerConfirmedEscrowRelease(jobId, message)
+                selectedJob.value = repository.jobs.first().find { it.id == jobId }
+                escrowReleaseState.value = EscrowReleaseState.Released(message)
+            } else {
+                escrowReleaseState.value = EscrowReleaseState.Failed(message)
+            }
+        }
+    }
+
+    /** Non-money transitions (work in progress, proof submitted, cash settlement marks). */
     fun updateEscrowStatus(jobId: String, newEscrowStatus: String) {
+        // R02-P2-01: RELEASED_TO_WORKER must come from releaseEscrow(), never from the sheet.
+        if (newEscrowStatus == "RELEASED_TO_WORKER") return
         viewModelScope.launch {
             repository.updateEscrowStatus(jobId, newEscrowStatus)
             val updatedJob = repository.jobs.first().find { it.id == jobId }
@@ -886,18 +932,30 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    /** R02-P2-02: one SOS dispatch at a time; repeated taps are ignored, not queued. */
+    private var sosDispatchInFlight = false
+
     fun triggerSosAlert(jobId: String) {
+        if (sosDispatchInFlight) return
+        sosDispatchInFlight = true
         viewModelScope.launch {
-            val jobPost = repository.jobs.first().find { it.id == jobId } ?: return@launch
-            // C2-2 Fix #3 (F7): only the AUTHENTICATED profile's coordinates may be used as the
-            // fallback location — never the newest Room row's.
-            val user = currentUserByUid.value
-            val gps = gpsLocationState.value
-            val latitude = gps.latitude ?: user?.latitude ?: 0.3476
-            val longitude = gps.longitude ?: user?.longitude ?: 32.5825
-            repository.triggerEmergencySos(jobId, latitude, longitude, jobPost.district)
-            val updatedJob = repository.jobs.first().find { it.id == jobId }
-            selectedJob.value = updatedJob
+            try {
+                val jobPost = repository.jobs.first().find { it.id == jobId } ?: return@launch
+                // C2-2 Fix #3 (F7): only the AUTHENTICATED profile's coordinates may be used as the
+                // fallback location — never the newest Room row's.
+                val user = currentUserByUid.value
+                val gps = gpsLocationState.value
+                // R02-P2-04: there is no invented fallback. When neither GPS nor the profile has a
+                // position, the incident is raised with 0,0 — a sentinel responders can recognise —
+                // instead of Kampala city-centre coordinates that look real but may be wrong.
+                val latitude = gps.latitude ?: user?.latitude ?: 0.0
+                val longitude = gps.longitude ?: user?.longitude ?: 0.0
+                repository.triggerEmergencySos(jobId, latitude, longitude, jobPost.district)
+                val updatedJob = repository.jobs.first().find { it.id == jobId }
+                selectedJob.value = updatedJob
+            } finally {
+                sosDispatchInFlight = false
+            }
         }
     }
 

@@ -567,6 +567,10 @@ fun MainScreen(
         val sosClearState by viewModel.sosClearState.collectAsStateWithLifecycle()
         // PAY-002: provider-verified payment state published by the trusted backend.
         val momoPaymentState by viewModel.momoPaymentState.collectAsStateWithLifecycle()
+        val escrowReleaseState by viewModel.escrowReleaseState.collectAsStateWithLifecycle()
+        LaunchedEffect(isEscrowSheetOpen) {
+            if (isEscrowSheetOpen) viewModel.resetEscrowReleaseState()
+        }
         EscrowAndProofSheet(
             job = liveJob,
             onUpdateEscrowStatus = { newEscrowStatus ->
@@ -595,6 +599,10 @@ fun MainScreen(
                 )
             },
             mobileMoneyPaymentState = momoPaymentState,
+            onReleaseFunds = { viewModel.releaseEscrow(liveJob.id) },
+            isReleasingFunds = escrowReleaseState is SkillsExchangeViewModel.EscrowReleaseState.Releasing,
+            releaseError = (escrowReleaseState as? SkillsExchangeViewModel.EscrowReleaseState.Failed)?.message,
+            releaseMessage = (escrowReleaseState as? SkillsExchangeViewModel.EscrowReleaseState.Released)?.message,
             onVerifyDoorstepPin = { pin, expected, callback ->
                 viewModel.verifyDoorstepPin(liveJob.id, pin, expected, callback)
             },

@@ -1,5 +1,6 @@
 package com.example.data.repository
 
+import android.util.Log
 import android.net.Uri
 import com.example.data.db.*
 import com.example.data.remote.FirebaseService
@@ -651,7 +652,23 @@ class SkillsExchangeRepository(
         db.jobPostDao().updateWorkerLocation(jobId, latitude, longitude)
     }
 
-    suspend fun updateEscrowStatus(jobId: String, newEscrowStatus: String) {
+    /**
+     * R02-P2-01: RELEASED_TO_WORKER is a server outcome, never a client choice.
+     *
+     * The sheet used to call this with "RELEASED_TO_WORKER" and the client wrote the status plus a
+     * "payout dispatched" notification without any provider call. A release is now applied only
+     * through [applyServerConfirmedEscrowRelease], after `releaseEscrowToWorker` returned success.
+     * Any direct client attempt is refused before it can write.
+     */
+    suspend fun updateEscrowStatus(
+        jobId: String,
+        newEscrowStatus: String,
+        serverConfirmed: Boolean = false
+    ) {
+        if (newEscrowStatus == "RELEASED_TO_WORKER" && !serverConfirmed) {
+            Log.w("SkillsExchangeRepository", "Refused client-side release for $jobId")
+            return
+        }
         db.jobPostDao().updateEscrowStatus(jobId, newEscrowStatus)
 
         val notificationMsg = when (newEscrowStatus) {
@@ -659,7 +676,8 @@ class SkillsExchangeRepository(
             "FUNDS_LOCKED_IN_ESCROW" -> "🔒 Escrow Locked! Customer approved MoMo transfer into secure escrow."
             "WORK_IN_PROGRESS" -> "🛠️ Work in progress. Service provider is performing labor."
             "PROOF_SUBMITTED" -> "📷 Ground proof photos uploaded by worker. Awaiting resident release."
-            "RELEASED_TO_WORKER" -> "✅ Escrow Released! Funds payout dispatched to worker's Mobile Money wallet."
+            "RELEASED_TO_WORKER" -> "Escrow released by the server. The payout is queued with the mobile money provider."
+            "CASH_SETTLEMENT_ACKNOWLEDGED" -> "Cash settlement recorded. No funds are held by the platform."
             else -> "Escrow status updated to $newEscrowStatus."
         }
 
@@ -719,6 +737,27 @@ class SkillsExchangeRepository(
                 message = notificationMsg,
                 timestampText = "Just now",
                 isSystemNotification = true
+            )
+        )
+    }
+
+    /**
+     * R02-P2-01: record a release the backend actually confirmed.
+     *
+     * Called only after `releaseEscrowToWorker` succeeds. The message shown to the user is the
+     * server's, not a client invention, and the local row moves only now.
+     */
+    suspend fun applyServerConfirmedEscrowRelease(jobId: String, serverMessage: String) {
+        updateEscrowStatus(jobId, "RELEASED_TO_WORKER", serverConfirmed = true)
+        createNotification(
+            com.example.data.db.NotificationEntity(
+                id = "notif_${System.currentTimeMillis()}_escrow_server",
+                userId = db.jobPostDao().getJobById(jobId)?.assignedProviderId ?: "",
+                type = "PAYMENT_STATUS",
+                title = "Payment Released",
+                body = serverMessage,
+                jobId = jobId,
+                createdAt = System.currentTimeMillis()
             )
         )
     }

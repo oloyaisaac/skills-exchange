@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,20 +63,22 @@ fun OnboardingScreen(
     onOnboardingComplete: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    var currentStep by remember { mutableStateOf(OnboardingStep.ROLE_SELECTION) }
-    var selectedRole by remember { mutableStateOf("CLIENT") } // "CLIENT" or "WORKER"
-    var newUserRole by remember { mutableStateOf("") } // "CLIENT" or "WORKER" for NEW_HERE users
+    // R02-P2-03: the onboarding form survives rotation and process death. A user who switches to
+    // the SMS app to read an OTP must not come back to an empty form.
+    var currentStep by rememberSaveable { mutableStateOf(OnboardingStep.ROLE_SELECTION) }
+    var selectedRole by rememberSaveable { mutableStateOf("CLIENT") } // "CLIENT" or "WORKER"
+    var newUserRole by rememberSaveable { mutableStateOf("") } // "CLIENT" or "WORKER" for NEW_HERE users
 
-    var fullName by remember { mutableStateOf("") }
-    var phoneNumber by remember { mutableStateOf("") }
-    var otpCode by remember { mutableStateOf("") }
-    var selectedDistrict by remember { mutableStateOf("") }
-    var resendCooldown by remember { mutableStateOf(0) }
+    var fullName by rememberSaveable { mutableStateOf("") }
+    var phoneNumber by rememberSaveable { mutableStateOf("") }
+    var otpCode by rememberSaveable { mutableStateOf("") }
+    var selectedDistrict by rememberSaveable { mutableStateOf("") }
+    var resendCooldown by rememberSaveable { mutableStateOf(0) }
 
-    var showOtpInput by remember { mutableStateOf(false) }
-    var isVerifying by remember { mutableStateOf(false) }
-    var requestId by remember { mutableStateOf<String?>(null) }
-    var isGoogleSigningIn by remember { mutableStateOf(false) }
+    var showOtpInput by rememberSaveable { mutableStateOf(false) }
+    var isVerifying by rememberSaveable { mutableStateOf(false) }
+    var requestId by rememberSaveable { mutableStateOf<String?>(null) }
+    var isGoogleSigningIn by rememberSaveable { mutableStateOf(false) }
 
     val authState by viewModel.authState.collectAsStateWithLifecycle()
     val authError by viewModel.authError.collectAsStateWithLifecycle()
