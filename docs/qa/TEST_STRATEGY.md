@@ -16,7 +16,7 @@ remediation sandbox it is marked **UNVERIFIED** rather than estimated.
 | Callable handlers | `functions/test/handlers.emulator.mjs` | `npm run test:handlers` under `firebase emulators:exec --only firestore` | **19** | CI (`Backend handler tests`), 19/19 in run 44789646720 | yes |
 | Firestore rules (emulator) | `rules-test/firestore.rules.test.mjs` | `npm --prefix rules-test test` under the emulator | **26** | CI (`Firestore rules tests`) | yes |
 | Storage rules | `rules-test/storage.rules.check.mjs` | `node rules-test/storage.rules.check.mjs` | static | CI (same job) | yes |
-| Android JVM + Robolectric + Compose | `app/src/test` (62 files) | `./gradlew :app:testDebugUnitTest` | **478** | CI (`Compile and unit tests`) | yes |
+| Android JVM + Robolectric + Compose | `app/src/test` (64 files) | `./gradlew :app:testDebugUnitTest` | **489** | CI (`Compile and unit tests`), 489/489 in run 44795261468 | yes |
 | Android coverage | `:app:jacocoTestReport` / `:app:jacocoTestCoverageVerification` | `./gradlew :app:jacocoTestReport :app:jacocoTestCoverageVerification` | measured per run | CI, uploaded as `android-coverage` | yes (floor) |
 | Accessibility semantics | `app/src/test/java/com/example/ui/AccessibilitySemanticsTest.kt` | part of the Android unit suite | **7** | CI (`Compile and unit tests`) | yes |
 | Colour contrast (WCAG maths, no rendering) | `app/src/test/java/com/example/ui/theme/ContrastTest.kt` | part of the Android unit suite | **4** | CI, same job | yes |
@@ -144,7 +144,7 @@ Claims found in the repository that the committed code did not support, and what
 | Claim | Where it was | What was true | Resolution |
 |---|---|---|---|
 | "171 tests" (backend) | `README.md` | 310 at the time of this round | README no longer states a count; it names the command |
-| "355 tests" (Android) | `README.md` | 478 | same |
+| "355 tests" (Android) | `README.md` | 478 at R11, 489 after the R12 suites | same |
 | "The Android job is intentionally absent until REM-001…" | `ci.yml` header | the Android job has existed since R01 | header rewritten |
 | "The rules job arrives with REM-019" | `ci.yml` header | arrived in R07 | header rewritten |
 | Build logs and APKs in the repository root used as evidence | root `*.log`, `*.apk`, `diag-*.txt`, `ui-*.xml` | described commits that no longer exist; two 32 MB APKs | removed in R11; the README says where evidence actually comes from |

@@ -1,5 +1,51 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [PROMPT-4 / R12] UI/UX: copy that can be translated, screens a reader can navigate
+
+- **Screens are navigable now, and the claim is a test (R12-P2-02, HIGH).** The app had no semantics
+  at all: no headings, no live regions, no way for TalkBack to say that an emergency verdict had
+  arrived or that a release had failed. `app/src/main/java/com/example/ui/a11y/Accessibility.kt` adds
+  five modifiers — `sectionHeading`, `emergencyLiveRegion`, `announcementLiveRegion`, `describeState`
+  and `minTouchTarget` — and applies them to the panic control, the dispatch verdict, the release
+  feedback, onboarding field errors, the safety desk and the offline banner. `AccessibilitySemanticsTest`
+  reads the resulting tree: the role question is a `Heading`, the dispatch verdict is an assertive
+  `LiveRegion`, the offline banner a polite one, and the panic button carries a `stateDescription`
+  ("No emergency alert is active."). The 58 null `contentDescription`s were triaged rather than
+  counted: every one is decorative or beside a text label.
+- **Ten controls were too small to hit (R12-P2-04, MEDIUM).** The panic button was a 40 dp Material
+  button, the auth dismiss control 28 dp, and eight more `IconButton`s were explicitly sized between
+  20 and 36 dp — Material's 48 dp default undone by a `Modifier.size(...)`. All ten are 48 dp, two of
+  them asserted with `assertHeightIsAtLeast(48.dp)`, and a guard refuses a sub-48 dp `IconButton`
+  while ignoring the icon's own size inside it.
+- **Contrast is measured, and it was failing (R12-P2-06, MEDIUM).** `ContrastTest` computes the WCAG
+  ratio from the palette constants, with no rendering involved. Two defects fell out of writing it:
+  white on `IndustrialEmerald` measured **3.77:1**, below the 4.5:1 body floor, on the buttons that
+  carry worker onboarding and the escrow release (the tone is now 5.48:1, one step darker, no call
+  site changed); and `Slate400` measured **2.56:1** on white while being used for real sentences —
+  dialog placeholders, "Cancel", drawer captions (it is now a 3.5:1 graphics tone and 19 text usages
+  moved to `Slate500`, 4.76:1). The full Android suite later caught a third: `RedDanger` on its own
+  error surface at 4.41:1, now 5.24:1. The escrow sheet is also rendered at a 200 % font scale and
+  asserted to stay hittable.
+- **Copy is translatable, and the remaining debt is counted (R12-P2-01, HIGH).** The app shipped one
+  string resource for a four-country market. Fifteen critical strings — panic, stand-down, dispatch
+  heading, release action and failure, offline banner, safety desk title and empty state, four
+  onboarding landmarks — now live in `res/values/strings.xml` with a drafted `values-sw` locale, and a
+  test renders the escrow sheet under `@Config(qualifiers = "sw")` and asserts the Swahili label
+  resolves. **The translations are drafts: no native speaker has reviewed them.** The other **472
+  inline sentences** are baselined in `scripts/check_ui_copy.mjs`, which fails if the number rises.
+- **The privacy sheet stopped promising a service that does not exist (R12-P2-03, HIGH residual).**
+  "our 24/7 neighborhood arbitration protocol freezes funds pending review" described a desk that is
+  single-operator, unstaffed overnight and has no on-call rota. It now says what happens, that review
+  may take up to the category's response target, that nothing is staffed around the clock, and to call
+  the police or an ambulance yourself if someone is in danger.
+- **Two findings were already closed and were not re-implemented.** The escrow in-flight/error states
+  (`isReleasingFunds`, `releaseError`) arrived in R02, and `SecureScreen` has set `FLAG_SECURE` on the
+  identity, PIN, escrow and privacy surfaces since the same round.
+- Evidence: Android **489/489** (run 44795261468), eleven static guards plus the new UI-copy guard and
+  its self-test, 29 documents, 36 requirements. Not verified, and said so: no TalkBack or Accessibility
+  Scanner run, no native-speaker review of the Swahili draft, no screenshot baseline, no dark-theme
+  contrast, no RTL, and nothing rendered on a device.
+
 ### [2026-11-20] [PROMPT-4 / R11] QA: tests that run, counts that are checked, evidence that exists
 
 - **A suite can no longer exist and never run (R11-P2-04, HIGH).** `functions/package.json` listed its
