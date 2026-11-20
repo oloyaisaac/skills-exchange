@@ -29,7 +29,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SosIncidentEntity::class
     ],
     version = 27,
-    exportSchema = false
+    exportSchema = true
 )
 @androidx.room.TypeConverters(TypeConverters::class)
 abstract class AppDatabase : RoomDatabase() {
