@@ -1,22 +1,12 @@
 ## Prompt-4 remediation (one reviewer at a time)
 
-**R01 — IN PROGRESS (gate not passed).**
-- Single `FirebaseService` injected into the repository; UI identity reads go through
-  `currentAuthenticatedUid()`; root duplicate manifest removed; README test count corrected; CI guard
-  `scripts/check_architecture_guards.mjs` added.
-- God-class decomposition roadmap recorded (DECISIONS D-2026-11-20-1); code split not started.
-- **Blocked:** Android compile/test cannot run here (no JDK/SDK), so R01 cannot be declared complete.
-- R02–R15: not started; do not begin until R01's gate passes or the programme lead authorizes closure.
+**R01 — COMPLETE (gate passed 2026-11-20).** Buildability proven on a real runner: 186 compile errors
+fixed, then `:app:compileDebugKotlin` success and `:app:testDebugUnitTest` 355/355. Single Firebase
+gateway, root duplicate manifest removed, README counts corrected, decomposition roadmap recorded.
+Completion declaration: `reviewer_completions/REVIEWER_01_DONE.md`.
 
-﻿# TASKS.md â€” Skills Exchange Human-Readable Task Status
-
-Synchronized with `prd.json`. This is the human-readable view of the development backlog.
-Last synchronized: 2026-10-15T16:30:00+03:00 â€” **AUDIT-A-CONSOLE implemented & verified (code+unit)**: first operator UI (`AdminVerificationQueueSheet` + `AdminQueueDecisions` + drawer entry + MainScreen wiring + ViewModel loading/validation guards) renders the existing `adminVerificationQueue`/`submitAdminDecision` flow; backend `admin` claim + rules remain the authorizer. Previous sync 2026-10-15T11:00:00+03:00 â€” Multi-Perspective Platform Audit synchronized (12 gaps).
-Previous sync: 2026-10-14T11:15:00+03:00 â€” PAY-002 verified & complete (trusted backend confirmation: provider status re-query, pull-to-verify webhook, idempotent escrow lock, backend-driven Android states).
-
-Legend: âœ… Completed | ðŸ”„ In Progress | âœ… Completed | ðŸš« Blocked | âŒ Failed
-
----
+**R02 — Android client — NOT STARTED.** Do not begin until this session continues the sequence.
+R03–R15 — awaiting.
 
 ## Review Track — 2026-11-19 (not started)
 

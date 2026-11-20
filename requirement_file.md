@@ -965,3 +965,14 @@ REM-001, which still needs a JDK and Android SDK to verify.
 - **Decomposition:** a five-slice roadmap is recorded; the split itself is still outstanding.
 - **Limitation:** Android compilation and unit tests remain unexecuted here, so R01 is implemented
   only in part and is not verified.
+
+### 18.10 Prompt-4 R01: build restored and reviewer completed
+
+- The Android client now compiles and its JVM suite passes (355/355) on a GitHub runner; the
+  remediation sandbox cannot reach Google Maven, so the workflow is the evidence source.
+- 186 compile errors were fixed, including a spliced `QuickRequestDrawer.kt`, an invalid Room
+  `converters` argument, a missing `JobPostEntity.apartmentSuite` column and duplicated onboarding
+  state.
+- The Java toolchain moved from 11 to 17 (compile) with a Java 21 test launcher, because Robolectric
+  cannot run on Java 11.
+- R01's decomposition roadmap is recorded; the code split remains outstanding work for later slices.

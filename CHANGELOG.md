@@ -1,5 +1,19 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [PROMPT-4 / R01] Android build restored; Reviewer 1 complete
+
+- Added `.github/workflows/android.yml`: SDK install, `:app:compileDebugKotlin` and
+  `:app:testDebugUnitTest`, with failure diagnostics published to the `ci-logs` branch.
+- Fixed **186 compile errors** across 10 files (spliced `QuickRequestDrawer`, invalid Room
+  `converters` argument, missing `JobPostEntity.apartmentSuite`, `firebaseAuth`/`storage.child`,
+  broken map fallback, `private val` parameters, duplicated onboarding state, `.value` on delegated
+  state, JVM setter clash, duplicate rating accessors, test fixtures).
+- Build config: Java 17 compile target, Java 21 test launcher, Robolectric SDK pinned — the Java 11
+  toolchain could not run Robolectric at all.
+- `acknowledgeSos`/`resolveSosIncident` now validate the explicit actor instead of re-reading auth.
+- Result: compile success, **355/355** Android unit tests; backend still 171/171.
+- **R01 gate passed**; `reviewer_completions/REVIEWER_01_DONE.md` created.
+
 ### [2026-11-20] [CI] Run the backend suite on the Node version the tests require
 
 - The `.mjs` suites import `../src/*.ts` and rely on Node's built-in type stripping, which needs
