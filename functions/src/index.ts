@@ -139,7 +139,12 @@ import {
   retentionReportLine,
   summariseRetention,
 } from "./retention";
-import { sanitiseGuarantorSubmissionForExport, ninFingerprint, maskNin } from "./pii";
+import {
+  sanitiseGuarantorSubmissionForExport,
+  ninFingerprint,
+  maskNin,
+  scrubForLog,
+} from "./pii";
 import { decideRefund, buildRefundPayload } from "./refund";
 import { decideRefundStatus, applyRefundToEscrow } from "./refundStatus";
 import { APP_CHECK, withAppCheck } from "./appCheck";
@@ -800,7 +805,7 @@ async function recordPlatformFee(jobId: string, jobData: Record<string, unknown>
   } catch (error) {
     const code = (error as { code?: number | string }).code;
     if (code !== 6 && code !== "already-exists") {
-      console.warn(`platform fee write failed for ${jobId}: ${(error as Error).message}`);
+      console.warn(`platform fee write failed for ${jobId}: ${scrubForLog((error as Error).message)}`);
     }
   }
 }
@@ -1405,7 +1410,9 @@ export const reconcilePayments = functions.pubsub.schedule("every 60 minutes").o
             await deps.queryProviderPayoutStatus(config, token.token, payout.providerReferenceId)
           );
         } catch (error) {
-          console.warn(`reconciliation: provider query failed for ${payout.payoutId}: ${(error as Error).message}`);
+          console.warn(
+            `reconciliation: provider query failed for ${payout.payoutId}: ${scrubForLog((error as Error).message)}`
+          );
         }
       }
     }
@@ -1445,7 +1452,7 @@ export const reconcilePayments = functions.pubsub.schedule("every 60 minutes").o
       await creditPayoutEarning({ ...payout, status: newStatus });
     } else if (newStatus === "PAYOUT_FAILED" && payout.payoutKind === "CASHOUT") {
       await releaseWithdrawalReservation({ ...payout, status: newStatus, reason }).catch((error) => {
-        console.error("reconciliation reversal failed", (error as Error).message);
+        console.error("reconciliation reversal failed", scrubForLog((error as Error).message));
       });
     }
   }
@@ -1828,7 +1835,9 @@ export const applyRetentionPolicy = functions.pubsub.schedule("every 24 hours").
       entry.retained = plan.retained;
       entry.undated = plan.undatedIds.length;
     } catch (error) {
-      entry.error = (error as Error).message.slice(0, 200);
+      // R09-P2-05: a provider error body can echo a phone number or a URL; the report is
+      // admin-readable, so the message is scrubbed before it is persisted, not just before a log.
+      entry.error = scrubForLog((error as Error).message).slice(0, 200);
     }
     categories.push(entry);
   }
@@ -1861,7 +1870,7 @@ export const reconcileRefunds = functions.pubsub.schedule("every 60 minutes").on
       if (result && (result.status === "SUCCESS" || result.status === "FAILED")) settled += 1;
       else unchanged += 1;
     } catch (error) {
-      console.warn(`refund reconciliation failed for ${doc.id}: ${(error as Error).message}`);
+      console.warn(`refund reconciliation failed for ${doc.id}: ${scrubForLog((error as Error).message)}`);
       unchanged += 1;
     }
   }
@@ -1968,7 +1977,7 @@ export const processMoMoWebhook = functions.https.onRequest(
       escrowLocked: outcome.escrowLocked,
     });
   } catch (error: any) {
-    console.error("Error processing MoMo callback:", error);
+    console.error("Error processing MoMo callback:", scrubForLog(error));
     res.status(500).send({ error: error.message });
   }
 });
@@ -2090,7 +2099,7 @@ export const onSosIncidentCreated = functions.runWith({ secrets: AFRICA_TALKING_
         data: { incidentId: snapshot.id, jobId: String(data.jobId || "") },
       });
     } catch (error) {
-      console.error("SOS push failed", (error as Error).message);
+      console.error("SOS push failed", scrubForLog((error as Error).message));
     }
   });
 
@@ -3336,7 +3345,7 @@ export const getMoMoPayoutStatus = functions.runWith(APP_CHECK).https.onCall(asy
     await creditPayoutEarning({ ...ledger, status: newStatus });
   } else if (newStatus === "PAYOUT_FAILED" && ledger.payoutKind === "CASHOUT" && ledger.withdrawalId) {
     await releaseWithdrawalReservation(ledger).catch((error) => {
-      console.error("wallet reversal failed", (error as Error).message);
+      console.error("wallet reversal failed", scrubForLog((error as Error).message));
     });
   }
 
@@ -3389,7 +3398,7 @@ async function callAfricaTalkingOtp(
     );
     return { status: response.status, body: response.data };
   } catch (error) {
-    console.error("Africa's Talking OTP request failed", (error as Error).message);
+    console.error("Africa's Talking OTP request failed", scrubForLog((error as Error).message));
     throw new functions.https.HttpsError("unavailable", "Phone verification is temporarily unavailable");
   }
 }
@@ -3692,7 +3701,7 @@ export const transcribeVoiceJob = functions.runWith(withAppCheck({ secrets: GEMI
       }
     );
   } catch (error) {
-    console.error("Gemini transcription request failed", (error as Error).message);
+    console.error("Gemini transcription request failed", scrubForLog((error as Error).message));
     throw new functions.https.HttpsError("unavailable", "Voice transcription is temporarily unavailable");
   }
 
@@ -3705,7 +3714,7 @@ export const transcribeVoiceJob = functions.runWith(withAppCheck({ secrets: GEMI
     const text = extractGeminiText(response.data);
     return validateTranscribedJob(extractJsonObject(text));
   } catch (error) {
-    console.error("Gemini transcription response invalid", (error as Error).message);
+    console.error("Gemini transcription response invalid", scrubForLog((error as Error).message));
     throw new functions.https.HttpsError("internal", "Voice transcription could not be understood");
   }
 });

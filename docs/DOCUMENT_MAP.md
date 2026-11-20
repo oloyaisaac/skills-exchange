@@ -21,6 +21,8 @@ be corrected rather than followed.
 | `docs/traceability.md` | Requirement → code → test matrix | 4 (supplements findings) | Engineering lead | Updated when a requirement, implementation file or test changes |
 | `docs/privacy/RETENTION.md` | Retention schedule, legal holds and the deletion sweep that enforces them | 3 | Engineering lead | Changed in the same commit as `RETENTION_POLICY` (`functions/src/retention.ts`); the table must match the constant |
 | `docs/privacy/DSAR.md` | Operating procedure for access and erasure requests | 3 | Engineering lead | Must describe what the code does; corrected in the same change as `deleteMyAccount` / `exportMyData` |
+| `docs/privacy/ROPA.md` | Record of processing: category, subject, purpose, basis, location, recipient, retention | 3 | Engineering lead | Updated with `RETENTION_POLICY` and `storage.rules`; gaps are listed rather than smoothed over |
+| `docs/privacy/PROCESSORS.md` | Processor list, data categories, transfer basis | 3 | Engineering lead | A processor is added here before it is enabled in production |
 | `review_results/`, `review_results/prompt2/` | Independent review reports and cycle matrices | 14 (snapshot; not current state) | Review lead | Append-only; never rewritten to change a verdict |
 | `docs/DOCUMENT_MAP.md` | This precedence map | 0 (meta) | Engineering lead | Updated whenever a document is added, removed or changes role |
 | `SECURITY.md` | Security policy and reporting | 13 | Security lead | Changed only with a security decision |

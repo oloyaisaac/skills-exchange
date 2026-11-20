@@ -44,8 +44,10 @@ this order:
    (`FRESH_AUTH_WINDOW_SECONDS`); otherwise the call is refused with `REAUTH_REQUIRED`.
 2. **Ownership of every job id** the client supplied is verified before anything under that job is
    touched.
-3. **Cloud Storage** objects under `users/{uid}/`, `avatars/{uid}/` and `jobs/{jobId}/` (for the
-   verified jobs) are deleted, and the count of deleted objects is reported.
+3. **Cloud Storage** objects under `users/{uid}/` (which holds `kyc/`, `guarantors/`, `certificates/`
+   and `verification/`), `avatars/{uid}/`, `private_docs/{uid}/` and `jobs/{jobId}/` (for the verified
+   jobs) are deleted, and the count of deleted objects is reported. Every prefix the account can write
+   a document to is included, because a prefix a person *can* upload to must not outlive them.
 4. **Firestore personal documents:** `users/{uid}` and its sub-collections (`consents`,
    `guarantor_consents`, `guarantor_consents`, `push_tokens`, …), `worker_kyc`, `worker_training`,
    `providers`, `guarantor_submissions`.

@@ -105,6 +105,9 @@ jobs:
       - run: node scripts/check_architecture_guards.mjs
       - run: node scripts/check_query_limits.mjs
       - run: node scripts/check_consent_version.mjs
+      - run: node scripts/check_no_pii_logs.mjs --selftest
+      - run: node scripts/check_no_pii_logs.mjs
+      - run: node scripts/check_backup_policy.mjs
       - run: node scripts/secret_scan.mjs
 
   secret-scan:

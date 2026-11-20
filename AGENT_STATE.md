@@ -1,3 +1,20 @@
+## 2026-11-20 (R09 gate audit, PR #25) - THREE OPEN CONDITIONS CLOSED
+
+- After the R09 merge I audited the reviewer's section 11 PASSING CONDITIONS, not just the seven
+  findings. Three were not actually satisfied:
+  1. `private_docs/{uid}/` is owner-writable in `storage.rules` (nothing writes there today) but was
+     missing from `storagePurgePrefixes`, i.e. a person could upload a document that would outlive
+     their erasure. Added, and a test asserts every owner-writable prefix is purged.
+  2. "No PII in logs" rested on `scrubForLog`, which had no caller. Eleven log and persisted-report
+     sites now scrub provider error bodies; `scripts/check_no_pii_logs.mjs` fails the build on an
+     unmasked identifier and has a `--selftest` that proves it can fail.
+  3. The brief's required evidence (data inventory: category/subject/purpose/basis/location/
+     recipient/retention) did not exist. `docs/privacy/ROPA.md` now lists 16 categories and states
+     five gaps, including that no DPA is claimed and provider-side copies are outside the sweep.
+- `scripts/check_backup_policy.mjs` pins allowBackup=false and every excluded domain, so the backup
+  finding cannot silently regress. It is a static check; no on-device restore test is claimed.
+- Backend 273/273 after the new prefix test; all guards pass locally.
+
 ## 2026-11-20 (Prompt-4 R09 COMPLETE) - PRIVACY GATE PASSED
 
 - R09 closed on `arena/e11de41e-skills-exchange` (PR #24). The review's point was that privacy was a

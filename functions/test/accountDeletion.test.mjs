@@ -40,6 +40,7 @@ test("storage purge covers every personal prefix, including job photos", () => {
     "avatars/uid_42/",
     "jobs/job_a/",
     "jobs/job_b/",
+    "private_docs/uid_42/",
     "users/uid_42/",
   ]);
   // The `users/{uid}/` prefix is what holds KYC documents, certificates and guarantor portraits.
@@ -51,6 +52,7 @@ test("storage purge rejects empty ids and de-duplicates job prefixes", () => {
   assert.deepEqual(storagePurgePrefixes("uid_1", ["job_a", "job_a", "   "]), [
     "avatars/uid_1/",
     "jobs/job_a/",
+    "private_docs/uid_1/",
     "users/uid_1/",
   ]);
 });
@@ -158,4 +160,19 @@ test("erasure: the published procedure is the one the code follows", () => {
     true,
     "Auth is deleted last, and only when nothing is pending"
   );
+});
+
+test("erasure: every prefix a person can write documents to is purged", () => {
+  const prefixes = storagePurgePrefixes("worker_1", ["job_1"]);
+  // Identity documents live under users/{uid}/kyc|guarantors|certificates|verification.
+  assert.ok(prefixes.includes("users/worker_1/"));
+  assert.ok(prefixes.includes("avatars/worker_1/"));
+  // Owner-writable in storage.rules, so it must not outlive the account even though the app does not
+  // write there today.
+  assert.ok(prefixes.includes("private_docs/worker_1/"));
+  assert.ok(prefixes.includes("jobs/job_1/"));
+  // Another account's prefix is never included.
+  assert.equal(prefixes.some((prefix) => prefix.includes("worker_2")), false);
+  // A blank job id cannot widen the purge to the whole jobs tree.
+  assert.equal(storagePurgePrefixes("worker_1", ["  "]).some((p) => p === "jobs//"), false);
 });
