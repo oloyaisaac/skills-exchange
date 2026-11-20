@@ -2985,6 +2985,64 @@ class SkillsExchangeRepository(
         return MirrorReconciliationReport(adopted, attempted, succeeded, retryScheduled, abandoned)
     }
 
+    /**
+     * R13-P2-01: the queue drains, once, in order, with a retry cap.
+     *
+     * The finding: `flushPendingActions` took a snapshot, logged the count and deleted nothing — a
+     * queue that could only grow. The one real producer of queued rows is the SOS mirror retry, whose
+     * drain already existed (R04); what was missing was a single entry point that (a) runs that drain
+     * and (b) refuses to let any *other* action type accumulate forever.
+     *
+     * An action type this build does not know how to execute is not silently dropped — it is retried
+     * up to its own `maxRetries` and then dead-lettered as `FAILED`, so a row is never deleted without
+     * having been executed, and no row can spin past the cap. `remaining` is the honest answer to
+     * "how much is still queued", which the UI now shows.
+     */
+    internal suspend fun drainPendingActionQueue(
+        syncIncident: suspend (SosIncidentEntity) -> Boolean = { firebaseService.syncSosIncidentToFirestore(it) }
+    ): PendingDrainReport {
+        // 1. The one supported action type: re-mirror un-synced SOS incidents (idempotent, capped).
+        val mirror = reconcilePendingMirrors(syncIncident)
+
+        // 2. Anything else: bounded retries, then dead-letter. Never deleted while still PENDING.
+        var unsupported = 0
+        var unsupportedAbandoned = 0
+        val unknowns = db.pendingActionDao().getPendingActionsList()
+            .filter { it.actionType != ACTION_SYNC_SOS }
+        for (action in unknowns) {
+            unsupported++
+            val nextRetry = action.retryCount + 1
+            if (nextRetry >= action.maxRetries) {
+                db.pendingActionDao().updateActionStatus(action.id, "FAILED", nextRetry)
+                unsupportedAbandoned++
+            } else {
+                db.pendingActionDao().updateActionStatus(action.id, "PENDING", nextRetry)
+            }
+        }
+
+        return PendingDrainReport(
+            attempted = mirror.attempted,
+            succeeded = mirror.succeeded,
+            retryScheduled = mirror.retryScheduled,
+            abandoned = mirror.abandoned + unsupportedAbandoned,
+            unsupported = unsupported,
+            remaining = db.pendingActionDao().countPendingActions()
+        )
+    }
+
+    /** What one drain pass did. Returned so the caller can show it, never inferred from a log. */
+    internal data class PendingDrainReport(
+        val attempted: Int = 0,
+        val succeeded: Int = 0,
+        val retryScheduled: Int = 0,
+        val abandoned: Int = 0,
+        val unsupported: Int = 0,
+        val remaining: Int = 0
+    ) {
+        val didNothing: Boolean
+            get() = attempted == 0 && unsupported == 0 && remaining == 0
+    }
+
     // ==================== AUDIT-W-CASHOUT: WORKER WALLET CASHOUT ====================
 
     /**

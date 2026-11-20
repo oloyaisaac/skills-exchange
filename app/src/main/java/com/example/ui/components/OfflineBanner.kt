@@ -25,10 +25,14 @@ import com.example.ui.theme.Slate900
 @Composable
 fun OfflineStatusBar(
     isOnline: Boolean,
+    // R13-P2-01: how much work is queued. Shown while offline *and* while online-but-draining, so a
+    // user never has to guess whether their action was kept.
+    queuedActions: Int = 0,
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
-        visible = !isOnline,
+        // Visible while offline, and also while something is still queued after reconnect.
+        visible = !isOnline || queuedActions > 0,
         enter = expandVertically(),
         exit = shrinkVertically(),
         modifier = modifier
@@ -51,7 +55,11 @@ fun OfflineStatusBar(
             Text(
                 // R12-P2-01: externalised so the offline state is translatable.
                 // R12-P2-02: losing the network is a change of state — it is announced.
-                text = stringResource(R.string.offline_banner),
+                text = if (queuedActions > 0) {
+                    stringResource(R.string.offline_banner_queued, queuedActions)
+                } else {
+                    stringResource(R.string.offline_banner)
+                },
                 fontSize = 11.5.sp,
                 fontWeight = FontWeight.Bold,
                 color = Slate900,

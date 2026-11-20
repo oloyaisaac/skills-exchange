@@ -1,3 +1,55 @@
+## 2026-11-20 (Prompt-4 R13 COMPLETE) - PERFORMANCE, SCALE AND RELIABILITY GATE PASSED
+
+- R13 closed on `arena/b2e695fc-skills-exchange` (PR #29), from `main` at `94362a1`. Each of the
+  seven findings was re-checked against the tree before anything changed: one was stale (R8 and
+  resource shrinking were already on since R07), one was worse than reported (the offline queue
+  could only grow), four are fixed, one is accepted with a recorded threshold, one is partial
+  because telemetry cannot be wired in this environment.
+- P2-01: `flushPendingActions()` snapshotted the queue, logged the count and deleted nothing.
+  `SkillsExchangeRepository.drainPendingActionQueue()` now executes the supported action (the SOS
+  mirror retry), retries to `maxRetries`, dead-letters `FAILED` with the payload intact instead of
+  deleting an unexecuted row, retires an unknown action type the same way, and returns a
+  `PendingDrainReport`. `pendingActionCount` drives the offline banner ("N update(s) waiting to
+  sync"). `PendingActionDrainTest` drives all five paths.
+- P2-03: `streamJobsFromFirestore()` listened to the whole `jobs` collection and had no caller -
+  dead code one call from live. Deleted. The live chat listener is bounded to the last 200 messages;
+  `check_query_limits.mjs` now also refuses any client `addSnapshotListener` without a limit, and
+  was proved to fail on a fixture with an unbounded one.
+- P2-05: all 43 callables ran on platform defaults. `functions/src/runtime.ts` declares
+  `CALLABLE_RUNTIME` (60 s / 256 MB) and `PROVIDER_CALL` (120 s / 512 MB); 33 callables use
+  `callable()`, 9 use `providerCallable()` and one keeps a multiline `withAppCheck({ secrets })`.
+  `functions/test/appCheck.test.mjs` fails a callable site that declares neither, and asserts the
+  provider preset is the longer one. Region is left to the deploy runbook and recorded as a gap.
+  The two SMS triggers take `{ ...PROVIDER_CALL, secrets }`.
+- P2-07: `functions/src/providerRetry.ts` retries idempotent provider reads (transport errors,
+  timeouts, 429, 5xx) with exponential backoff from 250 ms capped at 2 s, full jitter, 3 attempts,
+  and an `onRetry` log. Writes are never retried - a repeated payout is a second payment. Applied to
+  the MoMo status query, whose per-attempt timeout dropped from 20 s to 15 s so 3 attempts plus
+  backoff fit inside the 120 s provider runtime. Seven tests.
+- P2-06: three sample JPEGs were 895 KB, 680 KB and 371 KB (80 percent of `res/`); re-encoded to
+  68 KB, 41 KB and 16 KB, so `res/` is 181 KB across 24 files. `scripts/check_asset_budget.mjs`
+  (150 KB per file, 1 MB per tree) with a selftest. A new `release-build` CI job generates a
+  throwaway keystore, assembles `:app:assembleRelease` and fails unless an APK and a non-empty R8
+  mapping exist: APK 6.3 MB, mapping 679,287 lines, 599.8 KB of uncompressed resources.
+- P2-02 remains the one open finding: there is no Crashlytics, Performance Monitoring or alerting.
+  `docs/ops/RELIABILITY_AND_PERFORMANCE.md` section 7 records the seven SLIs, proposed 28-day SLOs, the
+  measurement each needs and the error-budget policy, and section 8 states that nothing is measured.
+  Paging 3 is an accepted decision with the volume that would reverse it (section 6); the circuit
+  breaker is a recorded omission with its reason (section 4).
+- New CI plumbing, because the failures it produced were real: the release job publishes its summary
+  to a `ci-metrics` branch (artefacts are unreachable from this environment), diagnostics go to
+  `ci-logs-release` because two jobs force-pushing `ci-logs` erased each other, and the Android
+  compile failure log is published with every `*.log`.
+- Evidence: backend 318/318 (tsc clean), Android 494/494 (run 44799076234), release build green
+  (run 44799912835), CI 7/7 (run 44799913154). Guards: 13 static plus 4 selftests. Docs: 30
+  documents, 41 requirements (REQ-PERF-01..05). prd.json: REM-059, REM-060, REM-062, REM-063 to
+  IN_PROGRESS with status_note; REM-061 stays NOT_STARTED and says why.
+- Two Android failures happened in this round and both were genuine: a public property exposing the
+  internal `PendingDrainReport` (only the release compile catches it) and a foreign key on
+  `job_posts.assignedProviderId` that the new drain tests had guessed past.
+- Not claimed: no deployment, no device, no crash/ANR/startup figure, no Baseline Profile, no
+  circuit breaker, no region pinning, no Paging 3. Next: R14.
+
 ## 2026-11-20 (Prompt-4 R12 COMPLETE) - UI/UX AND ACCESSIBILITY GATE PASSED
 
 - R12 closed on `arena/e2ab81c4-skills-exchange`. The review could not render, so its findings were

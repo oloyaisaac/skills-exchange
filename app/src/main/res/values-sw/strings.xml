@@ -18,6 +18,7 @@
     <string name="escrow_release_failed">Utoaji umeshindikana: %1$s</string>
 
     <string name="offline_banner">Hakuna mtandao — unaona data iliyohifadhiwa. Mabadiliko yanasubiri.</string>
+    <string name="offline_banner_queued">Mabadiliko %1$d yanasubiri kufika kwa seva. Yanahifadhiwa kwenye kifaa hiki hadi yafike.</string>
 
     <string name="onboarding_role_question">Unajielezaje?</string>
     <string name="onboarding_profile_title">Kamilisha Taarifa za Wasifu</string>

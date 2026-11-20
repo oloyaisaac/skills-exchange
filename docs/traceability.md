@@ -27,6 +27,11 @@ a verification standpoint.
 | REQ-PAY-02 | Callback-confirmed escrow funding (§9) | `functions/src/momoConfirmation.ts`, `functions/src/index.ts` | `functions/test/momoConfirmation.test.mjs`, `functions/test/webhookAuth.test.mjs` | Implemented; sandbox unavailable |
 | REQ-PAY-03 | Worker payout and settlement status (§9) | `functions/src/momoDisbursement.ts` | `functions/test/momoDisbursement.test.mjs` | Implemented; provider endpoint unavailable |
 | REQ-AUTH-01 | Phone OTP yields a Firebase identity (§3) | `functions/src/otp.ts`, `app/src/main/java/com/example/data/remote/AfricaTalkingService.kt` | `functions/test/otp.test.mjs`, `app/src/test/java/com/example/data/remote/PhoneAuthServiceFailClosedTest.kt` | Implemented; real-project signup test outstanding |
+| REQ-PERF-01 | Queued offline actions are executed, retried to a bound and dead-lettered, not dropped (§9) | `app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt`, `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt`, `app/src/main/java/com/example/ui/components/OfflineBanner.kt` | `app/src/test/java/com/example/data/PendingActionDrainTest.kt` | Implemented in R13; executed by the Android CI job |
+| REQ-PERF-02 | Every callable and SMS trigger declares a runtime; provider work gets the longer one (§10) | `functions/src/runtime.ts`, `functions/src/index.ts` | `functions/test/appCheck.test.mjs` | Implemented in R13; no deploy, so the deployed runtime is unverified |
+| REQ-PERF-03 | Provider reads retry with bounded jittered backoff; writes are never retried (§9) | `functions/src/providerRetry.ts`, `functions/src/index.ts` | `functions/test/providerRetry.test.mjs` | Implemented in R13; applies to the MoMo status read only, no live provider call |
+| REQ-PERF-04 | Client resources stay inside an install and cold-start budget (§15) | `app/src/main/res/drawable/`, `scripts/check_asset_budget.mjs` | `scripts/check_asset_budget.mjs` | Implemented in R13; the budget is static, cold-start time itself is unmeasured |
+| REQ-PERF-05 | No unbounded Firestore listener or Room list read reaches the device (§9) | `app/src/main/java/com/example/data/remote/FirebaseService.kt`, `app/src/main/java/com/example/data/db/Daos.kt`, `scripts/check_query_limits.mjs` | `scripts/check_query_limits.mjs` | Implemented in R13; a static bound, not a load test |
 | REQ-AI-01 | Server-side voice transcription (§9) | `functions/src/transcription.ts`, `app/src/main/java/com/example/data/remote/GeminiAudioTranscriptionService.kt` | `functions/test/transcription.test.mjs` | Implemented; deployment unavailable |
 | REQ-SAFE-01 | SOS raise/acknowledge lifecycle (§10) | `firestore.rules`, `functions/src/index.ts` | `app/src/test/java/com/example/data/SosRaiseAuthorizationSecurityTest.kt`, `functions/test/sosDispatch.test.mjs` | Dispatch implemented server-side; FCM/SMS not exercised |
 | REQ-SAFE-02 | A report about a person reaches an operator, with a priority and a response target (§10) | `functions/src/reports.ts`, `functions/src/index.ts`, `firestore.rules`, `app/src/main/java/com/example/ui/components/SafetyReportQueueSheet.kt`, `docs/safety/SAFETY_DESK_RUNBOOK.md` | `functions/test/reports.test.mjs`, `rules-test/firestore.rules.test.mjs` | Server collection, triage state machine and operator console implemented; no operator has ever used it |
@@ -51,8 +56,9 @@ a verification standpoint.
 
 ## Known gaps
 
-1. Three requirements have no automated test at all (`REQ-ACC-02`, `REQ-LOC-01`, `REQ-TRAIN-01`);
-   `REQ-SEC-01` has a static Storage-rules check but no Storage emulator run. REM-064 (executable
+1. Two requirements have no automated test at all (`REQ-LOC-01`, `REQ-TRAIN-01` — `REQ-ACC-02` gained
+   its rules-suite and Android coverage in R07); `REQ-SEC-01` has a static Storage-rules check but no
+   Storage emulator run. REM-064 (executable
    Android suite) remains the gating task, and REM-019 (Firestore rules suite) closed in R07.
 2. Android tests below `app/src/test` exist but cannot run in this environment; "implemented" here
    means the code and test source exist, not that the test passed.

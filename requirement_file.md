@@ -869,7 +869,7 @@ This section adds requirements; it does not replace or relax any requirement abo
 | R10 | REM-034, REM-035, REM-036, REM-038, REM-039, REM-040 | Truthful SOS dispatch, secret PIN, moderator-visible reports and audited escalation | NOT_STARTED |
 | R11 | REM-064, REM-065, REM-066 | Executable test suites, rules/migration/E2E coverage and reproducible evidence | NOT_STARTED |
 | R12 | REM-055, REM-056, REM-057, REM-058 | Labelled controls, readable typography, localisation and consistent formatting | NOT_STARTED |
-| R13 | REM-059, REM-060, REM-061, REM-062, REM-063 | Telemetry, offline replay, push, bounded resources and SLOs | NOT_STARTED |
+| R13 | REM-059, REM-060, REM-061, REM-062, REM-063 | Telemetry, offline replay, push, bounded resources and SLOs | PARTIAL (R13: the offline queue drains with a retry cap and a dead-letter, three sample JPEGs are re-encoded from 2.0 MB to 181 KB with a budget guard, and CI now assembles the R8 release — APK 6.3 MB, mapping 679,287 lines; every callable declares a timeout and memory and provider reads retry with bounded backoff; SLOs are specified in docs/ops/RELIABILITY_AND_PERFORMANCE.md but no telemetry SDK, no alert, no Baseline Profile and no circuit breaker exist, and REM-061 push is untouched — see prd.json status_note per story) |
 | R14 | REM-005, REM-006, REM-007, REM-008 | CI, portable builds, signed releases, dependency hygiene and deploy safety | NOT_STARTED |
 | R15 | REM-067, REM-068, REM-069, REM-070, REM-071, REM-072 | Evidence-backed status, portable documentation and requirement traceability | NOT_STARTED |
 

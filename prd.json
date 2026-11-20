@@ -6577,7 +6577,7 @@
       "phase": 19,
       "title": "Add crash, ANR and performance telemetry",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "depends_on": [
         "REM-001",
         "REM-007"
@@ -6609,14 +6609,15 @@
       "source_finding": "MR-059",
       "reviewer": "R13",
       "review_report": "review_results/R13_PERFORMANCE.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "status_note": "R13 verified the finding: there is no Crashlytics, Performance Monitoring, analytics or alerting anywhere in the app or the functions. Nothing is wired, because the SDK needs a Firebase project registered by package name and signing fingerprint plus real devices, and this environment has neither - adding the dependency alone would compile and report nothing. What was delivered is the specification: docs/ops/RELIABILITY_AND_PERFORMANCE.md section 7 defines the SLIs (cold start p90, crash-free sessions, ANR rate, callable latency and error rate, escrow drift, offline-queue residue), proposed 28-day SLOs and the error-budget policy, so the remaining work is configuration rather than design. What is not done: no dashboard, no alert, and no crash or ANR has ever been observed for this app.",
+      "notes": "Promoted from NOT_STARTED in R13; the status_note records exactly what was and was not done."
     },
     {
       "id": "REM-060",
       "phase": 19,
       "title": "Implement offline replay",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "depends_on": [
         "REM-001",
         "REM-031"
@@ -6648,7 +6649,8 @@
       "source_finding": "MR-060",
       "reviewer": "R13",
       "review_report": "review_results/R13_PERFORMANCE.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "status_note": "R13 found the queue was worse than reported: flushPendingActions() took a snapshot, logged the count and deleted nothing, so rows could only accumulate. SkillsExchangeRepository.drainPendingActionQueue() now executes the one action type the app produces (the SOS mirror retry), increments retryCount on failure, dead-letters at maxRetries with the payload intact, and never deletes an unexecuted row; PendingActionDrainTest drives all five paths in Robolectric. pendingActionCount is surfaced in the offline banner so a user sees what is still queued. What is not done: no WorkManager scheduler (the producer set is a single type and the queue is normally empty), no idempotency keys on the queued action, and no airplane-mode E2E - reconnection was not exercised on a device.",
+      "notes": "Promoted from NOT_STARTED in R13; the status_note records exactly what was and was not done."
     },
     {
       "id": "REM-061",
@@ -6684,14 +6686,15 @@
       "source_finding": "MR-061",
       "reviewer": "R13",
       "review_report": "review_results/R13_PERFORMANCE.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "status_note": "Not addressed by R13 and left as found: collection and payout status are still polled from the client and no server-side FCM send exists. R13's findings (P2-01 to P2-07) do not cover push; the polling interval bounds are recorded in docs/ops/RELIABILITY_AND_PERFORMANCE.md section 6 together with the listener bounds, but no push path was added.",
+      "notes": "Promoted from NOT_STARTED in R13; the status_note records exactly what was and was not done."
     },
     {
       "id": "REM-062",
       "phase": 19,
       "title": "Reduce APK and asset size",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "depends_on": [
         "REM-020"
       ],
@@ -6720,14 +6723,15 @@
       "source_finding": "MR-062",
       "reviewer": "R13",
       "review_report": "review_results/R13_PERFORMANCE.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "status_note": "R13 re-verified the finding and it was half stale: R8 and resource shrinking were already enabled in R07 (app/build.gradle.kts release block), so the review's 'R8 disabled' no longer held. The assets were real: img_before_leak.jpg 895 KB, img_after_repair.jpg 680 KB and a 371 KB icon accounted for about 80 percent of res/. All three are re-encoded to 68 KB, 41 KB and 16 KB (res/ 2.0 MB -> 181 KB across 24 files), scripts/check_asset_budget.mjs enforces 150 KB per file and 1 MB for the tree with a selftest, and a new CI release-build job assembles the R8 variant and publishes the mapping and APK size. What is not done: no Baseline Profile (it is generated on a device by Macrobenchmark, and no device exists here), and the 'APK under 15 MB' criterion is measured only by the CI release job, not on this machine.",
+      "notes": "Promoted from NOT_STARTED in R13; the status_note records exactly what was and was not done."
     },
     {
       "id": "REM-063",
       "phase": 19,
       "title": "Add retries, circuit breaking and SLOs",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "depends_on": [
         "REM-059"
       ],
@@ -6758,7 +6762,8 @@
       "source_finding": "MR-063",
       "reviewer": "R13",
       "review_report": "review_results/R13_PERFORMANCE.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "status_note": "R13 split the finding. Retries: functions/src/providerRetry.ts retries idempotent provider reads (transport errors, timeouts, 429, 5xx) with exponential jittered backoff capped at 3 attempts, and never retries a write - collection, payout, refund and SMS carry a provider reference and a blind repeat would risk a second transaction; applied to the MoMo status query with 7 tests. Timeouts and memory: functions/src/runtime.ts declares a 60 s/256 MB default and a 120 s/512 MB provider preset, enforced for every callable by a test, which also makes the retry budget fit (3 x 15 s plus backoff inside 120 s). What is not done: no circuit breaker (it needs shared state and an operator policy that a deployment would have to define), no dead-letter queue beyond the client's FAILED rows, no SLO alerting - the SLOs are specified in docs/ops/RELIABILITY_AND_PERFORMANCE.md section 7 and section 4 records why the breaker was deliberately left out.",
+      "notes": "Promoted from NOT_STARTED in R13; the status_note records exactly what was and was not done."
     },
     {
       "id": "REM-064",

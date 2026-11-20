@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import { APP_CHECK, withAppCheck } from "../lib/appCheck.js";
+import { CALLABLE_RUNTIME, PROVIDER_CALL, callable, providerCallable } from "../lib/runtime.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const compiled = readFileSync(join(here, "..", "lib", "index.js"), "utf8");
@@ -35,10 +36,35 @@ test("both helpers enable enforcement", () => {
 test("every callable is wrapped in App Check enforcement", () => {
   const sites = callSites();
   assert.ok(sites.length >= 25, `expected the callable set, found ${sites.length}`);
+  // R13-P2-05 moved the wrapper inside two helpers, so the guarantee is checked in both places: the
+  // helpers must carry `enforceAppCheck`, and every call site must use one of them.
+  // The compiled call is `(0, runtime_1.callable)()` — an identifier reference, not a call — so the
+  // match is on the name, and `withAppCheck` stays valid for the one callable that is spread across
+  // lines with its secrets.
   const unwrapped = sites
-    .filter((site) => !site.before.includes("APP_CHECK") && !site.before.includes("withAppCheck"))
+    .filter((site) => !/(callable|providerCallable|withAppCheck)/.test(site.before))
     .map((site) => site.line.trim());
   assert.deepEqual(unwrapped, [], `callables without App Check: ${unwrapped.join(" | ")}`);
+});
+
+test("the two callable helpers both enforce App Check and both declare a runtime", () => {
+  for (const [name, options] of [
+    ["callable", callable()],
+    ["providerCallable", providerCallable()],
+  ]) {
+    assert.equal(options.enforceAppCheck, true, `${name} must enforce App Check`);
+    assert.equal(typeof options.timeoutSeconds, "number", `${name} must declare a timeout`);
+    assert.equal(typeof options.memory, "string", `${name} must declare memory`);
+  }
+  // The provider preset is the longer one: a provider round trip must not be cut off at the default.
+  assert.ok(PROVIDER_CALL.timeoutSeconds > CALLABLE_RUNTIME.timeoutSeconds);
+  assert.equal(CALLABLE_RUNTIME.timeoutSeconds, 60);
+  assert.equal(PROVIDER_CALL.timeoutSeconds, 120);
+  // Secrets passed through are preserved alongside the runtime.
+  const withSecrets = providerCallable({ secrets: ["SMS_KEY"] });
+  assert.deepEqual(withSecrets.secrets, ["SMS_KEY"]);
+  assert.equal(withSecrets.enforceAppCheck, true);
+  assert.equal(withSecrets.timeoutSeconds, 120);
 });
 
 test("App Check is not applied to triggers or the HTTPS webhook", () => {
