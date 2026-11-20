@@ -216,7 +216,9 @@ jobs:
 
       - name: Assemble release
         env:
-          KEYSTORE_PATH: my-upload-key.jks
+          # The signing config resolves a relative path against the module directory, so this must be
+          # absolute: `my-upload-key.jks` alone looked for app/my-upload-key.jks and failed validation.
+          KEYSTORE_PATH: ${{ github.workspace }}/my-upload-key.jks
           STORE_PASSWORD: ci-throwaway
           KEY_PASSWORD: ci-throwaway
         run: |

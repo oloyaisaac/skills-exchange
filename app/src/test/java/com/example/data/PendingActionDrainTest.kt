@@ -62,8 +62,10 @@ class PendingActionDrainTest {
                 budget = 10.0,
                 urgency = "Today",
                 status = "In Progress",
-                assignedProviderId = "worker_1",
-                assignedProviderName = "Worker",
+                // `job_posts.assignedProviderId` is a real foreign key to `service_providers`; a
+                // string that names no provider row aborts the insert (CI caught exactly that).
+                assignedProviderId = null,
+                assignedProviderName = null,
                 createdTimestamp = 1L,
                 estimatedHours = 1.0,
                 materialsCost = 0.0,
