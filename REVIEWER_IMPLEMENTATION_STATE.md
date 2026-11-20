@@ -85,6 +85,10 @@ callable refused every client-created job.
   resolution and live provider callbacks are **UNVERIFIED**. The Firestore emulator proves the
   handler logic, not the deployed configuration.
 - FCM delivery to a device was not observed; only the send call and topic subscription are in place.
+- The JVM unit-test step failed once on a documentation-only commit and passed when the same commit
+  was rerun (run 44711520374), so at least one Android test is non-deterministic. The failing test's
+  name could not be read from this sandbox (Actions logs and artifacts are unreachable); it is
+  recorded here for R11 rather than treated as resolved.
 - App Check and webhook-level rate limiting remain open and belong to later reviewers (R07).
 
 ## Completion declarations
