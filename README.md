@@ -14,7 +14,7 @@ A hyperlocal peer-to-peer services marketplace Android app for East African urba
 - **Local Database**: Room
 - **Backend**: Firebase (Firestore, Auth, Storage, Cloud Messaging)
 - **Serverless**: Firebase Cloud Functions
-- **Payments**: MTN MoMo collection and escrow, server-side and sandbox-only. **Airtel Money is a UI label only — there is no Airtel integration.**
+- **Payments**: MTN MoMo collection and escrow, server-side and sandbox-only. **Airtel Money and card are not offered in the app: neither has an integration** (removed in R05-REM-033).
 - **Maps**: Google Maps Android SDK
 - **AI**: Gemini 2.0 Flash (audio transcription, search grounding)
 - **Build**: Gradle with Kotlin DSL
@@ -47,7 +47,7 @@ A hyperlocal peer-to-peer services marketplace Android app for East African urba
 - Firebase project with Android app configured
 - Google Maps API key
 - Gemini API key
-- MTN MoMo sandbox credentials (Airtel Money appears only as a UI/channel label; no provider integration)
+- MTN MoMo sandbox credentials (no Airtel Money or card integration exists; those channels are not selectable)
 
 ## Build & Run
 

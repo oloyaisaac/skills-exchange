@@ -1,3 +1,22 @@
+## 2026-11-20 (Prompt-4 R05 COMPLETE) - API & INTEGRATIONS GATE PASSED
+
+- R05 gate passed on `arena/71ffb0a0-skills-exchange` (PR #20). Android run 44748445356 green,
+  backend 182/182, docs and secret checks pass. 430 tests were reported by the last run whose XML is
+  readable; 5 were added since, so the suite is 435 tests, 0 failures.
+- All seven findings closed: SOS SMS stub deleted (server trigger is the only sender), FCM token
+  registered under the authenticated uid and never logged, single UGX unit with a half-up
+  whole-shilling rule identical on client and server, Gemini key out of the APK, invented shop list
+  replaced by Google-grounded places only, typed contracts for all 17 callables, bounded retry and
+  server timeouts. REM-033 (unsupported channels) and REM-052 (ad-hoc scopes) also closed; REM-053 is
+  partial because no real Maps key exists here.
+- The first run after the Actions billing block was lifted found three real defects that review had
+  missed, including a ties-to-even vs half-up rounding disagreement between Kotlin and Node that
+  would have made the server reject priced jobs.
+- Not verified: `firebase deploy`, live Gemini/Africa's Talking/MTN traffic, FCM delivery, on-device
+  behaviour, a real Maps key. R06 is next; no reviewer beyond R05 has started.
+
+---
+
 ## 2026-11-20 (Prompt-4 R05 IN PROGRESS) - API & EXTERNAL INTEGRATIONS, CI BLOCKED BY BILLING
 
 - All seven R05 findings are implemented in source on `arena/a0499936-skills-exchange` (PR #19).

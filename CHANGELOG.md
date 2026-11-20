@@ -1,5 +1,29 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [PROMPT-4 / R05] API and external integrations; one money unit; grounded places
+
+- **SMS/SOS (R05-P2-01, CRITICAL).** The device stub that answered `SENT` without sending anything is
+  deleted. The only SMS path is the server `onSosIncidentCreated` trigger.
+- **Push (R05-P2-02).** New `registerPushToken` callable stores each device token under the
+  authenticated uid; delivery uses those tokens with the topic as fallback and deletes retired ones.
+  The token is never logged, and push data is sanitised before it becomes an Intent extra.
+- **Money (R05-P2-03).** UGX is the only unit: no ×3,700 display multiplier, `JobMoney` rounds each
+  component once, `pricing.ts`/`momoCollection.ts` refuse fractional shillings and use the same
+  half-up rule as `CurrencyRegion.roundToWholeShillings`. Seeds, escrow labels and the transcription
+  budget prompt converted.
+- **Gemini (R05-P2-04).** The key leaves the APK: `.env.example` no longer declares it and
+  `searchLocalPlaces` reads it from Secret Manager.
+- **Grounded places (R05-P2-05).** The hard-coded shop list with invented ratings and phone numbers
+  is gone; only `groundingMetadata` Maps chunks become places, and an ungrounded answer is labelled
+  "Not verified on Google Maps" with no place cards.
+- **Contracts and retries (R05-P2-06/07).** All 17 callables go through typed `CallableContracts`;
+  `CallableRetry` retries transient failures at most three times; every server HTTP call has a
+  timeout and backoff.
+- **Also (REM-033/REM-052).** Airtel Money and card are no longer selectable (no integration), and
+  the Africa's Talking client is suspend-only.
+- Evidence: Android run 44748445356 (435 tests), backend 182/182, docs and secret checks pass. Deploy,
+  live provider traffic, FCM delivery and a real Maps key remain UNVERIFIED.
+
 ### [2026-11-20] [PROMPT-4 / R04] Room schema export, migration proof, exact money, mirror reconciliation
 
 - **Schema (R04-P2-01).** `exportSchema = true`; `27.json` and `28.json` are committed and CI

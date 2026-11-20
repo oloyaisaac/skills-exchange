@@ -219,8 +219,9 @@ export function validateCollectionInput(input: ValidateCollectionInput): Validat
   if (job.laborTotal != null) {
     const labor = Number(job.laborTotal);
     const materials = Number(job.materialsSubtotal ?? 0);
-    const expectedFee = Math.round(labor * 0.1 * 100) / 100;
-    const expectedTotal = Math.round((labor + materials + expectedFee) * 100) / 100;
+    // R05-P2-03: whole shillings, half-up — identical to `pricing.ts` and to the Android client.
+    const expectedFee = Math.round(labor * 0.1);
+    const expectedTotal = labor + materials + expectedFee;
     if (!Number.isFinite(labor) || Number(job.platformFee) !== expectedFee) {
       return {
         ok: false,

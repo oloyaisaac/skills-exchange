@@ -23,10 +23,10 @@ class MapsGroundingContractTest {
 
     private fun repoFile(relative: String): File {
         var dir: File? = File(System.getProperty("user.dir") ?: ".").absoluteFile
-        repeat(6) {
+        repeat(8) {
             val current = dir ?: error("$relative not found")
             val candidate = File(current, relative)
-            if (candidate.isFile) return candidate
+            if (candidate.exists()) return candidate
             dir = current.parentFile
         }
         throw AssertionError("$relative not found above ${System.getProperty("user.dir")}")
@@ -47,10 +47,28 @@ class MapsGroundingContractTest {
         )
     )
 
+    /** Drops `//`, `/* ... */` and KDoc lines so documentation may still mention the old key. */
+    private fun codeOnly(source: String): String = source.lines()
+        .filterNot { line ->
+            val trimmed = line.trim()
+            trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*")
+        }
+        .joinToString("\n")
+
     @Test
     fun `the Gemini key is no longer referenced by any app source file`() {
-        val offenders = appSources().filter { it.readText().contains("GEMINI_API_KEY") }.map { it.name }
+        val offenders = appSources()
+            .filter { codeOnly(it.readText()).contains("GEMINI_API_KEY") }
+            .map { it.name }
         assertEquals("the Gemini key must stay server-side: $offenders", emptyList<String>(), offenders)
+    }
+
+    @Test
+    fun `the Gemini key is not read from the generated BuildConfig`() {
+        val offenders = appSources()
+            .filter { codeOnly(it.readText()).contains("BuildConfig.GEMINI") }
+            .map { it.name }
+        assertEquals("BuildConfig would put the key in the APK: $offenders", emptyList<String>(), offenders)
     }
 
     @Test

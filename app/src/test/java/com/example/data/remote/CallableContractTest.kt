@@ -27,10 +27,10 @@ class CallableContractTest {
 
     private fun repoFile(relative: String): File {
         var dir: File? = File(System.getProperty("user.dir") ?: ".").absoluteFile
-        repeat(6) {
+        repeat(8) {
             val current = dir ?: error("$relative not found from the test working directory")
             val candidate = File(current, relative)
-            if (candidate.isFile) return candidate
+            if (candidate.exists()) return candidate
             dir = current.parentFile
         }
         throw AssertionError("$relative not found above ${System.getProperty("user.dir")}")

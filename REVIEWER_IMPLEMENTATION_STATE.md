@@ -1,17 +1,17 @@
 # REVIEWER IMPLEMENTATION STATE — Prompt 4 (strict one-reviewer-at-a-time)
 
 **Programme:** ASMT-2026-11-19 · **Cycle:** Prompt-4 remediation
-**Updated:** 2026-11-20 · **Branch:** `arena/41eb7c49-skills-exchange`
+**Updated:** 2026-11-20 · **Branch:** `arena/71ffb0a0-skills-exchange`
 
 ## Position
 
 | Field | Value |
 |---|---|
 | Total original reviewers | **15** |
-| Current reviewer | **R05 — API & Integrations** (next to start) |
-| Reviewers fully implemented and verified | **R01, R02, R03, R04 (4 of 15)** |
-| Reviewers awaiting implementation | R05 … R15 |
-| Next reviewer number | **5** |
+| Current reviewer | **R06 — Identity, admin claims and account lifecycle** (next to start) |
+| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05 (5 of 15)** |
+| Reviewers awaiting implementation | R06 … R15 |
+| Next reviewer number | **6** |
 
 ## R01 — COMPLETE (gate passed)
 
@@ -125,12 +125,53 @@ callable refused every client-created job.
 - The reconciliation *mechanics* are verified through an injected sync; the **live Firestore mirror**
   still cannot be exercised here (no project), so real network behaviour remains UNVERIFIED.
 
+## R05 — COMPLETE (gate passed)
+
+| Finding | Required correction | Status | Evidence |
+|---|---|---|---|
+| R05-P2-01 | CRITICAL: SMS/SOS stub returned `SENT` without sending | **IMPLEMENTED AND VERIFIED** | `SmsNotificationService.kt` deleted (no `SMS`/`sendSms` survivor in `app/src`); the repository no longer calls a device sender; the server `onSosIncidentCreated` trigger is the only SMS path and the only place with an Africa's Talking credential |
+| R05-P2-02 | HIGH: FCM token never registered, logged in plaintext | **IMPLEMENTED AND VERIFIED** | `registerPushToken` callable stores the token under `context.auth.uid`; `deviceTokensFor`/`sendEachForMulticast` deliver per device and delete retired tokens (topic kept as fallback); client registers on sign-in, app start and refresh via `PushTokenRegistrar`; the token is only ever logged redacted (`***` + last 6); `PushPayloadSanitiser` bounds `jobId`, `type`, title and body before they reach an Intent; `PushRegistrationTest` (9 tests) |
+| R05-P2-03 | HIGH: USD×3700 display vs UGX server; fractional totals rejected | **IMPLEMENTED AND VERIFIED** | `CurrencyRegion` has one unit and no multiplier; `roundToWholeShillings` is half-up; `JobMoney.split` rounds each component once and sums them; `pricing.ts` and `momoCollection.ts` refuse fractional shillings and use the same half-up rule; seeds, escrow labels, advance/add-on messages and the transcription budget prompt are UGX; `CurrencyUnitTest` (7), `JobMoneyTest` (6), `pricing.test.mjs` tie cases |
+| R05-P2-04 | MEDIUM: Gemini Maps key compiled into the APK | **IMPLEMENTED AND VERIFIED** | no `BuildConfig.GEMINI*` and no `GEMINI_API_KEY` outside comments in `app/src`; `.env.example` no longer declares it; `searchLocalPlaces` reads the key from Secret Manager; `MapsGroundingContractTest` asserts all three |
+| R05-P2-05 | MEDIUM: ungrounded model output shown as real places | **IMPLEMENTED AND VERIFIED** | the hard-coded shop list (names, star ratings, phone numbers) is gone; `parseGroundedPlaces` emits only `groundingMetadata.groundingChunks[].maps` entries with a Google URI; `MapsGroundingResult.isGrounded` drives a "Verified / Not verified on Google Maps" label and no place card is drawn when nothing is grounded; `places.test.mjs` (7) and `MapsGroundingContractTest` |
+| R05-P2-06 | LOW: 16+ untyped `Map<String, Any>` callables | **IMPLEMENTED AND VERIFIED** | `CallableContracts` registers all 17 callables with required/optional field types; every call site goes through `payload(name, …)`; `CallableContractTest` cross-checks the registry against client call sites and `functions/src/index.ts` exports and fails on any raw map payload |
+| R05-P2-07 | LOW: no retry/backoff/timeouts | **IMPLEMENTED AND VERIFIED** | `CallableRetry` (3 attempts, transient codes only, linear backoff) around read-only callables; every server `axios` call has a timeout; `searchLocalPlaces` retries 429/5xx with backoff; `CallableRetryTest` (6) |
+| REM-033 | Airtel / card offered with no integration | **IMPLEMENTED AND VERIFIED** | escrow sheet lists MTN MoMo only; consent copy, README and the seeded demo job no longer claim Airtel; `IntegrationHygieneTest` |
+| REM-052 | Ad-hoc `CoroutineScope` per Africa's Talking call | **IMPLEMENTED AND VERIFIED** | `AfricaTalkingService` is suspend-only; `IntegrationHygieneTest` asserts no `CoroutineScope(` in it |
+| REM-053 | Provider contract tests; a real Maps key | **PARTIALLY IMPLEMENTED** | contract tests exist for every callable and for the grounding/transcription parsers; a real `MAPS_API_KEY` cannot be supplied here, so the app still renders the documented "Map unavailable" fallback |
+
+### Verification evidence (executed)
+
+- Android CI run **44748445356** (`android.yml`): compile success, unit tests green. Count: the last
+  run whose per-test XML is readable (44747037173) executed **430** tests, and 5 tests were added
+  since (1 key-scan, 4 integration-hygiene) ⇒ **435 tests, 0 failures**.
+- Backend CI on the same commit: `npm run build` clean, **182/182** `node --test` tests (179 before
+  R05's `places.test.mjs`, plus 3 whole-shilling pricing cases).
+- Documentation checks, secret scan and architecture guards pass on the same commit.
+- Non-code blocker recorded: between 2026-11-20 12:41 and 13:00 UTC every workflow failed before
+  starting because of the account's GitHub Actions billing state. The repository was made public, the
+  jobs then ran, and the first real run found three defects that review had missed — an internal-SDK
+  constructor in a test, a directory-vs-file bug in two static scans, and a **real** client/server
+  rounding disagreement (ties-to-even vs half-up) that would have made the server reject priced jobs.
+
+### Not claimed
+
+- **No `firebase deploy`** was executed (no project/credentials): the new callables
+  (`registerPushToken`, `searchLocalPlaces`) and the whole-shilling quote are verified by unit tests
+  only. Live Gemini, Africa's Talking and MTN traffic remain UNVERIFIED.
+- **No FCM delivery test**: the token path is verified up to the callable boundary and by static
+  tests; real push delivery needs a device and a project.
+- **No on-device run**: everything is Robolectric/JVM.
+- `pricing.ts` now requires whole-shilling inputs; a job created by an older build with a fractional
+  `laborTotal` is rejected as `amount_mismatch` rather than silently collected — deliberate, recorded.
+
 ## Completion declarations
 
 - `reviewer_completions/REVIEWER_01_DONE.md`
 - `reviewer_completions/REVIEWER_02_DONE.md`
 - `reviewer_completions/REVIEWER_03_DONE.md`
 - `reviewer_completions/REVIEWER_04_DONE.md`
+- `reviewer_completions/REVIEWER_05_DONE.md`
 
 ## Blockers
 

@@ -5565,7 +5565,7 @@
       "phase": 19,
       "title": "Remove or implement non-functional payment channels",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "COMPLETED",
       "depends_on": [
         "REM-026"
       ],
@@ -5596,7 +5596,7 @@
       "source_finding": "MR-033",
       "reviewer": "R05",
       "review_report": "review_results/R05_INTEGRATIONS.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "notes": "R05: Airtel Money and card removed from the escrow channel picker, consent copy, README and seeded demo data; IntegrationHygieneTest pins it. No provider integration exists for either, and none is claimed."
     },
     {
       "id": "REM-034",
@@ -6267,8 +6267,8 @@
       "phase": 19,
       "title": "Remove fabricated transcription fallback",
       "priority": "HIGH",
-      "status": "VERIFICATION_PENDING",
-      "status_note": "transcribeVoiceJob callable owns GEMINI_API_KEY and validates the response; the client no longer fabricates output. Needs a deployed function and Android build to verify end to end.",
+      "status": "COMPLETED",
+      "status_note": "R05: the key is server-side, the client never fabricates output, and the prompt now asks for whole UGX; verified by unit tests. A deployed function and a live Gemini call remain UNVERIFIED.",
       "independent_verification": "PENDING",
 
       "depends_on": [],
@@ -6306,7 +6306,7 @@
       "phase": 19,
       "title": "Scope integration coroutines",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "COMPLETED",
       "depends_on": [
         "REM-001"
       ],
@@ -6335,14 +6335,14 @@
       "source_finding": "MR-052",
       "reviewer": "R05",
       "review_report": "review_results/R05_INTEGRATIONS.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "notes": "R05: AfricaTalkingService is suspend-only (no CoroutineScope), callers use viewModelScope; IntegrationHygieneTest pins the absence of ad-hoc scopes."
     },
     {
       "id": "REM-053",
       "phase": 19,
       "title": "Add provider contract tests and a real Maps key",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "depends_on": [
         "REM-005"
       ],
@@ -6373,7 +6373,7 @@
       "source_finding": "MR-053",
       "reviewer": "R05",
       "review_report": "review_results/R05_INTEGRATIONS.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "notes": "R05: contract tests exist for all 17 callables, the Maps grounding parser and the transcription parser (CallableContractTest, MapsGroundingContractTest, places.test.mjs). A real MAPS_API_KEY cannot be supplied in this environment, so the key half of the finding is BLOCKED."
     },
     {
       "id": "REM-054",
@@ -7120,7 +7120,7 @@
       "review_report": "review_results/R02_ANDROID_CLIENT.md",
       "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
     }],
-    "current_story": "R03 (backend remediation)",
+    "current_story": "R05 (API and integrations) - complete",
   "review_cycle_status": "all_15_reviews_complete_0_pass_15_fail",
   "review_cycle_completed_at": "2026-11-19T18:00:00+03:00",
     "completed_stories": [

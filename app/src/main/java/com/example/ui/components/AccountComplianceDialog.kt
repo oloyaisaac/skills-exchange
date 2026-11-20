@@ -185,7 +185,7 @@ fun PrivacyAndTermsSheet(
 
             LegalSection(
                 title = "2. Mobile Money Escrow & Payments",
-                body = "Payments held in Escrow via MTN MoMo and Airtel Money are locked until resident approval or mutual release. In case of dispute, our 24/7 neighborhood arbitration protocol freezes funds pending review."
+                body = "Payments held in Escrow via MTN MoMo are locked until resident approval or mutual release. In case of dispute, our 24/7 neighborhood arbitration protocol freezes funds pending review."
             )
 
             LegalSection(
