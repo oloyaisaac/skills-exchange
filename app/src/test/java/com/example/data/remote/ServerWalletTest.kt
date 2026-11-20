@@ -71,9 +71,10 @@ class ServerWalletTest {
 
         assertEquals(120_000L, earning.amountUgx)
         assertTrue("the release is a statement line", !earning.withdrawable)
-        assertEquals(120_000L, earning.signedAmountUgx, 0L)
+        assertEquals(120_000L, earning.signedAmountUgx)
 
-        assertEquals(-10_000L, reserve.signedAmountUgx, "a debit must render with a minus sign")
+        // JUnit4 takes the message FIRST; the previous order does not compile.
+        assertEquals("a debit must render with a minus sign", -10_000L, reserve.signedAmountUgx)
         assertTrue("an entry without a flag defaults to spendable", reserve.withdrawable)
     }
 
