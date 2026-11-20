@@ -166,7 +166,7 @@ fun AppNavigationDrawer(
                                     Text(
                                         text = "Hyperlocal Resident Network",
                                         fontSize = 9.5.sp,
-                                        color = Slate400
+                                        color = Slate500
                                     )
                                 }
                             }
@@ -260,7 +260,7 @@ fun AppNavigationDrawer(
                                         Text(
                                             text = currentUserPhone,
                                             fontSize = 11.5.sp,
-                                            color = Slate400
+                                            color = Slate500
                                         )
                                     }
                                 }
@@ -629,7 +629,7 @@ fun AppNavigationDrawer(
                     Text(
                         text = "Skills Exchange App v2.4.0 • Hyperlocal Network",
                         fontSize = 10.sp,
-                        color = Slate400,
+                        color = Slate500,
                         modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
                     )
                 }

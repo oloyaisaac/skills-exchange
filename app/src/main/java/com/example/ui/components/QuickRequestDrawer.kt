@@ -278,7 +278,7 @@ fun AppointmentsDatePicker(
         ) {
             Text(displayDate, fontSize = 12.sp)
             if (selectedDate <= 0) {
-                Text("  (pick date)", color = Slate400, fontSize = 12.sp)
+                Text("  (pick date)", color = Slate500, fontSize = 12.sp)
             }
         }
 
@@ -342,7 +342,7 @@ fun AppointmentsTimePicker(
         ) {
             Text(displayTime, fontSize = 12.sp)
             if (selectedTime <= 0) {
-                Text("  (pick time)", color = Slate400, fontSize = 12.sp)
+                Text("  (pick time)", color = Slate500, fontSize = 12.sp)
             }
         }
 

@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -31,6 +32,11 @@ import com.example.data.db.DisputeReason
 import com.example.data.remote.DoorstepPinRules
 import com.example.data.remote.MoMoPaymentPhase
 import com.example.data.remote.MoMoPaymentUiState
+import com.example.ui.a11y.announcementLiveRegion
+import com.example.ui.a11y.describeState
+import com.example.ui.a11y.emergencyLiveRegion
+import com.example.ui.a11y.minTouchTarget
+import com.example.ui.a11y.sectionHeading
 import com.example.ui.theme.*
 import com.example.util.CurrencyRegion
 import com.example.util.SecureScreen
@@ -767,7 +773,7 @@ fun EscrowAndProofSheet(
                                 // R10-P2-03: was "Live GPS broadcasted to emergency contacts & security",
                                 // which claimed a delivery nobody had confirmed. The dispatch outcome is
                                 // reported by the server and shown below the banner.
-                                text = if (job.isSosTriggered) "🚨 EMERGENCY SOS ACTIVE: your alert is with the platform. The dispatch result appears below once confirmed."
+                                text = if (job.isSosTriggered) stringResource(R.string.safety_sos_active_note)
                                 else "Tap panic button if safety risk occurs during physical site visit.",
                                 fontSize = 9.sp,
                                 color = if (job.isSosTriggered) Color.Red else Slate500
@@ -781,22 +787,56 @@ fun EscrowAndProofSheet(
                             // the button is disabled while a stand-down is in flight.
                             onClick = { if (job.isSosTriggered) onClearSosAlert?.invoke() else onTriggerSosAlert?.invoke() },
                             enabled = !isClearingSos,
+                            // R12-P2-04: the panic control is the one thing on this screen that must be
+                            // hittable under stress; it was a 40dp Material button.
+                            modifier = Modifier
+                                .minTouchTarget()
+                                // R12-P2-02: a disabled panic button that says nothing is a dead end.
+                                .describeState {
+                                    when {
+                                        isClearingSos -> if (job.isSosTriggered) "Standing down, waiting for the server." else "Raising the alert, waiting for the server."
+                                        job.isSosTriggered -> "Emergency alert is active."
+                                        else -> "No emergency alert is active."
+                                    }
+                                },
                             colors = ButtonDefaults.buttonColors(containerColor = if (job.isSosTriggered) Color.Red else Slate800),
                             shape = RoundedCornerShape(6.dp)
                         ) {
-                            Icon(imageVector = Icons.Default.Warning, contentDescription = "SOS", modifier = Modifier.size(14.dp))
+                            // The label already says SOS PANIC / STAND DOWN; a described icon would make
+                            // TalkBack read "SOS SOS PANIC".
+                            Icon(imageVector = Icons.Default.Warning, contentDescription = null, modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = if (job.isSosTriggered) "STAND DOWN" else "SOS PANIC", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                            Text(
+                                // R12-P2-01: the two words a user must be able to read under stress.
+                                text = if (job.isSosTriggered) stringResource(R.string.safety_sos_stand_down)
+                                else stringResource(R.string.safety_sos_panic),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
                         }
                     }
                     // R10-P2-03: what the platform actually did, in the server's words.
                     if (job.isSosTriggered && sosDispatchMessage != null) {
                         Text(
+                            // R12-P2-02: a heading, so the verdict is a section and not one more line.
+                            text = stringResource(R.string.safety_dispatch_heading),
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Slate700,
+                            modifier = Modifier
+                                .padding(top = 6.dp)
+                                .sectionHeading()
+                        )
+                        Text(
                             text = sosDispatchMessage,
                             fontSize = 10.sp,
                             fontWeight = if (sosDispatchAdvisesCall) FontWeight.Bold else FontWeight.Normal,
                             color = if (sosDispatchAdvisesCall) Color.Red else Slate600,
-                            modifier = Modifier.padding(top = 4.dp)
+                            // R12-P2-02: the platform's verdict on an emergency must be *announced*, not
+                            // left for the user to discover by swiping.
+                            modifier = Modifier
+                                .padding(top = 4.dp)
+                                .emergencyLiveRegion()
                         )
                     }
                     // H7/SAFE-003: a rejected stand-down (not owner / not signed in) is surfaced
@@ -1068,10 +1108,13 @@ fun EscrowAndProofSheet(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
                 ) {
                     Text(
-                        text = "Release failed: $releaseError",
+                        text = stringResource(R.string.escrow_release_failed, releaseError),
                         fontSize = 11.sp,
                         color = RedDanger,
-                        modifier = Modifier.padding(10.dp)
+                        // R12-P2-02: a refusal after an action is announced, not just painted.
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .announcementLiveRegion()
                     )
                 }
             }
@@ -1086,7 +1129,9 @@ fun EscrowAndProofSheet(
                         text = releaseMessage,
                         fontSize = 11.sp,
                         color = IndustrialEmeraldDark,
-                        modifier = Modifier.padding(10.dp)
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .announcementLiveRegion()
                     )
                 }
             }
@@ -1276,7 +1321,14 @@ fun EscrowAndProofSheet(
                         Button(
                             onClick = { onReleaseFunds?.invoke() },
                             enabled = !isReleasingFunds,
-                            modifier = Modifier.weight(1.3f),
+                            modifier = Modifier
+                                .weight(1.3f)
+                                .minTouchTarget()
+                                // R12-P2-05: the release already had an in-flight state; it now says
+                                // what the state is to a screen reader too.
+                                .describeState {
+                                    if (isReleasingFunds) "Releasing funds. Waiting for the provider's answer." else null
+                                },
                             shape = RoundedCornerShape(6.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = IndustrialEmerald)
                         ) {
@@ -1292,9 +1344,12 @@ fun EscrowAndProofSheet(
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = if (isReleasingFunds) {
-                                    "Releasing with the server..."
+                                    stringResource(R.string.escrow_releasing)
                                 } else {
-                                    "Authorize & Release (${CurrencyRegion.format(currentGrandTotal, activeRegion)})"
+                                    stringResource(
+                                        R.string.escrow_release_action,
+                                        CurrencyRegion.format(currentGrandTotal, activeRegion)
+                                    )
                                 },
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
@@ -1539,7 +1594,7 @@ fun EscrowAndProofSheet(
             },
             dismissButton = {
                 TextButton(onClick = { showUssdPushModal = false }) {
-                    Text(text = "Cancel", color = Slate400)
+                    Text(text = "Cancel", color = Slate500)
                 }
             }
         )

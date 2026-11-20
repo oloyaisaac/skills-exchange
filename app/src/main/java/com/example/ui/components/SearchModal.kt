@@ -127,7 +127,8 @@ fun SearchModal(
                     Text(
                         text = if (selectedTab == 0) "Search by skill or name (e.g. Electrician, Plumbing)..." else "Search Google Maps (e.g. 240V Breaker supplier, Copper pipes)...",
                         fontSize = 12.sp,
-                        color = Slate400
+                        // R12-P2-06: placeholder copy is text; Slate400 is a graphics tint.
+                        color = Slate500
                     )
                 },
                 leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = "Search", tint = Slate500) },

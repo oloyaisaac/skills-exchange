@@ -135,7 +135,7 @@ fun FreelancerDashboardView(
                             Text(
                                 text = if (isOnline) "Receiving job requests within 5 miles" else "Toggle on to receive local resident work orders",
                                 fontSize = 10.sp,
-                                color = Slate400
+                                color = Slate500
                             )
                         }
                     }
@@ -301,7 +301,7 @@ private fun MetricCard(
                 Text(
                     text = title,
                     fontSize = 9.sp,
-                    color = Slate400,
+                    color = Slate500,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1
                 )
@@ -318,7 +318,7 @@ private fun MetricCard(
             Text(
                 text = subtitle,
                 fontSize = 8.5.sp,
-                color = Slate400,
+                color = Slate500,
                 maxLines = 1
             )
         }

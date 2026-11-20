@@ -218,7 +218,9 @@ fun AuthModal(
                     )
                 }
 
-                IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
+                // R12-P2-04: this was a 28dp dismiss button. The constraint now applies to the icon,
+                // so the hit area is Material's 48dp minimum and the sheet looks the same.
+                IconButton(onClick = onDismiss) {
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Close",
@@ -533,7 +535,7 @@ fun AuthModal(
                         value = fullName,
                         onValueChange = { fullName = it },
                         label = { Text("Your Full Name", fontSize = 12.sp) },
-                        placeholder = { Text("Enter your legal name", fontSize = 12.sp, color = Slate400) },
+                        placeholder = { Text("Enter your legal name", fontSize = 12.sp, color = Slate500) },
                         supportingText = {
                             Text(
                                 text = "Use the full name on your National ID. Your Google account name is not used.",
@@ -568,7 +570,7 @@ fun AuthModal(
                             if (newValue.length <= 15) phoneNumber = newValue
                         },
                         label = { Text("Mobile Phone Number", fontSize = 12.sp) },
-                        placeholder = { Text("+256 7XX XXX XXX", fontSize = 12.sp, color = Slate400) },
+                        placeholder = { Text("+256 7XX XXX XXX", fontSize = 12.sp, color = Slate500) },
                         supportingText = {
                             if (isPhoneFormatInvalid) {
                                 Text(

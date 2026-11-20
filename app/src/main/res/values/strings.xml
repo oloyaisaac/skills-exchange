@@ -1,3 +1,30 @@
 <resources>
     <string name="app_name">Skills Exchange</string>
+
+    <!--
+      R12-P2-01: the copy a user cannot afford to misunderstand, externalised so it can be translated.
+
+      This is a start, not the finish: the app still builds most of its copy inline (the guard
+      `scripts/check_hardcoded_copy.mjs` records how much, and refuses any increase). What is here is
+      the safety and money path — the words a Luganda or Swahili speaker needs in their own language
+      before they can trust a payment or an emergency button.
+    -->
+    <string name="safety_sos_panic">SOS PANIC</string>
+    <!-- A stand-down is an instruction, not a label: it must read as one at a glance. -->
+    <string name="safety_sos_stand_down">STAND DOWN</string>
+    <string name="safety_sos_active_note">Emergency alert is active. The platform\'s account of the dispatch appears below.</string>
+    <string name="safety_dispatch_heading">What the platform actually did</string>
+    <string name="safety_desk_title">Safety desk</string>
+    <string name="safety_desk_empty">No report is waiting triage right now.</string>
+
+    <string name="escrow_release_action">Authorize &amp; Release (%1$s)</string>
+    <string name="escrow_releasing">Releasing with the server…</string>
+    <string name="escrow_release_failed">Release failed: %1$s</string>
+
+    <string name="offline_banner">Offline — showing saved data. Changes queue automatically.</string>
+
+    <string name="onboarding_role_question">What describes you?</string>
+    <string name="onboarding_profile_title">Complete Profile Information</string>
+    <string name="onboarding_send_code">Send Verification Code</string>
+    <string name="onboarding_verify_continue">Verify &amp; Continue</string>
 </resources>
