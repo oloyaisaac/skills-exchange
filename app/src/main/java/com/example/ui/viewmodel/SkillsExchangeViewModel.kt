@@ -520,7 +520,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     private var phoneNumberFromUi by mutableStateOf("")
-    fun setPhoneNumberFromUi(phone: String) {
+    fun updatePhoneNumberFromUi(phone: String) {
         phoneNumberFromUi = phone
     }
 
