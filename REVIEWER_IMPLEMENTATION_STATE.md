@@ -1,17 +1,17 @@
 # REVIEWER IMPLEMENTATION STATE — Prompt 4 (strict one-reviewer-at-a-time)
 
 **Programme:** ASMT-2026-11-19 · **Cycle:** Prompt-4 remediation
-**Updated:** 2026-11-20 · **Branch:** `arena/5eb05553-skills-exchange`
+**Updated:** 2026-11-20 · **Branch:** `arena/e11de41e-skills-exchange`
 
 ## Position
 
 | Field | Value |
 |---|---|
 | Total original reviewers | **15** |
-| Current reviewer | **R09 — next in the reviewer list** (reviewer 8 complete) |
-| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05, R06, R07, R08 (8 of 15)** |
-| Reviewers awaiting implementation | R09 … R15 |
-| Next reviewer number | **9** |
+| Current reviewer | **R09 — COMPLETE** (evidence below) |
+| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05, R06, R07, R08, R09 (9 of 15)** |
+| Reviewers awaiting implementation | R10 … R15 |
+| Next reviewer number | **10** |
 
 ## R01 — COMPLETE (gate passed)
 
@@ -317,6 +317,58 @@ provider's.
   `wallet_withdrawals`, `payouts`, `platform_fees` and `refunds` are financial records with a
   retention obligation, and deleting them would erase evidence of a balance the owner may still be
   owed. Erasing the personal identifiers while retaining the money trail is R09's retention work.
+
+## R09 — COMPLETE (gate passed)
+
+Source: `review_results/prompt2/REVIEW_09.md` (verdict **FAIL**, 7 findings). The reviewer's point was
+that the privacy story was a document, not a control: erasure was partly in place but chat in other
+people's jobs survived, consent had a callable nobody called, there was no retention sweep at all, the
+DSAR export existed only as a callable, and the privacy copy claimed encryption the code did not do.
+Two of the seven findings were stale in the reviewer's favour (`R09-P2-01` was partly closed by R06,
+`R09-P2-07` fully closed by R07) and are recorded as such rather than re-implemented.
+
+| Finding | Required correction | Status | Evidence |
+|---|---|---|---|
+| R09-P2-01 | CRITICAL: erasure incomplete — chat and some personal documents survived, and what was kept was never disclosed | **IMPLEMENTED AND VERIFIED** | `deleteMyAccount` still verifies fresh auth and job ownership, and now also purges the account's own messages in jobs it was *assigned* (`ASSIGNED_JOB_FIELD` + `senderId`, via `messagesToPurge` — a legacy name-only attribution is not deleted because ownership is not provable). Every run writes an `account_deletions` record with counts, the retained categories and a plain-language notice (`buildErasureNotice`); `ERASURE_STEPS` is the published order and Auth is deleted last, only when nothing is pending. Client flow unchanged from R06 (`DeletionStep`, Auth last). `accountDeletion.test.mjs` (+3), rules test for the audit collection |
+| R09-P2-02 | HIGH: `recordConsent` had no call site, and the sheet's "I Understand & Agree" recorded nothing | **IMPLEMENTED AND VERIFIED** | `PrivacyAndTermsSheet` now records the receipt (version + the three grants) through `recordConsent` and cannot report agreement until the server answers; `ConsentOutcome` carries the outcome instead of a swallowed boolean. Third-party guarantor consent is its own grant: new `recordGuarantorConsent` (`buildGuarantorConsentRecord` validates a dated version, a real count and an explicit confirmation) writes `users/{uid}/guarantor_consents/{version}`, the filing path records it before any guarantor data is written, and `firestore.rules` rejects a guarantor row or submission without a dated `consentVersion`/`consentRecordedAt`. `withdrawConsent` records the revocation on the same receipt (never deletes it) and requires a fresh sign-in. `compliance.test.mjs` (+3), `ConsentVersionsTest` (5), 2 emulator rules tests, `check_consent_version.mjs` guard |
+| R09-P2-03 | HIGH: the DSAR export callable existed with no way to reach it | **IMPLEMENTED AND VERIFIED** | "Download my data (JSON)" in the privacy sheet calls `exportMyData` and shares a **private cache file** through a `FileProvider` (`cache-path` only, `exported=false`, one-shot read grant). The envelope now redacts the guarantor submission server-side (`sanitiseGuarantorSubmissionForExport`: NIN masked, names/phones/photo paths dropped), includes `guarantorConsents` and the retention schedule with legal holds. `pii.test.mjs` (7) proves the redaction; the client never builds the export |
+| R09-P2-04 | HIGH: no retention policy, no TTL, no purge — data kept for ever | **IMPLEMENTED AND VERIFIED (pure core)** | `functions/src/retention.ts` states a window, an action and a reason per category (`RETENTION_POLICY`), plus `LEGAL_HOLDS` for the payment, KYC and consent records that must never be swept; `decideRetention`, `planRetentionSweep` (batch-capped, undated documents retained and reported) and `anonymisePatch` are pure and tested. The daily `applyRetentionPolicy` scheduled function executes that same plan and writes `retention_reports` (admin-only, client-unwritable). `retention.test.mjs` (8), rules test for the report collections, `docs/privacy/RETENTION.md` |
+| R09-P2-05 | MEDIUM: privacy copy promised encryption the code did not implement; NIN handling was not minimised | **IMPLEMENTED AND VERIFIED** | "stored with encryption-at-rest" and "Guarantor National ID numbers are encrypted" replaced with what the code does (access-controlled, reviewer-only, masked, never shown to clients). `functions/src/pii.ts` adds `maskNin`, a salted HMAC `ninFingerprint` (no salt ⇒ no fingerprint), `scrubForLog`/`scrubFields`, and the reviewer's verification now stores `ninMasked` + `ninFingerprintHash` and flags NIN reuse across submissions; the new fields are admin-written in `firestore.rules`. `pii.test.mjs` |
+| R09-P2-06 | MEDIUM: `docs/privacy/DSAR.md` described a deletion flow that did not delete Storage objects | **IMPLEMENTED AND VERIFIED** | Rewritten from `ERASURE_STEPS`, `deleteMyAccount` and `exportMyData`: the real order, the retained categories with windows and reasons, the export path (in-app button, private cache, FileProvider) and the evidence collections. New `docs/privacy/RETENTION.md` is the schedule and is listed in `docs/DOCUMENT_MAP.md` |
+| R09-P2-07 | LOW: avatars publicly readable | **CLOSED IN R07 — re-verified, not re-implemented** | the review predates R07: `storage.rules` requires `isAuthenticated()` for both `avatars/{userId}` and `users/{userId}/avatars`. Recorded here rather than silently dropped; the Storage rules are checked statically, not executed |
+
+### Verification evidence (executed)
+
+- CI run **44766861805** / **44766861764** (commit `aaa1968`, the last commit of the round):
+  **all 7 checks pass** — Compile and unit tests (3m09s), Backend build and tests, Backend handler
+  tests, Firestore rules tests (1m12s), Documentation checks, Secret scan and CodeRabbit.
+- Backend: `npm run build && npm test` in `functions/` — **272/272** `node --test` tests (250 after
+  R08 + 8 retention + 7 pii + 4 compliance + 3 accountDeletion; the two new files are registered in
+  `functions/package.json`). The build is clean under `tsc`.
+- Firestore rules: **24 tests** in the `rules` job (20 after R08 + 4 for this round: guarantor consent
+  versioning, submission consent versioning, consent/guarantor-consent receipts, and the retention and
+  erasure report collections).
+- Static guards: document map, README claims, doc links, traceability, architecture guards, query
+  limits, secret scan, and the new **consent-version guard** (client `POLICY_VERSION` must equal server
+  `CONSENT_VERSION`, and both must be dated) all pass.
+- Client: `ConsentVersionsTest` adds **5** JVM tests; the Android job is green, but the client case
+  count was not read from the run (no JDK/Android SDK in this environment).
+- CI caught one real defect in the new tests: the submission test asserted its denials *after*
+  creating the document, so the permissive update rule answered instead of the create rule under
+  test. The denials now run first — the same class of mistake (a test that proves something other
+  than what it claims) the round is about.
+
+### Not claimed
+
+- **Nothing is deployed.** The retention sweep, the consent callables and the new rules have never
+  run against a real project; the schedule has never been observed firing.
+- **Storage purge is not executed against a real bucket**, and there is no Storage lifecycle rule for
+  abandoned KYC uploads — that is an infrastructure change and is stated as unhandled in
+  `docs/privacy/RETENTION.md`.
+- **Backups**: Firestore backups are outside the sweep's reach; a deleted document can persist in a
+  backup until it expires. Documented, not solved.
+- **Regulator filings, DPAs and provider sandbox behaviour remain UNVERIFIED.** `PROCESSORS.md` is
+  unchanged by this round.
 
 ## Completion declarations
 

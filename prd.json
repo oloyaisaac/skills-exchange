@@ -5886,7 +5886,7 @@
       "phase": 19,
       "title": "Rewrite account erasure server-side",
       "priority": "CRITICAL",
-      "status": "NOT_STARTED",
+      "status": "DONE",
       "depends_on": [
         "REM-022",
         "REM-024"
@@ -5921,14 +5921,14 @@
       "source_finding": "MR-041",
       "reviewer": "R09",
       "review_report": "review_results/R09_PRIVACY.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "notes": "R09: erasure covers the account's messages in jobs it worked on, writes an account_deletions record with retained categories and a notice, and deletes Auth last. Evidence: accountDeletion.test.mjs (11), rules test. Not verified: Storage purge against a real bucket."
     },
     {
       "id": "REM-042",
       "phase": 19,
       "title": "Correct the privacy notice",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "DONE",
       "depends_on": [
         "REM-041",
         "REM-044"
@@ -5959,14 +5959,14 @@
       "source_finding": "MR-042",
       "reviewer": "R09",
       "review_report": "review_results/R09_PRIVACY.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "notes": "R09: the privacy sheet and guarantor sheet no longer claim encryption the code does not implement; DSAR.md rewritten to the real deletion order. Evidence: docs/privacy/DSAR.md, docs/privacy/RETENTION.md."
     },
     {
       "id": "REM-043",
       "phase": 19,
       "title": "Implement retention and purge",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "DONE",
       "depends_on": [
         "REM-041"
       ],
@@ -5998,14 +5998,14 @@
       "source_finding": "MR-043",
       "reviewer": "R09",
       "review_report": "review_results/R09_PRIVACY.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "notes": "R09: RETENTION_POLICY (window/action/reason), LEGAL_HOLDS, planRetentionSweep and the daily applyRetentionPolicy sweep writing retention_reports. Undated documents are retained and reported. Evidence: retention.test.mjs (8). Not verified: the schedule firing (nothing deployed)."
     },
     {
       "id": "REM-044",
       "phase": 19,
       "title": "Add consent records, processor disclosure and DSAR workflow",
       "priority": "MEDIUM",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "status_note": "Consent receipts (dated version + three grants) are written by the recordConsent callable and read-only to clients; exportMyData returns the account data envelope with third-party guarantor identifiers stripped; processor list and 30-day DSAR procedure published under docs/privacy/. 3 tests. The onboarding UI does not yet call recordConsent or offer the export, so consent is not demonstrable in the app.",
       "independent_verification": "PENDING",
 
@@ -6038,14 +6038,14 @@
       "source_finding": "MR-044",
       "reviewer": "R09",
       "review_report": "review_results/R09_PRIVACY.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "notes": "R09: recordConsent wired to the privacy sheet, recordGuarantorConsent (dated third-party grant required by rules), withdrawConsent (recorded, never erased), in-app DSAR export with server-side redaction. Evidence: compliance.test.mjs, pii.test.mjs, ConsentVersionsTest, 2 rules tests, check_consent_version.mjs."
     },
     {
       "id": "REM-045",
       "phase": 19,
       "title": "Minimise and mask NIN data",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "DONE",
       "depends_on": [
         "REM-041"
       ],
@@ -6076,7 +6076,7 @@
       "source_finding": "MR-045",
       "reviewer": "R09",
       "review_report": "review_results/R09_PRIVACY.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "notes": "R09: pii.ts masks NINs, fingerprints them under PII_SALT (no salt, no fingerprint) for duplicate detection, scrubs logs; verification stores ninMasked/ninFingerprintHash (admin-only fields in rules). Evidence: pii.test.mjs (7)."
     },
     {
       "id": "REM-046",

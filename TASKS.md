@@ -83,7 +83,26 @@ Evidence: Android CI job green (3m32s) in run 44762882572, backend 250/250, rule
 suite rewritten to prove the fail-closed release. Not verified: any real provider traffic, deploy,
 and the scheduled sweeps.
 
-**R09 — next in the reviewer list.** R10–R15 awaiting.
+**R09 — COMPLETE.** Privacy was a document, not a control. Erasure now reaches the account's own
+messages in jobs it worked on (not just the jobs it posted), and every run writes an
+`account_deletions` record with counts, the retained categories and a notice that says which records
+the law keeps and for how long. Consent is a receipt, not a tap: the privacy sheet calls
+`recordConsent` and cannot report agreement until the server answers; third-party guarantor consent is
+a separate, dated grant (`recordGuarantorConsent`, `users/{uid}/guarantor_consents`) that the rules
+require before a guarantor row or submission exists; `withdrawConsent` records the revocation and
+never deletes the receipt. The DSAR export is reachable from the app ("Download my data"), and the
+server redacts the guarantor submission — NIN masked, names, phones and photo paths dropped — before
+the file reaches the share sheet. Retention exists as code: `RETENTION_POLICY` with a window, an
+action and a reason per category, legal holds that are never swept, and a daily `applyRetentionPolicy`
+sweep that retains and reports what it cannot date. The copy no longer claims encryption the code does
+not do. Evidence: backend 272/272, rules 24/24, 7 CI checks green (run 44766861805), new
+`check_consent_version.mjs` guard. Not verified: deployment, the schedule firing, Storage purge against
+a real bucket, backups, regulator filings.
+REM-037 stays `IN_PROGRESS` on purpose: R09 erases both sides' dispute records with the account, so
+"preserve the complaint while erasing the complainant" is not implemented — it needs a product
+decision about who may read a preserved complaint afterwards, and the erasure does not pretend
+otherwise.
+R10–R15 awaiting.
 
 ## Review Track — 2026-11-19 (not started)
 
@@ -483,7 +502,7 @@ _Last synchronized: 2026-10-11T15:24:11+03:00 â€” Phase 17 documentation st
 
 ## Remediation Track — Prompt 3 (2026-11-19)
 
-Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDINGS.md`. Full task detail, dependencies, tests and acceptance criteria: `IMPLEMENTATION_ROADMAP.md`. **Wave 1f (2026-11-20): REM-069/072 `COMPLETED`; REM-005/011/023/024/026–029/039/044/071 `IN_PROGRESS`; REM-001/002/006/010/012–016/021/022/034/035/049/051/070 `VERIFICATION_PENDING`; the rest `NOT_STARTED`.**
+Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDINGS.md`. Full task detail, dependencies, tests and acceptance criteria: `IMPLEMENTATION_ROADMAP.md`. **Wave 1g (R09, 2026-11-20): REM-041/042/043/044/045 `DONE`; REM-037 stays `IN_PROGRESS` (see the R09 note).** Previous wave — **Wave 1f (2026-11-20): REM-069/072 `COMPLETED`; REM-005/011/023/024/026–029/039/044/071 `IN_PROGRESS`; REM-001/002/006/010/012–016/021/022/034/035/049/051/070 `VERIFICATION_PENDING`; the rest `NOT_STARTED`.**
 
 | Task | Priority | Reviewer | Task title | Depends on | Status |
 |---|---|---|---|---|---|
@@ -496,7 +515,7 @@ Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDI
 | REM-028 | CRITICAL | R08 | Delete the fabricated payout stub | REM-026 | IN_PROGRESS |
 | REM-034 | CRITICAL | R10 | Implement real SOS dispatch | REM-002; REM-011 | VERIFICATION_PENDING |
 | REM-035 | CRITICAL | R10 | Add server push and escalation | REM-034; REM-023 | VERIFICATION_PENDING |
-| REM-041 | CRITICAL | R09 | Rewrite account erasure server-side | REM-022; REM-024 | NOT_STARTED |
+| REM-041 | CRITICAL | R09 | Rewrite account erasure server-side | REM-022; REM-024 | DONE |
 | REM-064 | CRITICAL | R11 | Make the Android test suite executable | REM-001 | NOT_STARTED |
 | REM-003 | HIGH | R01 | Split god classes and establish module boundaries | REM-001 | NOT_STARTED |
 | REM-005 | HIGH | R14 | Create a CI pipeline | REM-001; REM-002 | IN_PROGRESS |
@@ -515,9 +534,9 @@ Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDI
 | REM-030 | HIGH | R08 | Enforce escrow state transitions server-side | REM-029 | NOT_STARTED |
 | REM-031 | HIGH | R08 | Create a server-side ledger and settlement record | REM-026 | NOT_STARTED |
 | REM-036 | HIGH | R10 | Harden the doorstep PIN | REM-022 | NOT_STARTED |
-| REM-037 | HIGH | R09 | Preserve complaints when deleting an account | REM-041 | NOT_STARTED |
-| REM-042 | HIGH | R09 | Correct the privacy notice | REM-041; REM-044 | NOT_STARTED |
-| REM-043 | HIGH | R09 | Implement retention and purge | REM-041 | NOT_STARTED |
+| REM-037 | HIGH | R09 | Preserve complaints when deleting an account | REM-041 | IN_PROGRESS |
+| REM-042 | HIGH | R09 | Correct the privacy notice | REM-041; REM-044 | DONE |
+| REM-043 | HIGH | R09 | Implement retention and purge | REM-041 | DONE |
 | REM-046 | HIGH | R04 | Export the Room schema and test migrations | REM-001 | NOT_STARTED |
 | REM-047 | HIGH | R04 | Move money to integer minor units | REM-046 | NOT_STARTED |
 | REM-051 | HIGH | R05 | Remove fabricated transcription fallback | - | VERIFICATION_PENDING |
@@ -542,8 +561,8 @@ Derived from the 73 consolidated findings in `review_results/MASTER_REVIEW_FINDI
 | REM-038 | MEDIUM | R10 | Add SOS throttling, dedup and admin audit | REM-034; REM-023 | NOT_STARTED |
 | REM-039 | MEDIUM | R10 | Strengthen guarantor and identity checks | - | IN_PROGRESS |
 | REM-040 | MEDIUM | R10 | Make admin escalation reachable | REM-023; REM-035 | NOT_STARTED |
-| REM-044 | MEDIUM | R09 | Add consent records, processor disclosure and DSAR workflow | - | IN_PROGRESS |
-| REM-045 | MEDIUM | R09 | Minimise and mask NIN data | REM-041 | NOT_STARTED |
+| REM-044 | MEDIUM | R09 | Add consent records, processor disclosure and DSAR workflow | - | DONE |
+| REM-045 | MEDIUM | R09 | Minimise and mask NIN data | REM-041 | DONE |
 | REM-048 | MEDIUM | R04 | Remove destructive fallback and define dual-write conflict rules | REM-046 | NOT_STARTED |
 | REM-049 | MEDIUM | R04 | Bound and index list reads | - | VERIFICATION_PENDING |
 | REM-050 | MEDIUM | R04 | Fix chat dual-store ordering | REM-046 | NOT_STARTED |

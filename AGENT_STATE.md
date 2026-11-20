@@ -1,3 +1,29 @@
+## 2026-11-20 (Prompt-4 R09 COMPLETE) - PRIVACY GATE PASSED
+
+- R09 closed on `arena/e11de41e-skills-exchange` (PR #24). The review's point was that privacy was a
+  document, not a control: erasure missed the worker's own chat in the resident's job, `recordConsent`
+  had no caller, `exportMyData` had no entry point, nothing purged anything on a schedule, and the UI
+  claimed encryption the code did not implement.
+- Erasure: `deleteMyAccount` also purges the account's messages in jobs it was assigned to (matched on
+  `senderId`; a name-only legacy attribution is not deleted because ownership is not provable), writes
+  an `account_deletions` record with counts and retained categories, and returns a plain-language
+  notice. `ERASURE_STEPS` is the published order; Auth is last and only when nothing is pending.
+- Consent: the privacy sheet records a receipt and cannot claim agreement without one; third-party
+  guarantor consent is a separate dated grant (`recordGuarantorConsent`), required by `firestore.rules`
+  on both `guarantors` and `guarantor_submissions`; `withdrawConsent` records revocation on the receipt
+  instead of deleting the proof. `scripts/check_consent_version.mjs` keeps client and server versions
+  equal.
+- Retention: `functions/src/retention.ts` (policy as data, legal holds, pure decision + plan), a daily
+  `applyRetentionPolicy` sweep writing `retention_reports`, and undated documents retained and counted
+  rather than purged. New `docs/privacy/RETENTION.md`; `docs/privacy/DSAR.md` corrected to the code.
+- Data minimisation: `functions/src/pii.ts` (masking, salted fingerprint, log scrubbing, third-party
+  redaction for the subject export); the reviewer's NIN verification now stores `ninMasked` and
+  `ninFingerprintHash`, both admin-only in rules.
+- Evidence: backend 272/272, Firestore rules 24/24, seven CI checks green (run 44766861805). CI caught
+  a test that proved the wrong rule (denials asserted after creating the document) - fixed by ordering.
+- Not claimed: deployment, the sweep firing, Storage purge against a real bucket, backups, and any
+  regulator/DPA/provider-sandbox claim (all UNVERIFIED). REM-037 stays IN_PROGRESS by decision.
+
 ## 2026-11-20 (Prompt-4 R08 COMPLETE) - PAYMENTS GATE PASSED
 
 - R08 closed on `arena/5eb05553-skills-exchange`. The review's verdict was that the platform kept
