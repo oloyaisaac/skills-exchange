@@ -3,7 +3,6 @@ package com.example.ui
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import com.example.ui.screens.OnboardingScreen
@@ -31,10 +30,13 @@ class OnboardingComposeTest {
         compose.setContent { OnboardingScreen(viewModel = viewModel) }
 
         compose.onNodeWithText("What describes you?").assertExists()
-        compose.onNodeWithText("Continue").assertIsNotEnabled()
+        compose.onNodeWithText("Existing Client").assertExists()
+        compose.onNodeWithText("Existing Worker").assertExists()
+        compose.onNodeWithText("New Here").assertExists()
 
-        compose.onNodeWithText("I want to create a brand new account").performClick()
+        // A role is preselected (CLIENT), so Continue is live and advances to authentication.
+        compose.onNodeWithText("Continue").assertIsEnabled().performClick()
 
-        compose.onNodeWithText("Continue").assertIsEnabled()
+        compose.onNodeWithText("Sign in or Register").assertExists()
     }
 }
