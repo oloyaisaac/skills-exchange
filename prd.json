@@ -6761,7 +6761,8 @@
       "phase": 19,
       "title": "Make the Android test suite executable",
       "priority": "CRITICAL",
-      "status": "NOT_STARTED",
+  "status": "DONE",
+  "status_note": "Closed by R11 verification, not by new code: the Android module compiles and its 478 unit tests execute on every push in the 'Android build' workflow (job 'Compile and unit tests'), and a deliberate regression fails that job \u2014 the R09 round watched it reject a wrong expectation. The finding's '355 tests' was the count at review time; the suite has grown to 478. Instrumented tests are still only a template, which is REM-065's remaining half.",
       "depends_on": [
         "REM-001"
       ],
@@ -6799,7 +6800,8 @@
       "phase": 19,
       "title": "Add coverage and critical-path E2E",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+  "status": "IN_PROGRESS",
+  "status_note": "R11 added the coverage half on both sides: backend thresholds (lines 90 / branches 80 / functions 90) against a measured 96.38/85.94/96.81, and JaCoCo for the client with jacocoTestReport, jacocoTestCoverageVerification (20 % line floor) and per-run reporting in the Android CI job. Critical journeys are covered at the ViewModel/Compose level (7 Compose tests) and the safety/money callables at the emulator level (19 handler tests), but no instrumented end-to-end journey runs on a device: app/src/androidTest still holds the template only.",
       "depends_on": [
         "REM-064"
       ],
@@ -6837,7 +6839,8 @@
       "phase": 19,
       "title": "Make verification evidence reproducible",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+  "status": "IN_PROGRESS",
+  "status_note": "R11 removed the unreproducible evidence: 190 tracked artefacts (build.log, 81-log directories, diag-*.txt, ui-*.xml, two 32 MB APKs, res/ and META-INF/ build output) that described commits that no longer exist, and README now points at the CI run for a commit instead of at historical logs. docs/qa/TEST_STRATEGY.md records the command, count and environment behind every suite, with an UNVERIFIED marker wherever nothing was executed. Remaining: device and provider evidence still cannot be produced in this environment, so claims about them stay marked unverified.",
       "depends_on": [
         "REM-005"
       ],

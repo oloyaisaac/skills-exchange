@@ -87,6 +87,44 @@ jobs:
           set -o pipefail
           ./gradlew :app:testDebugUnitTest --stacktrace --no-daemon 2>&1 | tee unit-tests.log
 
+      # R11-P2-05: coverage is measured and gated, not assumed.
+      - name: Unit-test coverage (JaCoCo)
+        run: |
+          set -o pipefail
+          ./gradlew :app:jacocoTestReport :app:jacocoTestCoverageVerification \
+            --stacktrace --no-daemon 2>&1 | tee coverage.log
+
+      - name: Summarise coverage
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, re, xml.etree.ElementTree as ET
+          files = glob.glob("app/build/reports/jacoco/**/jacoco*.xml", recursive=True) + \
+                  glob.glob("app/build/reports/jacoco/test/jacocoTestReport.xml")
+          rows = []
+          for path in sorted(set(files)):
+              root = ET.parse(path).getroot()
+              for counter in root.findall("counter"):
+                  if counter.get("type") == "LINE":
+                      missed = int(counter.get("missed")); covered = int(counter.get("covered"))
+                      total = missed + covered
+                      pct = (covered / total * 100) if total else 0.0
+                      rows.append(f"LINE coverage: {pct:.2f}% ({covered}/{total}) from {path}")
+          with open("coverage-summary.txt", "w") as out:
+              out.write("\n".join(rows) + "\n" if rows else "no coverage XML found\n")
+          print(open("coverage-summary.txt").read())
+          PY
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-coverage
+          path: |
+            app/build/reports/jacoco/**
+            coverage-summary.txt
+          if-no-files-found: ignore
+
       - name: Publish diagnostics on failure
         if: failure()
         run: |

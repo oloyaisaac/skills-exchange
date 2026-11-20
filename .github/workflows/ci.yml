@@ -1,8 +1,11 @@
 # REM-005: continuous integration.
 #
-# Scope today: backend build/tests, documentation integrity and secret scanning. The Android job is
-# intentionally absent until REM-001 restores compilation and REM-064 makes the JVM suite runnable;
-# adding it now would only produce a permanently red check. The rules job arrives with REM-019.
+# Scope: backend build, unit tests and a coverage floor; callable handlers on the Firestore emulator;
+# Firestore/Storage rules; documentation and secret checks. The Android compile-and-unit-test job lives
+# in `android.yml` (R01), and the rules emulator job is here (R07).
+#
+# Every gate below is a *blocking* check: the suite count is asserted, so a step that quietly runs
+# nothing at all fails instead of passing on an empty list.
 name: CI
 
 on:
@@ -30,6 +33,28 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+      # R11-P2-06/R11 flake policy: the suite is deterministic or it is not evidence. Three
+      # identical runs must produce identical results; the backend suite is pure Node with injected
+      # fakes, so this is cheap enough to be a gate rather than an occasional check.
+      - name: Repeat the unit suite three times (flake check)
+        run: |
+          set -euo pipefail
+          for run in 1 2 3; do
+            echo "::group::run $run"
+            npm test 2>&1 | tee "/tmp/unit-run-$run.log" | grep -E "^# (pass|fail) "
+            grep -qx "# fail 0" "/tmp/unit-run-$run.log"
+            echo "::endgroup::"
+          done
+          first=$(grep "^# pass " /tmp/unit-run-1.log)
+          for run in 2 3; do
+            [ "$(grep "^# pass " /tmp/unit-run-$run.log)" = "$first" ] || {
+              echo "run $run reported a different number of passing tests than run 1"; exit 1; }
+          done
+
+      # R11-P2-05: measured coverage with a floor. Node's own test-coverage thresholds fail the step
+      # when line/branch/function coverage drops below the floor, so "we have tests" is a number the
+      # pipeline checks rather than a claim in a document.
+      - run: npm run test:coverage
 
   functions-handlers:
     name: Backend handler tests (Firestore emulator)
@@ -51,14 +76,15 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm install --no-save --no-audit --no-fund firebase-tools@13
-      - name: Run payout handlers on the Firestore emulator
+      - name: Run callable handlers on the Firestore emulator
         run: |
           set -euo pipefail
           npx firebase emulators:exec --config ../firebase.json --only firestore \
             --project demo-skills-exchange "npm run test:handlers" 2>&1 | tee "$RUNNER_TEMP/handlers.log"
           grep -E "^# (tests|pass|fail) " "$RUNNER_TEMP/handlers.log"
-          # The step only passes when exactly the five handler tests ran and none failed.
-          grep -qx "# pass 5" "$RUNNER_TEMP/handlers.log"
+          # The step only passes when exactly the handler tests ran and none failed: an exact count
+          # makes a suite that silently runs nothing a failure rather than a green check.
+          grep -qx "# pass 19" "$RUNNER_TEMP/handlers.log"
           grep -qx "# fail 0" "$RUNNER_TEMP/handlers.log"
 
   rules:
@@ -108,6 +134,8 @@ jobs:
       - run: node scripts/check_no_pii_logs.mjs --selftest
       - run: node scripts/check_no_pii_logs.mjs
       - run: node scripts/check_backup_policy.mjs
+      - run: node scripts/check_test_registration.mjs --selftest
+      - run: node scripts/check_test_registration.mjs
       - run: node scripts/secret_scan.mjs
 
   secret-scan:

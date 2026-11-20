@@ -1,7 +1,0 @@
-8b88e00 C1/C2/C3 DEVICE TEST — FIX ONLY THE CURRENTLY OBSERVED UI/AUTH PROBLEMS
-38d6f9d C1/C2/C3 implemented, verification pending (compile running).
-b6eca59 TASK: DOCUMENT THE COMPLETE FEATURE CONNECTION AUDIT AND THRER ARE SOME CHANGES MADE
-fc0964e fix(auth): use GoogleSignInHelper.getClient for sign-in intent
-ac9a67b feat: add OnboardingScreen composable for multi-step user onboarding workflow
-5edfe45 feat: add  on screen
-d843279 feat:fix 1 and fix 2(fix1 — FIX PROFILE NAME/INITIALS DISPLAY & fix 2 — FIRST-LAUNCH ONBOARDING + ROLE SELECTION

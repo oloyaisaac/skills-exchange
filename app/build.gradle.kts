@@ -7,6 +7,8 @@ plugins {
   alias(libs.plugins.roborazzi)
   alias(libs.plugins.secrets)
   alias(libs.plugins.google.services)
+  // R11-P2-05: coverage is measured, not assumed. `jacoco` is a core Gradle plugin (no version).
+  jacoco
 }
 
 android {
@@ -102,6 +104,75 @@ tasks.withType<Test> {
   // Android sandbox (SDK 34+ requires 17), so the whole project pins 17.
   javaLauncher = javaToolchains.launcherFor {
     languageVersion.set(JavaLanguageVersion.of(21))
+  }
+}
+
+// R11-P2-05: unit-test coverage for the Android client.
+//
+// The reviewer's finding was that nothing measured how much of the client the JVM tests actually
+// exercise, so "the suite is big" stood in for "the suite covers the risk". `:app:jacocoTestReport`
+// writes the numbers and `:app:jacocoTestCoverageVerification` fails the build below the floor.
+jacoco {
+  // 0.8.12 understands Java 21 class files; the Gradle default predates the toolchain.
+  toolVersion = "0.8.12"
+}
+
+tasks.withType<Test>().configureEach {
+  extensions.configure<org.gradle.testing.jacoco.plugins.JacocoTaskExtension> {
+    // Without this the agent is never attached and every report would claim 0%.
+    isEnabled = true
+  }
+}
+
+fun jacocoClasses(): FileCollection {
+  val kotlinClasses = fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug").get().asFile)
+  val javaClasses = fileTree(layout.buildDirectory.dir("intermediates/javac/debug/compileDebugJavaWithJavac/classes").get().asFile)
+  return files(kotlinClasses, javaClasses).filter { file ->
+    val path = file.path
+    // Generated, not written by hand: no test can meaningfully cover it, and including it would make
+    // the number depend on how much code the build generates.
+    !path.endsWith("R.class") &&
+      !path.contains("/R$") &&
+      !path.contains("BuildConfig") &&
+      !path.contains("_Factory") &&
+      !path.contains("_Impl") &&
+      !path.contains("ComposableSingletons") &&
+      !path.contains("hilt_aggregated_deps")
+  }
+}
+
+tasks.register<org.gradle.testing.jacoco.tasks.JacocoReport>("jacocoTestReport") {
+  group = "verification"
+  description = "Writes unit-test coverage (XML + HTML) for the debug variant."
+  dependsOn("testDebugUnitTest")
+  classDirectories.setFrom(jacocoClasses())
+  sourceDirectories.setFrom(files("src/main/java"))
+  executionData.setFrom(files(layout.buildDirectory.file("jacoco/testDebugUnitTest.exec")))
+  reports {
+    xml.required.set(true)
+    html.required.set(true)
+    csv.required.set(false)
+  }
+}
+
+tasks.register<org.gradle.testing.jacoco.tasks.JacocoCoverageVerification>("jacocoTestCoverageVerification") {
+  group = "verification"
+  description = "Fails when unit-test coverage falls below the floor."
+  dependsOn("testDebugUnitTest")
+  classDirectories.setFrom(jacocoClasses())
+  sourceDirectories.setFrom(files("src/main/java"))
+  executionData.setFrom(files(layout.buildDirectory.file("jacoco/testDebugUnitTest.exec")))
+  violationRules {
+    rule {
+      // A floor, not a target: it catches a collapse (a suite that stops running, a module that stops
+      // being exercised), and sits below today's measured value so ordinary refactoring stays green.
+      // The measured number is published as a CI artifact.
+      limit {
+        counter = "LINE"
+        value = "COVEREDRATIO"
+        minimum = "0.20".toBigDecimal()
+      }
+    }
   }
 }
 

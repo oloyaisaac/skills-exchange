@@ -1,6 +1,0 @@
-12
-31
-    versionName=26.33.32 (190300-974685114)
-    versionName=22.06.18 (190300-433619428)
-package:com.google.android.gms
-package:com.google.android.gms.location.history

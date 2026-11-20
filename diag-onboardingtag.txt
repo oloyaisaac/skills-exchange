@@ -1,2 +1,0 @@
-﻿OnboardingScreen.kt:43: * Documents (on-device, via `adb logcat -s OnboardingAuth`) whether the Google activity
-OnboardingScreen.kt:47: private const val OnboardingAuthTag = "OnboardingAuth"

@@ -1,5 +1,47 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [PROMPT-4 / R11] QA: tests that run, counts that are checked, evidence that exists
+
+- **A suite can no longer exist and never run (R11-P2-04, HIGH).** `functions/package.json` listed its
+  test files by hand, and `handlers.emulator.test.mjs` was picked up by Node's discovery while being
+  absent from `npm test` — two independent ways to write a test nobody executes. `npm test` is now
+  `node --test test/*.test.mjs`, and `scripts/check_test_registration.mjs` fails the build when a file
+  in `functions/test/` is run by no script, when `test:coverage` covers a different set from `test`, or
+  when CI stops invoking one of the three commands. Its `--selftest` plants an unregistered suite and
+  proves the guard refuses it, because a check that cannot fail is itself a false claim.
+- **Coverage is measured and gated (R11-P2-05, HIGH).** Nothing measured how much of either side the
+  tests exercised. The backend now has `npm run test:coverage` with floors of 90 lines / 80 branches /
+  90 functions, against a measured 96.38 / 85.94 / 96.81 (`lib/**/*.js`, Node 22.22.3) — a `99` run
+  fails, so the floor is real. The client gained JaCoCo 0.8.12: `jacocoTestReport` writes XML + HTML,
+  `jacocoTestCoverageVerification` enforces a 20 % line floor over hand-written classes only, and the
+  Android workflow runs both, prints the LINE total and uploads `android-coverage`. The backend floor
+  is stated as a floor, not a target: `momoDisbursement.js` sits at 78.45 % lines because the
+  provider's error branches cannot be reached without a sandbox account.
+- **The emulator suite covers the round-10 handlers, and its count is a gate (R11-P2-06, HIGH).**
+  `handlers.emulator.mjs` went from 5 tests to 19: `fileReport` acknowledgement, priority and refusal
+  of a non-participant; `getReportsQueue` admin-only and ordered; `resolveReport` forward-only and
+  attributed; `submitRating` recorded once and refusing strangers; `getSosDispatchStatus` scoped to the
+  caller's incident; `getSafetyMetrics` admin-only and reporting a failed read as unknown rather than
+  zero. The CI step asserts `# pass 19`, so a suite that silently executes nothing turns the job red.
+  The backend unit suite is repeated three times per pull request with an identical pass count.
+- **Stale evidence that described other commits is gone (R11-P2-07, MEDIUM).** 190 tracked artefacts —
+  `build.log`, nine `c123_verify_*.log` files, forty `diag-*.txt` dumps, `ui-*.xml`, `build_result*.txt`,
+  two 32 MB APKs and stray `res/`/`META-INF/` build output — 74 MB testifying to builds that no longer
+  exist in history. Deleted. `README.md` no longer states test counts (it said 171 backend and 355
+  Android against 310 and 478) and instead names the command that prints the current figure and the CI
+  workflow that is the evidence for a commit. New `docs/qa/TEST_STRATEGY.md` records what runs where,
+  the gates, the floors, the flake policy, a critical-path matrix and seven remaining gaps by risk.
+- **The document-map check now checks the document map (beyond the findings).** It read one directory
+  level of `docs/`, so a document in `docs/privacy/`, `docs/safety/` or `docs/qa/` could be added and
+  never listed. It walks the tree now: 22 → 28 documents verified, and a stray file fails it.
+- **Four findings were already closed and were not re-implemented (R11-P2-01/02/03).** The rules suite
+  (26 emulator tests), the Compose tests (7 in 3 files) and the Android CI job all exist and run; they
+  are recorded as stale, with the stale `ci.yml` header that still claimed the job was absent corrected.
+- Not verified, and not claimed: the 14 new handler tests and every Gradle/JaCoCo change are executed
+  in CI only (no emulator, no JDK here); there is still no instrumented device test, no coverage number
+  for `lib/index.js`, no flake evidence for Android or rules, no provider sandbox tests and no
+  screenshot baseline.
+
 ### [2026-11-20] [PROMPT-4 / R10] Safety: reports that reach a person, alerts that tell the truth
 
 - **A report is now a record an operator can act on (R10-P2-02, CRITICAL).** `reportUser` wrote a row
