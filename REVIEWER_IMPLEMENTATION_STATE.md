@@ -276,17 +276,27 @@ provider's.
 
 ### Verification evidence (executed)
 
+- CI run **44762882572** / **44762882657** (the last commit of the round): **all 7 checks pass** —
+  Compile and unit tests (3m32s), Backend build and tests, Backend handler tests, Firestore rules
+  tests, Documentation checks, Secret scan and CodeRabbit.
 - Backend: `npm run build && npm test` in `functions/` — **250/250** `node --test` tests (202 after R07
   + 9 wallet + 6 material advance + 4 fee ledger + 8 reconciliation + 13 payout core + 8 refund
   status). The build is clean under `tsc`.
+- Backend **handler** suite (real handlers against the Firestore emulator) was rewritten: it used to
+  assert that a release always succeeds. It now proves the opposite, which is the finding — with no
+  provider configuration the release is refused, the escrow stays `FUNDS_LOCKED_IN_ESCROW`, and
+  neither `payouts` nor the legacy `momo_payouts` record is written.
 - Static guards: document map, README claims, doc links, traceability, architecture guards, query
   limits (all list queries carry `limit`) and secret scan all pass.
 - Firestore rules: three new emulator tests (wallet/ledger/withdrawal deny-all, payout/fee/report
   admin-read-only, material advance visible to the two parties and writable by neither) — **20 tests**
   in the `rules` CI job.
 - Client: `ServerWalletTest` adds **6** JVM tests over the response parser and the new typed
-  contracts. The client suite is **not executed in this environment** (no JDK/Android SDK) — it runs
-  in CI.
+  contracts; the suite is executed in CI (the Android job is green), not in this environment — there
+  is no JDK or Android SDK here, and the total case count was not read from the run.
+- CI caught two real defects in the new client code that reading did not: the typed contract refused
+  `requestWalletCashout`/`getRefundStatus` because the service did not send their required fields, and
+  two `assertEquals` calls put the JUnit4 message last, which does not compile.
 
 ### Not claimed
 

@@ -79,8 +79,9 @@ collected total. Hourly `reconcilePayments` and `reconcileRefunds` sweeps settle
 confirms, flag amount disagreements for humans and write immutable reports; refunds are now polled and
 a partial refund reduces the escrow while keeping the remainder payable. Evidence: backend 250/250
 (48 new tests over six new pure modules), three new emulator rules tests (20 total), guards pass.
-Not verified: any real provider traffic, deploy, the scheduled sweeps, and the client suite (no JDK
-here — it runs in CI).
+Evidence: Android CI job green (3m32s) in run 44762882572, backend 250/250, rules 20/20, handler
+suite rewritten to prove the fail-closed release. Not verified: any real provider traffic, deploy,
+and the scheduled sweeps.
 
 **R09 — next in the reviewer list.** R10–R15 awaiting.
 
