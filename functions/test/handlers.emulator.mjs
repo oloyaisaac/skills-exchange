@@ -254,7 +254,7 @@ test("the report queue is admin-only", async () => {
   const queue = await callable.reportsQueue({}, ADMIN);
   assert.equal(queue.reports.length, 1);
   assert.equal(queue.reports[0].priority, "P0");
-  assert.equal(queue.breachingSla, false, "a fresh report is inside its window");
+  assert.equal(queue.reports[0].breachingSla, false, "a fresh report is inside its window");
   assert.equal(queue.operatorUid, "admin_1");
 });
 

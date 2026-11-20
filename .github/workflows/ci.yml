@@ -87,6 +87,23 @@ jobs:
           grep -qx "# pass 19" "$RUNNER_TEMP/handlers.log"
           grep -qx "# fail 0" "$RUNNER_TEMP/handlers.log"
 
+      # A failing handler test is worth more than a red mark: this sandbox cannot read GitHub's log
+      # blobs, so the log is published to the `ci-logs` branch (the Android job does the same) and an
+      # operator can read the assertion that failed straight out of the repository.
+      - name: Publish the handler log on failure
+        if: failure()
+        working-directory: ${{ github.workspace }}
+        run: |
+          mkdir -p ci-logs
+          cp "$RUNNER_TEMP/handlers.log" ci-logs/handlers.log 2>/dev/null || true
+          printf 'run: %s\ncommit: %s\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > ci-logs/README.txt
+          git config user.email "ci@users.noreply.github.com"
+          git config user.name "CI diagnostics"
+          git checkout --orphan ci-logs-publish
+          git add -f ci-logs
+          git commit -m "ci: handler diagnostics for $GITHUB_SHA"
+          git push -f origin HEAD:ci-logs
+
   rules:
     name: Firestore rules tests (emulator)
     runs-on: ubuntu-latest
