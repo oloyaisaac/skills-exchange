@@ -32,6 +32,7 @@ import com.example.data.remote.MoMoPaymentPhase
 import com.example.data.remote.MoMoPaymentUiState
 import com.example.ui.theme.*
 import com.example.util.CurrencyRegion
+import com.example.util.SecureScreen
 
 // Brand colors
 val MtnYellow = Color(0xFFFFCC00)
@@ -52,6 +53,11 @@ fun EscrowAndProofSheet(
     // carries the backend's provider-verified result. The device never flips escrow.
     onInitiateMobileMoneyPayment: (phone: String) -> Unit,
     mobileMoneyPaymentState: MoMoPaymentUiState? = null,
+    // R02-P2-01/P2-02: release is a server round-trip with its own visible state.
+    onReleaseFunds: (() -> Unit)? = null,
+    isReleasingFunds: Boolean = false,
+    releaseError: String? = null,
+    releaseMessage: String? = null,
     onDismiss: () -> Unit,
     onVerifyDoorstepPin: ((enteredPin: String, expectedPin: String, onResult: (Boolean) -> Unit) -> Unit)? = null,
     onRequestMaterialAdvance: ((amount: Double) -> Unit)? = null,
@@ -69,6 +75,8 @@ fun EscrowAndProofSheet(
     isClearingSos: Boolean = false,
     sosClearError: String? = null
 ) {
+    // R02-P2-06: identity/PIN surface — block screenshots and recents preview.
+    SecureScreen()
     var selectedChannel by remember { mutableStateOf(job.paymentChannel) }
     var phoneNumber by remember { mutableStateOf(job.momoPhoneNumber) }
 
@@ -1021,6 +1029,38 @@ fun EscrowAndProofSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // R02-P2-01: server release feedback, shown before the state-specific controls.
+            if (releaseError != null) {
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = RedDangerLight,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, RedDanger),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                ) {
+                    Text(
+                        text = "Release failed: $releaseError",
+                        fontSize = 11.sp,
+                        color = RedDanger,
+                        modifier = Modifier.padding(10.dp)
+                    )
+                }
+            }
+            if (releaseMessage != null) {
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = IndustrialEmeraldLight,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, IndustrialEmerald),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                ) {
+                    Text(
+                        text = releaseMessage,
+                        fontSize = 11.sp,
+                        color = IndustrialEmeraldDark,
+                        modifier = Modifier.padding(10.dp)
+                    )
+                }
+            }
+
             // ESCROW ACTIONS (State Machine Triggers)
             when (job.escrowStatus) {
                 "QUOTE_PENDING", "DEPOSIT_PROMPTED" -> {
@@ -1033,7 +1073,9 @@ fun EscrowAndProofSheet(
                     Button(
                         onClick = {
                             if (paymentTrustMode == "CASH_SETTLEMENT") {
-                                onUpdateEscrowStatus("FUNDS_LOCKED_IN_ESCROW")
+                                // R02-P2-01: cash never enters escrow, so it must not be recorded as
+                                // locked funds. This records the agreement and says so plainly.
+                                onUpdateEscrowStatus("CASH_SETTLEMENT_ACKNOWLEDGED")
                             } else {
                                 showUssdPushModal = true
                             }
@@ -1055,6 +1097,38 @@ fun EscrowAndProofSheet(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
+                    }
+                }
+
+                "CASH_SETTLEMENT_ACKNOWLEDGED" -> {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Slate100,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Slate300),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = "Cash settlement recorded",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Slate800
+                            )
+                            Text(
+                                text = "No money is held by the platform on this job. Pay the worker in cash on arrival.",
+                                fontSize = 11.sp,
+                                color = Slate600
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = { onUpdateEscrowStatus("WORK_IN_PROGRESS") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(6.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = SignalBlue)
+                    ) {
+                        Text(text = "Begin Labor (Start Work in Progress)", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -1170,15 +1244,28 @@ fun EscrowAndProofSheet(
                         }
 
                         Button(
-                            onClick = { onUpdateEscrowStatus("RELEASED_TO_WORKER") },
+                            onClick = { onReleaseFunds?.invoke() },
+                            enabled = !isReleasingFunds,
                             modifier = Modifier.weight(1.3f),
                             shape = RoundedCornerShape(6.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = IndustrialEmerald)
                         ) {
-                            Icon(imageVector = Icons.Default.Send, contentDescription = "Release", modifier = Modifier.size(16.dp))
+                            if (isReleasingFunds) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                    color = Color.White
+                                )
+                            } else {
+                                Icon(imageVector = Icons.Default.Send, contentDescription = "Release", modifier = Modifier.size(16.dp))
+                            }
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "Authorize & Release (${CurrencyRegion.format(currentGrandTotal, activeRegion)})",
+                                text = if (isReleasingFunds) {
+                                    "Releasing with the server..."
+                                } else {
+                                    "Authorize & Release (${CurrencyRegion.format(currentGrandTotal, activeRegion)})"
+                                },
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -1221,11 +1308,16 @@ fun EscrowAndProofSheet(
                                     color = Color(0xFF991B1B)
                                 )
                                 Button(
-                                    onClick = { onUpdateEscrowStatus("RELEASED_TO_WORKER") },
+                                    onClick = { onReleaseFunds?.invoke() },
+                                    enabled = !isReleasingFunds,
                                     shape = RoundedCornerShape(4.dp),
                                     colors = ButtonDefaults.buttonColors(containerColor = IndustrialEmerald)
                                 ) {
-                                    Text(text = "Resolve & Release Funds", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        text = if (isReleasingFunds) "Releasing..." else "Resolve & Release Funds",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 }
                             }
                         }

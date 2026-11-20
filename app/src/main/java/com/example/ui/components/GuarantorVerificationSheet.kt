@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import com.example.util.SecureScreen
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -110,6 +111,8 @@ fun GuarantorVerificationSheet(
     onSubmit: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    // R02-P2-06: identity/PIN surface — block screenshots and recents preview.
+    SecureScreen()
     var drafts by remember(workerId) { mutableStateOf(initialGuarantors.toDrafts(workerId)) }
     var groupPhotoSource by remember(workerId) { mutableStateOf(initialGroupPhotoSource) }
     var submitAttempted by remember { mutableStateOf(false) }

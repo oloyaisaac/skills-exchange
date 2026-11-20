@@ -1,3 +1,13 @@
+## 2026-11-20 (Prompt-4 R02 COMPLETE) - SERVER-CONFIRMED ESCROW, COMPOSE TESTS
+
+- Escrow release now requires the `releaseEscrowToWorker` callable; local status moves only on success.
+- Cash settlement records CASH_SETTLEMENT_ACKNOWLEDGED, no "funds locked" claim.
+- Single-flight on escrow release and SOS; onboarding uses rememberSaveable; SOS fallback coords removed.
+- SecureScreen (FLAG_SECURE) on escrow/PIN, guarantor and account surfaces.
+- Four Compose flow tests run on the JVM; 362/362 tests. R02 gate passed; R03 not started.
+
+---
+
 ## 2026-11-20 (Prompt-4 R01 COMPLETE) - ANDROID BUILD GREEN, 355/355 TESTS
 
 - Added the Android build workflow; first compile exposed 186 errors, all fixed.

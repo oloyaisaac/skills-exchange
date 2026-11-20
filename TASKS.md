@@ -1,12 +1,14 @@
 ## Prompt-4 remediation (one reviewer at a time)
 
-**R01 — COMPLETE (gate passed 2026-11-20).** Buildability proven on a real runner: 186 compile errors
-fixed, then `:app:compileDebugKotlin` success and `:app:testDebugUnitTest` 355/355. Single Firebase
-gateway, root duplicate manifest removed, README counts corrected, decomposition roadmap recorded.
-Completion declaration: `reviewer_completions/REVIEWER_01_DONE.md`.
+**R01 — COMPLETE.** Android build green (355/355) after fixing 186 compile errors; single Firebase
+gateway; duplicate manifest removed; decomposition roadmap recorded.
 
-**R02 — Android client — NOT STARTED.** Do not begin until this session continues the sequence.
-R03–R15 — awaiting.
+**R02 — COMPLETE.** Escrow release is server-confirmed (no fabricated payout UI), cash settlement no
+longer claims locked funds, single-flight on release and SOS, onboarding uses `rememberSaveable`,
+SOS stops inventing Kampala coordinates, `FLAG_SECURE` on identity surfaces, and Compose UI tests
+cover onboarding, posting, quoting and escrow. Evidence: CI run 44704246765, 362/362 tests.
+
+**R03 — backend — NOT STARTED.** R04–R15 awaiting.
 
 ## Review Track — 2026-11-19 (not started)
 

@@ -976,3 +976,12 @@ REM-001, which still needs a JDK and Android SDK to verify.
 - The Java toolchain moved from 11 to 17 (compile) with a Java 21 test launcher, because Robolectric
   cannot run on Java 11.
 - R01's decomposition roadmap is recorded; the code split remains outstanding work for later slices.
+
+### 18.11 Prompt-4 R02: Android client completed
+
+- Escrow release is server-confirmed; the client can no longer write `RELEASED_TO_WORKER` or show a
+  payout success on its own. Cash settlement is recorded honestly as an acknowledgement.
+- Money and SOS actions are single-flight; onboarding state survives recreation; SOS no longer
+  fabricates a location; identity surfaces set `FLAG_SECURE`.
+- Compose UI tests now cover onboarding (incl. state restoration), job posting, quoting and escrow
+  gating and run in CI on the JVM.
