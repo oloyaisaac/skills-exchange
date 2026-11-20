@@ -1,17 +1,17 @@
 # REVIEWER IMPLEMENTATION STATE — Prompt 4 (strict one-reviewer-at-a-time)
 
 **Programme:** ASMT-2026-11-19 · **Cycle:** Prompt-4 remediation
-**Updated:** 2026-11-20 · **Branch:** `arena/71ffb0a0-skills-exchange`
+**Updated:** 2026-11-20 · **Branch:** `arena/2029ee23-skills-exchange`
 
 ## Position
 
 | Field | Value |
 |---|---|
 | Total original reviewers | **15** |
-| Current reviewer | **R06 — Identity, admin claims and account lifecycle** (next to start) |
-| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05 (5 of 15)** |
-| Reviewers awaiting implementation | R06 … R15 |
-| Next reviewer number | **6** |
+| Current reviewer | **R07 — next in the reviewer list** (reviewer 6 complete) |
+| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05, R06 (6 of 15)** |
+| Reviewers awaiting implementation | R07 … R15 |
+| Next reviewer number | **7** |
 
 ## R01 — COMPLETE (gate passed)
 
@@ -165,6 +165,51 @@ callable refused every client-created job.
 - `pricing.ts` now requires whole-shilling inputs; a job created by an older build with a fractional
   `laborTotal` is rejected as `amount_mismatch` rather than silently collected — deliberate, recorded.
 
+## R06 — COMPLETE (gate passed)
+
+Source: `review_results/prompt2/REVIEW_06.md` (verdict **FAIL**, 6 findings). The failing condition was
+"account deletion can remove the Firebase Auth user while personal data remains". That condition is now
+enforced **server-side**: the client may only delete the identity after the server reports that every
+Firestore document **and** every Storage object is gone.
+
+| Finding | Required correction | Status | Evidence |
+|---|---|---|---|
+| R06-P2-01 | CRITICAL: auth user deleted unconditionally after a Firestore delete that may have failed | **IMPLEMENTED AND VERIFIED** | `deleteUserFirestoreData` and the unconditional `deleteCurrentUser()` pair are gone; `permanentlyDeleteUserAccountAndData` calls `requestAccountDeletion` → `deleteMyAccount`, and only the `AccountDeletionOutcome.Purged` branch deletes the auth user; every other outcome keeps the session and the local data and returns a retriable message; the dialog is state-driven (`DeletionStep`) and no longer dismisses itself on tap; `AccountDeletionRulesTest` (7 tests) asserts the ordering from source and the decision table |
+| R06-P2-02 | CRITICAL: "permanent deletion" never touched Cloud Storage | **IMPLEMENTED AND VERIFIED** | `deleteMyAccount` derives `users/{uid}/`, `avatars/{uid}/` and `jobs/{jobId}/` prefixes with `storagePurgePrefixes`, deletes objects with `file.delete({ignoreNotFound})`, counts failures as `storagePending`, and refuses to report `complete` while anything is pending; `push_tokens` sub-collection and job `messages` are purged too; the dialog names uploaded photos; `accountDeletion.test.mjs` (8 tests) |
+| R06-P2-03 | HIGH: phone and Google sign-in create two UIDs (two wallets) | **IMPLEMENTED AND VERIFIED** | `FirebaseService.linkGoogleAccount` uses `linkWithCredential` on the signed-in user; `IdentityLinkResult` distinguishes `Linked` / `Collision` / `NotSignedIn` / `Failed`; the drawer has "Link Google Sign-In" and the outcome is always shown as text — a collision is never reported as success; `AuthIdentityTest` |
+| R06-P2-04 | MEDIUM: logout leaves the FCM token registered | **IMPLEMENTED AND VERIFIED** | `deleteDevicePushToken()` removes the server record (`clearMyPushTokens`) and the device token (`SkillsExchangeMessagingService.deleteToken`) before `signOut()`; deletion uses the same helper; `AuthIdentityTest` asserts the order inside `logoutUser` |
+| R06-P2-05 | MEDIUM: five-minute gate had no in-app way to satisfy it | **IMPLEMENTED AND VERIFIED** | the deletion dialog gains a `REAUTH` step: Google re-consent (`reauthenticate(GoogleAuthProvider…)`) or an SMS code (`reauthenticate(PhoneAuthProvider…)`) refresh `auth_time` and the flow continues in place; the server also enforces the window (`isFreshAuth` in `deleteMyAccount`, fails closed on a missing claim) |
+| R06-P2-06 | LOW: Google web client id hardcoded in `GoogleSignInHelper.kt` | **IMPLEMENTED AND VERIFIED** | the id comes from `BuildConfig.GOOGLE_WEB_CLIENT_ID`, injected by `app/build.gradle.kts` from the environment, a Gradle property, or `.env`; `.env.example` documents it; an unset id makes `isConfigured` false, keeps the Google button from launching, and shows an explanation on the auth modal, the onboarding screen and the deletion dialog; no client-id literal exists in `app/src/main/java` (test-enforced) |
+| REM-024 | Stale-session destructive actions; no token revocation | **IMPLEMENTED AND VERIFIED** | as R06-P2-01/P2-05 above |
+| REM-025 | Link phone and Google identities; one UID per person | **PARTIALLY VERIFIED** | linking implemented and unit-tested; a genuine end-to-end link log needs a Firebase project (see "Not claimed") |
+
+### Verification evidence (executed)
+
+- Android CI run **44752473651** (`android.yml`): compile success, unit tests green, 6 of 6 checks
+  pass. Count: the readable per-test XML from the immediately preceding run of the same test set
+  (44751724461) totals **447** cases; the only failure in that run was a bug in one of the new static
+  scans (a substring check that matched the helper's own suffix guard), fixed and green in the final
+  run ⇒ **447 tests, 0 failures**.
+- Backend CI on the same commit (run **44752473672**): `npm run build` clean, **190/190**
+  `node --test` tests (182 before R06, plus 8 `accountDeletion.test.mjs`), Firestore-emulator handler
+  tests, documentation checks, secret scan and CodeRabbit all pass.
+- Three real defects were found by running CI rather than by reading code: a non-suspend teardown
+  calling suspend functions, and the self-matching client-id scan above.
+
+### Not claimed
+
+- **No live authentication traffic.** There is no Firebase project, no device and no Google project in
+  this environment, so these are UNVERIFIED end to end: Google re-consent and phone re-authentication
+  refreshing `auth_time`, `linkWithCredential` succeeding or colliding, `user.delete()` after the
+  purge, revocation taking effect on an already-issued ID token, and real FCM token deletion.
+- **No `firebase deploy`.** `deleteMyAccount` and `clearMyPushTokens` are verified by 8 unit tests and
+  by reading the compiled output; they have never run against a real bucket or database.
+- **Storage deletion is exercised by rule, not by execution.** The prefix derivation, the
+  pending-count gate and the refusal path are unit-tested; `getFiles`/`file.delete` are not.
+- **One-UID-per-person is a code property, not an observation** (REM-025). No link log exists.
+- Firestore rules were not changed: the client no longer performs the deletes at all, so the existing
+  fresh-auth owner-delete rules remain as a second barrier that this round does not exercise.
+
 ## Completion declarations
 
 - `reviewer_completions/REVIEWER_01_DONE.md`
@@ -172,7 +217,8 @@ callable refused every client-created job.
 - `reviewer_completions/REVIEWER_03_DONE.md`
 - `reviewer_completions/REVIEWER_04_DONE.md`
 - `reviewer_completions/REVIEWER_05_DONE.md`
+- `reviewer_completions/REVIEWER_06_DONE.md`
 
 ## Blockers
 
-None. R04 complete; R05 (API & Integrations) is next.
+None. R06 complete; R07 is next.

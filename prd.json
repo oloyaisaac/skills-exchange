@@ -5214,8 +5214,8 @@
       "phase": 19,
       "title": "Add re-authentication and token revocation",
       "priority": "HIGH",
-      "status": "IN_PROGRESS",
-      "status_note": "Destructive actions now require a sign-in within five minutes: hasFreshAuth() guards owner deletes in Firestore rules, the client blocks account deletion when stale, and revokeMyTokens revokes refresh tokens before local sign-out. 3 tests. Not verified: no Firebase project, so stale-session and revoked-token behaviour has not been observed.",
+      "status": "COMPLETED",
+      "status_note": "R06: account deletion is server-authoritative. deleteMyAccount purges Firestore and Cloud Storage with counted reports, refuses on a missing or stale auth_time, and the client deletes the Firebase Auth user only after a complete purge (the old unconditional pair is gone). The deletion dialog offers in-app re-authentication (Google re-consent or SMS code) instead of sign out and back in, and logout/deletion delete the push token locally and server-side. 17 tests. Not verified live: no Firebase project, so auth_time refresh, revocation and user.delete() have never been observed.",
       "independent_verification": "PENDING",
 
       "depends_on": [
@@ -5255,7 +5255,8 @@
       "phase": 19,
       "title": "Link phone and Google identities",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status_note": "R06: linking implemented - FirebaseService.linkGoogleAccount uses linkWithCredential on the signed-in user, IdentityLinkResult separates Linked/Collision/NotSignedIn/Failed, the drawer exposes it, and the outcome is always shown as text (a collision is never reported as success). Unit-tested only: one-UID-per-person has no live link log.",
+      "status": "IN_PROGRESS",
       "depends_on": [
         "REM-022"
       ],
@@ -5284,7 +5285,7 @@
       "source_finding": "MR-025",
       "reviewer": "R06",
       "review_report": "review_results/R06_AUTH.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "notes": "Derived from MASTER_REVIEW_FINDINGS. Code and tests complete in R06; the required E2E link log still needs a real Firebase project."
     },
     {
       "id": "REM-026",
@@ -7120,7 +7121,7 @@
       "review_report": "review_results/R02_ANDROID_CLIENT.md",
       "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
     }],
-    "current_story": "R05 (API and integrations) - complete",
+    "current_story": "R06 (authentication and identity) - complete",
   "review_cycle_status": "all_15_reviews_complete_0_pass_15_fail",
   "review_cycle_completed_at": "2026-11-19T18:00:00+03:00",
     "completed_stories": [

@@ -1,5 +1,34 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [PROMPT-4 / R06] Authentication and identity: deletion that cannot orphan data
+
+- **Deletion ordering (R06-P2-01, CRITICAL).** The client used to call `deleteUserFirestoreData` and then
+  `deleteCurrentUser` unconditionally, so a failed data delete still destroyed the Auth user and left
+  personal records with no owner able to remove them. Both client calls are gone. A new `deleteMyAccount`
+  callable purges server-side, returns counted progress, and the client deletes the Firebase Auth user
+  only when that report says `complete`; any other outcome keeps the session and returns a retriable
+  message. The deletion dialog is driven by `DeletionStep` and no longer dismisses itself on tap.
+- **Storage (R06-P2-02, CRITICAL).** "Permanent deletion" never touched Cloud Storage. It now removes
+  `users/{uid}/` (KYC documents, certificates, guarantor portraits), `avatars/{uid}/` and
+  `jobs/{jobId}/` (including `initial_photos`), plus the `push_tokens` sub-collection and job messages; a
+  single failed object delete keeps the account alive and is reported as `PURGE_INCOMPLETE`.
+- **Identity linking (R06-P2-03, HIGH).** `linkGoogleAccount` uses `linkWithCredential` on the signed-in
+  user, so a phone account that later taps "Continue with Google" does not silently become a second uid
+  and a second wallet. `IdentityLinkResult` distinguishes a provider collision from a failure, the drawer
+  exposes "Link Google Sign-In", and the outcome is always shown as text.
+- **Push token on sign-out (R06-P2-04).** Logout (and deletion) delete the FCM token locally and the
+  server record through `clearMyPushTokens`, before the session ends.
+- **Re-authentication (R06-P2-05).** The five-minute fresh-auth window finally has an in-app path: the
+  deletion dialog offers Google re-consent or an SMS code, refreshes `auth_time` on the same uid and
+  continues. The server enforces the same window and fails closed on a missing claim.
+- **Client id (R06-P2-06).** The Google web client id is no longer a literal in `GoogleSignInHelper.kt`;
+  it comes from `BuildConfig.GOOGLE_WEB_CLIENT_ID` (environment, Gradle property or `.env`). An unset id
+  disables the Google button and explains why, on the auth modal, onboarding and the deletion dialog.
+- **Tests.** `functions/test/accountDeletion.test.mjs` (8), `AccountDeletionRulesTest` (7),
+  `AuthIdentityTest` (5); backend suite 182 → 190, client suite 435 → 447.
+- **Not verified.** No Firebase project, device or deploy: live re-authentication, linking, token
+  revocation, `user.delete()` and Storage deletion against a real bucket remain UNVERIFIED.
+
 ### [2026-11-20] [PROMPT-4 / R05] API and external integrations; one money unit; grounded places
 
 - **SMS/SOS (R05-P2-01, CRITICAL).** The device stub that answered `SENT` without sending anything is
