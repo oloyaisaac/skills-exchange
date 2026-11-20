@@ -51,38 +51,46 @@ async function reset() {
   await db.recursiveDelete(db.collection("notifications"));
 }
 
-test("owner releases a funded job: payout and job documents are written", async () => {
+/**
+ * R08-P2-01: the release is only a release when the provider accepted it.
+ *
+ * This environment has no MTN sandbox credentials, so the provider path fails closed. That is the
+ * property worth testing here: the handler must refuse, leave the escrow funded and write no payout,
+ * rather than the old behaviour of marking the worker paid and queueing a document nobody read.
+ */
+test("an unconfigured provider refuses the release and nothing is marked paid", async () => {
   await reset();
   await seedJob();
 
-  const result = await callable.release(
-    { jobId: "job_1", workerId: "worker_1" },
-    { auth: { uid: "owner_1" } }
+  await assert.rejects(
+    callable.release({ jobId: "job_1", workerId: "worker_1" }, { auth: { uid: "owner_1" } }),
+    (error) => {
+      assert.equal(error.code, "failed-precondition", "a missing provider configuration is a precondition");
+      assert.match(error.message, /sandbox|MOMO_/i);
+      return true;
+    }
   );
-
-  assert.equal(result.success, true);
-  const payout = (await db.collection("momo_payouts").doc("PAYOUT-job_1").get()).data();
-  assert.equal(payout.amount, 50_000);
-  assert.equal(payout.workerMomoNumber, "+256700000000");
 
   const job = (await db.collection("jobs").doc("job_1").get()).data();
-  assert.equal(job.escrowStatus, "RELEASED_TO_WORKER");
-  assert.equal(job.releasePayoutRef, "PAYOUT-job_1");
+  assert.equal(job.escrowStatus, "FUNDS_LOCKED_IN_ESCROW", "the escrow stays funded so the release can be retried");
+  assert.equal(job.releasePayoutRef, undefined, "no payout reference is recorded");
+  assert.equal(job.releasedAt, undefined);
+
+  assert.equal((await db.collection("payouts").get()).size, 0, "no provider payout record exists");
+  assert.equal((await db.collection("momo_payouts").get()).size, 0, "no legacy payout record is queued either");
 });
 
-test("a repeat release is idempotent", async () => {
+test("a retried release still refuses and never creates a second record", async () => {
   await reset();
   await seedJob();
 
-  await callable.release({ jobId: "job_1", workerId: "worker_1" }, { auth: { uid: "owner_1" } });
-  const again = await callable.release(
-    { jobId: "job_1", workerId: "worker_1" },
-    { auth: { uid: "owner_1" } }
-  );
+  await assert.rejects(callable.release({ jobId: "job_1", workerId: "worker_1" }, { auth: { uid: "owner_1" } }));
+  await assert.rejects(callable.release({ jobId: "job_1", workerId: "worker_1" }, { auth: { uid: "owner_1" } }));
 
-  assert.equal(again.alreadyReleased, true);
-  const payouts = await db.collection("momo_payouts").get();
-  assert.equal(payouts.size, 1);
+  assert.equal((await db.collection("payouts").get()).size, 0);
+  assert.equal((await db.collection("momo_payouts").get()).size, 0);
+  const job = (await db.collection("jobs").doc("job_1").get()).data();
+  assert.equal(job.escrowStatus, "FUNDS_LOCKED_IN_ESCROW");
 });
 
 test("a non-owner cannot release escrow", async () => {
@@ -106,22 +114,30 @@ test("an unfunded job cannot be released", async () => {
   );
 });
 
-test("createMoMoPayout ignores a client-supplied amount and wallet", async () => {
+test("createMoMoPayout is the same core: a client amount and wallet cannot buy a payout", async () => {
   await reset();
   await seedJob();
 
-  const result = await callable.legacyPayout(
-    {
-      jobId: "job_1",
-      workerId: "worker_1",
-      amountUgx: 9_999_999,
-      workerMomoNumber: "+256799999999",
-    },
-    { auth: { uid: "owner_1" } }
+  await assert.rejects(
+    callable.legacyPayout(
+      {
+        jobId: "job_1",
+        workerId: "worker_1",
+        amountUgx: 9_999_999,
+        workerMomoNumber: "+256799999999",
+      },
+      { auth: { uid: "owner_1" } }
+    ),
+    (error) => {
+      // The alias reaches the same fail-closed provider path as the release: it cannot pay out at
+      // all here, and nothing it was told by the client appears in any document.
+      assert.equal(error.code, "failed-precondition");
+      return true;
+    }
   );
 
-  assert.equal(result.success, true);
-  const payout = (await db.collection("momo_payouts").doc("PAYOUT-job_1").get()).data();
-  assert.equal(payout.amount, 50_000, "the server amount wins");
-  assert.equal(payout.workerMomoNumber, "+256700000000", "the stored wallet wins");
+  assert.equal((await db.collection("payouts").get()).size, 0);
+  assert.equal((await db.collection("momo_payouts").get()).size, 0, "no payout carries the client's amount");
+  const job = (await db.collection("jobs").doc("job_1").get()).data();
+  assert.equal(job.escrowStatus, "FUNDS_LOCKED_IN_ESCROW");
 });

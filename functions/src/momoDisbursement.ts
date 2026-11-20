@@ -91,6 +91,7 @@ export interface JobRecordPayout {
   grandTotal?: number | null;
   budget?: number | null;
   assignedProvider?: string | null;
+  assignedProviderId?: string | null;
   assignedWorkerId?: string | null;
   momoPhoneNumber?: string | null;
   currency?: string | null;
@@ -121,6 +122,10 @@ export interface PayoutRecord {
   createdAt?: number;
   lastCheckedAt?: number;
   reason?: string;
+  /** R08: set when this payout settles a wallet withdrawal rather than an escrow release. */
+  withdrawalId?: string | null;
+  /** R08: RELEASE (escrow to worker), ADVANCE (materials) or CASHOUT (wallet withdrawal). */
+  payoutKind?: "RELEASE" | "ADVANCE" | "CASHOUT";
   providerFinancialTransactionId?: string | null;
   /** HTTP status the provider returned when the payout request was issued. */
   providerStatusCode?: number;
@@ -138,8 +143,14 @@ export interface ProviderPayoutStatusResult {
   error?: string | null;
 }
 export interface PayoutDeps {
-  /** Read the stored payout record (lifecycle gate + ledger). */
-  findPendingPayout: (jobId: string, clientUid: string) => Promise<PayoutRecord | null>;
+  /**
+   * Read the stored payout record (lifecycle gate + ledger).
+   *
+   * R08-P2-04: the gate is scoped by `payoutKind`, because a job has more than one money movement
+   * (a materials advance, then the escrow release). Keying only on the job id made the advance block
+   * the release it was paid out of.
+   */
+  findPendingPayout: (jobId: string, clientUid: string, payoutKind?: string | null) => Promise<PayoutRecord | null>;
   /** Read the authoritative job document. */
   getJob: (jobId: string) => Promise<JobRecordPayout | null>;
   /** Acquire an MTN sandbox access token (server-side only). */
@@ -183,6 +194,16 @@ export async function initiatePayout(
     clientPhone?: string | null;
     provider?: string;
     env: Record<string, string | undefined>;
+    /** R08: server-computed amount to validate against (defaults to the job's labour total). */
+    expectedAmountUgx?: number | null;
+    /** R08: the payee was resolved from the worker profile, not from the job's collection number. */
+    payeeResolvedServerSide?: boolean;
+    /** R08: worker uid resolved server-side from the job document. */
+    payeeWorkerId?: string | null;
+    /** R08: which money movement this is (defaults to the escrow release). */
+    payoutKind?: "RELEASE" | "ADVANCE";
+    /** R08: deterministic payout record id (`PAYOUT-<jobId>`), so a retried release cannot duplicate. */
+    payoutId?: string;
   },
   deps: PayoutDeps
 ): Promise<InitiateResult> {
@@ -202,7 +223,8 @@ export async function initiatePayout(
 
   // 2. Idempotency BEFORE touching the provider: a duplicate callable request
   //    for the same key is rejected at the local gate first.
-  const localGate = await deps.findPendingPayout(input.jobId, input.clientUid);
+  const payoutKind = input.payoutKind || "RELEASE";
+  const localGate = await deps.findPendingPayout(input.jobId, input.clientUid, payoutKind);
   if (localGate) {
     if (TERMINAL_PAYOUT_STATUSES.includes(localGate.status)) {
       return { ok: false, error: { code: "duplicate_request", message: "This payout already reached a terminal state.", payoutId: localGate.payoutId } };
@@ -220,47 +242,123 @@ export async function initiatePayout(
     callerUid: input.clientUid,
     requestedAmountUgx: input.amountUgx ?? null,
     workerMomoNumber: input.workerMomoNumber ?? null,
+    expectedAmountUgx: input.expectedAmountUgx ?? null,
+    payeeResolvedServerSide: input.payeeResolvedServerSide === true,
+    payeeWorkerId: input.payeeWorkerId ?? null,
   });
   if (!validation.ok) {
     return { ok: false, error: validation.error };
   }
 
-  // 4. Acquire a provider token (server-side only).
+  return submitDisbursement(
+    {
+      payoutId: input.payoutId || `PAYOUT-${deps.now()}`,
+      jobId: input.jobId,
+      payoutKind,
+      externalId: input.jobId,
+      workerId: validation.workerId,
+      workerMomoNumber: validation.workerMomoNumber,
+      clientUid: input.clientUid,
+      amountUgx: validation.amountUgx,
+      provider: input.provider,
+      env: input.env,
+    },
+    deps
+  );
+}
+
+/**
+ * R08-P2-04: the ONE place that talks to the disbursement provider.
+ *
+ * Both money paths — releasing escrow to a worker and settling a wallet cashout — go through this
+ * function, so the provider contract (fail-closed config, server-minted reference, 202 => PENDING,
+ * anything else => FAILED, terminal states immutable) exists exactly once. The callers differ only
+ * in how they authorize the payee and in the id of the record the payout lives in.
+ */
+export interface DisbursementOrder {
+  /** Record id in the `payouts` collection. */
+  payoutId: string;
+  /** Job this pays for ("" for a wallet cashout). */
+  jobId: string;
+  /** Value sent to the provider as `externalId` (job id or withdrawal id). */
+  externalId: string;
+  workerId: string;
+  workerMomoNumber: string;
+  /** The authenticated user the disbursement is attributed to. */
+  clientUid: string;
+  amountUgx: number;
+  provider?: string;
+  env: Record<string, string | undefined>;
+  withdrawalId?: string | null;
+  payoutKind?: "RELEASE" | "ADVANCE" | "CASHOUT";
+}
+
+export async function submitDisbursement(
+  order: DisbursementOrder,
+  deps: PayoutDeps
+): Promise<InitiateResult> {
+  if (!order.clientUid) {
+    return { ok: false, error: { code: "unauthenticated", message: "Authentication required to move money." } };
+  }
+  if (!Number.isInteger(order.amountUgx) || order.amountUgx <= 0) {
+    return { ok: false, error: { code: "invalid_argument", message: "The payout amount must be a positive whole number of shillings." } };
+  }
+  if (!order.payoutId) {
+    return { ok: false, error: { code: "invalid_argument", message: "A payout record id is required." } };
+  }
+  const msisdn = String(order.workerMomoNumber || "").trim();
+  if (!/^\+?[0-9]{9,15}$/.test(msisdn)) {
+    return { ok: false, error: { code: "worker_mismatch", message: "The payee's Mobile Money number is missing or malformed." } };
+  }
+
+  // 1. Fail-closed configuration. Never proceed to a provider call without
+  //    verified sandbox creds.
+  const config = loadPayoutConfig(order.env);
+  if ("error" in config) {
+    return { ok: false, error: { code: "config_error", message: config.error } };
+  }
+
+  // 2. Acquire a provider token (server-side only).
   const token = await deps.acquireToken(config);
   if (!token.ok) {
     return { ok: false, error: { code: "config_error", message: token.error } };
   }
 
-  // 5. Build the payout RequestToPay with a REAL server-minted reference id.
+  // 3. Build the RequestToPay with a REAL server-minted reference id.
   const providerReferenceId = deps.randomUuid();
-  const transactionId = `PAYOUT-${deps.now()}`;
   const payload = buildPayoutRequestPayload({
-    amount: validation.amountUgx,
-    workerMomoNumber: validation.workerMomoNumber,
-    externalId: input.jobId,
+    amount: order.amountUgx,
+    workerMomoNumber: msisdn,
+    externalId: order.externalId,
   });
 
-  // 6. Issue the payout request to the MTN Disbursement API.
+  const record = (status: PayoutStatus, extra: Partial<PayoutRecord>): PayoutRecord => ({
+    jobId: order.jobId,
+    workerId: order.workerId,
+    workerMomoNumber: msisdn,
+    amount: order.amountUgx,
+    currency: PAYOUT_CURRENCY,
+    provider: order.provider || "MTN_MOMO",
+    status,
+    payoutId: order.payoutId,
+    clientUid: order.clientUid,
+    releasedBy: order.clientUid,
+    transactionId: order.payoutId,
+    providerReferenceId,
+    createdAt: deps.now(),
+    withdrawalId: order.withdrawalId ?? null,
+    payoutKind: order.payoutKind || "RELEASE",
+    ...extra,
+  });
+
+  // 4. Issue the payout request to the MTN Disbursement API.
   const rtp = await deps.requestPayout(config, token.token, providerReferenceId, payload);
 
   if ("networkError" in rtp) {
-    // Provider unreachable: record the failure locally, never fabricate success.
-    await deps.persistPayout({
-      jobId: input.jobId,
-      workerId: validation.workerId,
-      workerMomoNumber: validation.workerMomoNumber,
-      amount: validation.amountUgx,
-      currency: PAYOUT_CURRENCY,
-      provider: input.provider || "MTN_MOMO",
-      status: "PAYOUT_FAILED",
-      payoutId: transactionId,
-      clientUid: input.clientUid,
-      releasedBy: input.clientUid,
-      transactionId,
-      providerReferenceId,
-      createdAt: deps.now(),
+    await deps.persistPayout(record("PAYOUT_FAILED", {
       reason: rtp.error ?? "provider_unreachable",
-    });
+      providerReferenceId,
+    }));
     return {
       ok: false,
       error: rtp.timeout
@@ -269,51 +367,81 @@ export async function initiatePayout(
     };
   }
 
-  // 7. 202 => accepted-and-delivered => PAYOUT_PENDING only. Non-202 => failure.
+  // 5. 202 => accepted-and-delivered => PAYOUT_PENDING only. Non-202 => failure.
   //    Never SUCCESSFUL here: the worker money movement is decided by the
-  //    provider's pull-status (the `getMoMoPayoutStatus` callable), not by us.
+  //    provider's pull-status, not by us.
   if (rtp.statusCode !== 202) {
-    await deps.persistPayout({
-      jobId: input.jobId,
-      workerId: validation.workerId,
-      workerMomoNumber: validation.workerMomoNumber,
-      amount: validation.amountUgx,
-      currency: PAYOUT_CURRENCY,
-      provider: input.provider || "MTN_MOMO",
-      status: "PAYOUT_FAILED",
-      payoutId: transactionId,
-      clientUid: input.clientUid,
-      releasedBy: input.clientUid,
-      transactionId,
-      providerReferenceId,
-      createdAt: deps.now(),
+    await deps.persistPayout(record("PAYOUT_FAILED", {
       providerStatusCode: rtp.statusCode,
       reason: `provider returned HTTP ${rtp.statusCode}`,
-    });
+    }));
     return {
       ok: false,
       error: { code: "provider_error", message: `The payout provider returned HTTP ${rtp.statusCode}. Nothing was funded.` },
     };
   }
 
-  await deps.persistPayout({
-    jobId: input.jobId,
-    workerId: validation.workerId,
-    workerMomoNumber: validation.workerMomoNumber,
-    amount: validation.amountUgx,
-    currency: PAYOUT_CURRENCY,
-    provider: input.provider || "MTN_MOMO",
-    status: "PAYOUT_PENDING",
-    payoutId: transactionId,
-    clientUid: input.clientUid,
-    releasedBy: input.clientUid,
-    transactionId,
-    providerReferenceId,
-    createdAt: deps.now(),
-    providerStatusCode: 202,
-  });
+  await deps.persistPayout(record("PAYOUT_PENDING", { providerStatusCode: 202 }));
 
-  return { ok: true, transactionId, payoutId: transactionId, providerReferenceId, status: "PAYOUT_PENDING" };
+  return {
+    ok: true,
+    transactionId: order.payoutId,
+    payoutId: order.payoutId,
+    providerReferenceId,
+    status: "PAYOUT_PENDING",
+  };
+}
+
+/**
+ * R08-P2-02/P2-04: settle a wallet cashout through the same disbursement core.
+ *
+ * The money has already been reserved in the server ledger by the cashout transaction, so this
+ * function only has to prove the request is well formed and hand it to `submitDisbursement`. The
+ * payout record id is the withdrawal id, which makes the provider reference idempotent per request.
+ */
+export async function initiateWithdrawalPayout(
+  input: {
+    withdrawalId: string;
+    uid: string;
+    amountUgx: number;
+    msisdn: string;
+    provider?: string;
+    env: Record<string, string | undefined>;
+  },
+  deps: PayoutDeps
+): Promise<InitiateResult> {
+  if (!input.withdrawalId) {
+    return { ok: false, error: { code: "invalid_argument", message: "withdrawalId is required." } };
+  }
+  if (!input.uid) {
+    return { ok: false, error: { code: "unauthenticated", message: "Authentication required to cash out." } };
+  }
+  if (!Number.isInteger(input.amountUgx) || input.amountUgx <= 0) {
+    return { ok: false, error: { code: "invalid_argument", message: "The cashout amount must be a positive whole number of shillings." } };
+  }
+  const existing = await deps.findPendingPayout(input.withdrawalId, input.uid, "CASHOUT");
+  if (existing) {
+    if (TERMINAL_PAYOUT_STATUSES.includes(existing.status)) {
+      return { ok: false, error: { code: "duplicate_request", message: "This cashout already reached a terminal state.", payoutId: existing.payoutId } };
+    }
+    return { ok: false, error: { code: "already_pending", message: "A payout for this cashout is already pending. Await its status before retrying." } };
+  }
+  return submitDisbursement(
+    {
+      payoutId: input.withdrawalId,
+      jobId: input.withdrawalId,
+      payoutKind: "CASHOUT",
+      externalId: input.withdrawalId,
+      workerId: input.uid,
+      workerMomoNumber: input.msisdn,
+      clientUid: input.uid,
+      amountUgx: input.amountUgx,
+      provider: input.provider,
+      env: input.env,
+      withdrawalId: input.withdrawalId,
+    },
+    deps
+  );
 }
 
 /**
@@ -410,6 +538,24 @@ export function validatePayoutInput(input: {
   callerUid: string;
   requestedAmountUgx?: number | null;
   workerMomoNumber?: string | null;
+  /**
+   * R08: the amount the server already computed for this payout (release of the labour total, or
+   * half the materials budget for an advance). When supplied it replaces the job's labour total as
+   * the expected amount, so an advance is validated against its own arithmetic instead of failing
+   * every time.
+   */
+  expectedAmountUgx?: number | null;
+  /**
+   * R08: `job.momoPhoneNumber` is the *resident's* collection number. A worker payout is validated
+   * against the worker's stored wallet instead, so this check is skipped only for payouts whose
+   * payee was already resolved server-side from the worker profile.
+   */
+  payeeResolvedServerSide?: boolean;
+  /**
+   * R08: the worker uid resolved server-side (the client writes `assignedProviderId`, not
+   * `assignedWorkerId`). When supplied it must still be one of the job's assigned workers.
+   */
+  payeeWorkerId?: string | null;
 }): { ok: true; amountUgx: number; workerId: string; workerMomoNumber: string } |
   { ok: false; error: InitiateError } {
   if (!input.job) {
@@ -431,24 +577,39 @@ export function validatePayoutInput(input: {
   if (typeof amountUgx !== "number" || amountUgx <= 0) {
     return { ok: false, error: { code: "amount_mismatch", message: "Amount must be a positive number." } };
   }
-  if (typeof input.job.laborTotal === "number" && amountUgx !== input.job.laborTotal) {
-    // Escrow is the labor-amount; a client cannot override it.
-    return { ok: false, error: { code: "amount_mismatch", message: `Amount mismatch: job escrow is UGX ${input.job.laborTotal}, client requested UGX ${amountUgx}.` } };
+  const expectedAmount = typeof input.expectedAmountUgx === "number"
+    ? input.expectedAmountUgx
+    : input.job.laborTotal;
+  if (typeof expectedAmount === "number" && amountUgx !== expectedAmount) {
+    // The amount is server-derived; a client cannot override it.
+    return { ok: false, error: { code: "amount_mismatch", message: `Amount mismatch: expected UGX ${expectedAmount}, requested UGX ${amountUgx}.` } };
   }
 
   // Worker must be the assigned worker of the job; the client may not pick
   // an arbitrary worker phone.
-  if (!input.job.assignedWorkerId) {
+  const assignedWorkers = [
+    input.job.assignedWorkerId,
+    input.job.assignedProviderId,
+    input.job.assignedProvider,
+  ].filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+  const workerId = (input.payeeWorkerId && String(input.payeeWorkerId).trim()) || input.job.assignedWorkerId;
+  if (!workerId) {
     return { ok: false, error: { code: "worker_mismatch", message: "Job has no assigned worker." } };
   }
   if (input.workerMomoNumber === null || input.workerMomoNumber === undefined) {
     return { ok: false, error: { code: "worker_mismatch", message: "Worker Mobile Money number is required." } };
   }
-  if (typeof input.job.momoPhoneNumber === "string" && input.workerMomoNumber !== input.job.momoPhoneNumber) {
+  if (assignedWorkers.length > 0 && !assignedWorkers.includes(workerId)) {
+    return { ok: false, error: { code: "worker_mismatch", message: "The requested payee is not the worker assigned to this job." } };
+  }
+  if (
+    !input.payeeResolvedServerSide &&
+    typeof input.job.momoPhoneNumber === "string" &&
+    input.workerMomoNumber !== input.job.momoPhoneNumber
+  ) {
     return { ok: false, error: { code: "worker_mismatch", message: "Worker Mobile Money number does not match the job's assigned worker." } };
   }
 
-  const workerId = input.job.assignedWorkerId as string;
   const workerMomoNumber = input.workerMomoNumber as string;
   return { ok: true, amountUgx, workerId, workerMomoNumber };
 }

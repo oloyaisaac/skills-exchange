@@ -1,5 +1,49 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [PROMPT-4 / R08] Payments: money actually moves, and the books can prove it
+
+- **Escrow release disburses (R08-P2-01, CRITICAL).** `releaseEscrowToWorker` used to mark the job
+  `RELEASED_TO_WORKER` and write a `momo_payouts` document with status `QUEUED` that no trigger ever
+  read, so the resident saw "paid" while nothing left the platform. It now asks the provider first
+  (`initiatePayout`), records `PAYOUT_PENDING` with a server-minted reference, and only then marks the
+  job released; a provider failure throws and leaves the escrow funded so the release can be retried.
+- **The wallet has a server (R08-P2-02, CRITICAL).** `wallet_entries` (immutable, derived entry ids)
+  and `wallets/{uid}` (transactional balance, daily counters) replace a Room-only ledger that a
+  reinstall erased. New callables `getWallet`, `requestWalletCashout`, `cancelWalletCashout`; the
+  cashout reserve and the balance change in one transaction; the client reads the balance from the
+  server (`ServerWalletService`) and keeps its Room ledger as an offline statement only.
+- **Material advance (R08-P2-03, HIGH).** Authorization now happens before any write (a stranger can
+  no longer burn a job's advance slot), the amount is half of `job.materialsSubtotal` from the job
+  document rather than a caller-supplied subtotal, the payee is read from `users/{workerId}`, and the
+  payout is validated against the advance amount instead of the labour total — the mismatch that made
+  every honest advance fail.
+- **One payout core (R08-P2-04, HIGH).** `submitDisbursement` is the single place that talks to the
+  disbursement provider; the release, the advance and the wallet cashout are thin front ends over it.
+  The idempotency gate is scoped by `payoutKind`, and a legacy `momo_payouts` record is reported as
+  `PAYOUT_UNCONFIRMED` rather than being mistaken for a paid worker.
+- **The fee is real (R08-P2-05, MEDIUM).** Every release writes one immutable
+  `platform_fees/{FEE-<jobId>}` record built from the stored quote; `validateFeeLedger` proves the
+  labour, materials and fee buckets add back to the collected total and that the fee is the quoted 10%
+  of labour. The worker is paid labour; the fee is never disbursed.
+- **Controls and reconciliation (R08-P2-06, MEDIUM).** Hourly `reconcilePayments` compares every open
+  payout with the provider, applies the same transitions as the status callable, credits the wallet
+  once per payout and writes a `reconciliation_reports` entry. Cashouts enforce a UGX 5,000 minimum,
+  UGX 2,000,000 and three requests per day, require a verified destination, refuse a number changed
+  inside 24 hours, and honour a sandbox `MOMO_ALLOWED_NUMBERS` allow-list.
+- **Refunds (R08-P2-07, LOW).** `getRefundStatus` and hourly `reconcileRefunds` settle refunds against
+  the provider; a partial refund now reduces the escrow (`applyRefundToEscrow`) and keeps the
+  remainder payable, and only a full refund closes it as `REFUNDED`.
+- **Rules.** `payouts`, `materialAdvances`, `wallet_entries`, `wallets`, `wallet_withdrawals`,
+  `platform_fees` and `reconciliation_reports` are server-written and admin-read only; three new
+  emulator tests.
+- **Tests.** Backend 202 → 250; Firestore rules 17 → 20; client +6 (`ServerWalletTest`, runs in CI);
+  callables 30 → 34, all wrapped in App Check, plus two hourly scheduled functions.
+- **Not verified.** No MTN sandbox call was made: payment correctness is code-verified and
+  provider-UNVERIFIED. No deploy, so the new callables, schedules and rules are not live. The
+  reconciliation sweep has never run against real data. A release still pays the worker's Mobile Money
+  directly, so its wallet line is a statement (`withdrawable: false`) — crediting it as spendable
+  would allow the same shilling to be withdrawn twice.
+
 ### [2026-11-20] [PROMPT-4 / R07] Application security: a PIN the server owns, and rules that are executed
 
 - **Doorstep PIN (R07-P2-01, CRITICAL).** The phone compared the typed code with a value the caller

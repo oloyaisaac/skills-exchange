@@ -1,17 +1,17 @@
 # REVIEWER IMPLEMENTATION STATE — Prompt 4 (strict one-reviewer-at-a-time)
 
 **Programme:** ASMT-2026-11-19 · **Cycle:** Prompt-4 remediation
-**Updated:** 2026-11-20 · **Branch:** `arena/503811fb-skills-exchange`
+**Updated:** 2026-11-20 · **Branch:** `arena/5eb05553-skills-exchange`
 
 ## Position
 
 | Field | Value |
 |---|---|
 | Total original reviewers | **15** |
-| Current reviewer | **R08 — next in the reviewer list** (reviewer 7 complete) |
-| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05, R06, R07 (7 of 15)** |
-| Reviewers awaiting implementation | R08 … R15 |
-| Next reviewer number | **8** |
+| Current reviewer | **R09 — next in the reviewer list** (reviewer 8 complete) |
+| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05, R06, R07, R08 (8 of 15)** |
+| Reviewers awaiting implementation | R09 … R15 |
+| Next reviewer number | **9** |
 
 ## R01 — COMPLETE (gate passed)
 
@@ -254,6 +254,70 @@ Firestore rules suite: the invariants below are proven against the emulator, not
 - **Storage rules are not executed**, only checked structurally.
 - **No device or on-device PEN test**: bypass attempts are the emulator's, not a real client's.
 
+## R08 — COMPLETE (gate passed)
+
+Source: `review_results/prompt2/REVIEW_08.md` (verdict **FAIL**, 7 findings). The reviewer's summary
+was blunt and correct: the platform had "bookkeeping that looks like payment". The release marked the
+worker paid and wrote a QUEUED record nobody read; the wallet existed only inside the phone; the
+platform fee was a client-side estimate; and nothing compared the platform's records with the
+provider's.
+
+| Finding | Required correction | Status | Evidence |
+|---|---|---|---|
+| R08-P2-01 | CRITICAL: `releaseEscrowToWorker` set `RELEASED_TO_WORKER` and queued a `momo_payouts` record with status QUEUED, with no provider call and no trigger reading it | **IMPLEMENTED AND VERIFIED (pure core)** | `performEscrowRelease` now calls `initiatePayout` **before** it touches the job: the provider is asked, a 202 becomes `PAYOUT_PENDING`, and only then does the job flip to `RELEASED_TO_WORKER` with the payout and provider reference ids. A provider failure throws and leaves the escrow funded, so no screen can report a payment that never left the account. `payoutCore.test.mjs` asserts the release reaches the provider (it never did) and that a 503 leaves nothing recorded as paid. The legacy `momo_payouts` document is still mirrored for the installed app, now carrying the real provider status |
+| R08-P2-02 | CRITICAL: the wallet ledger and withdrawals were Room-only; a reinstall erased the balance and no server wallet existed | **IMPLEMENTED AND VERIFIED** | `wallet_entries` (immutable, derived ids) + `wallets/{uid}` (transactional summary) are the server ledger and balance; `getWallet`, `requestWalletCashout` and `cancelWalletCashout` are new callables; the cashout reserve and the balance move in one transaction, so the balance cannot be double-spent. `wallet.test.mjs` (9) pins the money semantics, `ServerWalletTest` (6) pins the client contract, and the collections are deny-all in `firestore.rules` (emulator tests). Client: `ServerWalletService`, `getServerWallet`/`getServerAvailableBalanceMinor`/`requestServerWalletCashout` in the repository |
+| R08-P2-03 | HIGH: the material advance wrote PENDING before the ownership check, took the amount from a caller-supplied subtotal (and could therefore never pass `validatePayoutInput`), and trusted a client wallet number | **IMPLEMENTED AND VERIFIED** | `decideMaterialAdvance` authorizes first (owner, funded escrow, assigned worker, no existing advance) and derives half of `job.materialsSubtotal` from the job document; the slot is then claimed in a transaction; the payee is read from `users/{workerId}`; `initiatePayout` validates against `expectedAmountUgx` instead of the labour total. `materialAdvance.test.mjs` (6) and the advance cases in `payoutCore.test.mjs` |
+| R08-P2-04 | HIGH: two payout implementations with different money semantics, and no bridge between the collection the release wrote and the one the status callable read | **IMPLEMENTED AND VERIFIED** | one `submitDisbursement` core: `initiatePayout` (escrow release and material advance) and `initiateWithdrawalPayout` (wallet cashout, record id = withdrawal id) are thin front ends over it. The idempotency gate is scoped by `payoutKind`, so an advance no longer blocks the release it feeds. `getMoMoPayoutStatus` falls back to legacy `momo_payouts` records and reports an unconfirmed one as `PAYOUT_UNCONFIRMED` instead of pretending it is paid. `payoutCore.test.mjs` (13) |
+| R08-P2-05 | MEDIUM: the fee was not ledgered or split; the whole `grandTotal` landed in one platform account and the fee was a client calculation | **IMPLEMENTED AND VERIFIED** | `platform_fees/{FEE-<jobId>}` is written once per release from the *stored* quote (`validateStoredQuote`), and `validateFeeLedger` proves the buckets add back to the collected total and that the fee is the quoted 10% of labour. The worker is paid the labour bucket; the fee bucket is platform revenue and is never disbursed. `feeLedger.test.mjs` (4) |
+| R08-P2-06 | MEDIUM: no reconciliation, no velocity limit, no payout allow-list, no re-authentication on destination change | **IMPLEMENTED AND VERIFIED (pure core)** | `reconcilePayments` (hourly) re-queries every open payout, applies the same transitions as the status callable, credits the wallet once per payout, and writes an immutable `reconciliation_reports` entry; `decideCashout` enforces a UGX 5,000 minimum, UGX 2,000,000/day and 3 requests/day; `decideCashoutDestination` requires a verified profile number, refuses a number changed inside 24 hours (re-verification) and honours `MOMO_ALLOWED_NUMBERS` in sandbox. `reconciliation.test.mjs` (8), `wallet.test.mjs` destination cases |
+| R08-P2-07 | LOW: refund status was never polled, and a partial refund did not adjust the escrow or the ledger | **IMPLEMENTED AND VERIFIED (pure core)** | `getRefundStatus` (callable) and `reconcileRefunds` (hourly) poll the provider and settle the refund record; `applyRefundToEscrow` computes the escrow that remains after a partial refund, keeps the remainder payable (`FUNDS_LOCKED_IN_ESCROW`) and only closes the escrow on a full refund (`REFUNDED`); refunds larger than the funding never drive the escrow negative. `refundStatus.test.mjs` (8) |
+
+| (also flagged) | `momo_transactions` allowed authenticated create | **CLOSED (R07) — re-verified** | the review's note predates R07: the rule is `allow create: if false`, update is admin-only, and the emulator test "the MoMo ledger cannot be written by a client" executes the denial. Nothing further was needed, and it is recorded here rather than silently dropped |
+
+### Verification evidence (executed)
+
+- CI run **44762882572** / **44762882657** (the last commit of the round): **all 7 checks pass** —
+  Compile and unit tests (3m32s), Backend build and tests, Backend handler tests, Firestore rules
+  tests, Documentation checks, Secret scan and CodeRabbit.
+- Backend: `npm run build && npm test` in `functions/` — **250/250** `node --test` tests (202 after R07
+  + 9 wallet + 6 material advance + 4 fee ledger + 8 reconciliation + 13 payout core + 8 refund
+  status). The build is clean under `tsc`.
+- Backend **handler** suite (real handlers against the Firestore emulator) was rewritten: it used to
+  assert that a release always succeeds. It now proves the opposite, which is the finding — with no
+  provider configuration the release is refused, the escrow stays `FUNDS_LOCKED_IN_ESCROW`, and
+  neither `payouts` nor the legacy `momo_payouts` record is written.
+- Static guards: document map, README claims, doc links, traceability, architecture guards, query
+  limits (all list queries carry `limit`) and secret scan all pass.
+- Firestore rules: three new emulator tests (wallet/ledger/withdrawal deny-all, payout/fee/report
+  admin-read-only, material advance visible to the two parties and writable by neither) — **20 tests**
+  in the `rules` CI job.
+- Client: `ServerWalletTest` adds **6** JVM tests over the response parser and the new typed
+  contracts; the suite is executed in CI (the Android job is green), not in this environment — there
+  is no JDK or Android SDK here, and the total case count was not read from the run.
+- CI caught two real defects in the new client code that reading did not: the typed contract refused
+  `requestWalletCashout`/`getRefundStatus` because the service did not send their required fields, and
+  two `assertEquals` calls put the JUnit4 message last, which does not compile.
+
+### Not claimed
+
+- **No provider traffic**: the disbursement core is exercised against injected fakes; no MTN sandbox
+  call was made, so "the worker is paid" remains *code-verified, provider-UNVERIFIED*. The
+  fail-closed sandbox guard is what keeps this from being a production path.
+- **No `firebase deploy`**: new callables, scheduled functions and rules are exercised locally and in
+  the emulator only. `MOMO_ALLOWED_NUMBERS` and the hourly schedules must be deployed before the
+  wallet is operable in the cloud.
+- **The wallet is not funded by a release**: an escrow release pays the worker's Mobile Money
+  directly through the provider, so the resulting statement line is `withdrawable: false`. Crediting
+  it as a spendable balance would let the same shilling be withdrawn twice. A wallet balance becomes
+  withdrawable only for money that stayed inside the platform (adjustments/refunds-to-wallet), which
+  is the remaining product decision, not a hidden behaviour.
+- **No live reconciliation**: the sweep has never run against a real provider, and no report exists
+  from production data.
+- **The wallet books survive account deletion, on purpose**: `wallets`, `wallet_entries`,
+  `wallet_withdrawals`, `payouts`, `platform_fees` and `refunds` are financial records with a
+  retention obligation, and deleting them would erase evidence of a balance the owner may still be
+  owed. Erasing the personal identifiers while retaining the money trail is R09's retention work.
+
 ## Completion declarations
 
 - `reviewer_completions/REVIEWER_01_DONE.md`
@@ -263,7 +327,8 @@ Firestore rules suite: the invariants below are proven against the emulator, not
 - `reviewer_completions/REVIEWER_05_DONE.md`
 - `reviewer_completions/REVIEWER_06_DONE.md`
 - `reviewer_completions/REVIEWER_07_DONE.md`
+- `reviewer_completions/REVIEWER_08_DONE.md`
 
 ## Blockers
 
-None. R07 complete; R08 is next.
+None. R08 complete; R09 is next.

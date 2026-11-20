@@ -64,7 +64,26 @@ resource shrinking. Evidence: Android run 44758119411 (466 tests, 0 failures), b
 suite green (32s), docs and secret checks pass. Not verified: deploy, App Check attestation, release
 APK, Storage-rule execution, on-device bypass attempts.
 
-**R08 — next in the reviewer list.** R09–R15 awaiting.
+**R08 — COMPLETE.** Payments were bookkeeping that looked like payment: the release marked the
+worker paid and wrote a QUEUED record that nothing read. The escrow release now disburses through
+one `submitDisbursement` core **before** the job is marked released, so a provider failure leaves the
+escrow funded instead of reporting a payment that never happened. The wallet left the phone:
+`wallet_entries` + `wallets/{uid}` are the server ledger and balance, `getWallet`,
+`requestWalletCashout` and `cancelWalletCashout` decide amount, velocity limits (UGX 5,000 minimum,
+UGX 2,000,000 and three requests a day) and the verified destination server-side, and a cashout
+reserve is atomic with the balance. The material advance is authorized before anything is written and
+paid from `job.materialsSubtotal` (half) with the worker's number read from the profile, closing both
+the griefing slot and the `amount_mismatch` bug that made every honest advance fail. The 10% platform
+fee is a server-side, validated, per-job `platform_fees` record whose buckets must add back to the
+collected total. Hourly `reconcilePayments` and `reconcileRefunds` sweeps settle what the provider
+confirms, flag amount disagreements for humans and write immutable reports; refunds are now polled and
+a partial refund reduces the escrow while keeping the remainder payable. Evidence: backend 250/250
+(48 new tests over six new pure modules), three new emulator rules tests (20 total), guards pass.
+Evidence: Android CI job green (3m32s) in run 44762882572, backend 250/250, rules 20/20, handler
+suite rewritten to prove the fail-closed release. Not verified: any real provider traffic, deploy,
+and the scheduled sweeps.
+
+**R09 — next in the reviewer list.** R10–R15 awaiting.
 
 ## Review Track — 2026-11-19 (not started)
 
