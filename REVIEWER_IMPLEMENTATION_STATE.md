@@ -339,9 +339,9 @@ Two of the seven findings were stale in the reviewer's favour (`R09-P2-01` was p
 
 ### Verification evidence (executed)
 
-- CI run **44766861805** / **44766861764** (commit `aaa1968`, the last commit of the round):
-  **all 7 checks pass** — Compile and unit tests (3m09s), Backend build and tests, Backend handler
-  tests, Firestore rules tests (1m12s), Documentation checks, Secret scan and CodeRabbit.
+- CI run **44767996592** / **44767996563** (the last commit of the round):
+  **all 7 checks pass** — Compile and unit tests (2m29s), Backend build and tests, Backend handler
+  tests, Firestore rules tests (36s), Documentation checks, Secret scan and CodeRabbit.
 - Backend: `npm run build && npm test` in `functions/` — **272/272** `node --test` tests (250 after
   R08 + 8 retention + 7 pii + 4 compliance + 3 accountDeletion; the two new files are registered in
   `functions/package.json`). The build is clean under `tsc`.

@@ -95,7 +95,7 @@ server redacts the guarantor submission — NIN masked, names, phones and photo 
 the file reaches the share sheet. Retention exists as code: `RETENTION_POLICY` with a window, an
 action and a reason per category, legal holds that are never swept, and a daily `applyRetentionPolicy`
 sweep that retains and reports what it cannot date. The copy no longer claims encryption the code does
-not do. Evidence: backend 272/272, rules 24/24, 7 CI checks green (run 44766861805), new
+not do. Evidence: backend 272/272, rules 24/24, 7 CI checks green (run 44767996592), new
 `check_consent_version.mjs` guard. Not verified: deployment, the schedule firing, Storage purge against
 a real bucket, backups, regulator filings.
 REM-037 stays `IN_PROGRESS` on purpose: R09 erases both sides' dispute records with the account, so

@@ -21,9 +21,9 @@ I finished the work for this reviewer.
 
 ## Evidence
 
-- CI (run 44766861805 / 44766861764): **7/7 checks pass** — Compile and unit tests (3m09s), Backend
-  build and tests, Backend handler tests, Firestore rules tests, Documentation checks, Secret scan,
-  CodeRabbit.
+- CI (run 44767996592 / 44767996563): **7/7 checks pass** — Compile and unit tests (2m29s), Backend
+  build and tests, Backend handler tests, Firestore rules tests (36s), Documentation checks, Secret
+  scan, CodeRabbit.
 - Backend `npm run build && npm test`: **272/272** (retention 8, pii 7, compliance +4, accountDeletion
   +3).
 - Firestore rules: **24** emulator tests (4 new).
