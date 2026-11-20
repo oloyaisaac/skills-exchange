@@ -6,8 +6,9 @@ import android.util.Log
 import android.net.Uri
 import com.example.data.db.*
 import com.example.data.remote.FirebaseService
-import com.example.data.remote.SmsNotificationService
+import com.example.util.CurrencyRegion
 import com.example.util.DoorstepPinPolicy
+import com.example.util.JobMoney
 import com.example.util.Money
 import com.example.util.GuarantorInput
 import com.example.util.GuarantorValidators
@@ -18,8 +19,7 @@ import kotlinx.coroutines.flow.map
 
 class SkillsExchangeRepository(
     private val db: AppDatabase,
-    private val firebaseService: FirebaseService = FirebaseService(),
-    private val smsNotificationService: SmsNotificationService = SmsNotificationService()
+    private val firebaseService: FirebaseService = FirebaseService()
 ) {
     // R04-P2-06: both feeds are viewer-scoped. Providers must be KYC-approved to be listed; jobs
     // are open work plus the viewer's own or assigned jobs. Neither flow is an authorization
@@ -571,11 +571,14 @@ class SkillsExchangeRepository(
         val ownerUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
             ?: return null
         val newJobId = "job_${System.currentTimeMillis()}"
-        val laborTotal = laborHours * laborRate
-        val isLaborOnly = materialsProvidedBy == "RESIDENT" || materialsProvidedBy == "NONE_NEEDED"
-        val materialsSubtotal = if (isLaborOnly) 0.0 else (budget - laborTotal).coerceAtLeast(0.0)
-        val platformFee = laborTotal * 0.10
-        val grandTotal = laborTotal + materialsSubtotal + platformFee
+        // R05-P2-03: every money amount is whole Uganda shillings, the single unit the provider
+        // payloads use (`momoCollection` refuses a non-integer total). `JobMoney.split` rounds each
+        // component once and sums the rounded parts, so what is stored equals what is displayed.
+        val money = JobMoney.split(laborHours, laborRate, budget, materialsProvidedBy)
+        val laborTotal = money.laborTotal
+        val materialsSubtotal = money.materialsSubtotal
+        val platformFee = money.platformFee
+        val grandTotal = money.grandTotal
 
         val randomDoorstepPin = (1000..9999).random().toString()
 
@@ -635,7 +638,7 @@ class SkillsExchangeRepository(
                 jobId = newJobId,
                 senderName = "System",
                 isFromUser = false,
-                message = "Job request (${if (isLaborOnly) "Labor Only" else "Labor + Materials"}) broadcasted to verified local $category specialists in $district.",
+                message = "Job request (${if (JobMoney.isLaborOnly(materialsProvidedBy)) "Labor Only" else "Labor + Materials"}) broadcasted to verified local $category specialists in $district.",
                 timestampText = "Just now",
                 isSystemNotification = true
             )
@@ -792,7 +795,8 @@ class SkillsExchangeRepository(
         db.jobPostDao().updateEmergencyAddon(
             jobId = jobId,
             requested = true,
-            amount = amount,
+            // R05-P2-03: whole shillings, in the one unit the app stores.
+            amount = CurrencyRegion.roundToWholeShillings(amount).toDouble(),
             reason = reason,
             status = "PENDING"
         )
@@ -802,7 +806,7 @@ class SkillsExchangeRepository(
                 jobId = jobId,
                 senderName = "Worker Alert",
                 isFromUser = false,
-                message = "⚠️ Emergency Material Add-on Request: $reason ($${"%.2f".format(amount)}). Customer approval required.",
+                message = "⚠️ Emergency Material Add-on Request: $reason (${CurrencyRegion.format(amount)}). Customer approval required.",
                 timestampText = "Just now",
                 isSystemNotification = false
             )
@@ -870,7 +874,8 @@ class SkillsExchangeRepository(
         db.jobPostDao().updateMaterialAdvance(
             jobId = jobId,
             requested = true,
-            amount = amount,
+            // R05-P2-03: whole shillings at the boundary, never a fractional provider amount.
+            amount = CurrencyRegion.roundToWholeShillings(amount).toDouble(),
             status = "REQUESTED",
             receiptUrl = ""
         )
@@ -880,7 +885,7 @@ class SkillsExchangeRepository(
                 jobId = jobId,
                 senderName = "Worker Alert",
                 isFromUser = false,
-                message = "🛒 Early Parts Advance Requested: Worker requested 50% parts advance ($${"%.2f".format(amount)}) from escrow to buy hardware. Mandatory receipt photo upload required within 60 mins.",
+                message = "🛒 Early Parts Advance Requested: Worker requested 50% parts advance (${CurrencyRegion.format(amount)}) from escrow to buy hardware. Mandatory receipt photo upload required within 60 mins.",
                 timestampText = "Just now",
                 isSystemNotification = false
             )
@@ -1690,7 +1695,7 @@ class SkillsExchangeRepository(
                 category = "Plumbing",
                 neighborhood = "Maplewood East",
                 residenceYears = 4,
-                hourlyRate = 75.0,
+                hourlyRate = 277500.0,
                 distanceMiles = 0.8,
                 rating = 4.9,
                 completedJobsCount = 42,
@@ -1710,7 +1715,7 @@ class SkillsExchangeRepository(
                 category = "Electrical",
                 neighborhood = "Sunnyside District",
                 residenceYears = 6,
-                hourlyRate = 85.0,
+                hourlyRate = 314500.0,
                 distanceMiles = 1.2,
                 rating = 5.0,
                 completedJobsCount = 58,
@@ -1730,7 +1735,7 @@ class SkillsExchangeRepository(
                 category = "Mechanic",
                 neighborhood = "Oakridge Heights",
                 residenceYears = 3,
-                hourlyRate = 65.0,
+                hourlyRate = 240500.0,
                 distanceMiles = 2.1,
                 rating = 4.8,
                 completedJobsCount = 31,
@@ -1750,7 +1755,7 @@ class SkillsExchangeRepository(
                 category = "Tutoring",
                 neighborhood = "Sunnyside District",
                 residenceYears = 5,
-                hourlyRate = 50.0,
+                hourlyRate = 185000.0,
                 distanceMiles = 0.5,
                 rating = 4.9,
                 completedJobsCount = 64,
@@ -1770,7 +1775,7 @@ class SkillsExchangeRepository(
                 category = "Cleaning",
                 neighborhood = "Maplewood East",
                 residenceYears = 2,
-                hourlyRate = 45.0,
+                hourlyRate = 166500.0,
                 distanceMiles = 1.5,
                 rating = 4.7,
                 completedJobsCount = 29,
@@ -1790,7 +1795,7 @@ class SkillsExchangeRepository(
                 category = "Carpentry",
                 neighborhood = "Riverdale North",
                 residenceYears = 7,
-                hourlyRate = 90.0,
+                hourlyRate = 333000.0,
                 distanceMiles = 3.4,
                 rating = 5.0,
                 completedJobsCount = 46,
@@ -1810,7 +1815,7 @@ class SkillsExchangeRepository(
                 category = "Gardening",
                 neighborhood = "Sunnyside District",
                 residenceYears = 4,
-                hourlyRate = 40.0,
+                hourlyRate = 148000.0,
                 distanceMiles = 0.9,
                 rating = 4.8,
                 completedJobsCount = 52,
@@ -1830,7 +1835,7 @@ class SkillsExchangeRepository(
                 category = "Mechanic",
                 neighborhood = "Oakridge Heights",
                 residenceYears = 5,
-                hourlyRate = 70.0,
+                hourlyRate = 259000.0,
                 distanceMiles = 1.8,
                 rating = 4.9,
                 completedJobsCount = 37,
@@ -1853,7 +1858,7 @@ class SkillsExchangeRepository(
                 description = "Constant drip under shutoff valve near disposal unit. Customer provides new shutoff valve and Teflon tape on site.",
                 postedByResident = "Robert K. (Sunnyside)",
                 district = "Sunnyside District",
-                budget = 123.20,
+                budget = 455840.0,
                 urgency = "Today",
                 status = "In Progress",
                 assignedProviderId = "prov_1",
@@ -1861,14 +1866,14 @@ class SkillsExchangeRepository(
                 createdTimestamp = System.currentTimeMillis() - 3600000,
                 estimatedHours = 1.5,
                 materialsCost = 0.0,
-                safetyFee = 11.25,
+                safetyFee = 41625.0,
                 materialsProvidedBy = "RESIDENT",
                 laborHours = 1.5,
-                laborRate = 75.0,
-                laborTotal = 112.50,
+                laborRate = 277500.0,
+                laborTotal = 416250.0,
                 materialsSubtotal = 0.0,
-                platformFee = 11.25,
-                grandTotal = 123.75,
+                platformFee = 41625.0,
+                grandTotal = 457875.0,
                 beforePhotoUrl = "img_before_leak",
                 afterPhotoUrl = "img_after_repair",
                 paymentChannel = "MTN_MOMO",
@@ -1882,22 +1887,22 @@ class SkillsExchangeRepository(
                 description = "Install NEMA 14-50 receptacle near main electrical panel in attached garage. Worker sources 50A breaker and 6/3 Romex wire.",
                 postedByResident = "Sarah M. (Maplewood)",
                 district = "Maplewood East",
-                budget = 360.50,
+                budget = 1333850.0,
                 urgency = "This Week",
                 status = "Accepted",
                 assignedProviderId = "prov_2",
                 assignedProviderName = "Marcus Vance",
                 createdTimestamp = System.currentTimeMillis() - 7200000,
                 estimatedHours = 3.0,
-                materialsCost = 75.0,
-                safetyFee = 25.50,
+                materialsCost = 277500.0,
+                safetyFee = 94350.0,
                 materialsProvidedBy = "PROVIDER",
                 laborHours = 3.0,
-                laborRate = 85.0,
-                laborTotal = 255.00,
-                materialsSubtotal = 75.00,
-                platformFee = 25.50,
-                grandTotal = 355.50,
+                laborRate = 314500.0,
+                laborTotal = 943500.0,
+                materialsSubtotal = 277500.0,
+                platformFee = 94350.0,
+                grandTotal = 1315350.0,
                 paymentChannel = "AIRTEL_MONEY",
                 momoPhoneNumber = "+256 751 883 910",
                 escrowStatus = "DEPOSIT_PROMPTED"
@@ -1909,7 +1914,7 @@ class SkillsExchangeRepository(
                 description = "2 squeaky oak floorboards in hallway and top riser on staircase flexes under weight. Resident provides screws and glue.",
                 postedByResident = "David B. (Oakridge)",
                 district = "Oakridge Heights",
-                budget = 198.00,
+                budget = 732600.0,
                 urgency = "Today",
                 status = "Requested",
                 assignedProviderId = null,
@@ -1917,14 +1922,14 @@ class SkillsExchangeRepository(
                 createdTimestamp = System.currentTimeMillis() - 10800000,
                 estimatedHours = 2.0,
                 materialsCost = 0.0,
-                safetyFee = 18.00,
+                safetyFee = 66600.0,
                 materialsProvidedBy = "RESIDENT",
                 laborHours = 2.0,
-                laborRate = 90.0,
-                laborTotal = 180.00,
+                laborRate = 333000.0,
+                laborTotal = 666000.0,
                 materialsSubtotal = 0.0,
-                platformFee = 18.00,
-                grandTotal = 198.00,
+                platformFee = 66600.0,
+                grandTotal = 732600.0,
                 paymentChannel = "MTN_MOMO",
                 momoPhoneNumber = "+256 774 302 911",
                 escrowStatus = "QUOTE_PENDING"
@@ -1936,7 +1941,7 @@ class SkillsExchangeRepository(
                 description = "Squealing noise when braking on front wheels. Have replacement ceramic pads ready on site.",
                 postedByResident = "Annette W. (Sunnyside)",
                 district = "Sunnyside District",
-                budget = 178.75,
+                budget = 661375.0,
                 urgency = "Today",
                 status = "Review",
                 assignedProviderId = "prov_3",
@@ -1944,14 +1949,14 @@ class SkillsExchangeRepository(
                 createdTimestamp = System.currentTimeMillis() - 14400000,
                 estimatedHours = 2.5,
                 materialsCost = 0.0,
-                safetyFee = 16.25,
+                safetyFee = 60125.0,
                 materialsProvidedBy = "RESIDENT",
                 laborHours = 2.5,
-                laborRate = 65.0,
-                laborTotal = 162.50,
+                laborRate = 240500.0,
+                laborTotal = 601250.0,
                 materialsSubtotal = 0.0,
-                platformFee = 16.25,
-                grandTotal = 178.75,
+                platformFee = 60125.0,
+                grandTotal = 661375.0,
                 beforePhotoUrl = "img_before_leak",
                 afterPhotoUrl = "img_after_repair",
                 paymentChannel = "MTN_MOMO",
@@ -1965,7 +1970,7 @@ class SkillsExchangeRepository(
                 description = "10th grade student needing 2 hours/week problem solving prep for AP exams.",
                 postedByResident = "Gregory S. (Riverdale)",
                 district = "Riverdale North",
-                budget = 110.00,
+                budget = 407000.0,
                 urgency = "Scheduled",
                 status = "Completed",
                 assignedProviderId = "prov_4",
@@ -1973,14 +1978,14 @@ class SkillsExchangeRepository(
                 createdTimestamp = System.currentTimeMillis() - 86400000,
                 estimatedHours = 2.0,
                 materialsCost = 0.0,
-                safetyFee = 10.00,
+                safetyFee = 37000.0,
                 materialsProvidedBy = "NONE_NEEDED",
                 laborHours = 2.0,
-                laborRate = 50.0,
-                laborTotal = 100.00,
+                laborRate = 185000.0,
+                laborTotal = 370000.0,
                 materialsSubtotal = 0.0,
-                platformFee = 10.00,
-                grandTotal = 110.00,
+                platformFee = 37000.0,
+                grandTotal = 407000.0,
                 paymentChannel = "MTN_MOMO",
                 momoPhoneNumber = "+256 779 400 112",
                 escrowStatus = "RELEASED_TO_WORKER"
@@ -1992,7 +1997,7 @@ class SkillsExchangeRepository(
                 description = "Dust removal from baseboards, windowsills, and hardwood floors after kitchen remodeling.",
                 postedByResident = "Priya N. (Maplewood)",
                 district = "Maplewood East",
-                budget = 198.00,
+                budget = 732600.0,
                 urgency = "This Week",
                 status = "Requested",
                 assignedProviderId = null,
@@ -2000,14 +2005,14 @@ class SkillsExchangeRepository(
                 createdTimestamp = System.currentTimeMillis() - 28800000,
                 estimatedHours = 4.0,
                 materialsCost = 0.0,
-                safetyFee = 18.00,
+                safetyFee = 66600.0,
                 materialsProvidedBy = "RESIDENT",
                 laborHours = 4.0,
-                laborRate = 45.0,
-                laborTotal = 180.00,
+                laborRate = 166500.0,
+                laborTotal = 666000.0,
                 materialsSubtotal = 0.0,
-                platformFee = 18.00,
-                grandTotal = 198.00,
+                platformFee = 66600.0,
+                grandTotal = 732600.0,
                 paymentChannel = "MTN_MOMO",
                 momoPhoneNumber = "+256 770 551 234",
                 escrowStatus = "QUOTE_PENDING"
@@ -2194,24 +2199,13 @@ class SkillsExchangeRepository(
                         createdAt = System.currentTimeMillis()
                     )
                 )
-                // C2-2 Fix #3 (F7): the details broadcast to emergency contacts must belong to the
-                // AUTHENTICATED account only — never the newest Room row, never a fabricated
-                // placeholder. With no authenticated profile the SMS is not dispatched at all: the
-                // in-app SOS flag and incident are still raised, but a stranger's number (or a
-                // made-up "+256 700 000 000") is never sent to responders.
-                val profile = resolveSosContactProfile(
-                    firebaseUid = firebaseService.getCurrentUser()?.uid,
-                    row = authenticatedProfileOnce()
-                )
-                if (profile != null) {
-                    smsNotificationService.dispatchEmergencySosAlert(
-                        workerPhone = profile.phoneNumber,
-                        workerName = profile.fullName.ifBlank { "Authenticated user" },
-                        latitude = latitude,
-                        longitude = longitude,
-                        district = district
-                    )
-                }
+                // R05-P2-01: this device no longer "sends" an SOS SMS at all. The stub that
+                // fabricated a `SENT` status is deleted; the SMS to emergency contacts is produced
+                // by the server-side `onSosIncidentCreated` trigger, which holds the Africa's
+                // Talking credential and can report a real provider outcome. What this device owns
+                // is the local incident above and its Firestore mirror, which is what the trigger
+                // reacts to. Emergency contact details are resolved server-side from the incident's
+                // authenticated owner — never from this device's newest Room row.
             }
         }
 

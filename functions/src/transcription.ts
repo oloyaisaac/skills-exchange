@@ -34,7 +34,9 @@ export function buildTranscriptionPrompt(): string {
     '  "fullTranscript" (string, verbatim transcription),',
     '  "suggestedTitle" (string, max 60 characters),',
     '  "suggestedCategory" (one of: ' + TRANSCRIPTION_CATEGORIES.join(", ") + "),",
-    '  "suggestedBudget" (number, USD, between 0 and 100000),',
+    // R05-P2-03: the app stores money in whole Uganda shillings everywhere; asking the model for
+    // "USD" is what produced budgets that were later read as shillings.
+    '  "suggestedBudget" (number, whole Uganda shillings (UGX), between 0 and 10000000),',
     '  "suggestedDescription" (string).',
     "Do not wrap the JSON in prose or markdown.",
   ].join("\n");
@@ -81,7 +83,7 @@ export function validateTranscribedJob(value: Record<string, unknown>): Transcri
   }
 
   const budget = typeof value.suggestedBudget === "number" ? value.suggestedBudget : Number.NaN;
-  if (!Number.isFinite(budget) || budget < 0 || budget > 100_000) {
+  if (!Number.isFinite(budget) || budget < 0 || budget > 10_000_000) {
     throw new Error("suggestedBudget is out of range");
   }
 
@@ -96,7 +98,8 @@ export function validateTranscribedJob(value: Record<string, unknown>): Transcri
     fullTranscript: transcript.trim(),
     suggestedTitle: title,
     suggestedCategory: match,
-    suggestedBudget: Math.round(budget * 100) / 100,
+    // Whole shillings: a fractional shilling cannot be collected by the payment provider.
+    suggestedBudget: Math.round(budget),
     suggestedDescription: description,
   };
 }

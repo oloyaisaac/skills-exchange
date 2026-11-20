@@ -273,8 +273,15 @@ class FirebaseService(private val context: Context? = null) {
     suspend fun releaseEscrowToWorker(jobId: String, workerId: String): Pair<Boolean, String> {
         return try {
             val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            // R05-P2-06: validated against the typed contract before the network call.
             val result = functions.getHttpsCallable("releaseEscrowToWorker")
-                .call(mapOf("jobId" to jobId, "workerId" to workerId))
+                .call(
+                    CallableContracts.payload(
+                        "releaseEscrowToWorker",
+                        "jobId" to jobId,
+                        "workerId" to workerId
+                    )
+                )
                 .await()
             val data = result.data as? Map<*, *>
             Pair(true, data?.get("message")?.toString() ?: "Escrow released.")
@@ -288,7 +295,7 @@ class FirebaseService(private val context: Context? = null) {
         return try {
             val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
             functions.getHttpsCallable("revokeMyTokens")
-                .call(mapOf("reason" to reason))
+                .call(CallableContracts.payload("revokeMyTokens", "reason" to reason))
                 .await()
             true
         } catch (e: Exception) {
@@ -993,7 +1000,8 @@ class FirebaseService(private val context: Context? = null) {
             val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
             functions.getHttpsCallable("recordConsent")
                 .call(
-                    mapOf(
+                    CallableContracts.payload(
+                        "recordConsent",
                         "version" to version,
                         "grants" to mapOf(
                             "terms" to true,
@@ -1014,7 +1022,10 @@ class FirebaseService(private val context: Context? = null) {
     suspend fun exportMyData(): String? {
         return try {
             val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
-            val result = functions.getHttpsCallable("exportMyData").call(mapOf<String, Any>()).await()
+            val result = functions
+                .getHttpsCallable("exportMyData")
+                .call(CallableContracts.payload("exportMyData"))
+                .await()
             @Suppress("UNCHECKED_CAST")
             val data = result.data as? Map<String, Any?> ?: return null
             org.json.JSONObject(data).toString()
@@ -1031,7 +1042,10 @@ class FirebaseService(private val context: Context? = null) {
     suspend fun checkAdminAccess(): Boolean {
         return try {
             val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
-            val result = functions.getHttpsCallable("getAdminAccess").call(mapOf<String, Any>()).await()
+            val result = functions
+                .getHttpsCallable("getAdminAccess")
+                .call(CallableContracts.payload("getAdminAccess"))
+                .await()
             @Suppress("UNCHECKED_CAST")
             val data = result.data as? Map<String, Any?> ?: return false
             data["admin"] == true
@@ -1046,7 +1060,7 @@ class FirebaseService(private val context: Context? = null) {
             val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
             val result = functions
                 .getHttpsCallable("getPendingVerificationQueue")
-                .call(mapOf<String, Any>())
+                .call(CallableContracts.payload("getPendingVerificationQueue"))
                 .await()
             @Suppress("UNCHECKED_CAST")
             val data = result.data as? Map<String, Any> ?: emptyMap()
@@ -1062,7 +1076,14 @@ class FirebaseService(private val context: Context? = null) {
             val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
             val result = functions
                 .getHttpsCallable("reviewWorkerApplication")
-                .call(mapOf("userId" to userId, "decision" to decision, "feedback" to feedback))
+                .call(
+                    CallableContracts.payload(
+                        "reviewWorkerApplication",
+                        "userId" to userId,
+                        "decision" to decision,
+                        "feedback" to feedback
+                    )
+                )
                 .await()
             @Suppress("UNCHECKED_CAST")
             val data = result.data as? Map<String, Any> ?: emptyMap()
@@ -1077,7 +1098,13 @@ class FirebaseService(private val context: Context? = null) {
             val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
             val result = functions
                 .getHttpsCallable("setWorkerActivationStatus")
-                .call(mapOf("userId" to userId, "activate" to activate))
+                .call(
+                    CallableContracts.payload(
+                        "setWorkerActivationStatus",
+                        "userId" to userId,
+                        "activate" to activate
+                    )
+                )
                 .await()
             @Suppress("UNCHECKED_CAST")
             val data = result.data as? Map<String, Any> ?: emptyMap()
@@ -1097,11 +1124,9 @@ class FirebaseService(private val context: Context? = null) {
     suspend fun getDisputesQueue(status: String? = null): List<Map<String, Any>> {
         return try {
             val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
-            val payload = mutableMapOf<String, Any>()
-            if (!status.isNullOrBlank()) payload["status"] = status
             val result = functions
                 .getHttpsCallable("getDisputesQueue")
-                .call(payload)
+                .call(CallableContracts.payload("getDisputesQueue", "status" to status))
                 .await()
             @Suppress("UNCHECKED_CAST")
             val data = result.data as? Map<String, Any> ?: emptyMap()
@@ -1128,15 +1153,18 @@ class FirebaseService(private val context: Context? = null) {
     ): Boolean {
         return try {
             val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
-            val payload = mutableMapOf<String, Any>()
-            payload["disputeId"] = disputeId
-            payload["resolution"] = resolution
-            if (resolutionType != null) payload["resolutionType"] = resolutionType
-            if (resolutionAmount != null) payload["resolutionAmount"] = resolutionAmount
-            if (adminNotes != null) payload["adminNotes"] = adminNotes
             val result = functions
                 .getHttpsCallable("resolveDispute")
-                .call(payload)
+                .call(
+                    CallableContracts.payload(
+                        "resolveDispute",
+                        "disputeId" to disputeId,
+                        "resolution" to resolution,
+                        "resolutionType" to resolutionType,
+                        "resolutionAmount" to resolutionAmount,
+                        "adminNotes" to adminNotes
+                    )
+                )
                 .await()
             @Suppress("UNCHECKED_CAST")
             val data = result.data as? Map<String, Any> ?: emptyMap()
@@ -1162,12 +1190,17 @@ class FirebaseService(private val context: Context? = null) {
     ): MoMoCollectionResult {
         return try {
             val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
-            val payload = mutableMapOf<String, Any>("jobId" to jobId)
-            if (amountUgx != null) payload["amountUgx"] = amountUgx
-            if (!phoneNumber.isNullOrBlank()) payload["phoneNumber"] = phoneNumber
             val result = functions
                 .getHttpsCallable("createMoMoCollection")
-                .call(payload)
+                .call(
+                    CallableContracts.payload(
+                        "createMoMoCollection",
+                        "jobId" to jobId,
+                        // R05-P2-03: the provider collects whole shillings only.
+                        "amountUgx" to amountUgx?.let { com.example.util.CurrencyRegion.roundToWholeShillings(it) }?.toDouble(),
+                        "phoneNumber" to phoneNumber?.takeIf { it.isNotBlank() }
+                    )
+                )
                 .await()
             @Suppress("UNCHECKED_CAST")
             val data = result.data as? Map<String, Any> ?: emptyMap()
@@ -1218,7 +1251,7 @@ class FirebaseService(private val context: Context? = null) {
             val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
             val result = functions
                 .getHttpsCallable("getMoMoCollectionStatus")
-                .call(mapOf("transactionRef" to transactionRef))
+                .call(CallableContracts.payload("getMoMoCollectionStatus", "transactionRef" to transactionRef))
                 .await()
             @Suppress("UNCHECKED_CAST")
             val data = result.data as? Map<String, Any> ?: emptyMap()

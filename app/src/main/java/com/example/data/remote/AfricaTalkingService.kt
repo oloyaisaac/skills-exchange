@@ -22,7 +22,7 @@ class AfricaTalkingService(
         return try {
             val result = functions
                 .getHttpsCallable("sendOtp")
-                .call(mapOf("phoneNumber" to phoneNumber))
+                .call(CallableContracts.payload("sendOtp", "phoneNumber" to phoneNumber))
                 .await()
 
             @Suppress("UNCHECKED_CAST")
@@ -43,7 +43,13 @@ class AfricaTalkingService(
         return try {
             val result = functions
                 .getHttpsCallable("verifyOtp")
-                .call(mapOf("phoneNumber" to phoneNumber, "code" to code))
+                .call(
+                    CallableContracts.payload(
+                        "verifyOtp",
+                        "phoneNumber" to phoneNumber,
+                        "code" to code
+                    )
+                )
                 .await()
 
             @Suppress("UNCHECKED_CAST")

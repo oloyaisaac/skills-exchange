@@ -8,7 +8,6 @@ import com.example.data.db.JobPostEntity
 import com.example.data.db.JobStatusAuditEntity
 import com.example.data.db.UserProfileEntity
 import com.example.data.remote.FirebaseService
-import com.example.data.remote.SmsNotificationService
 import com.example.data.repository.SkillsExchangeRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -54,7 +53,7 @@ class JobStatusAttributionF6SecurityTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        repository = SkillsExchangeRepository(db, FirebaseService(), SmsNotificationService())
+        repository = SkillsExchangeRepository(db, FirebaseService())
     }
 
     @After

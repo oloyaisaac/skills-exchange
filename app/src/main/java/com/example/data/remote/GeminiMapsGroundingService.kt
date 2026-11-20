@@ -1,172 +1,150 @@
 package com.example.data.remote
 
 import android.util.Log
-import com.example.BuildConfig
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONArray
-import org.json.JSONObject
-import java.util.concurrent.TimeUnit
+import com.google.firebase.functions.FirebaseFunctions
+import com.google.firebase.functions.FirebaseFunctionsException
+import kotlinx.coroutines.tasks.await
 
+/**
+ * R05-P2-05: one nearby place.
+ *
+ * Only fields Google actually returned are ever filled. The previous implementation hard-coded a
+ * list of invented shops complete with star ratings and phone numbers and displayed them as live
+ * Google Maps results; [isGrounded] exists so the UI can never present model prose as a business.
+ */
 data class GroundedPlaceResult(
     val name: String,
     val address: String,
-    val rating: String,
-    val phone: String,
-    val category: String,
-    val description: String,
-    val mapsUrl: String? = null
+    val rating: String = "",
+    val phone: String = "",
+    val category: String = "",
+    val description: String = "",
+    val mapsUrl: String? = null,
+    val isGrounded: Boolean = false
 )
 
+/**
+ * Result of a nearby-supplier search.
+ *
+ * [isGrounded] is true only when the backend returned at least one place from Google Maps grounding
+ * metadata. When it is false the caller must show [summary] as an unverified AI answer and must not
+ * render any place card at all.
+ */
+data class MapsGroundingResult(
+    val summary: String,
+    val places: List<GroundedPlaceResult> = emptyList(),
+    val isGrounded: Boolean = false,
+    val error: String? = null
+)
+
+/**
+ * R05-P2-04 / R05-P2-05 / R05-P2-07: nearby-supplier search.
+ *
+ * The Gemini credential is no longer in the APK: this class calls the authenticated
+ * `searchLocalPlaces` callable, which holds the key server-side. There is no client-side fallback
+ * content — a failure returns an error result, never fabricated shops.
+ */
 class GeminiMapsGroundingService {
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .build()
+    companion object {
+        private const val TAG = "GeminiMapsService"
+        const val CALLABLE = "searchLocalPlaces"
+        const val MAX_QUERY_LENGTH = 200
+        const val MAX_DISTRICT_LENGTH = 80
 
-    suspend fun searchLocalPlacesWithMaps(
-        query: String,
-        district: String
-    ): Pair<String, List<GroundedPlaceResult>> = withContext(Dispatchers.IO) {
-        val apiKey = BuildConfig.GEMINI_API_KEY
-        if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
-            return@withContext Pair(
-                "Gemini API key is missing or default. Please configure your GEMINI_API_KEY in Secrets.",
-                emptyList()
-            )
+        /** User-safe message per callable failure; never leaks the underlying exception text. */
+        fun messageFor(code: FirebaseFunctionsException.Code?): String = when (code) {
+            FirebaseFunctionsException.Code.UNAUTHENTICATED ->
+                "Sign in to search nearby places."
+            FirebaseFunctionsException.Code.FAILED_PRECONDITION ->
+                "Nearby place search is not configured."
+            FirebaseFunctionsException.Code.UNAVAILABLE ->
+                "Nearby place search is temporarily unavailable. Please try again."
+            FirebaseFunctionsException.Code.INVALID_ARGUMENT ->
+                "Enter a more specific search, for example \"cement and PVC pipes\"."
+            else -> "Nearby place search is unavailable right now."
         }
 
-        val prompt = "Act as a Google Maps Grounding Assistant. User is looking for: '$query' in or near '$district'. " +
-                "Provide a friendly summary response, and explicitly list 3 real/grounded local hardware stores, material suppliers, or service centers with their name, address, phone, rating, and specialties."
-
-        val jsonPayload = JSONObject().apply {
-            put("contents", JSONArray().apply {
-                put(JSONObject().apply {
-                    put("parts", JSONArray().apply {
-                        put(JSONObject().apply {
-                            put("text", prompt)
-                        })
-                    })
-                })
-            })
-            // Include Google Maps grounding tool
-            put("tools", JSONArray().apply {
-                put(JSONObject().apply {
-                    put("googleMaps", JSONObject())
-                })
-            })
-        }
-
-        val requestUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey"
-
-        val request = Request.Builder()
-            .url(requestUrl)
-            .post(jsonPayload.toString().toRequestBody("application/json".toMediaType()))
-            .build()
-
-        try {
-            val response = client.newCall(request).execute()
-            val responseBody = response.body?.string() ?: ""
-
-            if (!response.isSuccessful) {
-                // If googleMaps tool isn't enabled for the key, retry without tool wrapper
-                return@withContext queryWithoutMapsTool(prompt, apiKey)
-            }
-
-            val jsonResponse = JSONObject(responseBody)
-            val candidates = jsonResponse.optJSONArray("candidates")
-            val firstCandidate = candidates?.optJSONObject(0)
-            val parts = firstCandidate?.optJSONObject("content")?.optJSONArray("parts")
-
-            val fullTextBuilder = StringBuilder()
-            if (parts != null) {
-                for (i in 0 until parts.length()) {
-                    val partObj = parts.optJSONObject(i)
-                    val text = partObj?.optString("text")
-                    if (!text.isNullOrEmpty()) {
-                        fullTextBuilder.append(text)
-                    }
-                }
-            }
-
-            val resultText = fullTextBuilder.toString().ifEmpty { "No grounded location results found." }
-
-            // Extract places parsed from text or grounding metadata
-            val places = parseGroundedPlacesFromText(resultText, district)
-            Pair(resultText, places)
-
-        } catch (e: Exception) {
-            Log.e("GeminiMapsService", "Error calling Gemini Maps Grounding API: ${e.message}")
-            Pair("Unable to fetch live Google Maps data: ${e.localizedMessage}", emptyList())
-        }
-    }
-
-    private fun queryWithoutMapsTool(prompt: String, apiKey: String): Pair<String, List<GroundedPlaceResult>> {
-        val requestUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey"
-        val jsonPayload = JSONObject().apply {
-            put("contents", JSONArray().apply {
-                put(JSONObject().apply {
-                    put("parts", JSONArray().apply {
-                        put(JSONObject().apply {
-                            put("text", prompt)
-                        })
-                    })
-                })
-            })
-        }
-        val request = Request.Builder()
-            .url(requestUrl)
-            .post(jsonPayload.toString().toRequestBody("application/json".toMediaType()))
-            .build()
-
-        return try {
-            val response = client.newCall(request).execute()
-            val body = response.body?.string() ?: ""
-            val jsonResponse = JSONObject(body)
-            val text = jsonResponse.optJSONArray("candidates")
-                ?.optJSONObject(0)
-                ?.optJSONObject("content")
-                ?.optJSONArray("parts")
-                ?.optJSONObject(0)
-                ?.optString("text") ?: "No places returned."
-            Pair(text, parseGroundedPlacesFromText(text, "Sunnyside"))
-        } catch (e: Exception) {
-            Pair("Fallback search failed: ${e.message}", emptyList())
-        }
-    }
-
-    private fun parseGroundedPlacesFromText(text: String, district: String): List<GroundedPlaceResult> {
-        // High quality fallback/extracted places based on search context
-        return listOf(
-            GroundedPlaceResult(
-                name = "$district Central Hardware & Building Supply",
-                address = "142 Main St, $district",
-                rating = "4.8 ★ (120 reviews)",
-                phone = "+256 700 882 110",
-                category = "Hardware & Tools",
-                description = "Stocked with copper fittings, PVC pipes, 240V breakers, and paint supplies."
-            ),
-            GroundedPlaceResult(
-                name = "Sunnyside Electrical & Plumbing Depot",
-                address = "88 Industrial Way, $district",
-                rating = "4.9 ★ (210 reviews)",
-                phone = "+256 772 449 001",
-                category = "Plumbing & Electrical",
-                description = "Direct wholesale supplier for certified tradespeople and residents."
-            ),
-            GroundedPlaceResult(
-                name = "Express Motor Parts & Battery Center",
-                address = "204 Highway Bypass, $district",
-                rating = "4.7 ★ (85 reviews)",
-                phone = "+256 751 330 200",
-                category = "Automotive Parts",
-                description = "OEM brake ceramic pads, 12V batteries, and engine fluids."
-            )
+        /** Request payload; the backend re-validates both fields. */
+        fun payloadFor(query: String, district: String): Map<String, Any> = mapOf(
+            "query" to query.trim(),
+            "district" to district.trim().ifEmpty { "Kampala" }
         )
+
+        /**
+         * Parses the callable response. Anything that is not a grounded Maps place is dropped, so a
+         * malformed or unexpected payload degrades to "nothing found" instead of a fake shop.
+         */
+        fun parseResponse(data: Any?): MapsGroundingResult {
+            val map = data as? Map<*, *>
+                ?: return MapsGroundingResult(
+                    summary = "No verified places were found nearby.",
+                    isGrounded = false
+                )
+            val summary = (map["summary"] as? String).orEmpty()
+            val grounded = map["grounded"] == true
+            val rawPlaces = map["places"] as? List<*>
+            val places = rawPlaces.orEmpty().mapNotNull { raw ->
+                val place = raw as? Map<*, *> ?: return@mapNotNull null
+                val name = (place["name"] as? String)?.trim().orEmpty()
+                val uri = (place["uri"] as? String)?.trim().orEmpty()
+                if (name.isEmpty() || uri.isEmpty()) return@mapNotNull null
+                GroundedPlaceResult(
+                    name = name,
+                    address = (place["address"] as? String).orEmpty(),
+                    mapsUrl = uri,
+                    isGrounded = true
+                )
+            }
+            return MapsGroundingResult(
+                summary = summary.ifEmpty {
+                    if (places.isEmpty()) "No verified places were found nearby." else "Nearby places found on Google Maps."
+                },
+                places = places,
+                isGrounded = grounded && places.isNotEmpty()
+            )
+        }
+    }
+
+    /**
+     * Searches for real businesses near [district]. Never throws: every failure is returned as a
+     * [MapsGroundingResult] carrying a user-safe [MapsGroundingResult.error].
+     */
+    suspend fun searchLocalPlacesWithMaps(query: String, district: String): MapsGroundingResult {
+        val trimmed = query.trim()
+        if (trimmed.length < 2) {
+            return MapsGroundingResult(
+                summary = "",
+                error = "Type at least two characters to search."
+            )
+        }
+        if (trimmed.length > MAX_QUERY_LENGTH || district.trim().length > MAX_DISTRICT_LENGTH) {
+            return MapsGroundingResult(summary = "", error = "That search is too long.")
+        }
+        return try {
+            // R05-P2-06: validated typed payload. R05-P2-07: only the read-only search is retried.
+            val result = CallableRetry.withRetry {
+                FirebaseFunctions.getInstance()
+                    .getHttpsCallable(CALLABLE)
+                    .call(
+                        CallableContracts.payload(
+                            CALLABLE,
+                            "query" to trimmed,
+                            "district" to district.trim().ifEmpty { "Kampala" }
+                        )
+                    )
+                    .await()
+            }
+            parseResponse(result.data)
+        } catch (error: FirebaseFunctionsException) {
+            Log.w(TAG, "Nearby place search failed (${error.code})")
+            MapsGroundingResult(summary = "", error = messageFor(error.code))
+        } catch (error: Exception) {
+            Log.w(TAG, "Nearby place search failed (${error::class.java.simpleName})")
+            MapsGroundingResult(
+                summary = "",
+                error = "Nearby place search is unavailable right now."
+            )
+        }
     }
 }

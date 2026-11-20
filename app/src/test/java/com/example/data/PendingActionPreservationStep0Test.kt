@@ -6,7 +6,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.example.data.db.AppDatabase
 import com.example.data.db.PendingActionEntity
 import com.example.data.remote.FirebaseService
-import com.example.data.remote.SmsNotificationService
 import com.example.data.repository.SkillsExchangeRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -46,7 +45,7 @@ class PendingActionPreservationStep0Test {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        repository = SkillsExchangeRepository(db, FirebaseService(), SmsNotificationService())
+        repository = SkillsExchangeRepository(db, FirebaseService())
     }
 
     @After

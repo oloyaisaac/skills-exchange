@@ -23,12 +23,11 @@ import com.example.data.remote.AfricaTalkingService.VerificationResponse
 import com.example.data.remote.FirebaseService
 import com.example.data.remote.GeminiAudioTranscriptionService
 import com.example.data.remote.GeminiMapsGroundingService
-import com.example.data.remote.GroundedPlaceResult
+import com.example.data.remote.MapsGroundingResult
 import com.example.data.remote.MoMoPaymentIntent
 import com.example.data.remote.MoMoPaymentPhase
 import com.example.data.remote.MoMoPaymentUiState
 import com.example.data.remote.mapBackendStatusToPhase
-import com.example.data.remote.SmsNotificationService
 import com.example.data.remote.TranscribedVoiceJob
 import com.example.data.repository.SkillsExchangeRepository
 import com.example.util.AdminDisputeDecisions
@@ -82,7 +81,6 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     val geminiMapsService = GeminiMapsGroundingService()
     val geminiAudioService = GeminiAudioTranscriptionService()
     val audioRecorderHelper = AudioRecorderHelper(application)
-    val smsNotificationService = SmsNotificationService()
     private val networkObserver = com.example.util.NetworkConnectivityObserver(application)
 
     // State flows for remote features
@@ -119,7 +117,11 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     fun currentAuthenticatedUid(): String? =
         resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
 
-    val mapsSearchResults = MutableStateFlow<Pair<String, List<GroundedPlaceResult>>?>(null)
+    /**
+     * R05-P2-05: the result carries its own grounded/unverified flag, so the screen can label model
+     * prose instead of rendering invented shops as real Google Maps places.
+     */
+    val mapsSearchResults = MutableStateFlow<MapsGroundingResult?>(null)
     val isMapsSearching = MutableStateFlow(false)
 
     val audioTranscribedJob = MutableStateFlow<TranscribedVoiceJob?>(null)
@@ -232,6 +234,9 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         messaging.subscribeToTopic(topic)
         pushTopic?.let { messaging.unsubscribeFromTopic(it) }
         pushTopic = topic
+        // R05-P2-02: the topic is only a fallback; the real address is this device's token stored
+        // server-side under the authenticated uid. Registered on every sign-in and app start.
+        com.example.data.remote.PushTokenRegistrar.registerCurrentToken()
     }
 
     init {
@@ -721,10 +726,21 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         if (query.isBlank()) return
         viewModelScope.launch {
             isMapsSearching.value = true
-            val currentDistrict = filterState.value.district
-            val result = geminiMapsService.searchLocalPlacesWithMaps(query, currentDistrict)
-            mapsSearchResults.value = result
-            isMapsSearching.value = false
+            try {
+                val currentDistrict = filterState.value.district
+                // R05-P2-04/-05: server-side, grounded-only; failures come back as an error result.
+                mapsSearchResults.value =
+                    geminiMapsService.searchLocalPlacesWithMaps(query, currentDistrict)
+            } catch (error: Exception) {
+                // The service already never throws, but a crash here would take the search sheet down.
+                android.util.Log.w("SkillsExchangeViewModel", "Nearby place search failed", error)
+                mapsSearchResults.value = MapsGroundingResult(
+                    summary = "",
+                    error = "Nearby place search is unavailable right now."
+                )
+            } finally {
+                isMapsSearching.value = false
+            }
         }
     }
 
@@ -1805,7 +1821,7 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         _momoPaymentState.value = null
     }
 
-    // --- MODULE 4: SMS FALLBACK DISPATCH TO OFFLINE WORKERS ---
+    // --- MODULE 4: SMS FALLBACK DISPATCH ---
     fun getDistrictJobStatsForProvider(providerId: String): Map<String, Int> {
         return jobs.value
             .filter { it.assignedProviderId == providerId }
@@ -1813,14 +1829,9 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             .mapValues { it.value.size }
     }
 
-    fun triggerSmsAlertToOfflineWorkers(jobTitle: String, district: String) {
-        viewModelScope.launch {
-            val offlineWorkers = providers.value
-                .filter { it.neighborhood.contains(district, ignoreCase = true) && it.kycStatus == "APPROVED" }
-                .map { it.momoNumber }
-            smsNotificationService.notifyOfflineWorkersInRadius(offlineWorkers, jobTitle, district)
-        }
-    }
+    // R05-P2-01: `triggerSmsAlertToOfflineWorkers` is gone with the device SMS stub that backed it.
+    // Radius SMS dispatch is server-side (`onJobCreated`); the client cannot deliver an SMS and must
+    // not be able to claim it did.
 
     fun saveGuarantors(workerKycId: String, guarantors: List<com.example.data.db.GuarantorEntity>) {
         viewModelScope.launch {
@@ -2649,11 +2660,15 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     fun initFcm() {
         com.example.data.remote.SkillsExchangeMessagingService.getToken { token ->
             fcmToken.value = token
+            // R05-P2-02: hand the token to the backend; it is never logged.
+            if (token != null) com.example.data.remote.PushTokenRegistrar.registerInBackground(token)
         }
     }
 
     fun onFcmTokenRefreshed(token: String) {
         fcmToken.value = token
+        // R05-P2-02: a refreshed token must reach the backend too, otherwise pushes stop silently.
+        com.example.data.remote.PushTokenRegistrar.registerInBackground(token)
         // AUTH-002: Persist FCM token
         viewModelScope.launch {
             sessionManager.saveFcmToken(token)

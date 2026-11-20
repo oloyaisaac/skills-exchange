@@ -55,9 +55,10 @@ class SkillsExchangeMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        Log.d(TAG, "Refreshed FCM token: $token")
-        // NOTIF-002: Send token to backend
-        sendTokenToServer(token)
+        // R05-P2-02: the token is a device credential — never log it. It goes to the backend,
+        // which stores it under the authenticated uid.
+        Log.d(TAG, "FCM token refreshed; registering ${PushTokenRegistrar.redacted(token)}")
+        PushTokenRegistrar.registerInBackground(token)
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
@@ -66,19 +67,21 @@ class SkillsExchangeMessagingService : FirebaseMessagingService() {
 
         // NOTIF-002: Persist notification locally
         val notificationData = remoteMessage.data
-        val type = notificationData["type"] ?: "GENERAL"
-        val title = remoteMessage.notification?.title ?: notificationData["title"] ?: "Skills Exchange"
-        val body = remoteMessage.notification?.body ?: notificationData["body"] ?: ""
-        val jobId = notificationData["jobId"] ?: ""
+        // R05-P2-02: sender-controlled data is sanitised before it reaches an Intent or the shade.
+        val type = PushPayloadSanitiser.sanitiseType(notificationData["type"])
+        val title = PushPayloadSanitiser.clip(
+            remoteMessage.notification?.title ?: notificationData["title"],
+            PushPayloadSanitiser.MAX_TITLE_LENGTH,
+            "Skills Exchange"
+        )
+        val body = PushPayloadSanitiser.clip(
+            remoteMessage.notification?.body ?: notificationData["body"],
+            PushPayloadSanitiser.MAX_BODY_LENGTH
+        )
+        val jobId = PushPayloadSanitiser.sanitiseJobId(notificationData["jobId"])
 
         // Show notification
         showNotification(title, body, jobId, type)
-    }
-
-    private fun sendTokenToServer(token: String) {
-        // NOTIF-002: In production, send token to your backend
-        // For now, just log it
-        Log.d(TAG, "FCM token to send to server: $token")
     }
 
     private fun showNotification(title: String, body: String, jobId: String, type: String) {

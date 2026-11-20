@@ -10,7 +10,6 @@ import com.example.data.db.JobStatus
 import com.example.data.db.ServiceProviderEntity
 import com.example.data.db.UserProfileEntity
 import com.example.data.remote.FirebaseService
-import com.example.data.remote.SmsNotificationService
 import com.example.data.repository.SkillsExchangeRepository
 import com.example.data.repository.SkillsExchangeRepository.QuoteResponseResult
 import com.example.data.repository.SkillsExchangeRepository.QuoteSubmissionResult
@@ -63,7 +62,7 @@ class QuoteAuthorizationSecurityTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        repository = SkillsExchangeRepository(db, FirebaseService(), SmsNotificationService())
+        repository = SkillsExchangeRepository(db, FirebaseService())
 
         // Seed provider for foreign key compatibility if needed
         runBlocking {

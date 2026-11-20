@@ -80,6 +80,20 @@ fun FreelancerDashboardView(
         return
     }
 
+    // R05-P2-03: derived from this worker's real jobs, in the stored UGX unit.
+    val releasedJobs = jobs.filter {
+        it.status.equals("Completed", true) || it.status.equals("RELEASED", true) ||
+            it.status.equals("Released", true)
+    }
+    val pendingEscrowJobs = jobs.filter {
+        it.status.equals("In Progress", true) || it.status.equals("IN_PROGRESS", true) ||
+            it.status.equals("Accepted", true) || it.status.equals("ACCEPTED", true)
+    }
+    val releasedEarnings = releasedJobs.sumOf { it.grandTotal }
+    val releasedJobCount = releasedJobs.size
+    val pendingEscrow = pendingEscrowJobs.sumOf { it.grandTotal }
+    val pendingEscrowCount = pendingEscrowJobs.size
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -143,10 +157,13 @@ fun FreelancerDashboardView(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // R05-P2-03: these two cards used to show hard-coded 180.0 / 210.0, which the old
+                    // formatter multiplied by 3,700 and the new one would have shown as "UGX 180".
+                    // They now show the worker's own stored UGX totals, and nothing when there are none.
                     MetricCard(
-                        title = "Today's Earnings",
-                        amount = CurrencyRegion.format(180.0),
-                        subtitle = "+2 jobs completed",
+                        title = "Released Earnings",
+                        amount = CurrencyRegion.format(releasedEarnings),
+                        subtitle = "$releasedJobCount completed job(s)",
                         icon = Icons.Default.Payments,
                         iconTint = IndustrialEmerald,
                         modifier = Modifier.weight(1f)
@@ -154,8 +171,8 @@ fun FreelancerDashboardView(
 
                     MetricCard(
                         title = "Pending Escrow",
-                        amount = CurrencyRegion.format(210.0),
-                        subtitle = "Locked in vault",
+                        amount = CurrencyRegion.format(pendingEscrow),
+                        subtitle = "$pendingEscrowCount job(s) in progress",
                         icon = Icons.Default.LockClock,
                         iconTint = SignalBlue,
                         modifier = Modifier.weight(1f)
