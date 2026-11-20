@@ -43,11 +43,11 @@ class CallableRetryTest {
             FirebaseFunctionsException.Code.INVALID_ARGUMENT,
             FirebaseFunctionsException.Code.FAILED_PRECONDITION,
             FirebaseFunctionsException.Code.NOT_FOUND,
-            FirebaseFunctionsException.Code.ALREADY_EXISTS,
-            null
+            FirebaseFunctionsException.Code.ALREADY_EXISTS
         )) {
             assertFalse("$code must not be retried", CallableRetry.isRetryable(code))
         }
+        assertFalse("a missing code is not retryable", CallableRetry.isRetryable(null))
     }
 
     @Test
