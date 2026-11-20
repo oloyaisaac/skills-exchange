@@ -19,19 +19,30 @@ export interface Quote {
   grandTotal: number;
 }
 
-const round2 = (value: number): number => Math.round(value * 100) / 100;
+/** Money is whole Uganda shillings: a fractional shilling cannot be collected by the provider. */
+const requireWholeShillings = (value: number, field: string): number => {
+  if (!Number.isInteger(value)) {
+    throw new Error(`${field} must be a whole number of UGX`);
+  }
+  return value;
+};
 
 export function computeQuote(laborTotal: unknown, materialsSubtotal: unknown): Quote {
   const labor = Number(laborTotal);
   const materials = Number(materialsSubtotal ?? 0);
   if (!Number.isFinite(labor) || labor <= 0) throw new Error("laborTotal must be positive");
   if (!Number.isFinite(materials) || materials < 0) throw new Error("materialsSubtotal must be >= 0");
-  const platformFee = round2(labor * PLATFORM_FEE_RATE);
+  requireWholeShillings(labor, "laborTotal");
+  requireWholeShillings(materials, "materialsSubtotal");
+  // R05-P2-03: the fee is rounded ONCE, to a whole shilling, with the same half-up rule the client
+  // uses (`CurrencyRegion.roundToWholeShillings`). The total is then the sum of whole components, so
+  // it is always collectable and the two sides can never disagree by a shilling.
+  const platformFee = Math.round(labor * PLATFORM_FEE_RATE);
   return {
-    laborTotal: round2(labor),
-    materialsSubtotal: round2(materials),
+    laborTotal: labor,
+    materialsSubtotal: materials,
     platformFee,
-    grandTotal: round2(labor + materials + platformFee),
+    grandTotal: labor + materials + platformFee,
   };
 }
 

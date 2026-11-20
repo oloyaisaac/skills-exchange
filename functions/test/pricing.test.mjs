@@ -11,7 +11,28 @@ test("the platform fee is ten percent of labour and the total includes materials
     platformFee: 5000,
     grandTotal: 70000,
   });
-  assert.equal(computeQuote(333.33, 0).grandTotal, 366.66);
+});
+
+test("R05-P2-03: every quote component is a whole shilling", () => {
+  const quote = computeQuote(33333, 0);
+  assert.deepEqual(quote, {
+    laborTotal: 33333,
+    materialsSubtotal: 0,
+    platformFee: 3333,
+    grandTotal: 36666,
+  });
+  // A tie rounds half-up, exactly like `CurrencyRegion.roundToWholeShillings` on Android.
+  const tie = computeQuote(25005, 0);
+  assert.equal(tie.platformFee, 2501);
+  assert.equal(tie.grandTotal, 27506);
+  for (const value of [quote.laborTotal, quote.platformFee, quote.grandTotal]) {
+    assert.equal(Number.isInteger(value), true);
+  }
+});
+
+test("a fractional shilling is refused instead of being collected", () => {
+  assert.throws(() => computeQuote(333.33, 0), /whole number of UGX/);
+  assert.throws(() => computeQuote(50000, 0.5), /whole number of UGX/);
 });
 
 test("a stored quote that matches the server calculation is accepted", () => {

@@ -58,9 +58,18 @@ enum class CurrencyRegion(val code: String, val label: String, val symbol: Strin
             }
         }
 
-        /** R05-P2-03: whole shillings, so nothing fractional reaches the provider payload. */
-        fun roundToWholeShillings(amountUgx: Double): Long =
-            if (amountUgx.isNaN() || amountUgx.isInfinite()) 0L else kotlin.math.round(amountUgx).toLong()
+        /**
+         * R05-P2-03: whole shillings, so nothing fractional reaches the provider payload.
+         *
+         * Half-up, deliberately: `kotlin.math.round` rounds ties to even (2500.5 -> 2500) while the
+         * Node side uses `Math.round` (2500.5 -> 2501). A one-shilling disagreement makes the
+         * server reject the job as an `amount_mismatch`, so both sides must round the same way.
+         */
+        fun roundToWholeShillings(amountUgx: Double): Long = when {
+            amountUgx.isNaN() || amountUgx.isInfinite() -> 0L
+            amountUgx >= 0 -> kotlin.math.floor(amountUgx + 0.5).toLong()
+            else -> kotlin.math.ceil(amountUgx - 0.5).toLong()
+        }
 
         /** Display-only approximations FROM the stored UGX amount. Never used for arithmetic. */
         private val REGION_DISPLAY_RATES: Map<CurrencyRegion, Double> = mapOf(

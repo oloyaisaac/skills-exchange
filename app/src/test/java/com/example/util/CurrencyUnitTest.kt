@@ -53,5 +53,9 @@ class CurrencyUnitTest {
         assertEquals(37_000L, CurrencyRegion.roundToWholeShillings(36_999.5))
         assertEquals(0L, CurrencyRegion.roundToWholeShillings(Double.NaN))
         assertEquals(0L, CurrencyRegion.roundToWholeShillings(Double.NEGATIVE_INFINITY))
+        // Ties round half-up, the same rule the Node functions use (Math.round); ties-to-even would
+        // make the client store 2500 where the server expects 2501 and the job would be rejected.
+        assertEquals(2_501L, CurrencyRegion.roundToWholeShillings(2_500.5))
+        assertEquals(2_500L, CurrencyRegion.roundToWholeShillings(2_499.5))
     }
 }
