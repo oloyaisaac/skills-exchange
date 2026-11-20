@@ -75,6 +75,8 @@ callable refused every client-created job.
   wallet.
 - `functions/test/escrowRelease.test.mjs` covers the six pure release decisions plus the client field
   name.
+- Android `Compile and unit tests` job succeeded on the same commit (run 44710340695), so the
+  `syncPushTopic` subscription added to `SkillsExchangeViewModel` compiles and the JVM suite passes.
 
 ### Not claimed
 
