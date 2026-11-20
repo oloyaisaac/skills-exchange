@@ -212,7 +212,31 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    /** R03-P2-06: the topic the server pushes user-scoped notifications to. */
+    private var pushTopic: String? = null
+
+    private fun syncPushTopic(uid: String?) {
+        val messaging = try {
+            com.google.firebase.messaging.FirebaseMessaging.getInstance()
+        } catch (_: Exception) {
+            return
+        }
+        if (uid == null) {
+            pushTopic?.let { messaging.unsubscribeFromTopic(it) }
+            pushTopic = null
+            return
+        }
+        val topic = "user_$uid"
+        if (topic == pushTopic) return
+        messaging.subscribeToTopic(topic)
+        pushTopic?.let { messaging.unsubscribeFromTopic(it) }
+        pushTopic = topic
+    }
+
     init {
+        viewModelScope.launch {
+            firebaseService.currentUserState.collect { user -> syncPushTopic(user?.uid) }
+        }
         viewModelScope.launch {
             repository.seedInitialDataIfNeeded()
             // AUTH-002: Restore session from DataStore

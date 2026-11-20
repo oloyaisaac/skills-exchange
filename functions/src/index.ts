@@ -1,7 +1,32 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+import { defineSecret } from "firebase-functions/params";
 import * as crypto from "crypto";
 import axios from "axios";
+/**
+ * R03-P2-05: secrets are declared to Secret Manager instead of being read only from `process.env`.
+ *
+ * `secret.value()` is preferred when the function is deployed with the binding; the environment
+ * variable stays as a fallback so emulator/CI runs and existing deployments keep working. A
+ * missing secret still fails closed at the call site (SMS/transcription return an error).
+ */
+const africaTalkingApiKey = defineSecret("AFRICASTALKING_API_KEY");
+const africaTalkingUsername = defineSecret("AFRICASTALKING_USERNAME");
+const geminiApiKey = defineSecret("GEMINI_API_KEY");
+
+function secretOrEnv(secret: { value: () => string }, envName: string, fallback = ""): string {
+  try {
+    const value = secret.value();
+    if (value) return value;
+  } catch {
+    // Not configured on this deployment; fall through to the environment.
+  }
+  return process.env[envName] || fallback;
+}
+
+const AFRICA_TALKING_SECRETS = [africaTalkingApiKey, africaTalkingUsername];
+const GEMINI_SECRETS = [geminiApiKey];
+
 import {
   checkAdminCaller,
   readWorkerId,
@@ -557,24 +582,17 @@ export const getMoMoCollectionStatus = functions.https.onCall(async (data, conte
  * Credits worker's Mobile Money wallet and updates job status.
  * SEC-004: Fixed to verify job ownership before releasing escrow.
  */
-export const releaseEscrowToWorker = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-      "unauthenticated",
-      "Authentication required to release escrow."
-    );
-  }
-
-  // REM-026: the client supplies only identifiers. The wallet and the amount are read from
-  // server-side records, so a modified APK cannot redirect a payout or inflate its value.
-  const { jobId, workerId, provider } = data || {};
-  if (!jobId || !workerId) {
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      "Missing required parameters: jobId, workerId."
-    );
-  }
-
+/**
+ * R03-P2-03: the ONE server-side escrow release. Every caller (the callable below and the
+ * deprecated `createMoMoPayout` alias) goes through this function, so the amount and the wallet
+ * are always derived from server records and a second payout implementation cannot drift.
+ */
+async function performEscrowRelease(
+  jobId: string,
+  workerId: string,
+  callerUid: string,
+  provider?: string
+): Promise<{ success: true; payoutRef: string; message: string } | { success: true; alreadyReleased: true; payoutRef: string; message: string }> {
   // SEC-004: Verify job ownership - only job owner can release escrow
   const jobDoc = await db.collection("jobs").doc(jobId).get();
   if (!jobDoc.exists) {
@@ -585,7 +603,6 @@ export const releaseEscrowToWorker = functions.https.onCall(async (data, context
   }
 
   const jobData = jobDoc.data();
-  const callerUid = context.auth.uid;
 
   // C2-2 Fix #4 (F4): ownership is the immutable authenticated uid stored at creation time
   // (postedByUid, bound to request.auth.uid by the firestore.rules create rule).
@@ -656,12 +673,36 @@ export const releaseEscrowToWorker = functions.https.onCall(async (data, context
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     read: false
   });
+  await sendUserPush(
+    workerId,
+    "Payment released",
+    `UGX ${amountUgx} is on its way to your ${provider || "MTN_MOMO"} wallet.`,
+    { type: "PAYOUT_RELEASED", jobId }
+  );
 
   return {
     success: true,
     payoutRef,
     message: `Escrow released. UGX ${amountUgx} payout queued to ${workerMomoNumber}.`
   };
+}
+
+export const releaseEscrowToWorker = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Authentication required to release escrow."
+    );
+  }
+  // REM-026: the client supplies only identifiers; amount and wallet are server-derived.
+  const { jobId, workerId, provider } = data || {};
+  if (!jobId || !workerId) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Missing required parameters: jobId, workerId."
+    );
+  }
+  return performEscrowRelease(jobId, workerId, context.auth.uid, provider);
 });
 
 // =====================================================================================
@@ -871,7 +912,7 @@ export const processMoMoWebhook = functions.https.onRequest(
  * Cloud Function trigger listening for new job creations.
  * Queries verified workers within 5km radius and dispatches SMS alerts to offline 2G/3G phones.
  */
-export const onJobCreated = functions.firestore
+export const onJobCreated = functions.runWith({ secrets: AFRICA_TALKING_SECRETS }).firestore
   .document("jobs/{jobId}")
   .onCreate(async (snapshot, context) => {
     const job = snapshot.data();
@@ -945,7 +986,7 @@ async function sendSmsAlert(phoneNumber: string, message: string): Promise<boole
  * raised, and push to the dispatch topic. Delivery is attempted once per incident; the outcome is
  * recorded on the incident so the admin queue can see what actually happened.
  */
-export const onSosIncidentCreated = functions.firestore
+export const onSosIncidentCreated = functions.runWith({ secrets: AFRICA_TALKING_SECRETS }).firestore
   .document("sosIncidents/{incidentId}")
   .onCreate(async (snapshot) => {
     const data = (snapshot.data() || {}) as Record<string, unknown>;
@@ -1162,6 +1203,12 @@ export const reviewWorkerApplication = functions.https.onCall(async (data, conte
     createdAt: now,
     read: false
   });
+  await sendUserPush(
+    userId,
+    "Verification decision",
+    decision === "APPROVE" ? "Your worker application was approved." : "Your application needs attention.",
+    { type: "VERIFICATION_DECISION" }
+  );
 
   return { success: true, userId, newStatus };
 });
@@ -1540,6 +1587,13 @@ export const resolveDispute = functions.https.onCall(async (data, context) => {
     read: false
   });
 
+  await sendUserPush(
+    disputeData?.reportedBy,
+    "Dispute resolved",
+    `Your dispute has been ${resolution.toLowerCase()}.`,
+    { type: "DISPUTE_RESOLVED", jobId: String(disputeData?.jobId || "") }
+  );
+
   if (disputeData?.reportedUserId) {
     await db.collection("notifications").add({
       userId: disputeData.reportedUserId,
@@ -1549,6 +1603,12 @@ export const resolveDispute = functions.https.onCall(async (data, context) => {
       createdAt: now,
       read: false
     });
+    await sendUserPush(
+      disputeData.reportedUserId,
+      "Dispute resolved",
+      `A dispute against you has been ${resolution.toLowerCase()}.`,
+      { type: "DISPUTE_RESOLVED", jobId: String(disputeData?.jobId || "") }
+    );
   }
 
   return {
@@ -1815,11 +1875,13 @@ function buildPayoutDeps(): PayoutDeps {
 
 
 /**
- * PAY-003: Create a worker payout (escrow release). Callable triggered when a
- * resident approves job completion. The resident releases escrow; the worker
- * receives the amount through the MTN Disbursement API (sandbox only). The
- * device never touches the payout endpoint — all trust decisions are enforced
- * server-side by the pure `initiatePayout` core.
+ * PAY-003 (deprecated alias): retained so an installed client keeps working, but it no longer
+ * implements a payout of its own.
+ *
+ * R03-P2-03: this used to accept `workerMomoNumber` and `amountUgx` from the caller and run the
+ * separate `initiatePayout` core, which is a second contract for the same money. It now delegates
+ * to [performEscrowRelease]: client-supplied amount and wallet are ignored, the job and the worker's
+ * stored wallet decide.
  */
 export const createMoMoPayout = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
@@ -1829,62 +1891,23 @@ export const createMoMoPayout = functions.https.onCall(async (data, context) => 
     );
   }
 
-  const { jobId, workerId, workerMomoNumber, amountUgx, provider } = data;
-  if (!jobId || !workerId || !workerMomoNumber || amountUgx === undefined) {
+  const { jobId, workerId, provider } = data || {};
+  if (!jobId || !workerId) {
     throw new functions.https.HttpsError(
       "invalid-argument",
-      "Missing required parameters: jobId, workerId, workerMomoNumber, amountUgx."
+      "Missing required parameters: jobId, workerId."
     );
   }
 
-  const result = await initiatePayout(
-    {
-      jobId,
-      clientUid: context.auth.uid,
-      amountUgx,
-      workerMomoNumber,
-      provider: provider || "MTN_MOMO",
-      env: process.env as Record<string, string | undefined>,
-    },
-    buildPayoutDeps()
-  );
-
-  if (!result.ok) {
-    const codeMap: Record<string, string> = {
-      unauthenticated: "unauthenticated",
-      invalid_argument: "invalid-argument",
-      job_not_found: "not-found",
-      not_job_owner: "permission-denied",
-      invalid_job_state: "failed-precondition",
-      job_not_escrowed: "failed-precondition",
-      amount_mismatch: "failed-precondition",
-      worker_mismatch: "failed-precondition",
-      config_error: "failed-precondition",
-      duplicate_request: "already-exists",
-      already_pending: "failed-precondition",
-      provider_error: "unavailable",
-      provider_timeout: "deadline-exceeded",
-    };
-    const httpsCode = codeMap[result.error.code] || "internal";
-    throw new functions.https.HttpsError(httpsCode as any, result.error.message);
-  }
-
-  // Payout accepted (PENDING). Notify the worker.
-  await db.collection("notifications").add({
-    userId: workerId,
-    type: "PAYOUT_PENDING",
-    jobId,
-    message: `A payout of UGX ${amountUgx} has been initiated. You will receive payment soon.`,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    read: false,
-  });
-
+  const result = await performEscrowRelease(jobId, workerId, context.auth.uid, provider);
   return {
     success: true,
-    payoutRef: result.payoutId,
-    message: `Payout pending. UGX ${amountUgx} will be delivered to ${workerMomoNumber} via the MTN Disbursement API (sandbox). Poll getMoMoPayoutStatus for the provider-verified result.`,
+    payoutRef: result.payoutRef,
+    message: result.message,
+    deprecated: "createMoMoPayout is an alias of releaseEscrowToWorker.",
   };
 });
+
 
 
 
@@ -2168,8 +2191,8 @@ async function callAfricaTalkingOtp(
   path: string,
   payload: Record<string, unknown>
 ): Promise<{ status: number; body: unknown }> {
-  const apiKey = process.env.AFRICASTALKING_API_KEY;
-  const username = process.env.AFRICASTALKING_USERNAME || "SkillsExchange";
+  const apiKey = secretOrEnv(africaTalkingApiKey, "AFRICASTALKING_API_KEY");
+  const username = secretOrEnv(africaTalkingUsername, "AFRICASTALKING_USERNAME", "SkillsExchange");
   if (!apiKey) {
     // Fail closed rather than attempting an unauthenticated provider call.
     throw new functions.https.HttpsError("failed-precondition", "Phone verification is not configured");
@@ -2208,7 +2231,37 @@ async function findOrCreateUserByPhone(phone: string): Promise<{ uid: string; is
   }
 }
 
-export const sendOtp = functions.https.onCall(async (data) => {
+/**
+ * R03-P2-06: device push for product events, not just SOS.
+ *
+ * Each signed-in client subscribes to the `user_{uid}` topic (the Android client does this after
+ * authentication). Push is best-effort: a notification document is already written, and a push
+ * failure must never fail the money/KYC/dispute operation that triggered it.
+ */
+async function sendUserPush(
+  userId: string | undefined,
+  title: string,
+  body: string,
+  data: Record<string, string> = {}
+): Promise<void> {
+  if (!userId) return;
+  try {
+    await admin.messaging().send({
+      topic: `user_${userId}`,
+      notification: { title, body },
+      data,
+      android: { priority: "high" },
+    });
+  } catch (error: any) {
+    console.warn("User push failed", { userId, message: error?.message });
+  }
+}
+
+/** R03-P2-07: a single IP may not drive an unbounded number of SMS sends. */
+const OTP_IP_WINDOW_MS = 60 * 60 * 1000;
+const OTP_IP_MAX_SENDS = 20;
+
+export const sendOtp = functions.runWith({ secrets: AFRICA_TALKING_SECRETS }).https.onCall(async (data, context) => {
   let phone: string;
   try {
     phone = normalizeUgandanPhone((data ?? {}).phoneNumber);
@@ -2236,6 +2289,34 @@ export const sendOtp = functions.https.onCall(async (data) => {
     throw new functions.https.HttpsError("resource-exhausted", "Please wait before requesting another code");
   }
 
+  // R03-P2-07: per-IP throttle, checked before the provider call so an attacker rotating phone
+  // numbers cannot turn the OTP endpoint into an SMS-cost amplifier. Missing IP (emulator, direct
+  // invocation) is allowed through rather than failing closed, matching the existing rate model.
+  const clientIp = (context as any)?.rawRequest?.ip || (data ?? {}).ip || "";
+  if (clientIp) {
+    const ipRef = db.collection("otp_ip_limits").doc(String(clientIp).replace(/[^a-zA-Z0-9.:_-]/g, "_"));
+    const ipAllowed = await db.runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(ipRef);
+      const record = snapshot.exists ? (snapshot.data() as { windowStart?: number; count?: number }) : {};
+      const windowStart = typeof record.windowStart === "number" ? record.windowStart : 0;
+      const inWindow = now - windowStart < OTP_IP_WINDOW_MS;
+      const count = inWindow ? (record.count ?? 0) : 0;
+      if (count >= OTP_IP_MAX_SENDS) return false;
+      transaction.set(
+        ipRef,
+        { windowStart: inWindow ? windowStart : now, count: count + 1, updatedAt: now },
+        { merge: true }
+      );
+      return true;
+    });
+    if (!ipAllowed) {
+      throw new functions.https.HttpsError(
+        "resource-exhausted",
+        "Too many verification requests from this network. Try again later."
+      );
+    }
+  }
+
   const provider = await callAfricaTalkingOtp("", {
     phoneNumber: phone,
     message: OTP_MESSAGE_PREFIX,
@@ -2257,7 +2338,7 @@ export const sendOtp = functions.https.onCall(async (data) => {
   };
 });
 
-export const verifyOtp = functions.https.onCall(async (data) => {
+export const verifyOtp = functions.runWith({ secrets: AFRICA_TALKING_SECRETS }).https.onCall(async (data) => {
   const code = (data ?? {}).code;
   if (typeof code !== "string" || !/^\d{4,8}$/.test(code)) {
     throw new functions.https.HttpsError("invalid-argument", "Enter the code from the SMS");
@@ -2311,7 +2392,7 @@ export const verifyOtp = functions.https.onCall(async (data) => {
 // fabricated "example job" the client used to produce.
 // =====================================================================================
 
-export const transcribeVoiceJob = functions.https.onCall(async (data, context) => {
+export const transcribeVoiceJob = functions.runWith({ secrets: GEMINI_SECRETS }).https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Sign in to transcribe a voice request");
   }
@@ -2328,7 +2409,7 @@ export const transcribeVoiceJob = functions.https.onCall(async (data, context) =
     throw new functions.https.HttpsError("invalid-argument", "Unsupported audio type");
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = secretOrEnv(geminiApiKey, "GEMINI_API_KEY");
   if (!apiKey) {
     throw new functions.https.HttpsError("failed-precondition", "Voice transcription is not configured");
   }

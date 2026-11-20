@@ -3,15 +3,16 @@
   "scripts": {
     "lint": "tslint --project tsconfig.json",
     "build": "tsc",
-    "test": "node --test test/guarantorReview.test.mjs test/momoCollection.test.mjs test/momoConfirmation.test.mjs test/momoDisbursement.test.mjs test/otp.test.mjs test/transcription.test.mjs test/guarantorRisk.test.mjs test/webhookAuth.test.mjs test/compliance.test.mjs test/sms.test.mjs test/sosDispatch.test.mjs test/admin.test.mjs test/session.test.mjs test/escrowRelease.test.mjs test/refund.test.mjs test/pricing.test.mjs",
+    "test": "node --test test/admin.test.mjs test/compliance.test.mjs test/escrowRelease.test.mjs test/guarantorReview.test.mjs test/guarantorRisk.test.mjs test/momoCollection.test.mjs test/momoConfirmation.test.mjs test/momoDisbursement.test.mjs test/otp.test.mjs test/pricing.test.mjs test/refund.test.mjs test/session.test.mjs test/sms.test.mjs test/sosDispatch.test.mjs test/transcription.test.mjs test/webhookAuth.test.mjs",
     "serve": "npm run build && firebase serve --only functions",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
+    "logs": "firebase functions:log",
+    "test:handlers": "node --test test/handlers.emulator.test.mjs"
   },
   "engines": {
-    "node": ">=22"
+    "node": "22"
   },
   "main": "lib/index.js",
   "dependencies": {
@@ -22,7 +23,8 @@
   "devDependencies": {
     "typescript": "^5.0.4",
     "@types/express": "^4.17.21",
-    "@types/node": "^20.14.10"
+    "@types/node": "^20.14.10",
+    "firebase-functions-test": "^3.4.0"
   },
   "private": true,
   "overrides": {

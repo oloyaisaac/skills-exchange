@@ -31,6 +31,28 @@ jobs:
       - run: npm run build
       - run: npm test
 
+  functions-handlers:
+    name: Backend handler tests (Firestore emulator)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - run: npm ci
+      - run: npm run build
+      - run: npm install --no-save --no-audit --no-fund firebase-tools@13
+      - run: npx firebase emulators:exec --config ../firebase.json --only firestore --project demo-skills-exchange "npm run test:handlers"
+
   documentation:
     name: Documentation checks
     runs-on: ubuntu-latest
