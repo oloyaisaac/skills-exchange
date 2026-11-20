@@ -22,7 +22,7 @@ import org.robolectric.annotation.Config
  *
  * The database starts as a real version-11 file built from `src/test/resources/migration/
  * v11_baseline.sql`, is seeded with a row, and is then opened through `AppDatabase` with the
- * production migration array. Room runs 11 → 27 and, because `exportSchema` is on and the entity
+ * production migration array. Room runs 11 → 28 and, because `exportSchema` is on and the entity
  * classes are the contract, validates the result: a column, index or foreign key that a migration
  * forgets makes `Room.openHelper.writableDatabase` throw `IllegalStateException("Migration didn't
  * properly handle ...")`, which fails this test.
@@ -91,10 +91,10 @@ class DatabaseMigrationChainTest {
         javaClass.classLoader!!.getResourceAsStream(path)!!.bufferedReader().use { it.readText() }
 
     @Test
-    fun `every consecutive version from 11 to 27 has exactly one migration`() {
+    fun `every consecutive version from 11 to 28 has exactly one migration`() {
         val pairs = AppDatabase.ALL_MIGRATIONS.map { it.startVersion to it.endVersion }
         assertEquals(
-            (11 until 27).map { it to it + 1 },
+            (11 until 28).map { it to it + 1 },
             pairs
         )
     }
@@ -109,7 +109,7 @@ class DatabaseMigrationChainTest {
 
         // Opening the database is the validation: Room compares the migrated schema with the
         // entity definitions and throws if they disagree.
-        assertEquals(27, db!!.openHelper.writableDatabase.version)
+        assertEquals(28, db!!.openHelper.writableDatabase.version)
 
         val job = runBlocking { db!!.jobPostDao().getJobById("job_v11") }
         assertNotNull("the pre-migration job row must survive", job)
@@ -163,5 +163,72 @@ class DatabaseMigrationChainTest {
         val visible = db!!.jobPostDao().getJobsVisibleTo("user_1").first().map { it.id }
         assertTrue("the new job is visible to its owner", visible.contains("job_new"))
         assertTrue("the migrated job is still listed", visible.contains("job_v11"))
+    }
+
+    @Test
+    fun `migration 27 to 28 converts wallet money to exact minor units`() {
+        // Build a real version-27 database from the exported schema, put money in it as REAL, then
+        // let the app migrate it. 100.50 and 250.25 must become 10050 and 25025 exactly.
+        val file = context.getDatabasePath(dbName)
+        file.parentFile?.mkdirs()
+        val raw = SQLiteDatabase.openOrCreateDatabase(file, null)
+        installSchema(raw, version = 27)
+        raw.version = 27
+        raw.execSQL(
+            "INSERT INTO user_profiles (id, phoneNumber, fullName, district, initialRole, " +
+                "currentActiveMode, workerKycStatus, isWorkerActivated, trainingCompleted, " +
+                "nationalIdNumber, additionalSkillsCsv, avatarUrl, momoNumber, momoProvider, " +
+                "walletBalance, createdAtTimestamp, updatedAtTimestamp, isOnboardingCompleted, " +
+                "backupContactName, backupContactPhone) VALUES (" +
+                "'worker_1', '+256700000001', 'W', 'Kampala', 'WORKER', 'WORKER', 'APPROVED', 1, 1, " +
+                "'UG-1', '', '', '+256700000001', 'MTN_MOMO', 0.0, 1, 1, 1, '', '')"
+        )
+        raw.execSQL(
+            "INSERT INTO wallet_ledger (id, workerId, entryType, amount, withdrawalId, description, createdAt) " +
+                "VALUES ('led_1', 'worker_1', 'CREDIT', 100.5, NULL, 'credit', 1)"
+        )
+        raw.execSQL(
+            "INSERT INTO wallet_withdrawals (id, workerId, amount, destinationMomoNumber, status, " +
+                "idempotencyKey, createdAt, updatedAt) VALUES " +
+                "('wd_1', 'worker_1', 250.25, '700000001', 'PENDING', 'k1', 1, 1)"
+        )
+        raw.close()
+
+        db = Room.databaseBuilder(context, AppDatabase::class.java, dbName)
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+
+        assertEquals(28, db!!.openHelper.writableDatabase.version)
+        val entries = runBlocking { db!!.walletLedgerDao().getEntriesForWorker("worker_1") }
+        assertEquals(1, entries.size)
+        assertEquals(10_050L, entries.single().amountMinor)
+        val withdrawals = runBlocking { db!!.walletWithdrawalDao().getWithdrawalsForWorker("worker_1") }
+        assertEquals(1, withdrawals.size)
+        assertEquals(25_025L, withdrawals.single().amountMinor)
+    }
+
+    /** Creates every table/index of an exported schema version, straight from `app/schemas`. */
+    private fun installSchema(raw: SQLiteDatabase, version: Int) {
+        val json = org.json.JSONObject(readResource("com.example.data.db.AppDatabase/$version.json"))
+        val entities = json.getJSONObject("database").getJSONArray("entities")
+        for (index in 0 until entities.length()) {
+            val entity = entities.getJSONObject(index)
+            val table = entity.getString("tableName")
+            // Room writes the table name as a `${TABLE_NAME}` placeholder in the exported JSON.
+            val placeholder = "$" + "{TABLE_NAME}"
+            raw.execSQL(entity.getString("createSql").replace(placeholder, table))
+            val indices = entity.optJSONArray("indices") ?: continue
+            for (i in 0 until indices.length()) {
+                val idx = indices.getJSONObject(i)
+                val columns = idx.getJSONArray("columnNames")
+                val columnList = (0 until columns.length()).joinToString(", ") { columns.getString(it) }
+                val unique = if (idx.optBoolean("unique", false)) "UNIQUE " else ""
+                raw.execSQL(
+                    "CREATE ${unique}INDEX IF NOT EXISTS `${idx.getString("name")}` " +
+                        "ON `$table` ($columnList)"
+                )
+            }
+        }
     }
 }

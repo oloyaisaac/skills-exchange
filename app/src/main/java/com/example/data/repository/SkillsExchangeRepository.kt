@@ -8,6 +8,7 @@ import com.example.data.db.*
 import com.example.data.remote.FirebaseService
 import com.example.data.remote.SmsNotificationService
 import com.example.util.DoorstepPinPolicy
+import com.example.util.Money
 import com.example.util.GuarantorInput
 import com.example.util.GuarantorValidators
 import kotlinx.coroutines.flow.Flow
@@ -2170,8 +2171,14 @@ class SkillsExchangeRepository(
             raisedAt = System.currentTimeMillis()
         )
         db.sosIncidentDao().insertSosIncident(incident)
-        // Best-effort mirror — a network failure must never roll back the local incident.
-        firebaseService.syncSosIncidentToFirestore(incident)
+        // Best-effort mirror — a network failure must never roll back the local incident, but the
+        // outcome is now recorded and the sync is queued for retry instead of being forgotten
+        // (R04-P2-05: Room and Firestore used to diverge with nothing to reconcile them).
+        val mirrored = firebaseService.syncSosIncidentToFirestore(incident)
+        db.sosIncidentDao().setFirestoreMirrored(incident.id, mirrored)
+        if (!mirrored) {
+            enqueueMirrorRetry(incident.id)
+        }
 
         if (sendSms) {
             val currentUserId = authenticatedProfileOnce()?.id
@@ -2714,6 +2721,94 @@ class SkillsExchangeRepository(
         object InvalidState : WithdrawalCancelResult()
     }
 
+    // ==================== R04-P2-05: ROOM <-> FIRESTORE RECONCILIATION ====================
+
+    /** Action type used by the durable retry queue for un-mirrored SOS incidents. */
+    private val ACTION_SYNC_SOS = "SYNC_SOS_INCIDENT"
+
+    /** What one reconciliation pass did. Returned so callers/tests can see it, never inferred. */
+    internal data class MirrorReconciliationReport(
+        val adopted: Int = 0,
+        val attempted: Int = 0,
+        val succeeded: Int = 0,
+        val retryScheduled: Int = 0,
+        val abandoned: Int = 0
+    )
+
+    private suspend fun enqueueMirrorRetry(incidentId: String) {
+        val actionId = "sync_sos_$incidentId"
+        val existing = db.pendingActionDao().getPendingActionsList()
+            .any { it.id == actionId || (it.actionType == ACTION_SYNC_SOS && it.payloadJson == incidentId) }
+        if (existing) return
+        db.pendingActionDao().insertAction(
+            PendingActionEntity(
+                id = actionId,
+                actionType = ACTION_SYNC_SOS,
+                payloadJson = incidentId,
+                status = "PENDING"
+            )
+        )
+    }
+
+    /**
+     * R04-P2-05: reconcile the local mirror state with what actually reached Firestore.
+     *
+     * Two-step and idempotent:
+     *  1. ADOPT — every incident the mirror has not accepted is put on the durable retry queue, so a
+     *     process death between the local insert and the sync is repaired on the next pass.
+     *  2. DRAIN — each queued sync is attempted once; success marks the incident mirrored and
+     *     removes the action, failure increments the retry counter and abandons the action after
+     *     `maxRetries` so the queue cannot spin forever.
+     *
+     * [sync] is injectable only so tests can drive both outcomes without a live Firestore; the
+     * production default is the real gateway.
+     */
+    internal suspend fun reconcilePendingMirrors(
+        sync: suspend (SosIncidentEntity) -> Boolean = { firebaseService.syncSosIncidentToFirestore(it) }
+    ): MirrorReconciliationReport {
+        // 1. ADOPT
+        var adopted = 0
+        for (incident in db.sosIncidentDao().getUnmirroredIncidents()) {
+            val before = db.pendingActionDao().getPendingActionsList()
+                .any { it.actionType == ACTION_SYNC_SOS && it.payloadJson == incident.id }
+            if (!before) {
+                enqueueMirrorRetry(incident.id)
+                adopted++
+            }
+        }
+
+        // 2. DRAIN
+        var attempted = 0
+        var succeeded = 0
+        var retryScheduled = 0
+        var abandoned = 0
+        val queue = db.pendingActionDao().getPendingActionsList()
+            .filter { it.actionType == ACTION_SYNC_SOS }
+        for (action in queue) {
+            val incident = db.sosIncidentDao().getSosIncidentById(action.payloadJson)
+            attempted++
+            val ok = incident != null && sync(incident)
+            when {
+                ok -> {
+                    db.sosIncidentDao().setFirestoreMirrored(incident!!.id, true)
+                    db.pendingActionDao().deleteAction(action.id)
+                    succeeded++
+                }
+                else -> {
+                    val nextRetry = action.retryCount + 1
+                    if (nextRetry >= action.maxRetries) {
+                        db.pendingActionDao().updateActionStatus(action.id, "FAILED", nextRetry)
+                        abandoned++
+                    } else {
+                        db.pendingActionDao().updateActionStatus(action.id, "PENDING", nextRetry)
+                        retryScheduled++
+                    }
+                }
+            }
+        }
+        return MirrorReconciliationReport(adopted, attempted, succeeded, retryScheduled, abandoned)
+    }
+
     // ==================== AUDIT-W-CASHOUT: WORKER WALLET CASHOUT ====================
 
     /**
@@ -2756,7 +2851,7 @@ class SkillsExchangeRepository(
 
         // 3. Load THIS worker's withdrawals (never another account's) and run the idempotency gate.
         val existing = db.walletWithdrawalDao().getWithdrawalsForWorker(uid)
-            .map { WithdrawalSnapshot(it.id, it.workerId, it.amount, it.status, it.idempotencyKey) }
+            .map { WithdrawalSnapshot(it.id, it.workerId, it.amountMinor, it.status, it.idempotencyKey) }
         when (val idem = evaluateCashoutIdempotency(existing, key)) {
             is CashoutIdempotencyOutcome.ReuseExisting -> {
                 val reused = db.walletWithdrawalDao().getWithdrawalById(idem.withdrawalId)
@@ -2774,12 +2869,16 @@ class SkillsExchangeRepository(
 
         // 4. Authoritative available balance from the LEDGER — never a caller-supplied number and
         //    never the display-only `UserProfileEntity.walletBalance` field.
+        //    R04-P2-04: every amount is an exact integer in minor units; the requested Double is
+        //    converted once, here, and a non-representable amount is rejected instead of guessed.
+        val requestedMinor = Money.toMinorUnits(amount)
+            ?: return CashoutRequestResult.InvalidAmount
         val entries = db.walletLedgerDao().getEntriesForWorker(uid)
-            .map { WalletLedgerEntrySnapshot(it.entryType, it.amount, it.withdrawalId) }
-        val available = computeAvailableBalance(entries)
+            .map { WalletLedgerEntrySnapshot(it.entryType, it.amountMinor, it.withdrawalId) }
+        val availableMinor = computeAvailableBalanceMinor(entries)
 
         // 5. Validate the REQUEST (amount + destination) against the authoritative balance.
-        val validation = validateCashoutRequest(amount, destinationMomoNumber, available)
+        val validation = validateCashoutRequest(requestedMinor, destinationMomoNumber, availableMinor)
         val valid = validation as? CashoutRequestValidation.Valid
             ?: return when ((validation as CashoutRequestValidation.Invalid).reason) {
                 CashoutRejectReason.NOT_AUTHENTICATED -> CashoutRequestResult.NotAuthenticated
@@ -2805,7 +2904,7 @@ class SkillsExchangeRepository(
                 WalletWithdrawalEntity(
                     id = withdrawalId,
                     workerId = uid,
-                    amount = valid.normalizedAmount,
+                    amountMinor = valid.normalizedAmountMinor,
                     destinationMomoNumber = valid.normalizedDestination,
                     status = WithdrawalStatus.PENDING.value,
                     idempotencyKey = key,
@@ -2818,7 +2917,7 @@ class SkillsExchangeRepository(
                     id = "led_${withdrawalId}_reserve",
                     workerId = uid,
                     entryType = LedgerEntryType.RESERVE.value,
-                    amount = valid.normalizedAmount,
+                    amountMinor = valid.normalizedAmountMinor,
                     withdrawalId = withdrawalId,
                     description = "Reserved for withdrawal request",
                     createdAt = now
@@ -2861,7 +2960,7 @@ class SkillsExchangeRepository(
         }
 
         // 4. State machine: only a PENDING withdrawal can be cancelled by its owner.
-        val snapshot = WithdrawalSnapshot(withdrawal.id, withdrawal.workerId, withdrawal.amount, withdrawal.status)
+        val snapshot = WithdrawalSnapshot(withdrawal.id, withdrawal.workerId, withdrawal.amountMinor, withdrawal.status)
         val outcome = evaluateWithdrawalTransition(
             withdrawal = snapshot,
             from = WithdrawalStatus.PENDING,
@@ -2888,7 +2987,7 @@ class SkillsExchangeRepository(
                         id = "led_${withdrawalId}_release",
                         workerId = uid,
                         entryType = LedgerEntryType.RELEASE.value,
-                        amount = withdrawal.amount,
+                        amountMinor = withdrawal.amountMinor,
                         withdrawalId = withdrawalId,
                         description = "Reservation released (withdrawal cancelled)",
                         createdAt = now
@@ -2907,9 +3006,21 @@ class SkillsExchangeRepository(
      */
     suspend fun getAvailableWalletBalance(): Double {
         val uid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid) ?: return 0.0
-        return computeAvailableBalance(
+        val balanceMinor = computeAvailableBalanceMinor(
             db.walletLedgerDao().getEntriesForWorker(uid)
-                .map { WalletLedgerEntrySnapshot(it.entryType, it.amount, it.withdrawalId) }
+                .map { WalletLedgerEntrySnapshot(it.entryType, it.amountMinor, it.withdrawalId) }
+        )
+        // R04-P2-04: the display value is derived from the exact integer balance; it is never used
+        // for arithmetic, and `getAvailableWalletBalanceMinor` is the authoritative accessor.
+        return Money.toMajorUnits(balanceMinor)
+    }
+
+    /** R04-P2-04: the authoritative available balance, exact, in minor units (1 UGX = 100). */
+    suspend fun getAvailableWalletBalanceMinor(): Long {
+        val uid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid) ?: return 0L
+        return computeAvailableBalanceMinor(
+            db.walletLedgerDao().getEntriesForWorker(uid)
+                .map { WalletLedgerEntrySnapshot(it.entryType, it.amountMinor, it.withdrawalId) }
         )
     }
 

@@ -783,8 +783,12 @@ data class WalletLedgerEntity(
     var workerId: String,
     /** CREDIT / DEBIT / RESERVE / RELEASE / ADJUSTMENT. */
     var entryType: String,
-    /** Always positive; the [entryType] determines whether it raises or lowers available. */
-    var amount: Double,
+    /**
+     * R04-P2-04: always positive, in MINOR UNITS (1 UGX = 100). Stored as an exact integer so the
+     * available balance is a sum of integers and cannot drift; the [entryType] determines whether
+     * it raises or lowers available. Never store a `Double` here — see `com.example.util.Money`.
+     */
+    var amountMinor: Long,
     /** Set when this entry is part of a withdrawal's lifecycle (reserve/release/debit). */
     var withdrawalId: String? = null,
     var description: String = "",
@@ -820,7 +824,8 @@ data class WalletWithdrawalEntity(
     @PrimaryKey val id: String,
     /** The wallet owner's authenticated Firebase UID — resolved internally, never trusted from UI. */
     var workerId: String,
-    var amount: Double,
+    /** R04-P2-04: exact amount in minor units (1 UGX = 100), never a `Double`. */
+    var amountMinor: Long,
     /** Normalized mobile-money destination (digits only). NEVER proof of identity. */
     var destinationMomoNumber: String,
     /** PENDING / PROCESSING / COMPLETED / FAILED / CANCELLED / REVERSED. */

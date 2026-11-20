@@ -28,7 +28,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         WalletWithdrawalEntity::class,
         SosIncidentEntity::class
     ],
-    version = 27,
+    version = 28,
     exportSchema = true
 )
 @androidx.room.TypeConverters(TypeConverters::class)
@@ -578,6 +578,67 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         /**
+         * R04-P2-04: money moves from floating point to exact integer minor units.
+         *
+         * `wallet_ledger.amount` and `wallet_withdrawals.amount` were `REAL`. Every available
+         * balance is a sum of those rows, so repeated credits and debits accumulated floating-point
+         * error and the same history could read as different balances. Both tables are recreated
+         * with `amountMinor INTEGER NOT NULL` (1 UGX = 100) and the existing values are converted
+         * with `ROUND(amount * 100)`, which is the exact cent value for every amount the app wrote.
+         *
+         * Only the column changes: ids, ownership, timestamps, descriptions, statuses, foreign keys
+         * and both indexes are carried over unchanged, and no row is deleted.
+         */
+        val MIGRATION_27_28 = object : Migration(27, 28) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS wallet_ledger_new (" +
+                        "id TEXT PRIMARY KEY NOT NULL, " +
+                        "workerId TEXT NOT NULL, " +
+                        "entryType TEXT NOT NULL, " +
+                        "amountMinor INTEGER NOT NULL, " +
+                        "withdrawalId TEXT, " +
+                        "description TEXT NOT NULL DEFAULT '', " +
+                        "createdAt INTEGER NOT NULL DEFAULT 0, " +
+                        "FOREIGN KEY(workerId) REFERENCES user_profiles(id) ON DELETE CASCADE)"
+                )
+                database.execSQL(
+                    "INSERT INTO wallet_ledger_new " +
+                        "(id, workerId, entryType, amountMinor, withdrawalId, description, createdAt) " +
+                        "SELECT id, workerId, entryType, CAST(ROUND(amount * 100) AS INTEGER), " +
+                        "withdrawalId, description, createdAt FROM wallet_ledger"
+                )
+                database.execSQL("DROP TABLE wallet_ledger")
+                database.execSQL("ALTER TABLE wallet_ledger_new RENAME TO wallet_ledger")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_wallet_ledger_workerId ON wallet_ledger(workerId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_wallet_ledger_withdrawalId ON wallet_ledger(withdrawalId)")
+
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS wallet_withdrawals_new (" +
+                        "id TEXT PRIMARY KEY NOT NULL, " +
+                        "workerId TEXT NOT NULL, " +
+                        "amountMinor INTEGER NOT NULL, " +
+                        "destinationMomoNumber TEXT NOT NULL, " +
+                        "status TEXT NOT NULL, " +
+                        "idempotencyKey TEXT NOT NULL, " +
+                        "createdAt INTEGER NOT NULL DEFAULT 0, " +
+                        "updatedAt INTEGER NOT NULL DEFAULT 0, " +
+                        "FOREIGN KEY(workerId) REFERENCES user_profiles(id) ON DELETE CASCADE)"
+                )
+                database.execSQL(
+                    "INSERT INTO wallet_withdrawals_new " +
+                        "(id, workerId, amountMinor, destinationMomoNumber, status, idempotencyKey, createdAt, updatedAt) " +
+                        "SELECT id, workerId, CAST(ROUND(amount * 100) AS INTEGER), destinationMomoNumber, " +
+                        "status, idempotencyKey, createdAt, updatedAt FROM wallet_withdrawals"
+                )
+                database.execSQL("DROP TABLE wallet_withdrawals")
+                database.execSQL("ALTER TABLE wallet_withdrawals_new RENAME TO wallet_withdrawals")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_wallet_withdrawals_workerId ON wallet_withdrawals(workerId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_wallet_withdrawals_idempotencyKey ON wallet_withdrawals(idempotencyKey)")
+            }
+        }
+
+        /**
          * R04-P2-02: every retained migration, in order. `getDatabase` applies this array and the
          * migration test walks it, so a migration cannot exist without being exercised.
          */
@@ -585,7 +646,7 @@ abstract class AppDatabase : RoomDatabase() {
             MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15,
             MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19,
             MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23,
-            MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27
+            MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28
         )
 
         fun getDatabase(context: Context): AppDatabase {

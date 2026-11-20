@@ -16,7 +16,7 @@ import com.example.data.repository.WithdrawalStatus
 import com.example.data.repository.WalletLedgerEntrySnapshot
 import com.example.data.repository.WithdrawalSnapshot
 import com.example.data.repository.WithdrawalTransitionOutcome
-import com.example.data.repository.computeAvailableBalance
+import com.example.data.repository.computeAvailableBalanceMinor
 import com.example.data.repository.evaluateWithdrawalTransition
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -80,13 +80,20 @@ class WorkerCashoutSecurityTest {
 
     private suspend fun credit(uid: String, amount: Double, id: String) {
         db.walletLedgerDao().insertEntry(
-            WalletLedgerEntity(id = id, workerId = uid, entryType = LedgerEntryType.CREDIT.value, amount = amount)
+            WalletLedgerEntity(
+                id = id,
+                workerId = uid,
+                entryType = LedgerEntryType.CREDIT.value,
+                amountMinor = com.example.util.Money.toMinorUnits(amount)!!
+            )
         )
     }
 
     private fun balanceOf(uid: String): Double = runBlocking {
-        computeAvailableBalance(
-            db.walletLedgerDao().getEntriesForWorker(uid).map { WalletLedgerEntrySnapshot(it.entryType, it.amount, it.withdrawalId) }
+        com.example.util.Money.toMajorUnits(
+            computeAvailableBalanceMinor(
+                db.walletLedgerDao().getEntriesForWorker(uid).map { WalletLedgerEntrySnapshot(it.entryType, it.amountMinor, it.withdrawalId) }
+            )
         )
     }
 
@@ -156,7 +163,7 @@ class WorkerCashoutSecurityTest {
         assertTrue(res is CashoutRequestResult.RequestRecorded)
         val row = db.walletWithdrawalDao().getWithdrawalsForWorker(workerA).single()
         assertEquals(workerA, row.workerId)
-        assertEquals(60.0, row.amount, 0.0)
+        assertEquals(6000L, row.amountMinor)
         assertEquals(WithdrawalStatus.PENDING.value, row.status)
     }
 
@@ -188,7 +195,7 @@ class WorkerCashoutSecurityTest {
         credit(workerA, 100.0, "c1")
         repository.requestWorkerCashoutInternal(50.0, momo, "k1", workerA)
         val row = db.walletWithdrawalDao().getWithdrawalsForWorker(workerA).single()
-        val snap = WithdrawalSnapshot(row.id, row.workerId, row.amount, row.status)
+        val snap = WithdrawalSnapshot(row.id, row.workerId, row.amountMinor, row.status)
         val outcome = evaluateWithdrawalTransition(snap, WithdrawalStatus.PENDING, WithdrawalStatus.COMPLETED, workerA, actorIsServerAuthority = false)
         assertTrue(outcome is WithdrawalTransitionOutcome.Reject)
     }
@@ -299,7 +306,7 @@ class WorkerCashoutSecurityTest {
         credit(workerA, 100.0, "c1")
         repository.requestWorkerCashoutInternal(60.0, momo, "k1", workerA)
         val row = db.walletWithdrawalDao().getWithdrawalsForWorker(workerA).single()
-        val snap = WithdrawalSnapshot(row.id, row.workerId, row.amount, row.status)
+        val snap = WithdrawalSnapshot(row.id, row.workerId, row.amountMinor, row.status)
         val outcome = evaluateWithdrawalTransition(snap, WithdrawalStatus.PENDING, WithdrawalStatus.FAILED, workerA, actorIsServerAuthority = true)
         val apply = outcome as WithdrawalTransitionOutcome.Apply
         // A FAILED disbursement must reverse the reservation, not destroy the funds.
@@ -311,13 +318,13 @@ class WorkerCashoutSecurityTest {
         credit(workerA, 100.0, "c1")
         repository.requestWorkerCashoutInternal(60.0, momo, "k1", workerA)
         val row = db.walletWithdrawalDao().getWithdrawalsForWorker(workerA).single()
-        val snap = WithdrawalSnapshot(row.id, row.workerId, row.amount, row.status)
+        val snap = WithdrawalSnapshot(row.id, row.workerId, row.amountMinor, row.status)
         val outcome = evaluateWithdrawalTransition(snap, WithdrawalStatus.PENDING, WithdrawalStatus.COMPLETED, workerA, actorIsServerAuthority = true)
         val apply = outcome as WithdrawalTransitionOutcome.Apply
         // Completion is NOT a reversal; the DEBIT is applied exactly once by the disbursement path.
         assertFalse(apply.reversalRequired)
         // Completing an already-COMPLETED withdrawal is a no-op terminal -> cannot pay twice.
-        val already = WithdrawalSnapshot(row.id, row.workerId, row.amount, WithdrawalStatus.COMPLETED.value)
+        val already = WithdrawalSnapshot(row.id, row.workerId, row.amountMinor, WithdrawalStatus.COMPLETED.value)
         val second = evaluateWithdrawalTransition(already, WithdrawalStatus.COMPLETED, WithdrawalStatus.COMPLETED, workerA, actorIsServerAuthority = true)
         assertTrue(second is WithdrawalTransitionOutcome.NoOpTerminal)
     }
@@ -350,19 +357,19 @@ class WorkerCashoutSecurityTest {
     @Test
     fun availableBalance_mathIsAuditable() {
         val entries = listOf(
-            WalletLedgerEntrySnapshot(LedgerEntryType.CREDIT.value, 100.0),
-            WalletLedgerEntrySnapshot(LedgerEntryType.RESERVE.value, 30.0),
-            WalletLedgerEntrySnapshot(LedgerEntryType.RELEASE.value, 30.0),
-            WalletLedgerEntrySnapshot(LedgerEntryType.DEBIT.value, 20.0)
+            WalletLedgerEntrySnapshot(LedgerEntryType.CREDIT.value, 10000L),
+            WalletLedgerEntrySnapshot(LedgerEntryType.RESERVE.value, 3000L),
+            WalletLedgerEntrySnapshot(LedgerEntryType.RELEASE.value, 3000L),
+            WalletLedgerEntrySnapshot(LedgerEntryType.DEBIT.value, 2000L)
         )
         // 100 - 30 (reserve) + 30 (release) - 20 (debit) = 80
-        assertEquals(80.0, computeAvailableBalance(entries), 0.0)
+        assertEquals(8000L, computeAvailableBalanceMinor(entries))
     }
 
     @Test
     fun negativeAvailableBalance_clampedToZero() {
-        val entries = listOf(WalletLedgerEntrySnapshot(LedgerEntryType.DEBIT.value, 50.0))
-        assertEquals(0.0, computeAvailableBalance(entries), 0.0)
+        val entries = listOf(WalletLedgerEntrySnapshot(LedgerEntryType.DEBIT.value, 5000L))
+        assertEquals(0L, computeAvailableBalanceMinor(entries))
     }
 }
 
