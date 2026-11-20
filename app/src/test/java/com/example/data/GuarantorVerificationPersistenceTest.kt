@@ -377,7 +377,7 @@ class GuarantorVerificationPersistenceTest {
         // AUDIT-W-CASHOUT later bumped it to v22 (wallet ledger + worker withdrawals); AUDIT-A-SOS
         // bumped it to v23 (sos_incidents table).
         // The MIGRATION_18_19 assertions above are unchanged and still must hold.
-        assertEquals("Room must build the v23 schema", 23L, schemaVersion)
+        assertEquals("Room must build the current v27 schema", 27L, schemaVersion)
     }
 
     @Test
@@ -393,7 +393,7 @@ class GuarantorVerificationPersistenceTest {
         // bumped it to v23 (sos_incidents table). This test asserts the F5 migration itself — its
         // senderId checks below — so only the live schema version moves forward. MIGRATION_20_21's
         // own start/end stay pinned at 20 -> 21.
-        assertEquals("Room must build the v23 schema", 23L, schemaVersion)
+        assertEquals("Room must build the current v27 schema", 27L, schemaVersion)
 
         var senderIdColumn: String? = null
         forEachRow("PRAGMA table_info(chat_messages)") { cursor ->
@@ -419,7 +419,7 @@ class GuarantorVerificationPersistenceTest {
         // table). This test asserts the F4 migration itself — its postedByUid checks below — so
         // only the live schema version moves forward. The migration's own start/end versions stay
         // pinned at 19 -> 20.
-        assertEquals("Room must build the current v23 schema", 23L, schemaVersion)
+        assertEquals("Room must build the current v27 schema", 27L, schemaVersion)
 
         var postedByUidColumn: String? = null
         forEachRow("PRAGMA table_info(job_posts)") { cursor ->

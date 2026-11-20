@@ -89,6 +89,7 @@ class SosRaiseAuthorizationSecurityTest {
         urgency = "Today",
         status = JobStatus.IN_PROGRESS.value,
         assignedProviderId = assignedProviderId,
+        assignedProviderUid = assignedProviderUid,
         assignedProviderName = "Elena Rostova",
         createdTimestamp = 1_000L,
         estimatedHours = 1.0,
@@ -112,9 +113,10 @@ class SosRaiseAuthorizationSecurityTest {
 
     @Test
     fun `assigned provider raising SOS on assigned job is authorized`() {
+        // The assigned account's Firebase UID is the identity; the catalog id is display-only.
         assertTrue(
             SkillsExchangeRepository.isSosRaiseAuthorized(
-                uid("prov_1"), job(assignedProviderId = "prov_1")
+                uid("uid_provider"), job(assignedProviderUid = "uid_provider")
             )
         )
     }

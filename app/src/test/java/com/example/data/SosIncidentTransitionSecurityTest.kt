@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.db.AppDatabase
 import com.example.data.db.JobPostEntity
+import com.example.data.db.ServiceProviderEntity
 import com.example.data.db.SosIncidentEntity
 import com.example.data.remote.FirebaseService
 import com.example.data.remote.SmsNotificationService
@@ -43,6 +44,29 @@ class SosIncidentTransitionSecurityTest {
         repository = SkillsExchangeRepository(db, FirebaseService(), SmsNotificationService())
 
         runBlocking {
+            // job_posts.assignedProviderId has a foreign key to service_providers.id.
+            db.serviceProviderDao().insertProvider(
+                ServiceProviderEntity(
+                    id = "prov_1",
+                    name = "Elena Rostova",
+                    tagline = "Master Plumber & Pipe Specialist",
+                    category = "Plumbing",
+                    neighborhood = "Maplewood East",
+                    residenceYears = 4,
+                    hourlyRate = 75.0,
+                    distanceMiles = 0.8,
+                    rating = 4.9,
+                    completedJobsCount = 42,
+                    avgResponseTime = "12 mins",
+                    isVerifiedResident = true,
+                    isBackgroundChecked = true,
+                    bio = "Licensed master plumber.",
+                    skillsCsv = "Pipe Leak Repair, Drain Clearing",
+                    latitude = 37.7749,
+                    longitude = -122.4194,
+                    endorsementsCount = 31
+                )
+            )
             db.jobPostDao().insertJob(
                 JobPostEntity(
                     id = "job_1",
