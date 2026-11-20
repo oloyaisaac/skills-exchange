@@ -325,9 +325,9 @@ const submissionPayload = (overrides = {}) => ({
 
 test("a guarantor row is filed only with a dated, recorded third-party consent", async () => {
   const worker = as(WORKER, freshAuth());
-  await assertSucceeds(setDoc(doc(worker, "guarantors", "g_ok"), guarantorPayload()));
 
-  // One field removed at a time: the consent proof is what the rule is there for.
+  // One field removed at a time: the consent proof is what the rule is there for. Each denial uses a
+  // fresh document id, so each is a create rather than an update.
   const missingVersion = guarantorPayload();
   delete missingVersion.consentVersion;
   await assertFails(setDoc(doc(worker, "guarantors", "g_no_version"), missingVersion));
@@ -342,6 +342,9 @@ test("a guarantor row is filed only with a dated, recorded third-party consent",
   await assertFails(
     setDoc(doc(worker, "guarantors", "g_false_consent"), guarantorPayload({ consentProvided: false }))
   );
+  // The same row with the dated receipt is accepted.
+  await assertSucceeds(setDoc(doc(worker, "guarantors", "g_ok"), guarantorPayload()));
+
   // The consent proof is immutable after filing, and the reviewer's own fields stay admin-only.
   await assertFails(
     updateDoc(doc(worker, "guarantors", "g_ok"), { consentRecordedAt: 1_760_000_009_999 })
@@ -351,12 +354,12 @@ test("a guarantor row is filed only with a dated, recorded third-party consent",
 
 test("a guarantor submission must name the consent version it was filed under", async () => {
   const worker = as(WORKER, freshAuth());
-  await assertSucceeds(setDoc(doc(worker, "guarantor_submissions", WORKER), submissionPayload()));
 
+  // The denials run first, so each one is a *create* (the document does not exist yet) and the create
+  // rule is what rejects it. Re-ordering these after the success would silently test the update rule.
   const noVersion = submissionPayload();
   delete noVersion.consentVersion;
   await assertFails(setDoc(doc(worker, "guarantor_submissions", WORKER), noVersion));
-
   await assertFails(
     setDoc(doc(worker, "guarantor_submissions", WORKER), submissionPayload({ consentVersion: "v2" }))
   );
@@ -367,6 +370,8 @@ test("a guarantor submission must name the consent version it was filed under", 
   await assertFails(
     setDoc(doc(as(STRANGER, freshAuth()), "guarantor_submissions", WORKER), submissionPayload())
   );
+  // The same payload with a dated version and a real receipt timestamp is accepted.
+  await assertSucceeds(setDoc(doc(worker, "guarantor_submissions", WORKER), submissionPayload()));
 });
 
 test("consent receipts are readable by their owner and forgeable by nobody", async () => {
