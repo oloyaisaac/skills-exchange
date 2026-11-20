@@ -8,7 +8,15 @@ longer claims locked funds, single-flight on release and SOS, onboarding uses `r
 SOS stops inventing Kampala coordinates, `FLAG_SECURE` on identity surfaces, and Compose UI tests
 cover onboarding, posting, quoting and escrow. Evidence: CI run 44704246765, 362/362 tests.
 
-**R03 — backend — NOT STARTED.** R04–R15 awaiting.
+**R03 — COMPLETE.** Runtime pinned to Node 22; the deploy config now builds functions before upload
+and declares the composite indexes; the escrow release has one core (`performEscrowRelease`) with
+`createMoMoPayout` reduced to an alias that ignores client amounts and wallets; provider and Gemini
+keys come from Secret Manager; push notifications cover payouts, KYC and disputes; OTP sends are
+limited to 20 per IP per hour; documentation counts corrected to 27 exports / 172 tests. Evidence:
+CI run 44709995723 — 172/172 backend tests, 5/5 Firestore-emulator handler tests, docs and secret
+checks pass. Deployment and live provider traffic stay UNVERIFIED.
+
+**R04 — data and persistence — NEXT.** R05–R15 awaiting.
 
 ## Review Track — 2026-11-19 (not started)
 
@@ -18,7 +26,7 @@ Independent review programme defined after a repository assessment found the com
 |---|---|---|---|---|
 | RVW-001 | P0 | R01 Architecture & Codebase Integrity | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_01.md`) | G0 build — FAIL |
 | RVW-002 | P1 | R02 Android Client | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_02.md`) | — |
-| RVW-003 | P0 | R03 Backend & Cloud Functions | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_03.md`) | — |
+| RVW-003 | P0 | R03 Backend & Cloud Functions | ✅ Prompt-4 PASS (`REVIEWER_03_DONE.md`) | — |
 | RVW-004 | P1 | R04 Data & Persistence | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_04.md`) | — |
 | RVW-005 | P1 | R05 API & Integrations | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_05.md`) | — |
 | RVW-006 | P0 | R06 Auth & Identity | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_06.md`) | G6 identity — FAIL |

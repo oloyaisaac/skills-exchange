@@ -7,7 +7,7 @@
 |---|---|---|---|---|---|
 | 1 | Architecture & Codebase | all 67 Kotlin files scanned; build topology; layering; god classes | backend build/tests; Android UNVERIFIED | FAIL | `REVIEW_01.md` |
 | 2 | Android Client | onboarding, shell, escrow UI, permissions, lifecycle | Android UNVERIFIED | FAIL | `REVIEW_02.md` |
-| 3 | Backend & Cloud Functions | 26 exports, auth gates, webhook, idempotency, deploy | build + 171 tests; deploy UNVERIFIED | FAIL | `REVIEW_03.md` |
+| 3 | Backend & Cloud Functions | 26 exports, auth gates, webhook, idempotency, deploy | build + 172 unit tests + 5 handler tests on the Firestore emulator; deploy UNVERIFIED | FAIL | `REVIEW_03.md` |
 | 4 | Data & Persistence | schema v27, 18 entities, migrations, ledger, queue | migration execution UNVERIFIED | FAIL | `REVIEW_04.md` |
 | 5 | API & Integrations | MoMo, OTP, SMS, Gemini, Maps, FCM, currency | provider calls UNVERIFIED | FAIL | `REVIEW_05.md` |
 | 6 | Auth & Identity | OTP, Google, restore, logout, deletion, admin claim | live auth UNVERIFIED | FAIL | `REVIEW_06.md` |

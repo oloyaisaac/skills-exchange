@@ -9,6 +9,8 @@ export interface ReleaseJobView {
   escrowStatus?: unknown;
   assignedProvider?: unknown;
   assignedWorkerId?: unknown;
+  /** The field the Android client actually writes (`job_posts.assignedProviderId`). */
+  assignedProviderId?: unknown;
   escrowAmount?: unknown;
   budget?: unknown;
   releasePayoutRef?: unknown;
@@ -50,7 +52,11 @@ export function decideEscrowRelease(
       message: `Escrow cannot be released for job in status: ${String(job.status)}.`,
     };
   }
-  if (job.assignedProvider !== workerId && job.assignedWorkerId !== workerId) {
+  if (
+    job.assignedProvider !== workerId &&
+    job.assignedWorkerId !== workerId &&
+    job.assignedProviderId !== workerId
+  ) {
     return {
       kind: "REJECT",
       code: "failed-precondition",

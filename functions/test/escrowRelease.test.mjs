@@ -41,3 +41,15 @@ test("unfunded escrow, wrong worker, bad wallet and zero amount are rejected", (
   const zero = decideEscrowRelease(job({ escrowAmount: 0, budget: 0 }), "worker_1", "+256700000001");
   assert.equal(zero.kind, "REJECT");
 });
+
+test("the client field name assignedProviderId authorizes the assigned worker", () => {
+  const job = {
+    status: "COMPLETED",
+    escrowStatus: "FUNDS_LOCKED_IN_ESCROW",
+    assignedProviderId: "worker_1",
+    escrowAmount: 50_000,
+  };
+  const decision = decideEscrowRelease(job, "worker_1", "+256700000000");
+  assert.equal(decision.kind, "RELEASE");
+  assert.equal(decision.amount, 50_000);
+});

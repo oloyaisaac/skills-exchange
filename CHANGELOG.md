@@ -1,5 +1,27 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [PROMPT-4 / R03] Backend hardening; handler tests on the Firestore emulator
+
+- **Runtime (R03-P2-01).** `functions/package.json` moves from the end-of-life Node 18 to Node 22.
+- **Deploy config (R03-P2-02, R03-P2-04).** `firebase.json` builds functions before upload
+  (`predeploy`) and points at the new `firestore.indexes.json`, which declares the four composite
+  indexes the queries use.
+- **One payout path (R03-P2-03).** `performEscrowRelease` is the only implementation;
+  `createMoMoPayout` is a deprecated alias that ignores client-supplied amounts and wallet numbers,
+  so a tampered call cannot change what is paid or where.
+- **Release fix.** The release policy now accepts `assignedProviderId`, the field the Android client
+  writes; before this the callable refused every client-created job.
+- **Secrets (R03-P2-05).** Africa's Talking and Gemini keys are declared with `defineSecret` and
+  resolved through `secretOrEnv()`; the five functions that need them run with the secret bindings.
+- **Notifications (R03-P2-06).** `sendUserPush()` notifies `user_{uid}` on payout release, KYC
+  decisions and disputes; the Android client subscribes and unsubscribes from its topic.
+- **Abuse limits (R03-P2-07).** OTP sends are limited to 20 per IP per hour.
+- **Tests.** 172 unit tests plus 5 handler tests that invoke the real callables against the Firestore
+  emulator (auth, idempotency, unfunded refusal, tamper-proof alias), wired into CI with a step that
+  requires exactly `# pass 5` / `# fail 0`.
+- **Docs (R03-P2-08).** Export and test counts corrected to 27 exports / 172 tests.
+- Evidence: CI run 44709995723. Deployment and live provider traffic remain UNVERIFIED.
+
 ### [2026-11-20] [PROMPT-4 / R02] Server-confirmed escrow; client lifecycle fixes; Compose tests
 
 - **Escrow (R02-P2-01).** The sheet no longer writes `RELEASED_TO_WORKER`. Release calls the
