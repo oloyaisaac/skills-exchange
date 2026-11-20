@@ -19,8 +19,11 @@ android {
     applicationId = "com.aistudio.skillsexchange.nxptvq"
     minSdk = 24
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0"
+    // R14-P2-05: version from `version.properties`, overridable per build. A placeholder "1.0"/1 is
+    // still a placeholder; what matters is that one file owns it, the format is validated, and CI can
+    // stamp a build without editing source.
+    versionCode = appVersionCode()
+    versionName = appVersionName()
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -44,11 +47,17 @@ android {
 
   signingConfigs {
     create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
-      keyAlias = "upload"
-      keyPassword = System.getenv("KEY_PASSWORD")
+      // R14-P2-05: a missing keystore used to surface as `validateSigningRelease: Keystore file not
+      // found` deep in a release build, which reads like a corruption rather than a missing key. The
+      // config is now only applied when the key exists, and the task-graph check below refuses a
+      // release build without one, with a sentence that says what to do.
+      val keystoreFile = releaseKeystoreFile()
+      if (keystoreFile.exists()) {
+        storeFile = keystoreFile
+        storePassword = System.getenv("STORE_PASSWORD")
+        keyAlias = "upload"
+        keyPassword = System.getenv("KEY_PASSWORD")
+      }
     }
   }
 
@@ -63,6 +72,18 @@ android {
       signingConfig = signingConfigs.getByName("release")
     }
   }
+  // R14-P2-02: Android Lint is wired into CI (`./gradlew :app:lintDebug`) and its XML report is gated by
+  // `scripts/check_lint_report.mjs`. `abortOnError = false` is deliberate: the gate is the script, which
+  // can distinguish an allowlisted rule with a written reason from a new error, and which reports
+  // warnings without failing on them.
+  lint {
+    abortOnError = false
+    checkReleaseBuilds = false
+    xmlReport = true
+    htmlReport = true
+    xmlOutput = file("build/reports/lint-results-debug.xml")
+  }
+
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
@@ -264,6 +285,46 @@ dependencies {
  * the untracked `.env` at the repository root. Returns an empty string when nothing is set, which
  * makes `GoogleSignInHelper.isConfigured` false and the button explains why.
  */
+/**
+ * R14-P2-05: `KEYSTORE_PATH` wins when set (CI points it at a throwaway key), otherwise the
+ * conventional root-level upload key.
+ */
+fun releaseKeystoreFile(): java.io.File {
+  val configured = System.getenv("KEYSTORE_PATH")?.trim().orEmpty()
+  val path = if (configured.isNotEmpty()) configured else "${rootDir}/my-upload-key.jks"
+  return file(path)
+}
+
+/** Reads one key from `version.properties`; a missing file is a build error, not a default. */
+fun versionProperty(key: String): String {
+  val file = rootProject.file("version.properties")
+  require(file.exists()) {
+    "version.properties is missing: it is the single source of truth for versionCode and versionName."
+  }
+  val line = file.readLines()
+    .map { it.trim() }
+    .firstOrNull { it.startsWith("$key=") }
+    ?: error("version.properties has no $key= line.")
+  return line.substringAfter("=").trim()
+}
+
+fun appVersionCode(): Int {
+  val raw = System.getenv("VERSION_CODE")?.trim().takeUnless { it.isNullOrEmpty() } ?: versionProperty("VERSION_CODE")
+  val code = raw.toIntOrNull()
+  require(code != null && code > 0) {
+    "versionCode must be a positive integer, got '$raw'. A re-used or zero code is rejected by Play."
+  }
+  return code
+}
+
+fun appVersionName(): String {
+  val raw = System.getenv("VERSION_NAME")?.trim().takeUnless { it.isNullOrEmpty() } ?: versionProperty("VERSION_NAME")
+  require(Regex("^\\d+\\.\\d+\\.\\d+$").matches(raw)) {
+    "versionName must be MAJOR.MINOR.PATCH, got '$raw'."
+  }
+  return raw
+}
+
 fun googleWebClientId(): String {
   val fromEnv = System.getenv("GOOGLE_WEB_CLIENT_ID")?.trim().orEmpty()
   if (fromEnv.isNotEmpty()) return fromEnv
@@ -274,4 +335,17 @@ fun googleWebClientId(): String {
   val line = dotEnv.readLines().firstOrNull { it.trim().startsWith("GOOGLE_WEB_CLIENT_ID=") }
     ?: return ""
   return line.substringAfter("=").trim().trim('"')
+}
+
+// R14-P2-05: a release build without a signing key fails here, at configuration time, with a readable
+// message — instead of at `validateSigningRelease` inside a task that has already done work.
+gradle.taskGraph.whenReady {
+  val wantsRelease = allTasks.any { it.name.contains("Release") }
+  if (wantsRelease && !releaseKeystoreFile().exists()) {
+    throw GradleException(
+      "Release signing key not found at ${releaseKeystoreFile().absolutePath}. " +
+        "Set KEYSTORE_PATH (and STORE_PASSWORD / KEY_PASSWORD) or place my-upload-key.jks in the " +
+        "repository root. Debug and unit-test builds do not need it."
+    )
+  }
 }
