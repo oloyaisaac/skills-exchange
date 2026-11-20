@@ -202,7 +202,8 @@ fun GpsLocationBanner(
                 } else if (gpsState.isPermissionGranted) {
                     IconButton(
                         onClick = onRequestGps,
-                        modifier = Modifier.size(24.dp)
+                        // R12-P2-04: 48dp touch target.
+                        modifier = Modifier.size(48.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
@@ -229,7 +230,8 @@ fun GpsLocationBanner(
 
                 IconButton(
                     onClick = onDismissBanner,
-                    modifier = Modifier.size(24.dp)
+                    // R12-P2-04: 48dp touch target.
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,

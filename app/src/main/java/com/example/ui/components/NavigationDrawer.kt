@@ -174,7 +174,8 @@ fun AppNavigationDrawer(
                             // Close Button with proper padding
                             IconButton(
                                 onClick = onDismiss,
-                                modifier = Modifier.size(36.dp)
+                                // R12-P2-04: 48dp touch target.
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Close,

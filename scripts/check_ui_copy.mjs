@@ -92,6 +92,67 @@ function slate400AsText(uiRoot) {
   return offenders;
 }
 
+/**
+ * Icon-only buttons with no accessible name — the one accessibility defect that is unambiguously a
+ * defect and unambiguously detectable: `IconButton { Icon(contentDescription = null) }` reads as
+ * "button" to a screen reader. An icon beside a `Text` label is fine (the label is the name), which is
+ * why the scan looks at the whole button block rather than at the icon's own description.
+ */
+function unlabelledIconButtons(uiRoot) {
+  const offenders = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (entry.name.endsWith(".kt")) {
+        const lines = fs.readFileSync(full, "utf8").split("\n");
+        lines.forEach((line, index) => {
+          if (!line.includes("IconButton(")) return;
+          // Wide enough for a button whose onClick is a lambda spanning a dozen lines.
+          const block = lines.slice(index, index + 30).join("\n");
+          const labelled = block.includes('contentDescription = "') || block.includes("Text(");
+          if (!labelled) offenders.push(`${full}:${index + 1}: an IconButton has no accessible name`);
+        });
+      }
+    }
+  };
+  if (fs.existsSync(uiRoot)) walk(uiRoot);
+  return offenders;
+}
+
+/**
+ * Icon buttons constrained below the 48dp floor. Material's `IconButton` is 48dp by default; a
+ * `Modifier.size(24.dp)` on it silently shrinks the hit area to a quarter of that. The icon inside may
+ * be any size — this rule looks only at the button's own size modifier.
+ */
+function smallIconButtons(uiRoot) {
+  const offenders = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (entry.name.endsWith(".kt")) {
+        const lines = fs.readFileSync(full, "utf8").split("\n");
+        lines.forEach((line, index) => {
+          if (!line.includes("IconButton(")) return;
+          // Only the button's own modifier counts: stop at the content lambda, so the icon's
+          // size inside the button body is not mistaken for the button's size.
+          const raw = lines.slice(index, index + 12).join("\n");
+          const header = raw.split(") {")[0];
+          const sized = header.match(/\.size\((\d+)\.dp\)/);
+          if (sized && Number(sized[1]) < 48) {
+            offenders.push(`${full}:${index + 1}: an IconButton is ${sized[1]}dp, below the 48dp floor`);
+          }
+        });
+      }
+    }
+  };
+  if (fs.existsSync(uiRoot)) walk(uiRoot);
+  return offenders;
+}
+
 export function problems(root) {
   const found = [];
   const resRoot = path.join(root, RES);
@@ -129,6 +190,14 @@ export function problems(root) {
       `hardcoded user-facing copy grew from ${HARDCODED_COPY_BASELINE} to ${total}: ` +
         `add the sentence to res/values/strings.xml instead (the remaining debt is R12-P2-01)`
     );
+  }
+
+  for (const offender of unlabelledIconButtons(uiRoot)) {
+    found.push(offender);
+  }
+
+  for (const offender of smallIconButtons(uiRoot)) {
+    found.push(offender);
   }
 
   for (const offender of slate400AsText(uiRoot)) {
@@ -200,8 +269,30 @@ function selftest() {
     throw new Error("selftest: Slate400 as a text colour was not refused");
   }
 
+  // 4. an icon-only button with no accessible name
+  write(
+    path.join(ui, "Unlabelled.kt"),
+    `class Unlabelled {\n  fun f() {\n    IconButton(onClick = {}) {\n      Icon(Icons.Default.Close, contentDescription = null)\n    }\n  }\n}\n`
+  );
+  const unlabelled = problems(tmp);
+  if (!unlabelled.some((problem) => problem.includes("no accessible name"))) {
+    throw new Error("selftest: an unlabelled IconButton was not refused");
+  }
+  fs.rmSync(path.join(ui, "Unlabelled.kt"));
+
+  // 5. an icon button smaller than the touch floor
+  write(
+    path.join(ui, "Tiny.kt"),
+    `class Tiny {\n  fun f() {\n    IconButton(onClick = {}, modifier = Modifier.size(24.dp)) {\n      Icon(Icons.Default.Close, contentDescription = "Close")\n    }\n  }\n}\n`
+  );
+  const tiny = problems(tmp);
+  if (!tiny.some((problem) => problem.includes("below the 48dp floor"))) {
+    throw new Error("selftest: a 24dp IconButton was not refused");
+  }
+  fs.rmSync(path.join(ui, "Tiny.kt"));
+
   fs.rmSync(tmp, { recursive: true, force: true });
-  console.log("UI copy guard selftest passed: clean passes; a missing translation, new hardcoded copy and a tint-as-text are each refused.");
+  console.log("UI copy guard selftest passed: clean passes; a missing translation, new hardcoded copy, a tint-as-text, an unlabelled IconButton and a 24dp IconButton are each refused.");
 }
 
 if (process.argv.includes("--selftest")) {

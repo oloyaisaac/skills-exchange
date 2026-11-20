@@ -18,7 +18,9 @@ remediation sandbox it is marked **UNVERIFIED** rather than estimated.
 | Storage rules | `rules-test/storage.rules.check.mjs` | `node rules-test/storage.rules.check.mjs` | static | CI (same job) | yes |
 | Android JVM + Robolectric + Compose | `app/src/test` (62 files) | `./gradlew :app:testDebugUnitTest` | **478** | CI (`Compile and unit tests`) | yes |
 | Android coverage | `:app:jacocoTestReport` / `:app:jacocoTestCoverageVerification` | `./gradlew :app:jacocoTestReport :app:jacocoTestCoverageVerification` | measured per run | CI, uploaded as `android-coverage` | yes (floor) |
-| Documentation and static guarantees | `scripts/check_*.mjs`, `scripts/secret_scan.mjs` | see `docs/DOCUMENT_MAP.md` | 10 guards | CI (`Documentation checks`, `Secret scan`) | yes |
+| Accessibility semantics | `app/src/test/java/com/example/ui/AccessibilitySemanticsTest.kt` | part of the Android unit suite | **7** | CI (`Compile and unit tests`) | yes |
+| Colour contrast (WCAG maths, no rendering) | `app/src/test/java/com/example/ui/theme/ContrastTest.kt` | part of the Android unit suite | **4** | CI, same job | yes |
+| Documentation and static guarantees | `scripts/check_*.mjs`, `scripts/secret_scan.mjs` | see `docs/DOCUMENT_MAP.md` | 12 guards | CI (`Documentation checks`, `Secret scan`) | yes |
 | Instrumented (device) tests | `app/src/androidTest` | — | 1 template | nowhere | **no** — see §7 |
 
 The backend suite count is asserted nowhere by hand: `npm test` discovers `test/*.test.mjs`, and
@@ -38,7 +40,8 @@ A gate is a command that fails the pull request. The following are blocking toda
 4. `android`: `:app:compileDebugKotlin`, `:app:testDebugUnitTest`, then
    `:app:jacocoTestCoverageVerification`.
 5. `documentation`: link integrity, document map, traceability, README claims, architecture guards,
-   query limits, consent version, backup policy, test registration (with self-test), secret scan.
+   query limits, consent version, backup policy, test registration and UI copy (each with a self-test),
+   and the secret scan.
 
 Non-blocking (run but do not gate): the `ci-schema` and `ci-logs` publication steps, the diagnostic
 uploads, and `CodeRabbit`.
@@ -106,6 +109,9 @@ follow-up, and it should be raised only against a measured number.
   if you name it anything else without registering it.
 - Rules: extend `rules-test/firestore.rules.test.mjs`. Assert denials on fresh document ids *before*
   creating anything, or the permissive rule answers instead of the rule under test.
+- Accessibility: add the assertion to `AccessibilitySemanticsTest` (semantics, touch targets, font
+  scale) or `ContrastTest` (a colour pair). A new hardcoded sentence must become a string resource —
+  `scripts/check_ui_copy.mjs` fails otherwise.
 - Android: add a `@RunWith(AndroidJUnit4::class)` Robolectric or plain JUnit4 test under
   `app/src/test`. Compose assertions belong in `com.example.ui` next to `CriticalFlowComposeTest`
   (which already covers posting, quoting and the pipeline) or `EscrowGatingComposeTest`.
@@ -127,6 +133,9 @@ follow-up, and it should be raised only against a measured number.
    baseline is compared, so a visual regression would not be caught.
 6. **The Android coverage floor (20 %) is low** and is not a quality target.
 7. **No load or latency testing.** Nothing measures the p95 of a callable under concurrency.
+8. **No TalkBack, Accessibility Scanner or native-speaker review.** The semantics tree is asserted and
+   the palette is measured, but no human has listened to the app or read the Swahili drafts.
+   `docs/ux/ACCESSIBILITY_AND_LOCALISATION.md` records the details.
 
 ## 8. Contradiction log
 

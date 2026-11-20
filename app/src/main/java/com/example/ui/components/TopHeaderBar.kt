@@ -82,7 +82,8 @@ fun TopHeaderBar(
             // 1. Left: Hamburger Menu Button
             IconButton(
                 onClick = onOpenNavigationDrawer,
-                modifier = Modifier.size(36.dp)
+                // R12-P2-04: 48dp touch target.
+                modifier = Modifier.size(48.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Menu,
@@ -271,7 +272,8 @@ fun TopHeaderBar(
             Box {
                 IconButton(
                     onClick = onOpenNotifications,
-                    modifier = Modifier.size(36.dp)
+                    // R12-P2-04: 48dp touch target.
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Notifications,
