@@ -337,6 +337,21 @@ Two of the seven findings were stale in the reviewer's favour (`R09-P2-01` was p
 | R09-P2-06 | MEDIUM: `docs/privacy/DSAR.md` described a deletion flow that did not delete Storage objects | **IMPLEMENTED AND VERIFIED** | Rewritten from `ERASURE_STEPS`, `deleteMyAccount` and `exportMyData`: the real order, the retained categories with windows and reasons, the export path (in-app button, private cache, FileProvider) and the evidence collections. New `docs/privacy/RETENTION.md` is the schedule and is listed in `docs/DOCUMENT_MAP.md` |
 | R09-P2-07 | LOW: avatars publicly readable | **CLOSED IN R07 — re-verified, not re-implemented** | the review predates R07: `storage.rules` requires `isAuthenticated()` for both `avatars/{userId}` and `users/{userId}/avatars`. Recorded here rather than silently dropped; the Storage rules are checked statically, not executed |
 
+### Gate audit against §11 of the reviewer's brief (after the merge)
+
+The review's passing conditions are the gate, not the seven findings alone, so each condition was
+re-checked against the merged code. Three gaps were still open and are now closed (PR #25):
+
+| §11 condition | Where it is satisfied | Gap found in the audit | Status |
+|---|---|---|---|
+| Lawful basis and consent recorded | `compliance.ts` receipts (account + guarantor), rules requiring a dated version, `docs/privacy/ROPA.md` naming the basis per category | the basis was described in prose but never inventoried | **CLOSED** — `docs/privacy/ROPA.md` (16 categories, gaps listed) |
+| Minimisation demonstrated | `pii.ts` masking/fingerprint/scrubbing, `sanitiseGuarantorSubmissionForExport`, NIN masked in the reviewer queue, district-level location | `scrubForLog` existed with no caller, so "no PII in logs" was a claim about a helper | **CLOSED** — 11 log/persisted-error sites now scrub, and `scripts/check_no_pii_logs.mjs` (with a self-test) fails the build on an unmasked identifier |
+| Retention defined and enforced | `RETENTION_POLICY` + `LEGAL_HOLDS` + daily sweep + `retention_reports` | none | satisfied (sweep never observed running — not deployed) |
+| Erasure complete across all stores | `deleteMyAccount` (Firestore, Storage, chat in worked jobs, Auth last), `mayDeleteAuthUser` | `private_docs/{uid}/` is owner-writable in `storage.rules` but was **not** in `storagePurgePrefixes` | **CLOSED** — prefix added, test asserts every owner-writable prefix is purged |
+| No misleading privacy claims | privacy + guarantor copy, `DSAR.md`, `RETENTION.md` | none | satisfied |
+| Transfer/processor safeguards documented | `PROCESSORS.md` (processor, categories, transfer basis, contract status) + `ROPA.md` §3.4 | none claimed beyond what exists | satisfied, with signed DPAs explicitly **not** claimed |
+| Backup: no personal data in cloud backup | `allowBackup="false"` plus both rule files excluding every domain | nothing proved it stayed that way | **CLOSED** — `scripts/check_backup_policy.mjs` reads the manifest and both policies (static check; no on-device restore test is claimed) |
+
 ### Verification evidence (executed)
 
 - CI run **44767996592** / **44767996563** (the last commit of the round):

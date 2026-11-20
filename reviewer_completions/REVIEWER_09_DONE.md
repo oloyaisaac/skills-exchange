@@ -30,6 +30,15 @@ I finished the work for this reviewer.
 - Guards: document map, README claims, doc links, traceability, architecture, query limits, secret
   scan, and the new `check_consent_version.mjs`.
 
+## Gate audit (PR #25)
+
+The seven findings were not the whole gate. Re-checking the reviewer's §11 passing conditions against
+the merged code found three open items, now closed: `private_docs/{uid}/` was owner-writable but
+outside `storagePurgePrefixes`; `scrubForLog` had no caller, so "no PII in logs" described an unused
+helper; and the lawful-basis/transfer inventory the brief asks for did not exist. Added
+`docs/privacy/ROPA.md`, 11 scrubbing call sites, and two self-checking guards
+(`check_no_pii_logs.mjs` with `--selftest`, `check_backup_policy.mjs`).
+
 ## Not claimed
 
 - Nothing is deployed; the daily sweep has never been observed firing.

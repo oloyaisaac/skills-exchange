@@ -30,6 +30,14 @@
   reviewer-only view, masked display. New `functions/src/pii.ts` masks NINs, fingerprints them under a
   server-held salt for duplicate detection (no salt, no fingerprint), and scrubs identity numbers and
   phone numbers out of log lines.
+- **Gate audit follow-up (PR #25).** `private_docs/{uid}/` was owner-writable in `storage.rules` but
+  missing from `storagePurgePrefixes`, so a person who uploaded a document there would have left it
+  behind; it is purged now and a test asserts every owner-writable prefix. `scrubForLog` had no
+  caller, so identity values could still reach Cloud Logging through provider error bodies: eleven
+  log and persisted-report sites now scrub, and `scripts/check_no_pii_logs.mjs` (self-testing) fails
+  the build when a log line carries an unmasked identifier. `scripts/check_backup_policy.mjs` pins
+  `allowBackup="false"` and every excluded domain. `docs/privacy/ROPA.md` is the processing inventory
+  the reviewer's evidence list asks for.
 - **The procedure matches the code (R09-P2-06, MEDIUM).** `docs/privacy/DSAR.md` is rewritten from the
   actual deletion order, and `docs/privacy/RETENTION.md` is new. Avatar reads were already
   authentication-gated in R07 (R09-P2-07), recorded rather than re-implemented.

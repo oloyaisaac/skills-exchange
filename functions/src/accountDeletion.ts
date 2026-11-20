@@ -58,7 +58,11 @@ export function isFreshAuth(
  */
 export function storagePurgePrefixes(uid: string, jobIds: string[]): string[] {
   if (!uid) return [];
-  const prefixes = new Set<string>([`users/${uid}/`, `avatars/${uid}/`]);
+  // R09: every prefix whose rules let this account write personal documents. `users/{uid}/` covers
+  // kyc/, guarantors/, certificates/ and verification/ (see storage.rules), which is where the
+  // identity documents live; `private_docs/{uid}/` is owner-writable too and is not written by the
+  // app today, but a prefix a person *can* put a document into must be purged with their account.
+  const prefixes = new Set<string>([`users/${uid}/`, `avatars/${uid}/`, `private_docs/${uid}/`]);
   for (const jobId of jobIds) {
     if (typeof jobId === "string" && jobId.trim().length > 0) prefixes.add(`jobs/${jobId.trim()}/`);
   }

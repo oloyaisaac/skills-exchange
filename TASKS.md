@@ -98,6 +98,14 @@ sweep that retains and reports what it cannot date. The copy no longer claims en
 not do. Evidence: backend 272/272, rules 24/24, 7 CI checks green (run 44767996592), new
 `check_consent_version.mjs` guard. Not verified: deployment, the schedule firing, Storage purge against
 a real bucket, backups, regulator filings.
+
+**R09 follow-up (PR #25).** The gate audit against the reviewer's §11 passing conditions — not just
+the seven findings — found three open items, now closed: `private_docs/{uid}/` is owner-writable but
+was not in `storagePurgePrefixes` (added, asserted); `scrubForLog` had no caller, so "no PII in logs"
+was a claim about an unused helper (11 sites now scrub, and `check_no_pii_logs.mjs` fails the build on
+an unmasked identifier, with a self-test proving it can fail); and the lawful-basis/transfer evidence
+the brief asks for did not exist as an inventory (`docs/privacy/ROPA.md`, 16 categories, gaps stated).
+`check_backup_policy.mjs` now proves backup stays disabled and every domain excluded.
 REM-037 stays `IN_PROGRESS` on purpose: R09 erases both sides' dispute records with the account, so
 "preserve the complaint while erasing the complainant" is not implemented — it needs a product
 decision about who may read a preserved complaint afterwards, and the erasure does not pretend

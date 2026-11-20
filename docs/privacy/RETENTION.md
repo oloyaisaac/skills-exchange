@@ -63,11 +63,18 @@ One category failing does not stop the others, and a failure is recorded rather 
 - **Sub-collections of `users/{uid}`** other than the consent receipts are removed by account
   deletion, not by the sweep; they are part of an active account.
 - **Storage objects** are not aged by this sweep. They are covered by account deletion
-  (`storagePurgePrefixes`) and by `storage.rules` ownership; a Storage lifecycle rule for abandoned
-  KYC uploads is **UNVERIFIED/not claimed** — it needs a bucket policy, which is an infrastructure
-  change, not application code.
+  (`storagePurgePrefixes`: `users/{uid}/`, `avatars/{uid}/`, `private_docs/{uid}/`,
+  `jobs/{jobId}/`) and by `storage.rules` ownership; a Storage lifecycle rule for abandoned KYC
+  uploads is **UNVERIFIED/not claimed** — it needs a bucket policy, which is an infrastructure change,
+  not application code.
 - **Backups.** Google-managed Firestore backups are outside the sweep's reach; a deleted document can
   persist in a backup until the backup expires. That is stated here rather than claimed as handled.
+
+## Related records
+
+`docs/privacy/ROPA.md` is the processing inventory this schedule belongs to: every category here has a
+row there with its purpose, basis and recipients. `docs/privacy/DSAR.md` is the procedure that applies
+both.
 
 ## Evidence
 
