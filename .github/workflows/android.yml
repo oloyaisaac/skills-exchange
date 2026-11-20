@@ -77,6 +77,8 @@ jobs:
           sdkmanager --list > ci-logs/sdkmanager.txt 2>&1 || true
           cp compile.log ci-logs/ 2>/dev/null || true
           cp unit-tests.log ci-logs/ 2>/dev/null || true
+          mkdir -p ci-logs/test-results
+          cp app/build/test-results/testDebugUnitTest/*.xml ci-logs/test-results/ 2>/dev/null || true
           printf 'run: %s\ncommit: %s\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > ci-logs/README.txt
           git config user.email "ci@users.noreply.github.com"
           git config user.name "CI diagnostics"

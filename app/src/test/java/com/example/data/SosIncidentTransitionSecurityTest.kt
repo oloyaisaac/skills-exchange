@@ -28,7 +28,7 @@ import org.robolectric.annotation.Config
  * rewrite the incident identity (actor/job/id/raisedAt) or an out-of-state row.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
+@Config(sdk = [34])
 class SosIncidentTransitionSecurityTest {
 
     private lateinit var db: AppDatabase
