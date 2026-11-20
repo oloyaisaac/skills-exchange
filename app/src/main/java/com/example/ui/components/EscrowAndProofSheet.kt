@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.db.JobPostEntity
 import com.example.data.db.DisputeReason
+import com.example.data.remote.DoorstepPinRules
 import com.example.data.remote.MoMoPaymentPhase
 import com.example.data.remote.MoMoPaymentUiState
 import com.example.ui.theme.*
@@ -59,7 +60,10 @@ fun EscrowAndProofSheet(
     releaseError: String? = null,
     releaseMessage: String? = null,
     onDismiss: () -> Unit,
-    onVerifyDoorstepPin: ((enteredPin: String, expectedPin: String, onResult: (Boolean) -> Unit) -> Unit)? = null,
+    // R07-P2-01: only the typed PIN is sent; the server compares it with its own hash.
+    onVerifyDoorstepPin: ((enteredPin: String, onResult: (Boolean, String?) -> Unit) -> Unit)? = null,
+    // R07-P2-01: the PIN belongs to the resident. The worker asks for it instead of reading it here.
+    viewerIsResident: Boolean = true,
     onRequestMaterialAdvance: ((amount: Double) -> Unit)? = null,
     onRespondMaterialAdvance: ((approve: Boolean) -> Unit)? = null,
     onTriggerSosAlert: (() -> Unit)? = null,
@@ -646,7 +650,7 @@ fun EscrowAndProofSheet(
 
                     if (job.isDoorstepVerified) {
                         Text(
-                            text = "✅ 4-Digit Doorstep PIN Verified (${job.doorstepPin}). Resident & worker confirmed physically present on site.",
+                            text = "✅ Doorstep PIN verified by the server. Resident & worker confirmed physically present on site.",
                             fontSize = 11.sp,
                             color = IndustrialEmeraldDark,
                             fontWeight = FontWeight.SemiBold
@@ -654,7 +658,11 @@ fun EscrowAndProofSheet(
                     } else {
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(
-                                text = "Resident's Doorstep Security PIN: ${job.doorstepPin}. Resident shares this code with worker on arrival to confirm job commencement.",
+                                text = if (viewerIsResident) {
+                                    DoorstepPinRules.residentInstruction(job.doorstepPin)
+                                } else {
+                                    DoorstepPinRules.workerInstruction()
+                                },
                                 fontSize = 10.sp,
                                 color = Slate600
                             )
@@ -678,9 +686,14 @@ fun EscrowAndProofSheet(
                                 )
                                 Button(
                                     onClick = {
-                                        onVerifyDoorstepPin?.invoke(doorstepPinInput, job.doorstepPin) { success ->
-                                            if (!success) {
-                                                doorstepPinError = "Incorrect PIN code. Try again."
+                                        onVerifyDoorstepPin?.invoke(doorstepPinInput) { success, message ->
+                                            if (success) {
+                                                doorstepPinError = ""
+                                                doorstepPinInput = ""
+                                            } else {
+                                                // R07-P2-01: show the server's reason (wrong PIN with the
+                                                // attempts left, or a lockout), never a generic guess.
+                                                doorstepPinError = message ?: "Incorrect PIN code. Try again."
                                             }
                                         }
                                     },

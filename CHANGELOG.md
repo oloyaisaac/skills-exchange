@@ -1,5 +1,33 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [PROMPT-4 / R07] Application security: a PIN the server owns, and rules that are executed
+
+- **Doorstep PIN (R07-P2-01, CRITICAL).** The phone compared the typed code with a value the caller
+  supplied, defaulted to `4829`, stored it in plaintext and had no attempt limit. Now `setDoorstepPin`
+  stores a salted SHA-256 in `job_secrets/{jobId}` (denied to every client, admin included) and
+  `verifyDoorstepPin` compares in constant time, locks for 15 minutes after five wrong attempts, and
+  is the only path that moves a job to IN_PROGRESS. The client's local comparator is deleted, the
+  worker is no longer shown the resident's PIN, and failures return the attempts left.
+- **Erasure (R07-P2-02, CRITICAL).** `users/{uid}` had no delete rule and `worker_kyc` was
+  admin-delete only, so the Auth user could be removed while the data survived. Owner deletes now
+  exist for `users`, `worker_kyc`, `worker_training` and `providers`, each gated by a fresh sign-in.
+- **Escrow forgery (R07-P2-03, HIGH).** `jobs` update rules pinned ownership and status but not
+  money. `serverOwnedJobFieldsTouched()`, `escrowTransitionAllowed()` and `jobMoneyPinned()` close
+  that; terminal escrow outcomes and priced amounts are Admin-SDK-only, and `JobSyncPolicy` makes the
+  client withhold those fields and merge instead of replacing the document.
+- **App Check (R07-P2-04).** Every one of the 28 callables is wrapped in `enforceAppCheck`, and the
+  client installs Play Integrity (release) or the debug provider (debug).
+- **Release hardening (R07-P2-05).** R8 minification and resource shrinking are enabled; the existing
+  keep rules for Room, Firebase models and Moshi stay in force.
+- **Avatars (R07-P2-07).** Both avatar prefixes now require a session; `public/` is the only
+  anonymous prefix left.
+- **Rules tests (REM-019).** `rules-test/` runs 17 Firestore rules tests against the emulator in CI
+  for anonymous, stranger, owner, provider and admin actors; Storage rules get a labelled structural
+  check.
+- **Tests.** Backend 190 → 202; client 447 → 466; a seventh CI check ("Firestore rules tests").
+- **Not verified.** No deploy, so production rules and the new callables are unchanged in the cloud;
+  App Check has never minted a token; no release APK was built; Storage rules are not executed.
+
 ### [2026-11-20] [PROMPT-4 / R06] Authentication and identity: deletion that cannot orphan data
 
 - **Deletion ordering (R06-P2-01, CRITICAL).** The client used to call `deleteUserFirestoreData` and then

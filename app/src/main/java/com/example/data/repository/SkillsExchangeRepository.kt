@@ -5,9 +5,10 @@ package com.example.data.repository
 import android.util.Log
 import android.net.Uri
 import com.example.data.db.*
+import com.example.data.remote.DoorstepPinResult
+import com.example.data.remote.DoorstepPinRules
 import com.example.data.remote.FirebaseService
 import com.example.util.CurrencyRegion
-import com.example.util.DoorstepPinPolicy
 import com.example.util.JobMoney
 import com.example.util.Money
 import com.example.util.GuarantorInput
@@ -631,6 +632,11 @@ class SkillsExchangeRepository(
         )
         db.jobPostDao().insertJob(job)
 
+        // R07-P2-01: hand the PIN to the server (hashed) so verification never depends on a value the
+        // caller supplies. Best-effort here: the first verification attempt registers it if the
+        // device was offline at creation time.
+        runCatching { registerDoorstepPin(newJobId, randomDoorstepPin) }
+
         // Add initial system message
         db.chatMessageDao().insertMessage(
             ChatMessageEntity(
@@ -836,23 +842,46 @@ class SkillsExchangeRepository(
         )
     }
 
-    suspend fun verifyDoorstepPin(jobId: String, enteredPin: String, expectedPin: String): Boolean {
-        // C2-2 job-status authorization: `JobPostDao.verifyDoorstepPin` also sets
-        // `status = 'In Progress'`, so this method is a STATUS MUTATION and not merely a PIN check.
-        // It previously ran with no identity and no ownership check, so any caller who knew or
-        // guessed a job's 4-digit PIN could move that job's status. The PIN stays a second,
-        // independent factor; it is no longer the ONLY factor. Owner-only (fail closed) because the
-        // PIN is the resident's and there is no worker uid to authorize a worker-side arrival.
+    /**
+     * R07-P2-01: verify the doorstep PIN — on the server, with the PIN the caller typed.
+     *
+     * The device used to compare the typed code with a second value the UI handed in
+     * (`expectedPin` == the stored PIN), so the comparison proved nothing and a modified client could
+     * pass it. Now only `enteredPin` is sent; `verifyDoorstepPin` (Cloud Function) compares it with a
+     * salted hash in `job_secrets/{jobId}`, counts attempts and locks after five, and is the only
+     * place that may start the job.
+     *
+     * Authorization is still enforced here as well (resident or assigned worker, authenticated uid
+     * only), and the local row is updated only when the server says `Verified`. If the resident's
+     * device created the job offline, the PIN may not be registered yet: the owner registers it once
+     * and the verification is retried, so a flaky connection does not leave a job unstartable.
+     */
+    suspend fun verifyDoorstepPin(jobId: String, enteredPin: String): Pair<Boolean, String?> {
         val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
-            ?: return false
-        val job = db.jobPostDao().getJobById(jobId) ?: return false
-        if (job.postedByUid == null || job.postedByUid != actorUid) return false
+            ?: return false to "Sign in again to verify the PIN."
+        val job = db.jobPostDao().getJobById(jobId) ?: return false to "That job is no longer on this device."
 
-        // R04-P2-03: a PIN is only meaningful when both sides are a real 4-digit code. A blank
-        // expected PIN (a row written without one) or a blank entry must never match, otherwise
-        // "no PIN configured" would degrade into "any PIN works".
-        if (!DoorstepPinPolicy.matches(enteredPin, expectedPin)) {
-            return false
+        val isResident = job.postedByUid != null && job.postedByUid == actorUid
+        val isAssignedWorker = job.assignedProviderId == actorUid
+        if (!isResident && !isAssignedWorker) {
+            return false to "Only the resident or the assigned worker can verify this PIN."
+        }
+        if (!DoorstepPinRules.isWellFormed(enteredPin)) {
+            return false to "Enter the 4-digit PIN."
+        }
+
+        var result = firebaseService.verifyDoorstepPinWithServer(jobId, enteredPin)
+
+        // The resident holds the PIN, so the resident is who registers it when it is missing.
+        if (result is DoorstepPinResult.NotRegistered && isResident &&
+            DoorstepPinRules.isWellFormed(job.doorstepPin)
+        ) {
+            firebaseService.registerDoorstepPin(jobId, job.doorstepPin)
+            result = firebaseService.verifyDoorstepPinWithServer(jobId, enteredPin)
+        }
+
+        if (result !is DoorstepPinResult.Verified) {
+            return false to DoorstepPinRules.failureMessage(result)
         }
 
         db.jobPostDao().verifyDoorstepPin(jobId)
@@ -862,12 +891,25 @@ class SkillsExchangeRepository(
                 jobId = jobId,
                 senderName = "Doorstep Security",
                 isFromUser = false,
-                message = "🔑 4-Digit Doorstep PIN Verified! Resident & Worker confirmed physically present. Job status officially set to IN_PROGRESS.",
+                message = "🔑 Doorstep PIN verified by the server. Resident and worker confirmed present; the job has started.",
                 timestampText = "Just now",
                 isSystemNotification = true
             )
         )
-        return true
+        return true to null
+    }
+
+    /**
+     * R07-P2-01: give the job's doorstep PIN to the server so it can verify it later.
+     *
+     * Called right after the job is created. A failure is not fatal — the PIN is registered lazily on
+     * the first verification attempt — but it is attempted eagerly so the common path needs no retry.
+     */
+    suspend fun registerDoorstepPin(jobId: String, pin: String): Boolean {
+        val ownerUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid) ?: return false
+        val job = db.jobPostDao().getJobById(jobId) ?: return false
+        if (job.postedByUid != ownerUid) return false
+        return firebaseService.registerDoorstepPin(jobId, pin).isSuccess
     }
 
     suspend fun requestMaterialAdvance(jobId: String, amount: Double) {

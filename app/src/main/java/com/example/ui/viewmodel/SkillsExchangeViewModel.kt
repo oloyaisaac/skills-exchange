@@ -994,12 +994,16 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
-    fun verifyDoorstepPin(jobId: String, enteredPin: String, expectedPin: String, onResult: (Boolean) -> Unit) {
+    /**
+     * R07-P2-01: verify the doorstep PIN. Only the typed code is sent — the expected value is no
+     * longer supplied by the caller, because the server holds the salted hash and counts attempts.
+     */
+    fun verifyDoorstepPin(jobId: String, enteredPin: String, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
-            val success = repository.verifyDoorstepPin(jobId, enteredPin, expectedPin)
+            val (success, message) = repository.verifyDoorstepPin(jobId, enteredPin)
             val updatedJob = repository.jobs.first().find { it.id == jobId }
             selectedJob.value = updatedJob
-            onResult(success)
+            onResult(success, message)
         }
     }
 

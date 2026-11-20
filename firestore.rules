@@ -37,6 +37,39 @@ service cloud.firestore {
         request.auth.token.auth_time * 1000 > request.time.toMillis() - 300000;
     }
 
+    // R07-P2-03: a job document mixes what the client legitimately edits (title, photos,
+    // description) with what only the server may decide (money that has moved, release
+    // timestamps, doorstep-PIN material). These field lists are the boundary.
+    function serverOwnedJobFieldsTouched() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['releasedAt', 'releasedBy', 'payoutAmountUgx', 'platformFeeUgx',
+                 'doorstepPin', 'doorstepPinHash', 'doorstepPinAttempts', 'doorstepPinLockedUntil',
+                 'doorstepPinVerifiedAt', 'doorstepPinVerifiedBy', 'escrowLockedAt']);
+    }
+
+    // R07-P2-03: escrow state is money state. A client may nudge the non-terminal states that
+    // its own workflow owns, but `FUNDS_LOCKED_IN_ESCROW` (payment received), `RELEASED_TO_WORKER`
+    // (payout queued) and `REFUNDED` are outcomes written only by the Admin SDK functions. Before
+    // this rule the owner could send `escrowStatus = "RELEASED_TO_WORKER"` in the same update that
+    // moved the status, forging payment at the rules layer.
+    function escrowTransitionAllowed() {
+      return request.resource.data.escrowStatus == resource.data.escrowStatus ||
+        ((request.auth.uid == resource.data.assignedProviderUid ||
+          request.auth.uid == resource.data.assignedProviderId) &&
+         request.resource.data.escrowStatus in ['WORK_IN_PROGRESS', 'PROOF_SUBMITTED']) ||
+        (request.auth.uid == resource.data.postedByUid &&
+         request.resource.data.escrowStatus in ['QUOTE_PENDING', 'DEPOSIT_PROMPTED']);
+    }
+
+    // R07-P2-03: the amounts a job is priced at may only be edited by its owner while the job is
+    // still unpriced/unaccepted. Once money is attached they are immutable from a client.
+    function jobMoneyPinned() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['grandTotal', 'platformFee', 'laborTotal', 'materialsSubtotal', 'budget']) ||
+        (request.auth.uid == resource.data.postedByUid &&
+         resource.data.status in ['REQUESTED', 'QUOTED']);
+    }
+
     function isWorkerKycApproved() {
       return isAuthenticated() &&
         exists(/databases/$(database)/documents/worker_kyc/$(request.auth.uid)) &&
@@ -65,7 +98,10 @@ service cloud.firestore {
       allow read: if isDocOwner(userId) || isAdmin();
       allow create: if isDocOwner(userId);
       allow update: if isAdmin();
-      allow delete: if isAdmin();
+      // R07-P2-02: account erasure must be possible for the account's own data. It was
+      // admin-only, so a client-side deletion removed the Auth user while the KYC document
+      // survived. The fresh-auth window keeps a stolen long-lived session from erasing it.
+      allow delete: if isAdmin() || (isDocOwner(userId) && hasFreshAuth());
     }
 
     // SEC-006: Rules for worker_training collection
@@ -73,7 +109,8 @@ service cloud.firestore {
       allow read: if isDocOwner(userId) || isAdmin();
       allow create: if isDocOwner(userId);
       allow update: if isDocOwner(userId) || isAdmin();
-      allow delete: if isAdmin();
+      // R07-P2-02: same erasure rule as worker_kyc.
+      allow delete: if isAdmin() || (isDocOwner(userId) && hasFreshAuth());
     }
 
     // SEC-006: Rules for guarantors collection
@@ -216,6 +253,10 @@ service cloud.firestore {
       // activation decisions are admin-owned. A worker can never flip their own
       // workerKycStatus / isWorkerActivated / admin flag through a profile write.
       allow update: if isDocOwner(userId) && !touchesPrivilegedUserFields();
+      // R07-P2-02: there was no delete rule at all, so erasing an account from the client was
+      // impossible by construction. The owner may now delete their own profile document, and only
+      // within the fresh-auth window.
+      allow delete: if isDocOwner(userId) && hasFreshAuth();
 
       // REM-044: consent receipts are written only by the recordConsent callable (Admin SDK);
       // the account owner may read their history, nobody may edit or delete it from a client.
@@ -229,6 +270,13 @@ service cloud.firestore {
         allow read: if isDocOwner(userId) || isAdmin();
         allow create, update: if isDocOwner(userId) || isAdmin();
       }
+    }
+
+    // R07-P2-01: the doorstep PIN is verified server-side. Only the salted hash and the attempt
+    // counter live here, and no client — owner, provider or admin — may read or write this
+    // collection. The Admin SDK (which bypasses rules) is the only reader.
+    match /job_secrets/{jobId} {
+      allow read, write: if false;
     }
 
     // REM-023: provisioning audit trail. Written only by scripts/grant-admin.js through the
@@ -256,8 +304,9 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.auth.uid == providerId;
       // Update: only the provider themselves may update their own profile
       allow update: if isAuthenticated() && request.auth.uid == providerId;
-      // Delete: only admin may delete a provider record (e.g. account suspension)
-      allow delete: if isAdmin();
+      // R07-P2-02: the provider may erase their own catalogue row (account erasure); admins may
+      // still delete any record for suspension. Both need the fresh-auth window.
+      allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == providerId && hasFreshAuth());
     }
 
     // --- MODULE 1: JOB LIFECYCLE & ESCROW STATE MACHINE ---
@@ -297,6 +346,11 @@ service cloud.firestore {
       // NOTE: this file is source only — it is NOT deployed (see CHANGELOG/AGENT_STATE).
       allow update: if isAuthenticated() &&
         request.resource.data.postedByUid == resource.data.postedByUid &&
+        // R07-P2-03: server-owned fields, escrow state and priced amounts are pinned here so a
+        // client cannot forge a payout outcome alongside a legal status transition.
+        !serverOwnedJobFieldsTouched() &&
+        escrowTransitionAllowed() &&
+        jobMoneyPinned() &&
         (
         // Case 1: Client accepting quote -> ACCEPTED_FUNDED (OWNER ONLY)
         (resource.data.status == 'REQUESTED' && request.resource.data.status in ['QUOTED', 'ACCEPTED_FUNDED'] &&

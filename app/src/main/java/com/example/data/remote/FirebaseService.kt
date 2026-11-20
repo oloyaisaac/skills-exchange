@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import com.example.BuildConfig
 import com.example.data.db.DisputeEntity
 import com.example.data.db.GuarantorEntity
 import com.example.data.db.JobPostEntity
@@ -54,6 +55,10 @@ class FirebaseService(private val context: Context? = null) {
          * Activity alive. When no Activity is attached the phone flow fails closed.
          */
         private var phoneAuthActivityRef: WeakReference<Activity>? = null
+
+        /** R07-P2-04: App Check is installed once per process. */
+        @Volatile
+        private var appCheckInstalled = false
 
         /** Firebase SMS code lifetime (Google's default is 60s). */
         private const val PHONE_VERIFICATION_TIMEOUT_SECONDS = 60L
@@ -181,7 +186,7 @@ class FirebaseService(private val context: Context? = null) {
 
     private fun initializeFirebase(): Boolean {
         return try {
-            if (context != null) {
+            val ready = if (context != null) {
                 if (FirebaseApp.getApps(context).isEmpty()) {
                     FirebaseApp.initializeApp(context)
                 }
@@ -189,9 +194,36 @@ class FirebaseService(private val context: Context? = null) {
             } else {
                 FirebaseApp.getInstance() != null
             }
+            if (ready) installAppCheck()
+            ready
         } catch (e: Exception) {
             Log.d("FirebaseService", "FirebaseApp initialization skipped: ${e.message}")
             false
+        }
+    }
+
+    /**
+     * R07-P2-04: attest the app instance, not just the user.
+     *
+     * The server now enforces App Check on every callable, so without a provider every call would be
+     * rejected. Play Integrity is used in release builds; debug builds use the debug provider, whose
+     * token must be registered in the Firebase console (documented in `docs/`). A failure here is
+     * logged without the token value and never crashes the app — the callable will then fail closed
+     * with a clear message instead.
+     */
+    private fun installAppCheck() {
+        if (appCheckInstalled) return
+        try {
+            val factory = if (BuildConfig.DEBUG) {
+                com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory.getInstance()
+            } else {
+                com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory.getInstance()
+            }
+            com.google.firebase.appcheck.FirebaseAppCheck.getInstance()
+                .installAppCheckProviderFactory(factory)
+            appCheckInstalled = true
+        } catch (e: Exception) {
+            Log.w("FirebaseService", "App Check setup skipped: ${e.javaClass.simpleName}")
         }
     }
 
@@ -340,6 +372,56 @@ class FirebaseService(private val context: Context? = null) {
         } catch (e: Exception) {
             Log.d("FirebaseService", "Delete user error: ${e.message}")
             false
+        }
+    }
+
+    /**
+     * R07-P2-01: register the job's doorstep PIN with the server.
+     *
+     * Only the resident who posted the job may do this (`setDoorstepPin` re-checks ownership). The
+     * plaintext PIN is hashed server-side with a fresh salt and stored in `job_secrets/{jobId}`, a
+     * collection no client can read. The call is idempotent while the job is unverified, so an
+     * offline creation can register later.
+     */
+    suspend fun registerDoorstepPin(jobId: String, pin: String): Result<Unit> {
+        if (!DoorstepPinRules.isWellFormed(pin)) {
+            return Result.failure(Exception("The doorstep PIN must be exactly four digits."))
+        }
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            functions.getHttpsCallable("setDoorstepPin")
+                .call(CallableContracts.payload("setDoorstepPin", "jobId" to jobId, "pin" to pin))
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.w("FirebaseService", "setDoorstepPin failed: ${e.javaClass.simpleName}")
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * R07-P2-01: ask the server to verify the PIN.
+     *
+     * The device no longer decides: it sends only the typed code, and the server compares it with the
+     * stored hash, counts the attempt and locks after five. `Verified` is the only outcome that means
+     * the job may start.
+     */
+    suspend fun verifyDoorstepPinWithServer(jobId: String, pin: String): DoorstepPinResult {
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            functions.getHttpsCallable("verifyDoorstepPin")
+                .call(CallableContracts.payload("verifyDoorstepPin", "jobId" to jobId, "pin" to pin))
+                .await()
+            DoorstepPinResult.Verified
+        } catch (e: FirebaseFunctionsException) {
+            val details = (e.details as? Map<*, *>)
+                ?.entries
+                ?.associate { (key, value) -> key.toString() to value }
+                ?: emptyMap()
+            DoorstepPinRules.outcomeOf(errorCode = e.code.name, message = e.message, details = details)
+        } catch (e: Exception) {
+            Log.w("FirebaseService", "verifyDoorstepPin failed: ${e.javaClass.simpleName}")
+            DoorstepPinResult.Failed("We could not reach the server. Check your connection and try again.")
         }
     }
 
@@ -663,9 +745,13 @@ class FirebaseService(private val context: Context? = null) {
                 "recurringSchedule" to job.recurringSchedule,
                 "recurringStartDate" to job.recurringStartDate
             )
+            // R07-P2-03: withhold the fields the server owns (terminal escrow outcomes, priced
+            // amounts after funding). A merge keeps the server's values instead of deleting them —
+            // a plain `set()` would wipe the escrow state the Functions wrote.
+            val writable = JobSyncPolicy.clientPayload(jobData, job.status, job.escrowStatus)
             db.collection("jobs")
                 .document(job.id)
-                .set(jobData)
+                .set(writable, com.google.firebase.firestore.SetOptions.merge())
                 .await()
             Log.d("FirebaseService", "Successfully synced job ${job.id} to Firestore")
         } catch (e: Exception) {

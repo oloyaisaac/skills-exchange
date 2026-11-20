@@ -625,9 +625,11 @@ fun MainScreen(
             isReleasingFunds = escrowReleaseState is SkillsExchangeViewModel.EscrowReleaseState.Releasing,
             releaseError = (escrowReleaseState as? SkillsExchangeViewModel.EscrowReleaseState.Failed)?.message,
             releaseMessage = (escrowReleaseState as? SkillsExchangeViewModel.EscrowReleaseState.Released)?.message,
-            onVerifyDoorstepPin = { pin, expected, callback ->
-                viewModel.verifyDoorstepPin(liveJob.id, pin, expected, callback)
+            onVerifyDoorstepPin = { pin, callback ->
+                viewModel.verifyDoorstepPin(liveJob.id, pin, callback)
             },
+            // R07-P2-01: only the resident is shown the PIN; the worker must ask for it.
+            viewerIsResident = currentUserProfile?.id == liveJob.postedByUid,
             onRequestMaterialAdvance = { amount ->
                 viewModel.requestMaterialAdvance(liveJob.id, amount)
             },

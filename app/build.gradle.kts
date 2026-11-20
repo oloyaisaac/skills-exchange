@@ -53,7 +53,10 @@ android {
   buildTypes {
     release {
       isCrunchPngs = false
-      isMinifyEnabled = false
+      // R07-P2-05: release builds are shrunk and obfuscated. `proguard-rules.pro` keeps Room,
+      // Firebase data models and Moshi types, which are the parts reflection/Room rely on.
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("release")
     }
@@ -150,6 +153,10 @@ dependencies {
   implementation("com.google.android.gms:play-services-auth:20.5.0")
   implementation(libs.googleid)
   implementation(libs.firebase.appcheck.recaptcha)
+  // R07-P2-04: App Check providers. Both artifacts ship in every variant: the debug provider is only
+  // *installed* when BuildConfig.DEBUG, so release code never attests with it.
+  implementation(libs.firebase.appcheck.playintegrity)
+  implementation(libs.firebase.appcheck.debug)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.logging.interceptor)

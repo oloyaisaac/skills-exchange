@@ -49,7 +49,22 @@ config (an unset id disables the button with an explanation). Evidence: Android 
 (447 tests, 0 failures), backend 190/190, docs and secret checks pass. Not verified: live auth traffic,
 deploy, Storage deletion against a real bucket, and the REM-025 end-to-end link log.
 
-**R07 — next in the reviewer list.** R08–R15 awaiting.
+**R07 — COMPLETE.** The two critical findings were about rules nobody had executed, so this round
+added the programme's first **executable** Firestore rules suite (17 tests, emulator, new CI job).
+The doorstep PIN is now server-held: a salted SHA-256 in `job_secrets/{jobId}` that no client can
+read, verified with a constant-time comparison, five attempts then a fifteen-minute lockout, and the
+success path is the only thing that can start the job — the client sends only the typed PIN and the
+worker is no longer shown it. Escrow state can no longer be forged: terminal outcomes
+(`RELEASED_TO_WORKER`, `REFUND_*`) and priced amounts after funding are Admin-SDK-only, server-owned
+release/PIN fields are pinned, and the client mirrors jobs with a merge that withholds exactly those
+fields. Account erasure regained owner-delete rules (fresh sign-in) for `users`, `worker_kyc`,
+`worker_training` and `providers`. App Check is enforced on all 28 callables and installed in the
+client (Play Integrity / debug), avatars require a session, and the release build finally has R8 and
+resource shrinking. Evidence: Android run 44758119411 (466 tests, 0 failures), backend 202/202, rules
+suite green (32s), docs and secret checks pass. Not verified: deploy, App Check attestation, release
+APK, Storage-rule execution, on-device bypass attempts.
+
+**R08 — next in the reviewer list.** R09–R15 awaiting.
 
 ## Review Track — 2026-11-19 (not started)
 

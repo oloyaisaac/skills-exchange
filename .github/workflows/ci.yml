@@ -61,6 +61,35 @@ jobs:
           grep -qx "# pass 5" "$RUNNER_TEMP/handlers.log"
           grep -qx "# fail 0" "$RUNNER_TEMP/handlers.log"
 
+  rules:
+    name: Firestore rules tests (emulator)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: rules-test/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - run: npm ci
+        working-directory: rules-test
+      - run: npm install --no-save --no-audit --no-fund firebase-tools@13
+      # R07: the rules are executed, not read. Every collection the client touches is exercised for
+      # anonymous, stranger, owner, assigned provider and admin actors.
+      - name: Run the rules suite against the Firestore emulator
+        run: |
+          set -euo pipefail
+          npx firebase emulators:exec --config firebase.json --only firestore \
+            --project demo-skills-exchange "npm --prefix rules-test test" 2>&1 | tee "$RUNNER_TEMP/rules.log"
+          grep -E "^# (tests|pass|fail) " "$RUNNER_TEMP/rules.log"
+          grep -qx "# fail 0" "$RUNNER_TEMP/rules.log"
+      - name: Static Storage-rules check
+        run: node rules-test/storage.rules.check.mjs
+
   documentation:
     name: Documentation checks
     runs-on: ubuntu-latest
