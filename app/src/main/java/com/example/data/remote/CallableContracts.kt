@@ -112,6 +112,22 @@ object CallableContracts {
             )
         ),
         CallableContract(name = "exportMyData"),
+        // R09-P2-02: the third-party guarantor grant. `confirmed` must be true — the server refuses
+        // anything else — and the count is validated against the policy maximum server-side.
+        CallableContract(
+            name = "recordGuarantorConsent",
+            required = mapOf(
+                "version" to CallableValueType.STRING,
+                "guarantorCount" to CallableValueType.NUMBER,
+                "confirmed" to CallableValueType.BOOLEAN
+            )
+        ),
+        // R09: withdrawal of consent is recorded, and needs a fresh sign-in (server-enforced).
+        CallableContract(
+            name = "withdrawConsent",
+            required = mapOf("version" to CallableValueType.STRING),
+            optional = mapOf("reason" to CallableValueType.STRING)
+        ),
         CallableContract(name = "getAdminAccess"),
         CallableContract(name = "getPendingVerificationQueue"),
         CallableContract(

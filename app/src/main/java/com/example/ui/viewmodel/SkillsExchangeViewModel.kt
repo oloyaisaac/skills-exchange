@@ -19,6 +19,8 @@ import com.example.data.db.ServiceProviderEntity
 import com.example.data.db.SkillEndorsementEntity
 import com.example.data.db.UserProfileEntity
 import com.example.data.remote.AccountDeletionOutcome
+import com.example.data.remote.ConsentOutcome
+import com.example.data.remote.ConsentVersions
 import com.example.data.remote.AccountDeletionRules
 import com.example.data.remote.AfricaTalkingService
 import com.example.data.remote.AfricaTalkingService.OtpResponse
@@ -1506,6 +1508,127 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    // ============ R09: consent, withdrawal and the subject-access export ============
+
+    /**
+     * R09-P2-02: what the privacy sheet is doing. It must not close on a consent that was never
+     * written — "I Understand & Agree" is only honest once the server has a receipt.
+     */
+    val privacyConsentState = MutableStateFlow(PrivacyConsentState.IDLE)
+    val privacyConsentMessage = MutableStateFlow<String?>(null)
+
+    /** The policy revision this build quotes; the server validates whatever it is sent. */
+    val privacyPolicyVersion: String get() = ConsentVersions.POLICY_VERSION
+
+    fun resetPrivacyConsentState() {
+        if (privacyConsentState.value == PrivacyConsentState.RECORDING) return
+        privacyConsentState.value = PrivacyConsentState.IDLE
+        privacyConsentMessage.value = null
+    }
+
+    /**
+     * Record the account-level acceptance server-side, with the deadline the policy quotes.
+     *
+     * The three grants are the ones `REQUIRED_CONSENT_KEYS` names; the server rejects a receipt that
+     * is missing any of them, so a partial acceptance cannot be stored as if it were complete.
+     */
+    fun acceptPrivacyPolicy() {
+        if (privacyConsentState.value == PrivacyConsentState.RECORDING) return
+        if (currentAuthenticatedUid() == null) {
+            privacyConsentState.value = PrivacyConsentState.FAILED
+            privacyConsentMessage.value =
+                "Sign in first — we can only record an agreement against an account."
+            return
+        }
+        privacyConsentState.value = PrivacyConsentState.RECORDING
+        privacyConsentMessage.value = null
+        viewModelScope.launch {
+            when (val outcome = firebaseService.recordConsent(ConsentVersions.POLICY_VERSION)) {
+                is ConsentOutcome.Recorded -> {
+                    privacyConsentState.value = PrivacyConsentState.RECORDED
+                    privacyConsentMessage.value =
+                        "Agreement recorded (policy ${outcome.version}). You can withdraw it at any time."
+                }
+                is ConsentOutcome.Failed -> {
+                    privacyConsentState.value = PrivacyConsentState.FAILED
+                    privacyConsentMessage.value = outcome.message
+                }
+            }
+        }
+    }
+
+    /**
+     * R09: withdraw consent. The receipt stays and the revocation is added to it, so the history
+     * proves both what was agreed and when the platform stopped relying on it.
+     */
+    fun withdrawConsent() {
+        if (privacyConsentState.value == PrivacyConsentState.RECORDING) return
+        if (currentAuthenticatedUid() == null) return
+        privacyConsentState.value = PrivacyConsentState.RECORDING
+        privacyConsentMessage.value = null
+        viewModelScope.launch {
+            when (val outcome =
+                firebaseService.withdrawConsent(ConsentVersions.POLICY_VERSION, "withdrawn in app")) {
+                is ConsentOutcome.Recorded -> {
+                    privacyConsentState.value = PrivacyConsentState.IDLE
+                    privacyConsentMessage.value = "Consent withdrawn. Your records are unchanged."
+                }
+                is ConsentOutcome.Failed -> {
+                    privacyConsentState.value = PrivacyConsentState.FAILED
+                    privacyConsentMessage.value = outcome.message
+                }
+            }
+        }
+    }
+
+    /**
+     * R09-P2-03: the data-subject access export.
+     *
+     * The request has to be startable from inside the app — the policy promises "full export in
+     * standard JSON ... through the in-app settings", and until now nothing called the callable that
+     * builds it. The JSON is produced on the server; this only carries it to the share sheet so the
+     * account holder can save it.
+     */
+    val dataExportState = MutableStateFlow(DataExportState.IDLE)
+    val dataExportMessage = MutableStateFlow<String?>(null)
+    val dataExportJson = MutableStateFlow<String?>(null)
+
+    fun resetDataExportState() {
+        if (dataExportState.value == DataExportState.WORKING) return
+        dataExportState.value = DataExportState.IDLE
+        dataExportMessage.value = null
+        dataExportJson.value = null
+    }
+
+    /** R09: the share sheet has taken the file, so the payload is dropped (never kept in UI state). */
+    fun consumeDataExportJson() {
+        dataExportJson.value = null
+    }
+
+    fun exportMyData() {
+        if (dataExportState.value == DataExportState.WORKING) return
+        if (currentAuthenticatedUid() == null) {
+            dataExportState.value = DataExportState.FAILED
+            dataExportMessage.value = "Sign in first — an export can only be built for an account."
+            return
+        }
+        dataExportState.value = DataExportState.WORKING
+        dataExportMessage.value = null
+        viewModelScope.launch {
+            val json = firebaseService.exportMyData()
+            if (json.isNullOrBlank()) {
+                dataExportState.value = DataExportState.FAILED
+                dataExportMessage.value =
+                    "We could not build your export just now. Nothing was sent; please try again."
+            } else {
+                dataExportJson.value = json
+                dataExportState.value = DataExportState.DONE
+                dataExportMessage.value =
+                    "Your export is ready. Save it somewhere private — it contains your personal data."
+            }
+        }
+    }
+
     // ============ R06: account deletion (server-authoritative, ordered) ============
 
     /**
@@ -1709,6 +1832,12 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         fcmToken.value = null
         hasNotificationPermission.value = false
         userRoleMode.value = "Hire a Neighbor"
+        // R09: consent and export state belong to the account that produced them.
+        privacyConsentState.value = PrivacyConsentState.IDLE
+        privacyConsentMessage.value = null
+        dataExportState.value = DataExportState.IDLE
+        dataExportMessage.value = null
+        dataExportJson.value = null
     }
 
     // --- REG-003: WORKER BACKUP CONTACT ---
@@ -2099,6 +2228,13 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         if (user.id == DEMO_PROFILE_ID) {
             guarantorSubmissionError =
                 "Sign in to file your guarantors. Demo data cannot submit other people's identity details."
+            return
+        }
+        // R09-P2-02: every guarantor must have been asked. The server records that consent and
+        // refuses the filing without it, so the app checks first and says which one is missing.
+        if (guarantorDrafts.size != 2 || guarantorDrafts.any { !it.consentProvided }) {
+            guarantorSubmissionError =
+                "Confirm that each guarantor knows they are listed and agrees to their details being verified."
             return
         }
         guarantorSubmissionPending = true
@@ -3112,3 +3248,12 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 }
+
+/**
+ * R09-P2-02: the privacy sheet's state. `RECORDED` is the only state in which the app may claim the
+ * agreement was captured.
+ */
+enum class PrivacyConsentState { IDLE, RECORDING, RECORDED, FAILED }
+
+/** R09-P2-03: the subject-access export's state. */
+enum class DataExportState { IDLE, WORKING, DONE, FAILED }

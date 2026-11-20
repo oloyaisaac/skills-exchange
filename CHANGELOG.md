@@ -1,5 +1,39 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [PROMPT-4 / R09] Privacy: consent you can prove, data you can delete, retention that exists
+
+- **Erasure reaches the chat (R09-P2-01, CRITICAL).** `deleteMyAccount` verified fresh authentication
+  and purged the jobs the account *posted*; a worker's own messages in the resident's job survived.
+  The purge now also reads the jobs the account was assigned to and deletes the messages it wrote
+  there (a legacy message attributed only by name is kept, because ownership cannot be proven). Every
+  run writes an `account_deletions` record with counts, the retained categories and a plain-language
+  notice, and the Firebase Auth user is still deleted last, only when nothing is pending.
+- **Consent is a receipt, not a tap (R09-P2-02, HIGH).** `recordConsent` existed with no caller: the
+  privacy sheet ended in "I Understand & Agree" and recorded nothing. It now writes the receipt
+  (version, three grants, server time) and will not report agreement until the server answers. The two
+  guarantors' consent is a **separate, dated grant** — `recordGuarantorConsent` writes
+  `users/{uid}/guarantor_consents/{version}` before any guarantor data is filed, and `firestore.rules`
+  rejects a guarantor row or submission without the version and timestamp. `withdrawConsent` records
+  the revocation on the receipt; it never deletes the proof.
+- **A copy of your data, from inside the app (R09-P2-03, HIGH).** The privacy sheet's *Download my
+  data (JSON)* calls `exportMyData` and shares a private cache file through a `FileProvider`. The
+  server redacts third-party data before the file exists: the guarantor submission is masked and
+  stripped of names, phone numbers and photo paths, and the envelope now carries your consent
+  receipts and the retention schedule.
+- **Retention exists as code (R09-P2-04, HIGH).** `functions/src/retention.ts` states a window, an
+  action and a reason per category, with legal holds for the payment (7 years), KYC (5 years) and
+  consent (6 years) records that must never be swept. A daily sweep executes that plan, anonymises
+  chats and SOS coordinates, purges notifications and rate-limit buckets, and **retains and reports
+  anything it cannot date** instead of guessing. Runs are recorded in `retention_reports`.
+- **The copy stops overclaiming (R09-P2-05, MEDIUM).** "Stored with encryption-at-rest" and "guarantor
+  NINs are encrypted" are gone; the text now says what is true — access-controlled records, a
+  reviewer-only view, masked display. New `functions/src/pii.ts` masks NINs, fingerprints them under a
+  server-held salt for duplicate detection (no salt, no fingerprint), and scrubs identity numbers and
+  phone numbers out of log lines.
+- **The procedure matches the code (R09-P2-06, MEDIUM).** `docs/privacy/DSAR.md` is rewritten from the
+  actual deletion order, and `docs/privacy/RETENTION.md` is new. Avatar reads were already
+  authentication-gated in R07 (R09-P2-07), recorded rather than re-implemented.
+
 ### [2026-11-20] [PROMPT-4 / R08] Payments: money actually moves, and the books can prove it
 
 - **Escrow release disburses (R08-P2-01, CRITICAL).** `releaseEscrowToWorker` used to mark the job

@@ -165,11 +165,18 @@ fun GuarantorVerificationSheet(
                 Row(modifier = Modifier.padding(SpaceMD)) {
                     Text(text = "\u2139", color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(8.dp))
+                    // R09-P2-02 / R09-P2-05: the old text claimed the numbers were "encrypted".
+                    // They are stored in an access-controlled record readable only by the verifying
+                    // reviewer, masked wherever they are displayed, and never shown to clients — which
+                    // is what this says now. The consent sentence is the separate, recorded grant.
                     Text(
-                        text = "Guarantor National ID numbers are encrypted, used only to verify " +
-                            "the account, and are never shown to clients. Ask each guarantor for " +
-                            "consent first, and take the photographs where the people are clearly " +
-                            "visible.",
+                        text = "Guarantor National ID numbers are kept in an access-controlled " +
+                            "record that only the verification reviewer can open. They are masked " +
+                            "whenever they are displayed, never shown to clients, and used only to " +
+                            "verify your account. You must ask each guarantor for permission before " +
+                            "you file their details — we record that agreement, with its date, " +
+                            "before anything is submitted — and take the photographs where the " +
+                            "people are clearly visible.",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -380,8 +387,9 @@ private fun GuarantorDraftCard(
                     onCheckedChange = { checked -> onDraftChange(draft.copy(consentProvided = checked)) }
                 )
                 Text(
-                    text = "This guarantor knows they are listed here and agrees to be contacted " +
-                        "to confirm the worker's identity.",
+                    text = "I have told this guarantor that their name, National ID number, phone " +
+                        "number and photographs are filed to verify me, and they agreed. Their " +
+                        "consent is recorded separately and can be withdrawn by contacting support.",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.weight(1f)
                 )
