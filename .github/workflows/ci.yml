@@ -51,7 +51,15 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm install --no-save --no-audit --no-fund firebase-tools@13
-      - run: npx firebase emulators:exec --config ../firebase.json --only firestore --project demo-skills-exchange "npm run test:handlers"
+      - name: Run payout handlers on the Firestore emulator
+        run: |
+          set -euo pipefail
+          npx firebase emulators:exec --config ../firebase.json --only firestore \
+            --project demo-skills-exchange "npm run test:handlers" 2>&1 | tee "$RUNNER_TEMP/handlers.log"
+          grep -E "^# (tests|pass|fail) " "$RUNNER_TEMP/handlers.log"
+          # The step only passes when exactly the five handler tests ran and none failed.
+          grep -qx "# pass 5" "$RUNNER_TEMP/handlers.log"
+          grep -qx "# fail 0" "$RUNNER_TEMP/handlers.log"
 
   documentation:
     name: Documentation checks
