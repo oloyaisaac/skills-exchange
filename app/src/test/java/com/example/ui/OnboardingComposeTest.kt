@@ -1,6 +1,7 @@
 package com.example.ui
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
@@ -30,7 +31,7 @@ class OnboardingComposeTest {
 
         compose.onNodeWithText("What describes you?").assertExists()
         compose.onNodeWithText("New Here").performClick()
-        compose.onNodeWithText("Continue").performClick()
+        compose.onAllNodesWithText("Continue")[0].performClick()
         compose.onNodeWithText("What do you want to do?").assertExists()
     }
 }

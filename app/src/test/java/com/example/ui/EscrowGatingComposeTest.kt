@@ -40,7 +40,7 @@ class EscrowGatingComposeTest {
         estimatedHours = 1.0,
         materialsCost = 0.0,
         safetyFee = 0.0
-    ).apply { escrowStatus = "WORK_IN_PROGRESS" }
+    ).apply { escrowStatus = "PROOF_SUBMITTED" }
 
     @Test
     fun `a failed server release is surfaced to the user`() {
