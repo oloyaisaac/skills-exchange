@@ -970,15 +970,15 @@ fun EscrowAndProofSheet(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Payment Channel Tabs (MTN MoMo, Airtel Money, Card)
+            // R05-REM-033: only channels that actually exist are selectable. Airtel Money and card
+            // were offered here with no integration behind them, so choosing one produced a dead
+            // end and an escrow record claiming a provider that was never called.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 val channels = listOf(
-                    Triple("MTN_MOMO", "MTN MoMo", MtnYellow),
-                    Triple("AIRTEL_MONEY", "Airtel Money", AirtelRed),
-                    Triple("CARD", "Visa / Card", SignalBlue)
+                    Triple("MTN_MOMO", "MTN MoMo", MtnYellow)
                 )
 
                 channels.forEach { (code, name, brandColor) ->

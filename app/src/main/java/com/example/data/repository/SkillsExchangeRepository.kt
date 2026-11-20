@@ -1903,7 +1903,7 @@ class SkillsExchangeRepository(
                 materialsSubtotal = 277500.0,
                 platformFee = 94350.0,
                 grandTotal = 1315350.0,
-                paymentChannel = "AIRTEL_MONEY",
+                paymentChannel = "MTN_MOMO",
                 momoPhoneNumber = "+256 751 883 910",
                 escrowStatus = "DEPOSIT_PROMPTED"
             ),
