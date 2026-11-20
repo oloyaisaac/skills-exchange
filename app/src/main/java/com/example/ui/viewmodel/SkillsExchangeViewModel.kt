@@ -191,8 +191,13 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     /** R13-P2-01: how much work is still queued, so the banner can say so. */
     val pendingActionCount = MutableStateFlow(0)
 
-    /** The outcome of the last drain pass; the UI shows the count, tests read the detail. */
-    val lastDrainReport = MutableStateFlow(com.example.data.repository.SkillsExchangeRepository.PendingDrainReport())
+    /**
+     * The outcome of the last drain pass; the UI shows the count, tests read the detail.
+     * `internal`, because [SkillsExchangeRepository.PendingDrainReport] is internal to the data layer
+     * and a public property cannot expose a narrower type.
+     */
+    internal val lastDrainReport =
+        MutableStateFlow(com.example.data.repository.SkillsExchangeRepository.PendingDrainReport())
 
     /**
      * STEP 0 (offline queue data-loss fix): single-flight guard for [flushPendingActions].

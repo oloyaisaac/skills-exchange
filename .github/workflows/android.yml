@@ -253,9 +253,18 @@ jobs:
         run: |
           mkdir -p ci-logs
           cp -f *.log ci-logs/ 2>/dev/null || true
+          {
+            printf 'run: %s\ncommit: %s\n' "$GITHUB_RUN_ID" "$GITHUB_SHA"
+            printf '\n-- workspace logs --\n'
+            ls -la *.log 2>/dev/null || echo '(none)'
+            printf '\n-- release outputs --\n'
+            ls -la app/build/outputs/apk/release 2>/dev/null || echo '(none)'
+          } > ci-logs/README.txt
           git config user.email "ci@users.noreply.github.com"
           git config user.name "CI diagnostics"
           git checkout --orphan ci-logs-publish
           git add -f ci-logs
           git commit -m "ci: android release diagnostics for $GITHUB_SHA"
-          git push -f origin HEAD:ci-logs
+          # A separate branch: the compile job also publishes to `ci-logs`, and two jobs forcing the
+          # same ref means whichever finishes last erases the other's evidence.
+          git push -f origin HEAD:ci-logs-release
