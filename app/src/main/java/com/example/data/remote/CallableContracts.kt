@@ -28,7 +28,7 @@ enum class CallableValueType {
 /** Description of one callable: its function name plus required/optional typed fields. */
 data class CallableContract(
     val name: String,
-    val required: Map<String, CallableValueType>,
+    val required: Map<String, CallableValueType> = emptyMap(),
     val optional: Map<String, CallableValueType> = emptyMap()
 ) {
     val allowedFields: Set<String> get() = required.keys + optional.keys
