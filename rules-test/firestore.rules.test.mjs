@@ -293,3 +293,118 @@ test("a material advance is visible to the resident and the worker, and writable
   await assertFails(setDoc(doc(owner, "materialAdvances", "forged"), { jobId: "forged", advanceAmount: 1 }));
   await assertFails(updateDoc(doc(owner, "materialAdvances", JOB), { advanceAmount: 999999 }));
 });
+
+// ------------------------------------------------------------------ R09 privacy & consent
+
+const guarantorPayload = (overrides = {}) => ({
+  workerKycId: WORKER,
+  fullName: "Third Party",
+  nationalIdNumber: "CM90012345678ABC",
+  phoneNumber: "+256772198420",
+  relationship: "Sister",
+  district: "Nakawa",
+  guarantorPhotoStoragePath: `users/${WORKER}/guarantors/guarantor_1.jpg`,
+  workerWithGuarantorPhotoStoragePath: `users/${WORKER}/guarantors/with_worker_1.jpg`,
+  consentProvided: true,
+  consentVersion: "2026-11-19",
+  consentRecordedAt: 1_760_000_000_000,
+  ninVerificationStatus: "PENDING",
+  ...overrides,
+});
+
+const submissionPayload = (overrides = {}) => ({
+  workerId: WORKER,
+  guarantorCount: 2,
+  consentConfirmed: true,
+  consentVersion: "2026-11-19",
+  consentRecordedAt: 1_760_000_000_000,
+  groupPhotoStoragePath: `users/${WORKER}/guarantors/group_1.jpg`,
+  status: "PENDING_REVIEW",
+  ...overrides,
+});
+
+test("a guarantor row is filed only with a dated, recorded third-party consent", async () => {
+  const worker = as(WORKER, freshAuth());
+  await assertSucceeds(setDoc(doc(worker, "guarantors", "g_ok"), guarantorPayload()));
+
+  // One field removed at a time: the consent proof is what the rule is there for.
+  const missingVersion = guarantorPayload();
+  delete missingVersion.consentVersion;
+  await assertFails(setDoc(doc(worker, "guarantors", "g_no_version"), missingVersion));
+
+  const missingTimestamp = guarantorPayload();
+  delete missingTimestamp.consentRecordedAt;
+  await assertFails(setDoc(doc(worker, "guarantors", "g_no_time"), missingTimestamp));
+
+  await assertFails(
+    setDoc(doc(worker, "guarantors", "g_bad_version"), guarantorPayload({ consentVersion: "latest" }))
+  );
+  await assertFails(
+    setDoc(doc(worker, "guarantors", "g_false_consent"), guarantorPayload({ consentProvided: false }))
+  );
+  // The consent proof is immutable after filing, and the reviewer's own fields stay admin-only.
+  await assertFails(
+    updateDoc(doc(worker, "guarantors", "g_ok"), { consentRecordedAt: 1_760_000_009_999 })
+  );
+  await assertFails(updateDoc(doc(worker, "guarantors", "g_ok"), { ninMasked: "CM*********ABC" }));
+});
+
+test("a guarantor submission must name the consent version it was filed under", async () => {
+  const worker = as(WORKER, freshAuth());
+  await assertSucceeds(setDoc(doc(worker, "guarantor_submissions", WORKER), submissionPayload()));
+
+  const noVersion = submissionPayload();
+  delete noVersion.consentVersion;
+  await assertFails(setDoc(doc(worker, "guarantor_submissions", WORKER), noVersion));
+
+  await assertFails(
+    setDoc(doc(worker, "guarantor_submissions", WORKER), submissionPayload({ consentVersion: "v2" }))
+  );
+  await assertFails(
+    setDoc(doc(worker, "guarantor_submissions", WORKER), submissionPayload({ consentRecordedAt: 1 }))
+  );
+  // A submission is never filed for someone else's account.
+  await assertFails(
+    setDoc(doc(as(STRANGER, freshAuth()), "guarantor_submissions", WORKER), submissionPayload())
+  );
+});
+
+test("consent receipts are readable by their owner and forgeable by nobody", async () => {
+  await env.withSecurityRulesDisabled(async (context) => {
+    const db = context.firestore();
+    await setDoc(doc(db, "users", WORKER, "consents", "2026-11-19"), { version: "2026-11-19", acceptedAt: 1 });
+    await setDoc(doc(db, "users", WORKER, "guarantor_consents", "2026-11-19"), { version: "2026-11-19", recordedAt: 1 });
+  });
+
+  await assertSucceeds(getDoc(doc(as(WORKER, freshAuth()), "users", WORKER, "consents", "2026-11-19")));
+  await assertSucceeds(
+    getDoc(doc(as(WORKER, freshAuth()), "users", WORKER, "guarantor_consents", "2026-11-19"))
+  );
+  await assertFails(getDoc(doc(as(STRANGER, freshAuth()), "users", WORKER, "consents", "2026-11-19")));
+  await assertFails(
+    getDoc(doc(as(STRANGER, freshAuth()), "users", WORKER, "guarantor_consents", "2026-11-19"))
+  );
+
+  const worker = as(WORKER, freshAuth());
+  await assertFails(setDoc(doc(worker, "users", WORKER, "consents", "2026-11-20"), { acceptedAt: 2 }));
+  await assertFails(
+    setDoc(doc(worker, "users", WORKER, "guarantor_consents", "2026-11-20"), { recordedAt: 2 })
+  );
+  await assertFails(deleteDoc(doc(worker, "users", WORKER, "consents", "2026-11-19")));
+  await assertFails(deleteDoc(doc(worker, "users", WORKER, "guarantor_consents", "2026-11-19")));
+  // Withdrawal is a server-written revocation on the same receipt, not a client edit.
+  await assertFails(
+    updateDoc(doc(worker, "users", WORKER, "consents", "2026-11-19"), { revokedAt: 3 })
+  );
+});
+
+test("the retention and erasure reports are admin evidence, never client data", async () => {
+  for (const [collectionName, id] of [["retention_reports", "r1"], ["account_deletions", "d1"]]) {
+    await assertFails(getDoc(doc(as(WORKER, freshAuth()), collectionName, id)));
+    await assertFails(getDoc(doc(as(OWNER, freshAuth()), collectionName, id)));
+    await assertFails(getDoc(doc(anon(), collectionName, id)));
+    await assertSucceeds(getDoc(doc(as(ADMIN, adminAuth()), collectionName, id)));
+    await assertFails(setDoc(doc(as(WORKER, freshAuth()), collectionName, "forged"), { forged: true }));
+    await assertFails(setDoc(doc(as(ADMIN, adminAuth()), collectionName, "forged"), { forged: true }));
+  }
+});

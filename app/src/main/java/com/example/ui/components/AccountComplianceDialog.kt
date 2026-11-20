@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.sp
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.net.Uri
+import com.example.ui.viewmodel.DataExportState
+import com.example.ui.viewmodel.PrivacyConsentState
 import com.example.ui.viewmodel.SkillsExchangeViewModel
 import com.example.data.remote.AccountDeletionRules
 import com.example.data.remote.DeletionStep
@@ -322,10 +324,30 @@ fun AccountDeletionDialog(
     )
 }
 
+/**
+ * R09-P2-02 / R09-P2-03 / R09-P2-05: the privacy sheet, with an honest button.
+ *
+ * The sheet used to end in "I Understand & Agree" calling `onDismiss` — nothing was recorded, so the
+ * app's claim of consent rested on a tap that left no trace. It now records the acceptance on the
+ * server (version + timestamp + the three grants) and will not report agreement until the receipt
+ * exists. It also hosts the two rights the policy promises and the app never offered: a copy of your
+ * data, and withdrawal of consent.
+ *
+ * The copy is corrected too: the account records are access-controlled, not "encryption-at-rest"
+ * marketing, and the deletion section states the legal holds rather than implying everything goes.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrivacyAndTermsSheet(
     isOpen: Boolean,
+    consentState: PrivacyConsentState,
+    consentMessage: String?,
+    exportState: DataExportState,
+    exportMessage: String?,
+    policyVersion: String,
+    onAccept: () -> Unit,
+    onWithdraw: () -> Unit,
+    onExportData: () -> Unit,
     onDismiss: () -> Unit
 ) {
     // R02-P2-06: account/identity surface — block screenshots and recents preview.
@@ -363,33 +385,109 @@ fun PrivacyAndTermsSheet(
 
             LegalSection(
                 title = "1. Data Collection & National ID Verification",
-                body = "Skills Exchange collects phone numbers and optional National ID records strictly for fraud prevention, resident safety, and verification badges. Data is stored with encryption-at-rest and never sold to third parties."
+                body = "Skills Exchange collects phone numbers and the National ID records needed to " +
+                    "verify workers, strictly for fraud prevention, resident safety and verification " +
+                    "badges. These records live in access-controlled account documents that only you " +
+                    "and authorised verification reviewers can open on the server; they are not " +
+                    "end-to-end encrypted, and they are never sold. Your National ID number is never " +
+                    "shown to clients and is masked wherever it is displayed."
             )
 
             LegalSection(
                 title = "2. Mobile Money Escrow & Payments",
-                body = "Payments held in Escrow via MTN MoMo are locked until resident approval or mutual release. In case of dispute, our 24/7 neighborhood arbitration protocol freezes funds pending review."
+                body = "Payments held in Escrow via MTN MoMo are locked until resident approval or " +
+                    "mutual release. In case of dispute, our 24/7 neighborhood arbitration protocol " +
+                    "freezes funds pending review."
             )
 
             LegalSection(
                 title = "3. Hyperlocal Location Privacy",
-                body = "Unverified accounts cannot view precise GPS coordinates or street numbers. Coarse district locations are shown to preserve client privacy until a quote is accepted."
+                body = "Unverified accounts cannot view precise GPS coordinates or street numbers. " +
+                    "Coarse district locations are shown to preserve client privacy until a quote is " +
+                    "accepted."
             )
 
             LegalSection(
-                title = "4. User Rights & Account Deletion",
-                body = "You retain full ownership of your data. You may request full export in standard JSON format or complete account deletion anytime through the in-app settings."
+                title = "4. Your Rights, Export & Account Deletion",
+                body = "You retain ownership of your data. You can download a JSON copy of everything " +
+                    "we hold about you, and you can delete your account, from this screen at any " +
+                    "time. Deletion removes your records, your photos and your messages. Payment, " +
+                    "identity-verification and consent records are kept for as long as the law " +
+                    "requires — up to seven years — and are then deleted; when your deletion " +
+                    "completes we tell you exactly which categories were kept and why."
             )
 
+            LegalSection(
+                title = "5. Consent You Are Giving Here",
+                body = "Accepting below records your agreement to the Terms, this Privacy Policy and " +
+                    "the processing described above, on our servers, against policy version " +
+                    "$policyVersion, with the time you accepted. A copy stays readable to you. You " +
+                    "can withdraw it at any time; the record of what you agreed, and when you " +
+                    "withdrew, is kept so the agreement stays demonstrable."
+            )
+
+            if (consentState == PrivacyConsentState.RECORDED) {
+                Text(
+                    text = "Agreement recorded.",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = SignalBlue
+                )
+            }
+            if (consentMessage != null) {
+                Text(
+                    text = consentMessage,
+                    fontSize = 12.sp,
+                    color = if (consentState == PrivacyConsentState.FAILED) RedDanger else Slate600
+                )
+            }
+
             Button(
-                onClick = onDismiss,
+                onClick = if (consentState == PrivacyConsentState.RECORDED) onDismiss else onAccept,
+                enabled = consentState != PrivacyConsentState.RECORDING,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Slate900)
             ) {
-                Text("I Understand & Agree", fontWeight = FontWeight.Bold)
+                Text(
+                    text = when (consentState) {
+                        PrivacyConsentState.RECORDED -> "Done"
+                        PrivacyConsentState.RECORDING -> "Recording…"
+                        PrivacyConsentState.FAILED -> "Try Again"
+                        PrivacyConsentState.IDLE -> "I Understand & Agree"
+                    },
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            HorizontalDivider(color = Slate200)
+
+            OutlinedButton(
+                onClick = onExportData,
+                enabled = exportState != DataExportState.WORKING,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = when (exportState) {
+                        DataExportState.WORKING -> "Preparing your export…"
+                        DataExportState.DONE -> "Export again"
+                        else -> "Download my data (JSON)"
+                    }
+                )
+            }
+            exportMessage?.let { message ->
+                Text(
+                    text = message,
+                    fontSize = 12.sp,
+                    color = if (exportState == DataExportState.FAILED) RedDanger else Slate600
+                )
+            }
+
+            TextButton(onClick = onWithdraw, modifier = Modifier.fillMaxWidth()) {
+                Text("Withdraw my consent", fontSize = 12.sp, color = Slate600)
             }
         }
     }

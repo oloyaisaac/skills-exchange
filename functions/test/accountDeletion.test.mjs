@@ -13,6 +13,10 @@ import {
   storagePurgePrefixes,
   mayDeleteAuthUser,
   deletionRefusalReason,
+  messagesToPurge,
+  retainedRecords,
+  ERASURE_STEPS,
+  ASSIGNED_JOB_FIELD,
 } from "../lib/accountDeletion.js";
 
 const NOW = 1_800_000_000_000;
@@ -108,4 +112,50 @@ test("sign-out clears the device push token before the session ends", () => {
   const body = source.slice(source.indexOf("clearMyPushTokens"));
   assert.ok(body.includes("push_tokens"), "the callable must target the push token sub-collection");
   assert.ok(body.includes("context.auth.uid"), "tokens are scoped to the authenticated uid");
+});
+
+// ---------------------------------------------------------------------------------------------
+// R09-P2-01: erasure must also reach the account's own messages in jobs it did not post, and must
+// say out loud what it keeps.
+// ---------------------------------------------------------------------------------------------
+
+test("erasure: only the account's own messages in a worked job are removed", () => {
+  const docs = [
+    { id: "m1", data: { senderId: "worker_1", text: "on my way" } },
+    { id: "m2", data: { senderId: "resident_9", text: "thanks" } },
+    { id: "m3", data: { senderId: "worker_1" } },
+    { id: "m4", data: { senderName: "worker_1" } }, // legacy attribution is not provable
+    { id: "m5", data: {} },
+  ];
+  assert.deepEqual(messagesToPurge(docs, "worker_1"), ["m1", "m3"]);
+  assert.deepEqual(messagesToPurge(docs, ""), [], "no uid, nothing deleted");
+  assert.deepEqual(messagesToPurge([], "worker_1"), []);
+  assert.equal(ASSIGNED_JOB_FIELD, "assignedProviderUid", "the query the purge relies on");
+});
+
+test("erasure: the retained categories are named with a reason and a window", () => {
+  const retained = retainedRecords();
+  assert.ok(retained.length >= 3);
+  const categories = retained.map((hold) => hold.category).join(" | ");
+  assert.match(categories, /payment/);
+  assert.match(categories, /identity-verification/);
+  assert.match(categories, /consent/);
+  for (const hold of retained) {
+    assert.ok(hold.reason.length > 20);
+    assert.ok(hold.retentionDays >= 365);
+  }
+});
+
+test("erasure: the published procedure is the one the code follows", () => {
+  assert.ok(ERASURE_STEPS.length >= 8);
+  const steps = ERASURE_STEPS.join(" ");
+  assert.match(steps, /fresh authentication/i);
+  assert.match(steps, /Cloud Storage/);
+  assert.match(steps, /chat/i);
+  assert.match(steps, /Firebase Auth/);
+  assert.equal(
+    ERASURE_STEPS[ERASURE_STEPS.length - 1].includes("Auth"),
+    true,
+    "Auth is deleted last, and only when nothing is pending"
+  );
 });

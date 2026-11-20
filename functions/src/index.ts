@@ -98,7 +98,15 @@ import {
   evaluateWebhookRate,
 } from "./webhookAuth";
 import type { WebhookRateRecord } from "./webhookAuth";
-import { buildConsentRecord, buildDsarEnvelope, sanitiseGuarantorForExport } from "./compliance";
+import {
+  buildConsentRecord,
+  buildDsarEnvelope,
+  sanitiseGuarantorForExport,
+  buildGuarantorConsentRecord,
+  buildConsentWithdrawal,
+  buildErasureNotice,
+  CONSENT_VERSION,
+} from "./compliance";
 import { loadSmsConfig, createSmsSender } from "./sms";
 import type { SmsTransport } from "./sms";
 import { planSosDispatch, selectSosRecipients, buildSosMessage } from "./sosDispatch";
@@ -123,6 +131,15 @@ import { decideMaterialAdvance } from "./materialAdvance";
 import { validateStoredQuote } from "./pricing";
 import { buildFeeLedger, validateFeeLedger, feeLedgerId } from "./feeLedger";
 import { buildReconciliationReport, reportLine } from "./reconciliation";
+import {
+  RETENTION_POLICY,
+  anonymisePatch,
+  categoryById,
+  planRetentionSweep,
+  retentionReportLine,
+  summariseRetention,
+} from "./retention";
+import { sanitiseGuarantorSubmissionForExport, ninFingerprint, maskNin } from "./pii";
 import { decideRefund, buildRefundPayload } from "./refund";
 import { decideRefundStatus, applyRefundToEscrow } from "./refundStatus";
 import { APP_CHECK, withAppCheck } from "./appCheck";
@@ -138,6 +155,10 @@ import {
 } from "./doorstepPin";
 import {
   FRESH_AUTH_WINDOW_SECONDS,
+  ASSIGNED_JOB_FIELD,
+  ERASURE_STEPS,
+  messagesToPurge,
+  retainedRecords,
   SINGLE_DOC_COLLECTIONS,
   QUERY_DELETIONS,
   isFreshAuth as isFreshAuthForDeletion,
@@ -1720,6 +1741,108 @@ export const getRefundStatus = functions.runWith(APP_CHECK).https.onCall(async (
   };
 });
 
+// =====================================================================================
+// R09-P2-04: the retention sweep.
+//
+// Nothing purged or minimised anything: KYC scans, chats, SOS incidents and notifications were kept
+// for ever because no window had been decided. `RETENTION_POLICY` now states a window, an action and
+// a reason per category, and this daily job enforces it — using `planRetentionSweep`, so the plan a
+// test sees is the plan the sweep executes.
+// =====================================================================================
+
+/** How many documents one category may act on in a single run. */
+const RETENTION_BATCH_SIZE = 200;
+
+/** Read one category's due documents. Errors are reported, never fatal to the whole sweep. */
+async function readRetentionCandidates(
+  categoryId: string
+): Promise<Array<{ id: string; ref: FirebaseFirestore.DocumentReference; data: Record<string, unknown> }>> {
+  const category = categoryById(categoryId);
+  if (!category) return [];
+  const cutoff = Date.now() - category.retentionDays * 24 * 60 * 60 * 1000;
+  const query = category.collectionGroup
+    ? db.collectionGroup(category.collection)
+    : db.collection(category.collection);
+  const snapshot = await query
+    .where(category.timestampField, "<", cutoff)
+    .orderBy(category.timestampField, "asc")
+    .limit(RETENTION_BATCH_SIZE)
+    .get();
+  return snapshot.docs.map((doc) => ({ id: doc.id, ref: doc.ref, data: doc.data() as Record<string, unknown> }));
+}
+
+/**
+ * Daily retention sweep.
+ *
+ * Every category is attempted even if an earlier one fails, the counts are written to
+ * `retention_reports` (admin-readable only), and the operator log carries counts — never a document
+ * id or a value that was removed.
+ */
+export const applyRetentionPolicy = functions.pubsub.schedule("every 24 hours").onRun(async () => {
+  const now = Date.now();
+  const categories: Array<{
+    id: string;
+    action: "PURGE" | "ANONYMISE";
+    retentionDays: number;
+    purged: number;
+    anonymised: number;
+    retained: number;
+    undated: number;
+    error?: string;
+  }> = [];
+
+  for (const category of RETENTION_POLICY) {
+    const entry = {
+      id: category.id,
+      action: category.action,
+      retentionDays: category.retentionDays,
+      purged: 0,
+      anonymised: 0,
+      retained: 0,
+      undated: 0,
+      error: undefined as string | undefined,
+    };
+    try {
+      const candidates = await readRetentionCandidates(category.id);
+      const plan = planRetentionSweep({
+        categoryId: category.id,
+        now,
+        docs: candidates.map((candidate) => ({ id: candidate.id, data: candidate.data })),
+        maxActions: RETENTION_BATCH_SIZE,
+      });
+      const refs = new Map(candidates.map((candidate) => [candidate.id, candidate.ref]));
+
+      for (const id of plan.purgeIds) {
+        const ref = refs.get(id);
+        if (!ref) continue;
+        await ref.delete();
+        entry.purged += 1;
+      }
+      const patch = anonymisePatch(category.id);
+      for (const id of plan.anonymiseIds) {
+        const ref = refs.get(id);
+        if (!ref) continue;
+        await ref.set(patch, { merge: true });
+        entry.anonymised += 1;
+      }
+      entry.retained = plan.retained;
+      entry.undated = plan.undatedIds.length;
+    } catch (error) {
+      entry.error = (error as Error).message.slice(0, 200);
+    }
+    categories.push(entry);
+  }
+
+  const report = summariseRetention(now, categories);
+  await db.collection("retention_reports").add({
+    ...report,
+    summary: retentionReportLine(report),
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  }).catch(() => undefined);
+  console.log(retentionReportLine(report));
+  return null;
+});
+
 /** Hourly: sweep pending refunds so a rejected refund cannot stay pending for ever. */
 export const reconcileRefunds = functions.pubsub.schedule("every 60 minutes").onRun(async () => {
   const snap = await db.collection("refunds")
@@ -2396,6 +2519,49 @@ export const reviewGuarantorSubmission = functions.runWith(APP_CHECK).https.onCa
     guarantorsUpdated += 1;
   });
   if (guarantorsUpdated > 0) await batch.commit();
+
+  // R09-P2-05: a verified NIN leaves a salted fingerprint and a masked value behind, never a second
+  // plaintext copy in an index. The fingerprint is what lets a reviewer see that the same ID was used
+  // for two different guarantors; without `PII_SALT` no fingerprint is written at all, because an
+  // unsalted hash of a NIN is brute-forceable.
+  if (command.ninStatus === "VERIFIED") {
+    const salt = (process.env.PII_SALT || "").trim();
+    const fingerprintBatch = db.batch();
+    let fingerprinted = 0;
+    for (const doc of guarantorSnapshot.docs) {
+      const data = doc.data() || {};
+      if (data["workerKycId"] !== command.workerId) continue;
+      const rawNin = String(data["nationalIdNumber"] || "");
+      if (!rawNin) continue;
+      const patch: Record<string, unknown> = { ninMasked: maskNin(rawNin) };
+      const fingerprint = ninFingerprint(rawNin, salt);
+      if (fingerprint) {
+        patch["ninFingerprintHash"] = fingerprint;
+        try {
+          const clashes = await db
+            .collection("guarantors")
+            .where("ninFingerprintHash", "==", fingerprint)
+            .limit(5)
+            .get();
+          const others = clashes.docs
+            .map((other) => String((other.data() || {})["workerKycId"] || ""))
+            .filter((workerKycId) => workerKycId && workerKycId !== command.workerId);
+          if (others.length > 0) {
+            patch["ninDuplicateOfWorker"] = others[0];
+            console.warn("NIN reuse detected across guarantor submissions", {
+              workerId: command.workerId,
+              occurrences: others.length,
+            });
+          }
+        } catch {
+          // The clash query is advisory; a missing index must not fail the review.
+        }
+      }
+      fingerprintBatch.set(doc.ref, patch, { merge: true });
+      fingerprinted += 1;
+    }
+    if (fingerprinted > 0) await fingerprintBatch.commit();
+  }
 
   // 3. Keep the KYC row's guarantor mirror honest — but only when that row exists. The app
   //    never creates `worker_kyc` in Firestore today (documented blocker); creating it from
@@ -3651,7 +3817,92 @@ export const recordConsent = functions.runWith(APP_CHECK).https.onCall(async (da
     .doc(record.version)
     .set(record, { merge: false });
 
-  return { version: record.version, acceptedAt: record.acceptedAt };
+  return { version: record.version, acceptedAt: record.acceptedAt, currentVersion: CONSENT_VERSION };
+});
+
+/**
+ * R09-P2-02: third-party guarantor consent, recorded separately from the worker's own.
+ *
+ * The guarantor sheet cannot submit until the worker has confirmed, for each guarantor, that the
+ * person was told and agreed. The record is written by the server with the policy version and the
+ * time it was given, into its own collection, so the grant can be shown and (later) withdrawn without
+ * touching the worker's own consent history.
+ */
+export const recordGuarantorConsent = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to record guarantor consent");
+  }
+  let record;
+  try {
+    record = buildGuarantorConsentRecord(
+      { version: data?.version, guarantorCount: data?.guarantorCount, confirmed: data?.confirmed },
+      Date.now()
+    );
+  } catch (error) {
+    throw new functions.https.HttpsError("invalid-argument", (error as Error).message);
+  }
+
+  await db
+    .collection("users")
+    .doc(context.auth.uid)
+    .collection("guarantor_consents")
+    .doc(record.version)
+    .set(record, { merge: false });
+
+  return {
+    version: record.version,
+    recordedAt: record.recordedAt,
+    guarantorCount: record.guarantorCount,
+    currentVersion: CONSENT_VERSION,
+  };
+});
+
+/**
+ * R09: withdrawal of consent is recorded, never erased.
+ *
+ * Withdrawal stops the platform relying on the grant from that moment, but the original receipt stays
+ * — a consent record that can be deleted proves nothing. Withdrawal requires a fresh sign-in because
+ * it is a consequential change to the account's legal position.
+ */
+export const withdrawConsent = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to withdraw consent");
+  }
+  const authTime = (context.auth.token as { auth_time?: unknown }).auth_time;
+  if (!isFreshAuthForDeletion(authTime, Date.now())) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Please verify your identity again before withdrawing consent.",
+      { code: "REAUTH_REQUIRED", windowSeconds: FRESH_AUTH_WINDOW_SECONDS }
+    );
+  }
+
+  let withdrawal;
+  try {
+    withdrawal = buildConsentWithdrawal({ version: data?.version, reason: data?.reason }, Date.now());
+  } catch (error) {
+    throw new functions.https.HttpsError("invalid-argument", (error as Error).message);
+  }
+
+  const consentRef = db
+    .collection("users")
+    .doc(context.auth.uid)
+    .collection("consents")
+    .doc(withdrawal.version);
+  const existing = await consentRef.get();
+  if (!existing.exists) {
+    throw new functions.https.HttpsError("not-found", "There is no consent record for that version.");
+  }
+  if (existing.get("revokedAt")) {
+    return { version: withdrawal.version, revokedAt: Number(existing.get("revokedAt")), alreadyWithdrawn: true };
+  }
+
+  await consentRef.set(
+    { revokedAt: withdrawal.revokedAt, revokeReason: withdrawal.reason },
+    { merge: true }
+  );
+
+  return { version: withdrawal.version, revokedAt: withdrawal.revokedAt, alreadyWithdrawn: false };
 });
 
 export const exportMyData = functions.runWith(APP_CHECK).https.onCall(async (_data, context) => {
@@ -3685,12 +3936,31 @@ export const exportMyData = functions.runWith(APP_CHECK).https.onCall(async (_da
     reports: toRows(reports),
     notifications: toRows(notifications),
     payouts: toRows(payouts),
-    guarantorSubmission: submissions.exists ? submissions.data() : null,
+    // R09-P2-03: the submission document holds two other people's NINs and photo paths; it is
+    // redacted before it leaves the server.
+    guarantorSubmission: submissions.exists
+      ? sanitiseGuarantorSubmissionForExport({ id: submissions.id, ...(submissions.data() as Record<string, unknown>) })
+      : null,
     // Third-party identifiers are stripped here, not in the client.
     guarantors: guarantors.docs.map((doc) => sanitiseGuarantorForExport(doc.data() as Record<string, unknown>)),
     consents: (
       await db.collection("users").doc(uid).collection("consents").limit(50).get()
     ).docs.map((doc) => ({ version: doc.id, ...(doc.data() as Record<string, unknown>) })),
+    guarantorConsents: (
+      await db.collection("users").doc(uid).collection("guarantor_consents").limit(50).get()
+    ).docs.map((doc) => ({ version: doc.id, ...(doc.data() as Record<string, unknown>) })),
+    // R09-P2-04: the export states how long each category is kept, so a subject is not told
+    // "we delete everything" while the payment books are held for seven years.
+    retention: {
+      policy: RETENTION_POLICY.map((category) => ({
+        category: category.id,
+        collection: category.collection,
+        retentionDays: category.retentionDays,
+        action: category.action,
+        basis: category.basis,
+      })),
+      legalHolds: retainedRecords(),
+    },
   };
 
   return buildDsarEnvelope(data, Date.now());
@@ -3837,6 +4107,29 @@ export const deleteMyAccount = functions.runWith(APP_CHECK).https.onCall(async (
       firestorePending += 1;
     }
   }
+
+  // R09-P2-01: this account's own words in jobs it did NOT post. The old purge keyed chat by job id
+  // only, so a worker's messages survived in the resident's job — still that worker's personal data.
+  try {
+    const workedJobs = await db
+      .collection("jobs")
+      .where(ASSIGNED_JOB_FIELD, "==", uid)
+      .limit(200)
+      .get();
+    for (const job of workedJobs.docs) {
+      if (jobIds.includes(job.id)) continue; // already purged above
+      const messages = await job.ref.collection("messages").get();
+      const mine = messagesToPurge(
+        messages.docs.map((doc) => ({ id: doc.id, data: doc.data() as Record<string, unknown> })),
+        uid
+      );
+      for (const messageId of mine) {
+        await deleteRef(job.ref.collection("messages").doc(messageId));
+      }
+    }
+  } catch {
+    firestorePending += 1;
+  }
   for (const collection of SINGLE_DOC_COLLECTIONS) {
     await deleteRef(db.collection(collection).doc(uid));
   }
@@ -3861,6 +4154,15 @@ export const deleteMyAccount = functions.runWith(APP_CHECK).https.onCall(async (
     firestorePending,
   };
   const complete = mayDeleteAuthUser(progress);
+  const retained = retainedRecords();
+  const notice = buildErasureNotice({
+    deletedRecords: firestoreDocsDeleted,
+    deletedFiles: storageDeleted,
+    retained,
+    complete,
+    pendingRecords: firestorePending,
+    pendingFiles: storagePending,
+  });
   await db
     .collection("account_deletions")
     .doc(`${uid}_${Date.now()}`)
@@ -3872,6 +4174,9 @@ export const deleteMyAccount = functions.runWith(APP_CHECK).https.onCall(async (
       firestoreDocsDeleted,
       storagePending,
       firestorePending,
+      retainedCategories: retained.map((hold) => hold.category),
+      steps: ERASURE_STEPS,
+      notice,
     })
     .catch(() => undefined);
 
@@ -3879,12 +4184,17 @@ export const deleteMyAccount = functions.runWith(APP_CHECK).https.onCall(async (
     throw new functions.https.HttpsError(
       "internal",
       deletionRefusalReason(progress),
-      { code: "PURGE_INCOMPLETE", ...progress }
+      { code: "PURGE_INCOMPLETE", ...progress, retainedCategories: retained.map((hold) => hold.category) }
     );
   }
 
   console.info("Account data purged; auth user may now be deleted", { uid, ...progress });
-  return { complete: true, ...progress };
+  return {
+    complete: true,
+    ...progress,
+    retainedCategories: retained.map((hold) => hold.category),
+    notice,
+  };
 });
 
 /**

@@ -33,6 +33,7 @@ import com.example.ui.theme.*
 import com.example.data.remote.DeletionStep
 import com.example.ui.viewmodel.SkillsExchangeViewModel
 import com.example.util.CurrencyRegion
+import com.example.util.DataBackupHelper
 import com.example.util.LocationHelper
 import com.example.util.NetworkConnectivityObserver
 import com.example.util.NotificationRouting
@@ -990,9 +991,41 @@ fun MainScreen(
         jobs = jobs
     )
 
+    // R09: the privacy sheet records consent, offers the export and records withdrawal — it is no
+    // longer a sheet that ends in a dismissal.
+    val privacyConsentState by viewModel.privacyConsentState.collectAsStateWithLifecycle()
+    val privacyConsentMessage by viewModel.privacyConsentMessage.collectAsStateWithLifecycle()
+    val dataExportState by viewModel.dataExportState.collectAsStateWithLifecycle()
+    val dataExportMessage by viewModel.dataExportMessage.collectAsStateWithLifecycle()
+    val dataExportJson by viewModel.dataExportJson.collectAsStateWithLifecycle()
+    val shareContext = LocalContext.current
+    LaunchedEffect(dataExportJson) {
+        val json = dataExportJson
+        if (!json.isNullOrBlank()) {
+            DataBackupHelper.exportAndShareFile(
+                shareContext,
+                json,
+                "SkillsExchange_MyData"
+            )
+            // Handed to the share sheet once; the state stays DONE so the button reads "Export again".
+            viewModel.consumeDataExportJson()
+        }
+    }
     PrivacyAndTermsSheet(
         isOpen = isPrivacyPolicyOpen,
-        onDismiss = { isPrivacyPolicyOpen = false }
+        consentState = privacyConsentState,
+        consentMessage = privacyConsentMessage,
+        exportState = dataExportState,
+        exportMessage = dataExportMessage,
+        policyVersion = viewModel.privacyPolicyVersion,
+        onAccept = viewModel::acceptPrivacyPolicy,
+        onWithdraw = viewModel::withdrawConsent,
+        onExportData = viewModel::exportMyData,
+        onDismiss = {
+            isPrivacyPolicyOpen = false
+            viewModel.resetPrivacyConsentState()
+            viewModel.resetDataExportState()
+        }
     )
 
     // R06-P2-01: the dialog is driven by the deletion state, so it cannot report success (or close)

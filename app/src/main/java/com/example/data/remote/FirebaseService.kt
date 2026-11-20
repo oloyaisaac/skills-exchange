@@ -42,6 +42,14 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 
+/** R09-P2-02: shown when a consent receipt could not be written — never a success claim. */
+private const val CONSENT_FAILURE =
+    "We could not record your agreement, so nothing was saved. Check your connection and try again."
+
+/** R09: shown when a withdrawal could not be recorded — nothing changed, and it says so. */
+private const val WITHDRAWAL_FAILURE =
+    "We could not record the withdrawal. Nothing changed; please try again."
+
 class FirebaseService(private val context: Context? = null) {
 
     companion object {
@@ -1028,7 +1036,8 @@ class FirebaseService(private val context: Context? = null) {
         db: FirebaseFirestore,
         workerId: String,
         guarantors: List<GuarantorEntity>,
-        groupPhotoStoragePath: String
+        groupPhotoStoragePath: String,
+        consentRecordedAt: Long
     ) {
         val ref = db.collection("guarantor_submissions").document(workerId)
         if (ref.get().await().exists()) {
@@ -1041,6 +1050,10 @@ class FirebaseService(private val context: Context? = null) {
                 "guarantorCount" to guarantors.size,
                 "groupPhotoStoragePath" to groupPhotoStoragePath,
                 "consentConfirmed" to true,
+                // R09-P2-02: the submission names the version and the receipt it was filed under;
+                // the create rule rejects a submission without them.
+                "consentVersion" to ConsentVersions.GUARANTOR_VERSION,
+                "consentRecordedAt" to consentRecordedAt,
                 "submittedAt" to System.currentTimeMillis(),
                 // Initial review state only — the create rule rejects any other value, and
                 // every later change is admin-only.
@@ -1114,6 +1127,12 @@ class FirebaseService(private val context: Context? = null) {
             }
         ) return false
         return try {
+            // R09-P2-02: the third-party receipt comes first. Filing without a recorded grant would
+            // put two other people's identity documents on the server on the worker's word alone.
+            val consentRecordedAt = recordGuarantorConsent(
+                ConsentVersions.GUARANTOR_VERSION,
+                guarantors.size
+            ) ?: return false
             val submittedAt = System.currentTimeMillis()
             guarantors.forEach { guarantor ->
                 val ref = db.collection("guarantors").document(guarantor.id)
@@ -1127,6 +1146,9 @@ class FirebaseService(private val context: Context? = null) {
                     "guarantorPhotoStoragePath" to guarantor.guarantorPhotoStoragePath,
                     "workerWithGuarantorPhotoStoragePath" to guarantor.workerWithGuarantorPhotoStoragePath,
                     "consentProvided" to true,
+                    // R09-P2-02: the dated receipt this row was filed under, not just a boolean.
+                    "consentVersion" to ConsentVersions.GUARANTOR_VERSION,
+                    "consentRecordedAt" to consentRecordedAt,
                     "submittedAt" to submittedAt,
                     "updatedAt" to submittedAt
                 )
@@ -1139,7 +1161,13 @@ class FirebaseService(private val context: Context? = null) {
                     ref.set(payload).await()
                 }
             }
-            fileGuarantorSubmission(db, workerId, guarantors, groupPhotoStoragePath)
+            fileGuarantorSubmission(
+                db,
+                workerId,
+                guarantors,
+                groupPhotoStoragePath,
+                consentRecordedAt
+            )
             true
         } catch (e: Exception) {
             Log.d("FirebaseService", "Guarantor submission failed: ${GuarantorValidators.scrubIdentifiers(e.message ?: "unknown")}")
@@ -1205,33 +1233,101 @@ class FirebaseService(private val context: Context? = null) {
     }
 
     /**
-     * REM-044: record the account-level consent receipt server-side. The callable validates the
-     * policy version and all three grants; a client boolean is not accepted as evidence.
+     * R09-P2-02: record the account-level consent receipt server-side, and report what happened.
+     *
+     * The callable validates the policy version and all three grants; a client boolean is not
+     * accepted as evidence. The result is returned rather than swallowed, because the policy sheet
+     * must not close on a consent that was never written.
      */
-    suspend fun recordConsent(version: String): Boolean {
+    suspend fun recordConsent(version: String): ConsentOutcome {
+        if (version.isBlank()) return ConsentOutcome.Failed("No policy version to record.")
         return try {
             val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
-            functions.getHttpsCallable("recordConsent")
+            val result = functions.getHttpsCallable("recordConsent")
                 .call(
                     CallableContracts.payload(
                         "recordConsent",
                         "version" to version,
-                        "grants" to mapOf(
-                            "terms" to true,
-                            "privacy" to true,
-                            "dataProcessing" to true
-                        )
+                        "grants" to ConsentVersions.PRIVACY_GRANTS.associateWith { true }
                     )
                 )
                 .await()
-            true
+            val data = result.data as? Map<*, *> ?: return ConsentOutcome.Failed(CONSENT_FAILURE)
+            val recorded = data["acceptedAt"] as? Number
+            ConsentOutcome.Recorded(
+                version = data["version"] as? String ?: version,
+                recordedAtMillis = recorded?.toLong() ?: System.currentTimeMillis(),
+                currentVersion = data["currentVersion"] as? String ?: version
+            )
         } catch (e: Exception) {
-            Log.e("FirebaseService", "recordConsent failed: ${e.message}")
-            false
+            Log.e("FirebaseService", "recordConsent failed: ${e.javaClass.simpleName}")
+            ConsentOutcome.Failed(CONSENT_FAILURE)
         }
     }
 
-    /** REM-044: download the data-subject access export as JSON. */
+    /**
+     * R09-P2-02: record the third-party guarantor consent before the guarantor documents are filed.
+     *
+     * The guarantors' NINs, phones and photographs are other people's personal data. The worker's own
+     * acceptance says nothing about them, so this is a separate receipt, written by the server with
+     * its own version and timestamp. Filing is refused unless this succeeds.
+     */
+    suspend fun recordGuarantorConsent(version: String, guarantorCount: Int): Long? {
+        if (version.isBlank() || guarantorCount < 1) return null
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val result = functions.getHttpsCallable("recordGuarantorConsent")
+                .call(
+                    CallableContracts.payload(
+                        "recordGuarantorConsent",
+                        "version" to version,
+                        "guarantorCount" to guarantorCount,
+                        "confirmed" to true
+                    )
+                )
+                .await()
+            val data = result.data as? Map<*, *> ?: return null
+            (data["recordedAt"] as? Number)?.toLong()
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "recordGuarantorConsent failed: ${e.javaClass.simpleName}")
+            null
+        }
+    }
+
+    /**
+     * R09: withdraw consent. The receipt is kept and the revocation is added — a consent history that
+     * can be deleted proves nothing. Requires a fresh sign-in, enforced by the callable.
+     */
+    suspend fun withdrawConsent(version: String, reason: String): ConsentOutcome {
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val result = functions.getHttpsCallable("withdrawConsent")
+                .call(
+                    CallableContracts.payload(
+                        "withdrawConsent",
+                        "version" to version,
+                        "reason" to reason
+                    )
+                )
+                .await()
+            val data = result.data as? Map<*, *> ?: return ConsentOutcome.Failed(WITHDRAWAL_FAILURE)
+            ConsentOutcome.Recorded(
+                version = data["version"] as? String ?: version,
+                recordedAtMillis = (data["revokedAt"] as? Number)?.toLong() ?: System.currentTimeMillis(),
+                currentVersion = version
+            )
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "withdrawConsent failed: ${e.javaClass.simpleName}")
+            ConsentOutcome.Failed(WITHDRAWAL_FAILURE)
+        }
+    }
+
+    /**
+     * REM-044 / R09-P2-03: the data-subject access export, as the server builds it.
+     *
+     * The JSON is produced entirely on the server (third-party NINs masked, storage paths dropped), so
+     * the client cannot add to or invent the contents of the export.
+     */
     suspend fun exportMyData(): String? {
         return try {
             val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
@@ -1241,9 +1337,10 @@ class FirebaseService(private val context: Context? = null) {
                 .await()
             @Suppress("UNCHECKED_CAST")
             val data = result.data as? Map<String, Any?> ?: return null
-            org.json.JSONObject(data).toString()
+            org.json.JSONObject(data).toString(2)
         } catch (e: Exception) {
-            Log.e("FirebaseService", "exportMyData failed: ${e.message}")
+            // The message can carry a project id or a URL; the class name cannot.
+            Log.e("FirebaseService", "exportMyData failed: ${e.javaClass.simpleName}")
             null
         }
     }
