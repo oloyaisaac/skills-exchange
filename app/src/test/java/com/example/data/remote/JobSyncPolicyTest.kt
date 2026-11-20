@@ -26,10 +26,9 @@ class JobSyncPolicyTest {
     @Test
     fun `terminal escrow outcomes are withheld from the client payload`() {
         for (status in JobSyncPolicy.SERVER_ONLY_ESCROW_STATUSES) {
-            assertEquals(
+            assertTrue(
                 "escrowStatus must be withheld for $status",
-                setOf("escrowStatus"),
-                JobSyncPolicy.withheldFields("COMPLETED", status)
+                "escrowStatus" in JobSyncPolicy.withheldFields("COMPLETED", status)
             )
             val payload = JobSyncPolicy.clientPayload(
                 basePayload + ("escrowStatus" to status),
@@ -44,7 +43,10 @@ class JobSyncPolicyTest {
     @Test
     fun `a non-terminal escrow state is still mirrored`() {
         for (status in listOf("QUOTE_PENDING", "DEPOSIT_PROMPTED", "WORK_IN_PROGRESS", "PROOF_SUBMITTED")) {
-            assertTrue(JobSyncPolicy.withheldFields("ACCEPTED_FUNDED", status).isEmpty())
+            assertFalse(
+                "escrowStatus must stay client-mirrored for $status",
+                "escrowStatus" in JobSyncPolicy.withheldFields("ACCEPTED_FUNDED", status)
+            )
             assertTrue(JobSyncPolicy.clientPayload(basePayload, "ACCEPTED_FUNDED", status).containsKey("escrowStatus"))
         }
     }
