@@ -66,9 +66,11 @@ class AuthIdentityTest {
     @Test
     fun `no Google OAuth client id is hardcoded in source`() {
         val helper = repoFile("app/src/main/java/com/example/util/GoogleSignInHelper.kt").readText()
+        val clientIdLiteral = Regex("\\d{6,}-[a-z0-9]+\\.apps\\.googleusercontent\\.com")
+        // The helper may mention the suffix it validates against, but not a real id literal.
         assertFalse(
             "the client id must come from BuildConfig, not a literal",
-            helper.contains(".apps.googleusercontent.com\"")
+            clientIdLiteral.containsMatchIn(helper)
         )
         assertTrue(helper.contains("BuildConfig.GOOGLE_WEB_CLIENT_ID"))
         assertTrue("an unconfigured build must fail closed", helper.contains("isConfigured"))
@@ -78,7 +80,6 @@ class AuthIdentityTest {
         assertTrue("and documented for local builds", repoFile(".env.example").readText().contains("GOOGLE_WEB_CLIENT_ID"))
 
         // No source file may carry a client id literal (the `isConfigured` suffix check is fine).
-        val clientIdLiteral = Regex("\\d{6,}-[a-z0-9]+\\.apps\\.googleusercontent\\.com")
         val offenders = repoFile("app/src/main/java")
             .walkTopDown()
             .filter { it.isFile && it.extension == "kt" }
