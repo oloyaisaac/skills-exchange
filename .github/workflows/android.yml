@@ -32,8 +32,30 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Install Android SDK
+        run: |
+          set -euo pipefail
+          SDK="$HOME/android-sdk"
+          mkdir -p "$SDK/cmdline-tools"
+          ok=""
+          for url in \
+            https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip \
+            https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip \
+            https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip; do
+            if curl -fsSL -o /tmp/cmdline-tools.zip "$url"; then echo "downloaded $url"; ok=1; break; fi
+          done
+          test -n "$ok"
+          unzip -q /tmp/cmdline-tools.zip -d /tmp/clt
+          mv /tmp/clt/cmdline-tools "$SDK/cmdline-tools/latest"
+          export ANDROID_HOME="$SDK"
+          export ANDROID_SDK_ROOT="$SDK"
+          export PATH="$SDK/cmdline-tools/latest/bin:$SDK/platform-tools:$PATH"
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager "platform-tools"
+          sdkmanager "platforms;android-37" "build-tools;37.0.0" \
+            || sdkmanager "platforms;android-36" "build-tools;36.0.0"
+          sdkmanager --list_installed | tee "$HOME/sdk-installed.txt"
+          echo "sdk.dir=$SDK" > local.properties
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
