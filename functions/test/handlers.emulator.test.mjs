@@ -5,7 +5,10 @@
  * authentication context, Firestore reads, the shared release core and the documents it writes.
  * They are run with `npm run test:handlers` under `firebase emulators:exec --only firestore`.
  */
-process.env.GCLOUD_PROJECT = process.env.GCLOUD_PROJECT || "demo-skills-exchange";
+const PROJECT_ID = process.env.GCLOUD_PROJECT || "demo-skills-exchange";
+process.env.GCLOUD_PROJECT = PROJECT_ID;
+process.env.GOOGLE_CLOUD_PROJECT = PROJECT_ID;
+process.env.FIREBASE_CONFIG = process.env.FIREBASE_CONFIG || JSON.stringify({ projectId: PROJECT_ID });
 process.env.FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST || "127.0.0.1:8080";
 
 import test from "node:test";
@@ -13,12 +16,11 @@ import assert from "node:assert/strict";
 import admin from "firebase-admin";
 import functionsTest from "firebase-functions-test";
 
-if (admin.apps.length === 0) {
-  admin.initializeApp({ projectId: process.env.GCLOUD_PROJECT });
-}
-
-const ft = functionsTest({ projectId: process.env.GCLOUD_PROJECT });
+// `../lib/index.js` initialises the default admin app itself (as it does in Cloud Functions), so the
+// test must not initialise it first: doing so would raise app/duplicate-app.
 const { releaseEscrowToWorker, createMoMoPayout } = await import("../lib/index.js");
+
+const ft = functionsTest({ projectId: PROJECT_ID });
 
 const callable = {
   release: ft.wrap(releaseEscrowToWorker),

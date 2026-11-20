@@ -33,13 +33,13 @@ Senior Backend / Serverless Engineer, TypeScript + Firebase Cloud Functions, pay
 ## 6. Relevant Source Files and Components
 | Path | Why |
 |---|---|
-| `functions/src/index.ts` (1,889 lines) | 18 exports: 16 callables, 1 HTTPS webhook, 1 Firestore trigger; admin gating |
+| `functions/src/index.ts` (2,547 lines) | 27 exports: 24 callables, 1 HTTPS webhook, 2 Firestore triggers; admin gating on every callable |
 | `functions/src/momoCollection.ts` (483) | config loading, initiation, collection rules |
 | `functions/src/momoConfirmation.ts` (420) | pull-to-verify, status parsing, escrow lock |
 | `functions/src/momoDisbursement.ts` (529) | payout eligibility, payloads, terminal states |
 | `functions/src/guarantorReview.ts` (706) | `checkAdminCaller`, queue projection, signed URLs |
-| `functions/test/*.test.mjs` (4 files, 111 assertions) | pure-module tests (executed: 111 pass) |
-| `functions/package.json` | engine node 18, `firebase-functions ^4.3.1`, `firebase-admin ^11.8.0`, broken `tslint` script |
+| `functions/test/*.test.mjs` (16 files, 172 assertions) | pure-module tests (executed: 172 pass); `test/handlers.emulator.test.mjs` (5) runs the payout callables against the Firestore emulator |
+| `functions/package.json` | engine node 22, `firebase-functions ^4.3.1`, `firebase-admin ^11.8.0`, explicit `node --test` file list |
 | `functions/tsconfig.json` | `strict: true`, includes `test/` in build |
 | `firebase.json` | no `predeploy` build hook, no `firestore.indexes.json`, no hosting |
 | `app/src/main/java/com/example/data/remote/FirebaseService.kt` | client callable contract (files, payload shapes) |
@@ -69,7 +69,7 @@ Coordinate with R08 for money semantics and R07 for rules; R03 owns server imple
 
 ## 10. Expected Evidence
 - Function inventory table: name, trigger, auth, inputs, writes, idempotency, caller.
-- Exact `npm test` output (111 pass / 0 fail on Node 22.22.3 in this environment).
+- Exact `npm test` output (172 pass / 0 fail, plus 5 handler tests under the Firestore emulator in CI).
 - Query/index analysis with the failing composite query named.
 - Deployment dry-run or written blockers (engine mismatch, missing predeploy, missing Blaze plan).
 - Webhook threat-model note with forged-request test results.
