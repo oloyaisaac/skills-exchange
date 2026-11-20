@@ -57,6 +57,11 @@ class DatabaseMigrationChainTest {
         file.parentFile?.mkdirs()
         val raw = SQLiteDatabase.openOrCreateDatabase(file, null)
         val sql = readResource("migration/v11_baseline.sql")
+            // The baseline is a documented file, so its `--` comments are stripped before the
+            // statements are split on the statement terminator.
+            .lines()
+            .filterNot { it.trimStart().startsWith("--") }
+            .joinToString("\n")
         sql.split(";").map { it.trim() }.filter { it.isNotEmpty() }.forEach { raw.execSQL(it) }
         raw.version = 11
         raw.execSQL(

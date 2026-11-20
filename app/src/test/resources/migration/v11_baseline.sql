@@ -8,8 +8,8 @@
 -- after the chain runs, Room validates the result against the v27 entity definitions, so any
 -- drift between this baseline and the code fails the build.
 --
--- Statements are separated by a semicolon at the end of a line; no statement contains a literal
--- semicolon.
+-- Statements are separated by a semicolon, and no statement contains a literal one inside a
+-- string.
 CREATE TABLE IF NOT EXISTS skill_endorsements (
                         id TEXT PRIMARY KEY NOT NULL,
                         providerId TEXT NOT NULL,
