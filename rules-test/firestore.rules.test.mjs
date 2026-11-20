@@ -90,6 +90,14 @@ test.beforeEach(async () => {
     await setDoc(doc(db, "notifications", "n1"), { userId: OWNER, body: "hello" });
     await setDoc(doc(db, "momo_transactions", "t1"), { userId: OWNER, amountUgx: 1000 });
     await setDoc(doc(db, "job_secrets", JOB), { pinHash: "hash", salt: "salt", attempts: 0 });
+    // R08: the money books.
+    await setDoc(doc(db, "wallets", WORKER), { uid: WORKER, balanceUgx: 25000 });
+    await setDoc(doc(db, "wallet_entries", "e1"), { uid: WORKER, kind: "EARNING", amountUgx: 25000, direction: "CREDIT" });
+    await setDoc(doc(db, "wallet_withdrawals", "w1"), { uid: WORKER, amountUgx: 10000, status: "PROCESSING" });
+    await setDoc(doc(db, "payouts", "PAYOUT-1"), { payoutId: "PAYOUT-1", jobId: JOB, workerId: WORKER, amount: 50000 });
+    await setDoc(doc(db, "materialAdvances", JOB), { jobId: JOB, requestedBy: OWNER, workerId: WORKER, advanceAmount: 20000, status: "PENDING" });
+    await setDoc(doc(db, "platform_fees", "FEE-1"), { jobId: JOB, platformFeeUgx: 5000 });
+    await setDoc(doc(db, "reconciliation_reports", "r1"), { checked: 1 });
     await setDoc(doc(db, "jobs", JOB, "messages", "m1"), { senderId: OWNER, senderName: "Owner", body: "hi" });
   });
 });
@@ -247,4 +255,41 @@ test("a chat message cannot be posted as another account", async () => {
   await assertFails(
     setDoc(doc(db, "jobs", JOB, "messages", "forged"), { senderId: OWNER, senderName: "Owner", body: "x" })
   );
+});
+
+// ---------------------------------------------------------------- R08 money books
+
+test("the wallet balance and its ledger are never readable from a client, not even by the owner", async () => {
+  for (const actor of [anon(), as(WORKER, freshAuth()), as(OWNER, freshAuth())]) {
+    await assertFails(getDoc(doc(actor, "wallets", WORKER)));
+    await assertFails(getDoc(doc(actor, "wallet_entries", "e1")));
+    await assertFails(getDoc(doc(actor, "wallet_withdrawals", "w1")));
+  }
+  // An administrator may read the books for support, and nobody may write them.
+  await assertSucceeds(getDoc(doc(as(ADMIN, adminAuth()), "wallets", WORKER)));
+  for (const actor of [as(WORKER, freshAuth()), as(ADMIN, adminAuth())]) {
+    await assertFails(setDoc(doc(actor, "wallets", WORKER), { balanceUgx: 999999 }));
+    await assertFails(setDoc(doc(actor, "wallet_entries", "forged"), { uid: WORKER, amountUgx: 999999, direction: "CREDIT" }));
+    await assertFails(setDoc(doc(actor, "wallet_withdrawals", "forged"), { uid: WORKER, amountUgx: 1 }));
+    await assertFails(updateDoc(doc(actor, "wallets", WORKER), { balanceUgx: 999999 }));
+  }
+});
+
+test("payout, fee and reconciliation records are admin-readable and never client-written", async () => {
+  for (const path of [["payouts", "PAYOUT-1"], ["platform_fees", "FEE-1"], ["reconciliation_reports", "r1"]]) {
+    await assertFails(getDoc(doc(as(WORKER, freshAuth()), path[0], path[1])));
+    await assertFails(getDoc(doc(as(OWNER, freshAuth()), path[0], path[1])));
+    await assertSucceeds(getDoc(doc(as(ADMIN, adminAuth()), path[0], path[1])));
+    await assertFails(setDoc(doc(as(ADMIN, adminAuth()), path[0], "forged"), { forged: true }));
+  }
+});
+
+test("a material advance is visible to the resident and the worker, and writable by neither", async () => {
+  await assertSucceeds(getDoc(doc(as(OWNER, freshAuth()), "materialAdvances", JOB)));
+  await assertSucceeds(getDoc(doc(as(WORKER, freshAuth()), "materialAdvances", JOB)));
+  await assertFails(getDoc(doc(as(STRANGER, freshAuth()), "materialAdvances", JOB)));
+
+  const owner = as(OWNER, freshAuth());
+  await assertFails(setDoc(doc(owner, "materialAdvances", "forged"), { jobId: "forged", advanceAmount: 1 }));
+  await assertFails(updateDoc(doc(owner, "materialAdvances", JOB), { advanceAmount: 999999 }));
 });

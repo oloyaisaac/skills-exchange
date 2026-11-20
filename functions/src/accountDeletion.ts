@@ -19,7 +19,15 @@ export const SINGLE_DOC_COLLECTIONS = [
   "guarantor_submissions",
 ] as const;
 
-/** Collections deleted by a `where(field == uid)` query. */
+/**
+ * Collections deleted by a `where(field == uid)` query.
+ *
+ * R08: the wallet books (`wallets`, `wallet_entries`, `wallet_withdrawals`) and the money records
+ * (`payouts`, `platform_fees`, `refunds`, `reconciliation_reports`) are deliberately NOT purged here.
+ * They are financial records with a retention obligation, and deleting them would also destroy the
+ * evidence of a balance the owner may still be owed. Resolving that tension (retain the books, erase
+ * the personal identifiers) is R09's retention work, not a silent delete.
+ */
 export const QUERY_DELETIONS = [
   { collection: "guarantors", field: "workerKycId" },
   { collection: "notifications", field: "userId" },

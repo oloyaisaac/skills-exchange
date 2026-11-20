@@ -240,6 +240,55 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // R08-P2-02 / R08-P2-05 / R08-P2-06: the money books are server-owned.
+    //
+    // `payouts` is the provider ledger, `materialAdvances` tracks the materials draw, and
+    // `wallet_entries` / `wallets` / `wallet_withdrawals` are the worker wallet and its cashouts.
+    // `platform_fees` records how each collection was split and `reconciliation_reports` holds the
+    // provider-vs-platform sweeps. All of it is written only through the Admin SDK (which bypasses
+    // these rules), so no client — owner or admin — may write them, and nothing is world-readable.
+    // A worker sees their balance and statement through the `getWallet` callable, not by reading the
+    // ledger, so a modified APK cannot fabricate a balance.
+    match /payouts/{payoutId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /materialAdvances/{jobId} {
+      // The resident who asked and the assigned worker may see the advance's existence and status;
+      // the amounts are server-written.
+      allow read: if isAuthenticated() &&
+        (resource.data.requestedBy == request.auth.uid ||
+          resource.data.workerId == request.auth.uid ||
+          isAdmin());
+      allow write: if false;
+    }
+
+    match /wallet_entries/{entryId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /wallets/{uid} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /wallet_withdrawals/{withdrawalId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /platform_fees/{feeId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /reconciliation_reports/{reportId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // --- MODULE 2: USER PROFILES & KYC VERIFICATION LAYER ---
     match /users/{userId} {
       // C2-1: a `users/{uid}` document carries a phone number (and optionally a backup

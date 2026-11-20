@@ -13,6 +13,12 @@ export interface ReleaseJobView {
   assignedProviderId?: unknown;
   escrowAmount?: unknown;
   budget?: unknown;
+  /**
+   * R08: escrow releases pay the *labour* component to the worker. The materials bucket funds the
+   * material advance and the platform fee stays with the platform, so the labour total wins over the
+   * legacy `escrowAmount`/`budget` fallbacks.
+   */
+  laborTotal?: unknown;
   releasePayoutRef?: unknown;
 }
 
@@ -63,7 +69,7 @@ export function decideEscrowRelease(
       message: "Worker ID does not match assigned worker for this job.",
     };
   }
-  const amount = Number(job.escrowAmount ?? job.budget ?? 0);
+  const amount = Number(job.laborTotal ?? job.escrowAmount ?? job.budget ?? 0);
   if (!Number.isFinite(amount) || amount <= 0) {
     return { kind: "REJECT", code: "failed-precondition", message: "Job has no payable amount." };
   }

@@ -65,8 +65,8 @@ import type {
 import {
   loadPayoutConfig,
   decidePayoutStatus,
-  buildPayoutRequestPayload,
   initiatePayout,
+  initiateWithdrawalPayout,
   payoutMessageFor,
   PAYOUT_CURRENCY,
   TERMINAL_PAYOUT_STATUSES,
@@ -105,7 +105,26 @@ import { planSosDispatch, selectSosRecipients, buildSosMessage } from "./sosDisp
 import { hasAdminClaim } from "./admin";
 import { isFreshAuth, buildRevocationRecord } from "./session";
 import { decideEscrowRelease } from "./escrowRelease";
+import {
+  earningEntry,
+  cashoutEntry,
+  reversalEntry,
+  cashoutKey,
+  decideCashout,
+  decideCashoutDestination,
+  maskMsisdn,
+  summariseWallet,
+  CASHOUT_MIN_UGX,
+  CASHOUT_DAILY_LIMIT_UGX,
+  CASHOUT_MAX_PER_DAY,
+} from "./wallet";
+import type { WalletEntry } from "./wallet";
+import { decideMaterialAdvance } from "./materialAdvance";
+import { validateStoredQuote } from "./pricing";
+import { buildFeeLedger, validateFeeLedger, feeLedgerId } from "./feeLedger";
+import { buildReconciliationReport, reportLine } from "./reconciliation";
 import { decideRefund, buildRefundPayload } from "./refund";
+import { decideRefundStatus, applyRefundToEscrow } from "./refundStatus";
 import { APP_CHECK, withAppCheck } from "./appCheck";
 import {
   isValidPin,
@@ -602,16 +621,202 @@ export const getMoMoCollectionStatus = functions.runWith(APP_CHECK).https.onCall
 
 
 
+
+// =====================================================================================
+// R08-P2-02: the server-side wallet.
+//
+// `wallet_entries/{entryId}` is the immutable ledger (entry ids are derived, so a retry can never
+// double-credit) and `wallets/{uid}` is the transactional summary a cashout is validated against.
+// Both collections are deny-all in firestore.rules: only this backend writes them, and the client
+// reads its balance through `getWallet`.
+// =====================================================================================
+
+const WALLET_ENTRIES = "wallet_entries";
+const WALLETS = "wallets";
+const WITHDRAWALS = "wallet_withdrawals";
+
+interface WalletDoc {
+  uid?: string;
+  balanceUgx?: number;
+  lifetimeEarnedUgx?: number;
+  lifetimeWithdrawnUgx?: number;
+  dayKey?: string;
+  dayCount?: number;
+  dayTotalUgx?: number;
+  updatedAt?: number;
+}
+
+/** UTC day bucket for the cashout velocity limit. */
+function walletDayKey(now: number): string {
+  return new Date(now).toISOString().slice(0, 10);
+}
+
+class WalletRejection extends Error {
+  constructor(readonly code: string, message: string) {
+    super(message);
+  }
+}
+
+/**
+ * Apply one ledger entry and its effect on the summary, atomically and idempotently.
+ *
+ * Repeated entries (same derived id) are a no-op, and a debit that would overdraw the wallet is
+ * refused unless the caller explicitly allows a negative balance (reconciliation adjustments).
+ */
+async function applyWalletEntry(
+  entry: WalletEntry,
+  options: { allowNegative?: boolean } = {}
+): Promise<{ applied: boolean; balanceUgx: number }> {
+  const walletRef = db.collection(WALLETS).doc(entry.uid);
+  const entryRef = db.collection(WALLET_ENTRIES).doc(entry.id);
+  return db.runTransaction(async (tx) => {
+    const [entrySnap, walletSnap] = await Promise.all([tx.get(entryRef), tx.get(walletRef)]);
+    const wallet = (walletSnap.data() || {}) as WalletDoc;
+    const balance = Number(wallet.balanceUgx || 0);
+    if (entrySnap.exists) {
+      return { applied: false, balanceUgx: balance };
+    }
+    if (entry.amountUgx <= 0) {
+      throw new WalletRejection("invalid-amount", "A wallet entry must be a positive amount.");
+    }
+    // Statement-only entries (money paid straight to the worker's Mobile Money) never touch the
+    // withdrawable balance.
+    const delta = entry.withdrawable === false ? 0 : entry.direction === "CREDIT" ? entry.amountUgx : -entry.amountUgx;
+    const nextBalance = balance + delta;
+    if (nextBalance < 0 && !options.allowNegative) {
+      throw new WalletRejection("insufficient-funds", "The wallet balance cannot go below zero.");
+    }
+    tx.set(entryRef, {
+      uid: entry.uid,
+      jobId: entry.jobId ?? null,
+      kind: entry.kind,
+      amountUgx: entry.amountUgx,
+      direction: entry.direction,
+      payoutId: entry.payoutId ?? null,
+      withdrawalId: entry.withdrawalId ?? null,
+      description: entry.description ?? null,
+      createdAt: entry.createdAt,
+      withdrawable: entry.withdrawable !== false,
+    });
+    tx.set(
+      walletRef,
+      {
+        uid: entry.uid,
+        balanceUgx: nextBalance,
+        lifetimeEarnedUgx: Number(wallet.lifetimeEarnedUgx || 0) + (entry.kind === "EARNING" ? entry.amountUgx : 0),
+        lifetimeWithdrawnUgx: Number(wallet.lifetimeWithdrawnUgx || 0) + (entry.kind === "RESERVE" ? entry.amountUgx : 0),
+        updatedAt: entry.createdAt,
+      },
+      { merge: true }
+    );
+    return { applied: true, balanceUgx: nextBalance };
+  });
+}
+
+/** The credit that settles a provider-confirmed payout, exactly once per payout. */
+async function creditPayoutEarning(payout: PayoutRecord): Promise<void> {
+  if (!payout.workerId || !payout.payoutId) return;
+  if (!Number.isInteger(payout.amount) || payout.amount <= 0) return;
+  // A wallet cashout is not an earning (it already debited the wallet) and a material advance is
+  // spent on materials; only an escrow release is recorded as income.
+  const kind = payout.payoutKind || (payout.withdrawalId ? "CASHOUT" : "RELEASE");
+  if (kind !== "RELEASE") return;
+  await applyWalletEntry(
+    earningEntry({
+      uid: payout.workerId,
+      jobId: payout.jobId,
+      payoutId: payout.payoutId,
+      amountUgx: payout.amount,
+      now: Date.now(),
+      // The provider paid the worker directly, so this is a statement, not a spendable balance.
+      withdrawable: false,
+    })
+  );
+}
+
+/**
+ * R08-P2-05: record how the collected total was split, once per job.
+ *
+ * The worker is paid the labour component from escrow; the materials bucket funds the material
+ * advance; the platform fee is revenue and never leaves the platform account. The entry is written
+ * with `create` so a retried release cannot book the same fee twice.
+ */
+async function recordPlatformFee(jobId: string, jobData: Record<string, unknown>, payoutId: string): Promise<void> {
+  const quote = validateStoredQuote(jobData as { laborTotal?: unknown });
+  if (!quote.ok) {
+    console.warn(`platform fee not recorded for ${jobId}: ${quote.message}`);
+    return;
+  }
+  let collectionTransactionId: string | null = null;
+  try {
+    const txSnap = await db
+      .collection("momo_transactions")
+      .where("jobId", "==", jobId)
+      .where("status", "==", "SUCCESS")
+      .limit(1)
+      .get();
+    collectionTransactionId = txSnap.empty ? null : String(txSnap.docs[0].get("transactionRef") || txSnap.docs[0].id);
+  } catch {
+    collectionTransactionId = null;
+  }
+  const entry = buildFeeLedger({
+    jobId,
+    quote: quote.quote,
+    collectionTransactionId,
+    payoutId,
+    now: Date.now(),
+  });
+  const check = validateFeeLedger(entry);
+  if (!check.ok) {
+    console.warn(`platform fee not recorded for ${jobId}: ${check.message}`);
+    return;
+  }
+  try {
+    await db.collection("platform_fees").doc(feeLedgerId(jobId)).create({
+      ...entry,
+      recordedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch (error) {
+    const code = (error as { code?: number | string }).code;
+    if (code !== 6 && code !== "already-exists") {
+      console.warn(`platform fee write failed for ${jobId}: ${(error as Error).message}`);
+    }
+  }
+}
+
+/** Map a payout failure onto an HttpsError without leaking provider internals. */
+function payoutFailureToHttpsError(error: { code: string; message: string }): functions.https.HttpsError {
+  const codeMap: Record<string, string> = {
+    unauthenticated: "unauthenticated",
+    invalid_argument: "invalid-argument",
+    job_not_found: "not-found",
+    not_job_owner: "permission-denied",
+    invalid_job_state: "failed-precondition",
+    job_not_escrowed: "failed-precondition",
+    amount_mismatch: "failed-precondition",
+    worker_mismatch: "failed-precondition",
+    config_error: "failed-precondition",
+    duplicate_request: "already-exists",
+    already_queued: "already-exists",
+    already_pending: "failed-precondition",
+    provider_error: "unavailable",
+    provider_timeout: "deadline-exceeded",
+  };
+  return new functions.https.HttpsError((codeMap[error.code] || "internal") as any, error.message);
+}
+
 /**
  * PAY-003: Escrow Release & Worker MoMo Payout
  * Callable function triggered when resident approves job completion.
  * Credits worker's Mobile Money wallet and updates job status.
  * SEC-004: Fixed to verify job ownership before releasing escrow.
- */
-/**
+ *
  * R03-P2-03: the ONE server-side escrow release. Every caller (the callable below and the
  * deprecated `createMoMoPayout` alias) goes through this function, so the amount and the wallet
  * are always derived from server records and a second payout implementation cannot drift.
+ *
+ * R08-P2-01: the release DISBURSES. The provider is asked before the job is marked released, so a
+ * provider failure leaves the escrow funded instead of reporting a payment that never happened.
  */
 async function performEscrowRelease(
   jobId: string,
@@ -665,31 +870,63 @@ async function performEscrowRelease(
   }
   const amountUgx = decision.amount;
 
-  // Deterministic id: a retried call cannot create a second payout document.
+  // R08-P2-01: the release now actually disburses. Before this change the worker was marked
+  // RELEASED_TO_WORKER and a `momo_payouts` document was written with status QUEUED — and nothing
+  // ever read it, so the resident saw "paid" while no money left the platform account.
+  //
+  // Order matters: the provider is asked first, and the job is only marked released once the
+  // provider has accepted the request (PAYOUT_PENDING). A provider failure leaves the escrow
+  // funded, so the release can be retried instead of being reported as done.
   const payoutRef = `PAYOUT-${jobId}`;
-  const payoutPayload = {
-    payoutId: payoutRef,
-    jobId,
-    workerId,
-    workerMomoNumber,
-    amount: amountUgx,
-    currency: "UGX",
-    provider: provider || "MTN_MOMO",
-    status: "QUEUED",
-    releasedBy: callerUid,
-    createdAt: admin.firestore.FieldValue.serverTimestamp()
-  };
+  const payoutResult = await initiatePayout(
+    {
+      jobId,
+      clientUid: callerUid,
+      amountUgx,
+      workerMomoNumber,
+      // R08-P2-03: the payee was resolved from `users/{workerId}`, not from the client, and the
+      // amount is the server-derived labour total.
+      payeeResolvedServerSide: true,
+      payeeWorkerId: workerId,
+      expectedAmountUgx: amountUgx,
+      payoutId: payoutRef,
+      provider: provider || "MTN_MOMO",
+      env: process.env as Record<string, string | undefined>,
+    },
+    buildPayoutDeps()
+  );
 
-  await db.collection("momo_payouts").doc(payoutRef).set(payoutPayload);
+  if (!payoutResult.ok) {
+    throw payoutFailureToHttpsError(payoutResult.error);
+  }
 
   await db.collection("jobs").doc(jobId).update({
     status: "COMPLETED",
     escrowStatus: "RELEASED_TO_WORKER",
     releasedBy: callerUid,
     releasedAt: admin.firestore.FieldValue.serverTimestamp(),
-    releasePayoutRef: payoutRef,
+    releasePayoutRef: payoutResult.payoutId,
+    releaseProviderReferenceId: payoutResult.providerReferenceId,
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   });
+
+  // R08-P2-05: the fee split is booked as its own immutable record.
+  await recordPlatformFee(jobId, jobData as Record<string, unknown>, payoutResult.payoutId);
+
+  // Legacy mirror kept for the existing dashboards; it now carries the real provider state.
+  await db.collection("momo_payouts").doc(payoutRef).set({
+    payoutId: payoutResult.payoutId,
+    jobId,
+    workerId,
+    workerMomoNumber,
+    amount: amountUgx,
+    currency: "UGX",
+    provider: provider || "MTN_MOMO",
+    status: payoutResult.status,
+    providerReferenceId: payoutResult.providerReferenceId,
+    releasedBy: callerUid,
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
 
   await db.collection("notifications").add({
     userId: workerId,
@@ -708,8 +945,8 @@ async function performEscrowRelease(
 
   return {
     success: true,
-    payoutRef,
-    message: `Escrow released. UGX ${amountUgx} payout queued to ${workerMomoNumber}.`
+    payoutRef: payoutResult.payoutId,
+    message: `Escrow released. UGX ${amountUgx} payout pending with ${provider || "MTN_MOMO"} for ${maskMsisdn(workerMomoNumber)}.`
   };
 }
 
@@ -729,6 +966,475 @@ export const releaseEscrowToWorker = functions.runWith(APP_CHECK).https.onCall(a
     );
   }
   return performEscrowRelease(jobId, workerId, context.auth.uid, provider);
+});
+
+// =====================================================================================
+// R08-P2-02: the wallet callables.
+//
+// The client used to keep the balance and the withdrawals in Room, so reinstalling the app erased
+// the payable balance and two devices disagreed. The balance now lives in `wallets/{uid}` (derived
+// from the immutable `wallet_entries` ledger), and every cashout is a server decision: the amount is
+// checked against the server balance, the destination comes from the verified profile, and the
+// provider payout goes through the same disbursement core as the escrow release.
+// =====================================================================================
+
+/** Sandbox allow-list of payout destinations (`MOMO_ALLOWED_NUMBERS`, comma separated). */
+function sandboxPayoutAllowList(): string[] {
+  const env = process.env as Record<string, string | undefined>;
+  const raw = (env.MOMO_ALLOWED_NUMBERS || "").trim();
+  if (!raw) return [];
+  return raw.split(",").map((entry) => entry.trim()).filter((entry) => entry.length > 0);
+}
+
+/**
+ * Release the reservation a failed cashout made.
+ *
+ * The reservation debit is compensated by a REVERSAL credit (keyed by the request id, so a retried
+ * reversal cannot credit twice) and the daily counter is restored, because a payout that never left
+ * the platform must not consume the worker's daily allowance.
+ */
+async function releaseWithdrawalReservation(payout: PayoutRecord): Promise<void> {
+  const withdrawalId = payout.withdrawalId || payout.payoutId;
+  if (!withdrawalId) return;
+  const withdrawalRef = db.collection(WITHDRAWALS).doc(withdrawalId);
+  const now = Date.now();
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(withdrawalRef);
+    if (!snap.exists) return;
+    const data = snap.data() as Record<string, unknown>;
+    const status = String(data.status || "");
+    // A cashout is PROCESSING while the provider call is in flight and PAYOUT_PENDING once it has a
+    // provider reference; both are reversible, because neither is proof that money moved.
+    if (status !== "PROCESSING" && status !== "PAYOUT_PENDING") return;
+    const uid = String(data.uid || "");
+    const amountUgx = Number(data.amountUgx || 0);
+    if (!uid || !Number.isInteger(amountUgx) || amountUgx <= 0) return;
+    const requestId = String(data.requestId || withdrawalId);
+    const walletRef = db.collection(WALLETS).doc(uid);
+    const walletSnap = await tx.get(walletRef);
+    const wallet = (walletSnap.data() || {}) as WalletDoc;
+    const reversal = reversalEntry({
+      uid,
+      withdrawalId,
+      amountUgx,
+      requestId,
+      now,
+      reason: "provider payout failed",
+    });
+    const entryRef = db.collection(WALLET_ENTRIES).doc(reversal.id);
+    const entrySnap = await tx.get(entryRef);
+    if (entrySnap.exists) return;
+    tx.set(entryRef, {
+      uid: reversal.uid,
+      jobId: null,
+      kind: reversal.kind,
+      amountUgx: reversal.amountUgx,
+      direction: reversal.direction,
+      payoutId: null,
+      withdrawalId,
+      description: reversal.description ?? null,
+      createdAt: reversal.createdAt,
+      withdrawable: true,
+    });
+    const sameDay = wallet.dayKey === walletDayKey(now);
+    const dayCount = Math.max(0, Number(wallet.dayCount || 0) - (sameDay ? 1 : 0));
+    const dayTotalUgx = Math.max(0, Number(wallet.dayTotalUgx || 0) - (sameDay ? amountUgx : 0));
+    tx.set(
+      walletRef,
+      {
+        uid,
+        balanceUgx: Number(wallet.balanceUgx || 0) + amountUgx,
+        lifetimeWithdrawnUgx: Math.max(0, Number(wallet.lifetimeWithdrawnUgx || 0) - amountUgx),
+        dayKey: sameDay ? wallet.dayKey : walletDayKey(now),
+        dayCount,
+        dayTotalUgx,
+        updatedAt: now,
+      },
+      { merge: true }
+    );
+    tx.set(withdrawalRef, {
+      status: "FAILED",
+      failureReason: payout.reason || "provider payout failed",
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+  });
+}
+
+/** The worker's wallet: server balance, limits and the most recent statement lines. */
+export const getWallet = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Authentication required to open the wallet.");
+  }
+  const uid = context.auth.uid;
+  const walletSnap = await db.collection(WALLETS).doc(uid).get();
+  const entriesSnap = await db
+    .collection(WALLET_ENTRIES)
+    .where("uid", "==", uid)
+    .orderBy("createdAt", "desc")
+    .limit(50)
+    .get();
+  const entries: WalletEntry[] = entriesSnap.docs.map((doc) => {
+    const entry = doc.data() as Record<string, unknown>;
+    return {
+      id: doc.id,
+      uid: String(entry.uid || uid),
+      jobId: (entry.jobId as string | null) ?? null,
+      kind: String(entry.kind || "ADJUSTMENT") as WalletEntry["kind"],
+      amountUgx: Number(entry.amountUgx || 0),
+      direction: String(entry.direction || "CREDIT") === "DEBIT" ? "DEBIT" : "CREDIT",
+      payoutId: (entry.payoutId as string | null) ?? null,
+      withdrawalId: (entry.withdrawalId as string | null) ?? null,
+      description: (entry.description as string | null) ?? null,
+      createdAt: Number(entry.createdAt || 0),
+      withdrawable: entry.withdrawable !== false,
+    };
+  });
+  const summary = summariseWallet(entries);
+  const balanceUgx = Number((walletSnap.data() as WalletDoc | undefined)?.balanceUgx ?? summary.availableUgx);
+
+  const userSnap = await db.collection("users").doc(uid).get();
+  const storedMsisdn = String(userSnap.get("momoNumber") || userSnap.get("phone") || "").trim();
+
+  return {
+    balanceUgx,
+    availableUgx: Math.max(0, balanceUgx),
+    lifetimeEarnedUgx: Number((walletSnap.data() as WalletDoc | undefined)?.lifetimeEarnedUgx ?? summary.creditsUgx),
+    lifetimeWithdrawnUgx: Number((walletSnap.data() as WalletDoc | undefined)?.lifetimeWithdrawnUgx ?? 0),
+    payoutNumberMasked: maskMsisdn(storedMsisdn),
+    cashoutMinUgx: CASHOUT_MIN_UGX,
+    cashoutDailyLimitUgx: CASHOUT_DAILY_LIMIT_UGX,
+    cashoutMaxPerDay: CASHOUT_MAX_PER_DAY,
+    entries: entries.map((entry) => ({
+      id: entry.id,
+      kind: entry.kind,
+      amountUgx: entry.amountUgx,
+      direction: entry.direction,
+      description: entry.description,
+      createdAt: entry.createdAt,
+      withdrawable: entry.withdrawable !== false,
+    })),
+  };
+});
+
+/**
+ * R08-P2-02: request a wallet cashout.
+ *
+ * `requestId` is the client's idempotency key: a retried request resolves to the same withdrawal
+ * document and never reserves the amount twice.
+ */
+export const requestWalletCashout = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Authentication required to withdraw.");
+  }
+  const uid = context.auth.uid;
+  const { amountUgx, requestId } = data || {};
+  if (typeof requestId !== "string" || requestId.trim().length < 8) {
+    throw new functions.https.HttpsError("invalid-argument", "requestId is required so a retry cannot pay twice.");
+  }
+
+  // The destination is never taken from the request: it comes from the verified profile and must
+  // pass the cool-off and allow-list rules.
+  const userSnap = await db.collection("users").doc(uid).get();
+  const changedAtRaw = userSnap.get("momoNumberUpdatedAt");
+  const changedAt = typeof changedAtRaw === "number"
+    ? changedAtRaw
+    : changedAtRaw && typeof changedAtRaw.toMillis === "function"
+      ? changedAtRaw.toMillis()
+      : null;
+  const destination = decideCashoutDestination({
+    storedMsisdn: userSnap.get("momoNumber") || userSnap.get("phone"),
+    verified: userSnap.get("phoneVerified") === true || userSnap.get("momoNumberVerified") === true,
+    lastChangedAt: changedAt,
+    now: Date.now(),
+    allowList: sandboxPayoutAllowList(),
+  });
+  if (!destination.ok) {
+    throw new functions.https.HttpsError("failed-precondition", destination.message);
+  }
+
+  const withdrawalId = cashoutKey(uid, requestId.trim());
+  const withdrawalRef = db.collection(WITHDRAWALS).doc(withdrawalId);
+  const walletRef = db.collection(WALLETS).doc(uid);
+  const now = Date.now();
+  const dayKey = walletDayKey(now);
+
+  let reservedBalance = 0;
+  try {
+    reservedBalance = await db.runTransaction(async (tx) => {
+      const [walletSnap, withdrawalSnap] = await Promise.all([tx.get(walletRef), tx.get(withdrawalRef)]);
+      const wallet = (walletSnap.data() || {}) as WalletDoc;
+      const sameDay = wallet.dayKey === dayKey;
+      const decision = decideCashout(
+        amountUgx,
+        {
+          availableUgx: Number(wallet.balanceUgx || 0),
+          todayCount: sameDay ? Number(wallet.dayCount || 0) : 0,
+          todayTotalUgx: sameDay ? Number(wallet.dayTotalUgx || 0) : 0,
+          duplicateKey: withdrawalSnap.exists,
+        },
+        withdrawalId
+      );
+      if (!decision.ok) {
+        throw new WalletRejection(decision.code, decision.message);
+      }
+      const amount = decision.amountUgx;
+      const nextBalance = Number(wallet.balanceUgx || 0) - amount;
+      const entry = cashoutEntry({ uid, withdrawalId, amountUgx: amount, requestId: requestId.trim(), now });
+      const entryRef = db.collection(WALLET_ENTRIES).doc(entry.id);
+      tx.set(withdrawalRef, {
+        uid,
+        requestId: requestId.trim(),
+        amountUgx: amount,
+        currency: "UGX",
+        msisdnMasked: maskMsisdn(destination.msisdn),
+        msisdn: destination.msisdn,
+        status: "PROCESSING",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      tx.set(entryRef, {
+        uid,
+        jobId: null,
+        kind: entry.kind,
+        amountUgx: entry.amountUgx,
+        direction: entry.direction,
+        payoutId: null,
+        withdrawalId,
+        description: entry.description ?? null,
+        createdAt: entry.createdAt,
+        withdrawable: true,
+      });
+      tx.set(
+        walletRef,
+        {
+          uid,
+          balanceUgx: nextBalance,
+          dayKey,
+          dayCount: (sameDay ? Number(wallet.dayCount || 0) : 0) + 1,
+          dayTotalUgx: (sameDay ? Number(wallet.dayTotalUgx || 0) : 0) + amount,
+          lifetimeWithdrawnUgx: Number(wallet.lifetimeWithdrawnUgx || 0) + amount,
+          updatedAt: now,
+        },
+        { merge: true }
+      );
+      return nextBalance;
+    });
+  } catch (error) {
+    if (error instanceof WalletRejection) {
+      const code =
+        error.code === "duplicate_request" ? "already-exists"
+          : error.code === "exceeds_available" ? "failed-precondition"
+            : error.code === "invalid_amount" ? "invalid-argument"
+              : "failed-precondition";
+      throw new functions.https.HttpsError(code as any, error.message);
+    }
+    throw error;
+  }
+
+  // The reservation is durable before the provider is called, so a crash here leaves a FAILED
+  // withdrawal that the reversal below (or the reconciliation sweep) compensates — never free money.
+  const payoutResult = await initiateWithdrawalPayout(
+    {
+      withdrawalId,
+      uid,
+      amountUgx: Number(amountUgx),
+      msisdn: destination.msisdn,
+      provider: "MTN_MOMO",
+      env: process.env as Record<string, string | undefined>,
+    },
+    buildPayoutDeps()
+  );
+
+  if (!payoutResult.ok) {
+    await releaseWithdrawalReservation({
+      payoutId: withdrawalId,
+      withdrawalId,
+      jobId: withdrawalId,
+      workerId: uid,
+      workerMomoNumber: destination.msisdn,
+      amount: Number(amountUgx),
+      currency: "UGX",
+      provider: "MTN_MOMO",
+      status: "PAYOUT_FAILED",
+      clientUid: uid,
+      releasedBy: uid,
+      transactionId: withdrawalId,
+      providerReferenceId: "",
+      reason: payoutResult.error.message,
+      payoutKind: "CASHOUT",
+    });
+    throw payoutFailureToHttpsError(payoutResult.error);
+  }
+
+  await withdrawalRef.set(
+    { status: "PAYOUT_PENDING", payoutRef: payoutResult.payoutId, updatedAt: admin.firestore.FieldValue.serverTimestamp() },
+    { merge: true }
+  );
+
+  await db.collection("notifications").add({
+    userId: uid,
+    type: "WITHDRAWAL_PENDING",
+    jobId: null,
+    message: `Your withdrawal of UGX ${amountUgx} is on its way to ${maskMsisdn(destination.msisdn)}.`,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    read: false,
+  });
+
+  return {
+    success: true,
+    withdrawalId,
+    payoutRef: payoutResult.payoutId,
+    status: "PAYOUT_PENDING",
+    amountUgx: Number(amountUgx),
+    balanceUgx: reservedBalance,
+    message: `UGX ${amountUgx} is on its way to ${maskMsisdn(destination.msisdn)}.`,
+  };
+});
+
+/**
+ * Cancel a cashout that has not reached the provider yet.
+ *
+ * Once the provider holds a payout reference, cancelling here would be a lie: the money may already
+ * be moving, so the request is refused and the payout must be reconciled instead.
+ */
+export const cancelWalletCashout = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Authentication required to cancel a withdrawal.");
+  }
+  const { requestId, withdrawalId } = data || {};
+  const ref = typeof withdrawalId === "string" && withdrawalId
+    ? withdrawalId
+    : typeof requestId === "string" && requestId
+      ? cashoutKey(context.auth.uid, requestId.trim())
+      : "";
+  if (!ref) {
+    throw new functions.https.HttpsError("invalid-argument", "requestId or withdrawalId is required.");
+  }
+  const snap = await db.collection(WITHDRAWALS).doc(ref).get();
+  if (!snap.exists) throw new functions.https.HttpsError("not-found", "Withdrawal not found.");
+  if (String(snap.get("uid") || "") !== context.auth.uid) {
+    throw new functions.https.HttpsError("permission-denied", "You may only cancel your own withdrawal.");
+  }
+  const status = String(snap.get("status") || "");
+  if (status !== "PROCESSING") {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      status === "CANCELLED"
+        ? "This withdrawal is already cancelled."
+        : "This withdrawal can no longer be cancelled; it is already with the payment provider."
+    );
+  }
+  if (snap.get("payoutRef")) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "This withdrawal is already with the payment provider and must be reconciled instead."
+    );
+  }
+  await releaseWithdrawalReservation({
+    payoutId: ref,
+    withdrawalId: ref,
+    jobId: ref,
+    workerId: context.auth.uid,
+    workerMomoNumber: "",
+    amount: Number(snap.get("amountUgx") || 0),
+    currency: "UGX",
+    provider: "MTN_MOMO",
+    status: "PAYOUT_FAILED",
+    clientUid: context.auth.uid,
+    releasedBy: context.auth.uid,
+    transactionId: ref,
+    providerReferenceId: "",
+    reason: "cancelled by the worker",
+    payoutKind: "CASHOUT",
+  });
+  await db.collection(WITHDRAWALS).doc(ref).set({ status: "CANCELLED" }, { merge: true });
+  return { success: true, withdrawalId: ref, status: "CANCELLED" };
+});
+
+/**
+ * R08-P2-06: the reconciliation sweep.
+ *
+ * Nothing compared the provider's view with the platform's records. Every hour this reads the
+ * payouts still open, asks the provider, applies the same transitions the status callable uses, and
+ * writes an immutable report so an operator can see what was settled, what was flagged and what
+ * could not be read.
+ */
+export const reconcilePayments = functions.pubsub.schedule("every 60 minutes").onRun(async () => {
+  const payoutsSnap = await db
+    .collection("payouts")
+    .where("status", "in", ["PAYOUT_PENDING"])
+    .orderBy("createdAt", "asc")
+    .limit(100)
+    .get();
+
+  const payouts: PayoutRecord[] = payoutsSnap.docs.map((doc) =>
+    toPayoutRecord({ ...(doc.data() as Record<string, unknown>), payoutId: doc.id })
+  );
+
+  const config = loadPayoutConfig(process.env as Record<string, string | undefined>);
+  const providerViews = new Map<string, ProviderPayoutStatusResult>();
+  if (!("error" in config)) {
+    const deps = buildPayoutDeps();
+    const token = await deps.acquireToken(config);
+    if (token.ok) {
+      for (const payout of payouts) {
+        if (!payout.providerReferenceId) continue;
+        try {
+          providerViews.set(
+            payout.payoutId,
+            await deps.queryProviderPayoutStatus(config, token.token, payout.providerReferenceId)
+          );
+        } catch (error) {
+          console.warn(`reconciliation: provider query failed for ${payout.payoutId}: ${(error as Error).message}`);
+        }
+      }
+    }
+  }
+
+  const report = buildReconciliationReport({
+    now: Date.now(),
+    staleAfterMs: 5 * 60 * 1000,
+    payouts: payouts.map((payout) => ({
+      payoutId: payout.payoutId,
+      jobId: payout.jobId,
+      workerId: payout.workerId,
+      amount: payout.amount,
+      currency: payout.currency,
+      status: payout.status,
+      providerReferenceId: payout.providerReferenceId,
+      createdAt: payout.createdAt ?? null,
+      lastCheckedAt: payout.lastCheckedAt ?? null,
+    })),
+    providerFor: (view) =>
+      providerViews.get(view.payoutId) ?? { kind: "networkError" },
+  });
+
+  for (const item of report.items) {
+    const payout = payouts.find((entry) => entry.payoutId === item.payoutId);
+    if (!payout || item.action === "NOOP" || item.action === "UNREADABLE") continue;
+    const provider = providerViews.get(payout.payoutId);
+    if (!provider) continue;
+    const { newStatus, reason } = decidePayoutStatus({ stored: payout, provider });
+    if (newStatus === payout.status) continue;
+    const patch: Record<string, unknown> = { status: newStatus, reason, lastCheckedAt: Date.now() };
+    if (provider.kind === "ok" && provider.financialTransactionId) {
+      patch.providerFinancialTransactionId = provider.financialTransactionId;
+    }
+    await db.collection("payouts").doc(payout.payoutId).update(patch);
+    if (newStatus === "PAYOUT_SUCCESSFUL") {
+      await creditPayoutEarning({ ...payout, status: newStatus });
+    } else if (newStatus === "PAYOUT_FAILED" && payout.payoutKind === "CASHOUT") {
+      await releaseWithdrawalReservation({ ...payout, status: newStatus, reason }).catch((error) => {
+        console.error("reconciliation reversal failed", (error as Error).message);
+      });
+    }
+  }
+
+  await db.collection("reconciliation_reports").add({
+    ...report,
+    summary: reportLine(report),
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  console.log(reportLine(report));
 });
 
 // =====================================================================================
@@ -839,6 +1545,218 @@ export const refundEscrow = functions.runWith(APP_CHECK).https.onCall(async (dat
   }
   const { jobId, amount, reason } = data || {};
   return performEscrowRefund(jobId, Number(amount), String(reason || "Admin refund"), context.auth.uid);
+});
+
+// =====================================================================================
+// R08-P2-07: refunds are polled, and a partial refund changes the escrow.
+//
+// A refund used to be written as PENDING and never checked again, so a rejected refund looked
+// outstanding for ever; and a partial refund left the job's escrow untouched, so the worker could be
+// released the full amount after part of it had gone back to the resident.
+// =====================================================================================
+
+/** Provider-verified refund status, with the escrow adjustment applied on success. */
+async function refreshRefundStatus(refundRef: string): Promise<{ status: string; reason: string } | null> {
+  const refundSnap = await db.collection("refunds").doc(refundRef).get();
+  if (!refundSnap.exists) return null;
+  const refund = refundSnap.data() as Record<string, unknown>;
+  const stored = String(refund.status || "").toUpperCase();
+  if (stored === "SUCCESS" || stored === "FAILED") {
+    return { status: stored, reason: "already_terminal" };
+  }
+
+  const config = loadMomoConfig(process.env as Record<string, string | undefined>);
+  if ("error" in config) return { status: stored || "PENDING", reason: "config_error" };
+
+  let provider: ProviderStatusQueryResult;
+  const providerReferenceId = String(refund.providerReferenceId || "");
+  if (!providerReferenceId) {
+    provider = { kind: "provider_error", error: "missing provider reference" };
+  } else {
+    const basic = Buffer.from(`${config.apiUser}:${config.apiKey}`).toString("base64");
+    try {
+      const tokenResp = await axios.post(`${config.baseUrl}/collection/token/`, {}, {
+        headers: {
+          "Authorization": `Basic ${basic}`,
+          "Ocp-Apim-Subscription-Key": config.subscriptionKey,
+        },
+        timeout: 15000,
+        validateStatus: () => true,
+      });
+      provider = tokenResp.status !== 200 || !tokenResp.data?.access_token
+        ? { kind: "provider_error", error: "token exchange failed" }
+        : await queryMomoProviderStatus(config, String(tokenResp.data.access_token), providerReferenceId);
+    } catch (error) {
+      provider = { kind: "provider_error", error: (error as Error).message };
+    }
+  }
+
+  const action = decideRefundStatus(
+    {
+      refundRef,
+      jobId: refund.jobId as string | null,
+      amount: refund.amount as number | null,
+      currency: refund.currency as string | null,
+      status: refund.status as string | null,
+      providerReferenceId,
+    },
+    provider
+  );
+
+  if (action.kind === "NOOP") return { status: stored || "PENDING", reason: action.note };
+
+  await db.collection("refunds").doc(refundRef).update({
+    status: action.status,
+    statusReason: action.note,
+    lastCheckedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  if (action.kind === "SETTLE" && action.status === "SUCCESS") {
+    await applyRefundEffect(refundRef, refund);
+  }
+  return { status: action.status, reason: action.note };
+}
+
+/**
+ * Apply a provider-confirmed refund to the job's escrow.
+ *
+ * The escrow that remains is what the worker can still be paid; a full refund closes it (`REFUNDED`,
+ * which the rules and the payout validator already treat as unpayable).
+ */
+async function applyRefundEffect(refundRef: string, refund: Record<string, unknown>): Promise<void> {
+  const jobId = String(refund.jobId || "");
+  if (!jobId) return;
+  const refundedThisTime = Math.round(Number(refund.amount) || 0);
+
+  const previousSnap = await db.collection("refunds")
+    .where("jobId", "==", jobId)
+    .where("status", "==", "SUCCESS")
+    .limit(20)
+    .get();
+  const previouslyRefunded = previousSnap.docs
+    .filter((doc) => doc.id !== refundRef)
+    .reduce((total, doc) => total + (Math.round(Number(doc.get("amount")) || 0)), 0);
+
+  const jobRef = db.collection("jobs").doc(jobId);
+  const jobSnap = await jobRef.get();
+  if (!jobSnap.exists) return;
+  const job = jobSnap.data() || {};
+
+  let funded = Math.round(Number(job.grandTotal ?? job.laborTotal ?? job.budget ?? 0));
+  try {
+    const txSnap = await db.collection("momo_transactions")
+      .where("jobId", "==", jobId)
+      .where("status", "==", "SUCCESS")
+      .limit(1)
+      .get();
+    if (!txSnap.empty) {
+      funded = Math.round(Number(txSnap.docs[0].get("amount")) || funded);
+    }
+  } catch {
+    // keep the job-derived amount
+  }
+
+  const escrow = applyRefundToEscrow({
+    fundedUgx: funded,
+    previouslyRefundedUgx: previouslyRefunded,
+    refundAmountUgx: refundedThisTime,
+  });
+
+  await jobRef.update({
+    escrowStatus: escrow.escrowStatus,
+    refundedUgx: escrow.refundedTotalUgx,
+    remainingEscrowUgx: escrow.remainingEscrowUgx,
+    lastRefundRef: refundRef,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  await db.collection("notifications").add({
+    userId: job.postedByUid || "",
+    type: escrow.fullyRefunded ? "REFUND_COMPLETED" : "REFUND_PARTIAL",
+    jobId,
+    message: escrow.fullyRefunded
+      ? `Your escrow for this job was refunded (UGX ${escrow.refundedTotalUgx}).`
+      : `UGX ${refundedThisTime} of your escrow was refunded; UGX ${escrow.remainingEscrowUgx} is still held for the job.`,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    read: false,
+  }).catch(() => undefined);
+}
+
+/** Poll a refund the caller is allowed to see (the job's owner, an administrator, or the requester). */
+export const getRefundStatus = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to check a refund.");
+  }
+  const { refundRef } = data || {};
+  if (!refundRef) throw new functions.https.HttpsError("invalid-argument", "refundRef is required.");
+
+  const refundSnap = await db.collection("refunds").doc(refundRef).get();
+  if (!refundSnap.exists) throw new functions.https.HttpsError("not-found", "Refund not found.");
+  const refund = refundSnap.data() as Record<string, unknown>;
+
+  const callerUid = context.auth.uid;
+  const isAdmin = hasAdminClaim(context.auth.token);
+  let allowed = isAdmin || String(refund.requestedBy || "") === callerUid;
+  if (!allowed && refund.jobId) {
+    const jobSnap = await db.collection("jobs").doc(String(refund.jobId)).get();
+    allowed = jobSnap.exists && String(jobSnap.get("postedByUid") || "") === callerUid;
+  }
+  if (!allowed) {
+    throw new functions.https.HttpsError("permission-denied", "You may not view this refund.");
+  }
+
+  const result = await refreshRefundStatus(refundRef);
+  return {
+    refundRef,
+    status: result?.status || String(refund.status || "PENDING"),
+    amount: Number(refund.amount || 0),
+    currency: String(refund.currency || "UGX"),
+    jobId: refund.jobId || null,
+    message: result?.status === "SUCCESS"
+      ? "The refund was confirmed by the payment provider."
+      : result?.status === "FAILED"
+        ? "The payment provider rejected the refund; the escrow is unchanged."
+        : "The refund is still pending with the payment provider.",
+  };
+});
+
+/** Hourly: sweep pending refunds so a rejected refund cannot stay pending for ever. */
+export const reconcileRefunds = functions.pubsub.schedule("every 60 minutes").onRun(async () => {
+  const snap = await db.collection("refunds")
+    .where("status", "==", "PENDING")
+    .orderBy("createdAt", "asc")
+    .limit(100)
+    .get();
+
+  let checked = 0;
+  let settled = 0;
+  let unchanged = 0;
+  for (const doc of snap.docs) {
+    checked += 1;
+    try {
+      const result = await refreshRefundStatus(doc.id);
+      if (result && (result.status === "SUCCESS" || result.status === "FAILED")) settled += 1;
+      else unchanged += 1;
+    } catch (error) {
+      console.warn(`refund reconciliation failed for ${doc.id}: ${(error as Error).message}`);
+      unchanged += 1;
+    }
+  }
+
+  await db.collection("reconciliation_reports").add({
+    kind: "REFUNDS",
+    generatedAt: Date.now(),
+    checked,
+    settled,
+    flagged: 0,
+    unchanged,
+    unreadable: 0,
+    creditedUgx: 0,
+    items: [],
+    summary: `refund reconciliation: checked=${checked} settled=${settled} unchanged=${unchanged}`,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  console.log(`refund reconciliation: checked=${checked} settled=${settled} unchanged=${unchanged}`);
 });
 
 /**
@@ -1773,6 +2691,31 @@ export const resolveSosIncident = functions.runWith(APP_CHECK).https.onCall(asyn
  * in the pure core; this function only performs the actual provider HTTP calls
  * and Firestore reads/writes.
  */
+/** Normalise a stored payout document into the shape the pure core expects. */
+function toPayoutRecord(data: Record<string, unknown>): PayoutRecord {
+  return {
+    jobId: String(data.jobId || ""),
+    workerId: String(data.workerId || ""),
+    workerMomoNumber: String(data.workerMomoNumber || ""),
+    amount: Number(data.amount || 0),
+    currency: String(data.currency || PAYOUT_CURRENCY),
+    provider: String(data.provider || "MTN_MOMO"),
+    status: String(data.status || "") as PayoutStatus,
+    payoutId: String(data.payoutId || ""),
+    clientUid: String(data.clientUid || ""),
+    releasedBy: String(data.releasedBy || ""),
+    transactionId: String(data.transactionId || ""),
+    providerReferenceId: String(data.providerReferenceId || ""),
+    createdAt: data.createdAt ? Number(data.createdAt) : undefined,
+    lastCheckedAt: data.lastCheckedAt ? Number(data.lastCheckedAt) : undefined,
+    reason: data.reason ? String(data.reason) : undefined,
+    withdrawalId: data.withdrawalId ? String(data.withdrawalId) : null,
+    payoutKind: (data.payoutKind as PayoutRecord["payoutKind"]) || undefined,
+    providerFinancialTransactionId: (data.providerFinancialTransactionId as string | null) ?? null,
+    providerStatusCode: data.providerStatusCode ? Number(data.providerStatusCode) : undefined,
+  };
+}
+
 function buildPayoutDeps(): PayoutDeps {
   return {
     randomUuid: () => crypto.randomUUID(),
@@ -1782,28 +2725,37 @@ function buildPayoutDeps(): PayoutDeps {
       if (!snap.exists) return null;
       return (snap.data() || {}) as JobRecordPayout;
     },
-    async findPendingPayout(jobId: string, clientUid: string): Promise<PayoutRecord | null> {
+    async findPendingPayout(
+      jobId: string,
+      clientUid: string,
+      payoutKind?: string | null
+    ): Promise<PayoutRecord | null> {
+      // R08-P2-04: the gate is scoped by kind. A job can have a material advance *and* an escrow
+      // release; keying only on the job id made the advance block the release it funded.
+      const kind = payoutKind || "RELEASE";
+      if (kind === "CASHOUT") {
+        // A cashout's payout record is keyed by the withdrawal id.
+        const direct = await db.collection("payouts").doc(jobId).get();
+        if (!direct.exists) return null;
+        return toPayoutRecord(direct.data() as Record<string, unknown>);
+      }
       const snap = await db.collection("payouts")
+        .where("jobId", "==", jobId)
+        .where("clientUid", "==", clientUid)
+        .where("payoutKind", "==", kind)
+        .limit(1)
+        .get();
+      if (!snap.empty) return toPayoutRecord(snap.docs[0].data() as Record<string, unknown>);
+      // Records written before payoutKind existed are all release payouts; honour them so a legacy
+      // pending payout still blocks a second release.
+      if (kind !== "RELEASE") return null;
+      const legacy = await db.collection("payouts")
         .where("jobId", "==", jobId)
         .where("clientUid", "==", clientUid)
         .limit(1)
         .get();
-      if (snap.empty) return null;
-      const data = snap.docs[0].data();
-      return {
-        jobId: data.jobId,
-        workerId: data.workerId,
-        workerMomoNumber: data.workerMomoNumber,
-        amount: data.amount,
-        currency: data.currency,
-        provider: data.provider,
-        status: data.status as PayoutStatus,
-        payoutId: data.payoutId,
-        clientUid: data.clientUid,
-        releasedBy: data.releasedBy,
-        transactionId: data.transactionId,
-        providerReferenceId: data.providerReferenceId,
-      };
+      if (legacy.empty) return null;
+      return toPayoutRecord(legacy.docs[0].data() as Record<string, unknown>);
     },
 
     async acquireToken(config: MomoConfig) {
@@ -1888,8 +2840,14 @@ function buildPayoutDeps(): PayoutDeps {
       }
     },
     async persistPayout(record: PayoutRecord) {
+      // Firestore rejects `undefined` field values, so optional fields are dropped rather than
+      // written as undefined.
+      const clean: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(record)) {
+        if (value !== undefined) clean[key] = value;
+      }
       await db.collection("payouts").doc(record.payoutId).set({
-        ...record,
+        ...clean,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
     },
@@ -1961,80 +2919,87 @@ export const createMoMoMaterialAdvance = functions.runWith(APP_CHECK).https.onCa
       );
     }
 
-    const {
-      jobId,
-      materialsSubtotal,
-      workerId,
-      workerMomoNumber,
-      provider,
-    } = data;
-
-    if (
-      !jobId ||
-      materialsSubtotal === undefined ||
-      workerId === undefined ||
-      workerMomoNumber === undefined
-    ) {
+    // R08-P2-03: the caller supplies only the job id. The materials budget, the worker and the
+    // number all come from the job/user documents, and authorization happens BEFORE anything is
+    // written — the old code wrote a PENDING advance first, so a stranger could burn the job's only
+    // advance slot without being the resident.
+    const { jobId, provider } = data || {};
+    if (!jobId) {
       throw new functions.https.HttpsError(
         "invalid-argument",
-        "Missing required parameters: jobId, materialsSubtotal, workerId, workerMomoNumber."
+        "jobId is required."
       );
     }
 
-    // Fail closed: materialsSubtotal must be positive, never negative or zero.
-    if (!(typeof materialsSubtotal === "number" && materialsSubtotal > 0)) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "materialsSubtotal must be a positive number."
-      );
-    }
+    const jobRef = db.collection("jobs").doc(jobId);
+    const jobSnap = await jobRef.get();
+    const jobData = jobSnap.exists ? (jobSnap.data() as Record<string, unknown>) : null;
 
-    // Advance is capped at 50% of the materials subtotal.
-    const advanceAmount = Math.min(materialsSubtotal * 0.5, materialsSubtotal);
-
-    // Record the receipt-capture requirement in Firestore BEFORE issuing the
-    // payout. The doc is the idempotency key: a second call returns ALREADY_PENDING.
     const advanceRef = db.collection("materialAdvances").doc(jobId);
-    const existing = await advanceRef.get();
-    if (existing.exists) {
-      const existingData = existing.data();
-      if (existingData?.status === "PENDING") {
-        return {
-          success: false,
-          error: "already-pending",
-          message:
-            "A material advance for this job is already pending. Await its status.",
-        };
-      }
-      // If a previous attempt exists, start a new one only if the amount changed.
-      // Refuse to overwrite an already-disbursed advance.
-      if (existingData?.status === "DISBURSED") {
+    const existingAdvance = await advanceRef.get();
+    const existingStatus = existingAdvance.exists ? String(existingAdvance.get("status") || "") : null;
+
+    const decision = decideMaterialAdvance(jobData as any, context.auth.uid, existingStatus);
+    if (decision.kind === "REJECT") {
+      throw new functions.https.HttpsError(
+        decision.code as "not-found" | "permission-denied" | "failed-precondition" | "invalid-argument" | "already-exists",
+        decision.message
+      );
+    }
+    const advanceAmount = decision.amountUgx;
+
+    // The payee is the worker on the job record, never a number supplied by the caller.
+    const workerDoc = await db.collection("users").doc(decision.workerUid).get();
+    const workerMomoNumber = String(
+      workerDoc.get("momoNumber") || workerDoc.get("phone") || ""
+    ).trim();
+    if (!workerMomoNumber) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "The assigned worker has no Mobile Money number on file."
+      );
+    }
+
+    // Claim the slot atomically: a concurrent second request cannot pass the ownership check and
+    // then both write an advance.
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(advanceRef);
+      const status = snap.exists ? String(snap.get("status") || "") : "";
+      if (status === "PENDING" || status === "DISBURSED") {
         throw new functions.https.HttpsError(
-          "failed-precondition",
-          "This material advance was already disbursed and cannot be re-run."
+          "already-exists",
+          status === "DISBURSED"
+            ? "This material advance was already disbursed and cannot be re-run."
+            : "A material advance for this job is already pending. Await its status."
         );
       }
-    }
-
-    await advanceRef.set({
-      jobId,
-      workerId,
-      workerMomoNumber,
-      materialsSubtotal,
-      advanceAmount,
-      provider: provider || "MTN_MOMO",
-      status: "PENDING",
-      receiptCaptureExpiresAt: admin.firestore.FieldValue.serverTimestamp(),
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      tx.set(advanceRef, {
+        jobId,
+        workerId: decision.workerUid,
+        workerMomoNumber: maskMsisdn(workerMomoNumber),
+        materialsSubtotal: decision.materialsSubtotal,
+        advanceAmount,
+        provider: provider || "MTN_MOMO",
+        status: "PENDING",
+        requestedBy: context.auth!.uid,
+        receiptCaptureExpiresAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
     });
 
-    // Issue the partial payout through the PAY-003 trust boundary.
+    // Issue the partial payout through the PAY-003 trust boundary. The amount is validated against
+    // the server-computed advance (not the job's labour total, which is a different bucket).
     const payoutResult = await initiatePayout(
       {
         jobId,
         clientUid: context.auth.uid,
-        amountUgx: Math.round(advanceAmount),
+        amountUgx: advanceAmount,
         workerMomoNumber,
+        payeeResolvedServerSide: true,
+        payeeWorkerId: decision.workerUid,
+        expectedAmountUgx: advanceAmount,
+        payoutId: `ADVANCE-${jobId}`,
+        payoutKind: "ADVANCE",
         provider: provider || "MTN_MOMO",
         env: process.env as Record<string, string | undefined>,
       },
@@ -2044,37 +3009,15 @@ export const createMoMoMaterialAdvance = functions.runWith(APP_CHECK).https.onCa
     if (!payoutResult.ok) {
       await advanceRef.update({
         status: "FAILED",
+        failureCode: payoutResult.error.code,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
-
-      const codeMap: Record<string, string> = {
-        unauthenticated: "unauthenticated",
-        invalid_argument: "invalid-argument",
-        job_not_found: "not-found",
-        not_job_owner: "permission-denied",
-        invalid_job_state: "failed-precondition",
-        job_not_escrowed: "failed-precondition",
-        amount_mismatch: "failed-precondition",
-        worker_mismatch: "failed-precondition",
-        config_error: "failed-precondition",
-        duplicate_request: "already-exists",
-        already_pending: "failed-precondition",
-        provider_error: "unavailable",
-        provider_timeout: "deadline-exceeded",
-      };
-
-      const httpsCode =
-        codeMap[payoutResult.error.code] || "internal";
-      throw new functions.https.HttpsError(
-        httpsCode as any,
-        payoutResult.error.message
-      );
+      throw payoutFailureToHttpsError(payoutResult.error);
     }
 
-    // Payout accepted (PENDING). Notify the worker.
     const payoutRef = payoutResult.payoutId;
     await db.collection("notifications").add({
-      userId: workerId,
+      userId: decision.workerUid,
       type: "PAYOUT_PENDING",
       jobId,
       message: `A material advance of UGX ${advanceAmount} has been initiated. Please upload the hardware receipt within 60 minutes so the payout can be completed.`,
@@ -2082,7 +3025,6 @@ export const createMoMoMaterialAdvance = functions.runWith(APP_CHECK).https.onCa
       read: false,
     });
 
-    // Update the local tracking document with the payout reference.
     await advanceRef.update({
       payoutRef,
       providerReferenceId: payoutResult.providerReferenceId,
@@ -2093,7 +3035,7 @@ export const createMoMoMaterialAdvance = functions.runWith(APP_CHECK).https.onCa
     return {
       success: true,
       payoutRef,
-      advanceAmount: Math.round(advanceAmount),
+      advanceAmount,
       receiptCaptureDeadlineMs: Date.now() + 60 * 60 * 1000,
       message: `Material advance of UGX ${advanceAmount} is pending. Upload the hardware receipt within 60 minutes to release the funds.`,
     };
@@ -2126,19 +3068,50 @@ export const getMoMoPayoutStatus = functions.runWith(APP_CHECK).https.onCall(asy
     );
   }
 
-  const deposit = await db.collection("payouts").doc(payoutRef).get();
+  let deposit = await db.collection("payouts").doc(payoutRef).get();
   if (!deposit.exists) {
-    throw new functions.https.HttpsError(
-      "not-found",
-      "Payout not found."
-    );
+    // R08-P2-04: the older release path wrote `momo_payouts/PAYOUT-<jobId>` and nothing ever read
+    // it. Those records still exist, so a status query falls back to them instead of reporting the
+    // payout as missing.
+    const legacy = await db.collection("momo_payouts").doc(payoutRef).get();
+    if (!legacy.exists) {
+      throw new functions.https.HttpsError(
+        "not-found",
+        "Payout not found."
+      );
+    }
+    const legacyData = legacy.data() as Record<string, unknown>;
+    const legacyStatus = String(legacyData.status || "").toUpperCase();
+    if (legacyStatus === "QUEUED" || legacyStatus === "PENDING") {
+      return {
+        payoutRef,
+        status: "PAYOUT_UNCONFIRMED",
+        statusText: "UNCONFIRMED",
+        workerId: legacyData.workerId,
+        momoNumber: legacyData.workerMomoNumber,
+        amount: legacyData.amount,
+        reason: "legacy_record_without_provider_reference",
+        message: "This payout was recorded before provider confirmation existed. It is not proof of payment.",
+      };
+    }
+    return {
+      payoutRef,
+      status: legacyStatus,
+      statusText: legacyStatus.replace("PAYOUT_", ""),
+      workerId: legacyData.workerId,
+      momoNumber: legacyData.workerMomoNumber,
+      amount: legacyData.amount,
+      reason: "legacy_record",
+      message: payoutMessageFor(legacyStatus as any),
+    };
   }
   const ledger = deposit.data() as PayoutRecord;
   const callerUid = context.auth.uid;
 
-  // Authorize: the caller must be the stored clientUid or the job's owner.
-  const jobDoc = await db.collection("jobs").doc(ledger.jobId).get();
-  const ownerUid = jobDoc.exists ? (jobDoc.data() as any)?.postedByUid : undefined;
+  // Authorize: the caller must be the stored clientUid or the job's owner. A wallet cashout has no
+  // job document, so only its owner may query it.
+  const jobDoc = ledger.jobId ? await db.collection("jobs").doc(ledger.jobId).get() : null;
+  const ownerUid = jobDoc && jobDoc.exists ? (jobDoc.data() as any)?.postedByUid : undefined;
   if (ledger.clientUid !== callerUid && ownerUid !== callerUid) {
     throw new functions.https.HttpsError(
       "permission-denied",
@@ -2188,6 +3161,17 @@ export const getMoMoPayoutStatus = functions.runWith(APP_CHECK).https.onCall(asy
       patch.providerFinancialTransactionId = provider.financialTransactionId;
     }
     await db.collection("payouts").doc(payoutRef).update(patch);
+  }
+
+  // R08-P2-02: a provider-confirmed payout becomes one wallet entry, keyed by the payout id, so a
+  // poll and a reconciliation sweep cannot credit the same money twice. A failed payout releases the
+  // reservation a cashout made.
+  if (newStatus === "PAYOUT_SUCCESSFUL") {
+    await creditPayoutEarning({ ...ledger, status: newStatus });
+  } else if (newStatus === "PAYOUT_FAILED" && ledger.payoutKind === "CASHOUT" && ledger.withdrawalId) {
+    await releaseWithdrawalReservation(ledger).catch((error) => {
+      console.error("wallet reversal failed", (error as Error).message);
+    });
   }
 
   return {

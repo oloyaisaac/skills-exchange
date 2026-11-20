@@ -8,6 +8,10 @@ import com.example.data.db.*
 import com.example.data.remote.DoorstepPinResult
 import com.example.data.remote.DoorstepPinRules
 import com.example.data.remote.FirebaseService
+import com.example.data.remote.ServerCashoutResult
+import com.example.data.remote.ServerRefundStatus
+import com.example.data.remote.ServerWalletService
+import com.example.data.remote.ServerWalletSnapshot
 import com.example.util.CurrencyRegion
 import com.example.util.JobMoney
 import com.example.util.Money
@@ -22,6 +26,11 @@ class SkillsExchangeRepository(
     private val db: AppDatabase,
     private val firebaseService: FirebaseService = FirebaseService()
 ) {
+    /**
+     * R08-P2-02: the server wallet. Constructed lazily so unit tests that never touch money do not
+     * need Firebase Functions initialised.
+     */
+    private val serverWallet: ServerWalletService by lazy { ServerWalletService() }
     // R04-P2-06: both feeds are viewer-scoped. Providers must be KYC-approved to be listed; jobs
     // are open work plus the viewer's own or assigned jobs. Neither flow is an authorization
     // boundary — every mutation still reloads the row and checks the actor.
@@ -3034,6 +3043,69 @@ class SkillsExchangeRepository(
 
         return WithdrawalCancelResult.Success
     }
+
+    // ==================== R08-P2-02: SERVER-AUTHORITATIVE WALLET ====================
+
+    /**
+     * The server's wallet: balance, limits and the recent statement.
+     *
+     * This is the authoritative balance. The Room ledger below is now only this device's record of
+     * what it last saw — a reinstall no longer erases the payable balance because the server holds
+     * it, and no client can raise its own balance.
+     */
+    suspend fun getServerWallet(): Result<ServerWalletSnapshot> = serverWallet.fetchWallet()
+
+    /**
+     * The server-authoritative available balance in MINOR units (1 UGX = 100), or null when the
+     * server cannot be reached. Money decisions must prefer this over [getAvailableWalletBalanceMinor].
+     */
+    suspend fun getServerAvailableBalanceMinor(): Long? =
+        serverWallet.fetchWallet().getOrNull()?.availableUgx?.let { it * 100 }
+
+    /**
+     * Request a cashout through the server.
+     *
+     * The amount, the velocity limits, the verified destination and the provider payout are all
+     * decided server-side; [requestId] is the idempotency key so a retried call cannot pay twice.
+     * The local withdrawal row is mirrored on success so the UI can show the pending request offline.
+     */
+    suspend fun requestServerWalletCashout(
+        amountUgx: Long,
+        requestId: String
+    ): Result<ServerCashoutResult> {
+        val outcome = serverWallet.requestCashout(amountUgx, requestId)
+        outcome.getOrNull()?.let { accepted ->
+            try {
+                val uid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid)
+                if (uid != null) {
+                    val now = System.currentTimeMillis()
+                    db.walletWithdrawalDao().insertWithdrawal(
+                        WalletWithdrawalEntity(
+                            id = accepted.withdrawalId,
+                            workerId = uid,
+                            amountMinor = accepted.amountUgx * 100,
+                            destinationMomoNumber = "",
+                            status = WithdrawalStatus.PENDING.value,
+                            idempotencyKey = requestId,
+                            createdAt = now,
+                            updatedAt = now
+                        )
+                    )
+                }
+            } catch (_: Exception) {
+                // The mirror is only a local convenience; the server record is authoritative.
+            }
+        }
+        return outcome
+    }
+
+    /** Cancel a cashout the server has not yet handed to the payment provider. */
+    suspend fun cancelServerWalletCashout(requestId: String): Result<Unit> =
+        serverWallet.cancelCashout(requestId)
+
+    /** R08-P2-07: provider-verified refund status for a job's refund. */
+    suspend fun getServerRefundStatus(refundRef: String): Result<ServerRefundStatus> =
+        serverWallet.fetchRefundStatus(refundRef)
 
     /**
      * AUDIT-W-CASHOUT: the authoritative AVAILABLE balance for the authenticated worker, derived

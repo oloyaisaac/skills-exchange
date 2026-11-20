@@ -156,6 +156,28 @@ object CallableContracts {
         CallableContract(
             name = "getMoMoCollectionStatus",
             required = mapOf("transactionRef" to CallableValueType.STRING)
+        ),
+        // R08-P2-02: the wallet balance lives on the server. The client reads it through this
+        // callable instead of trusting a local ledger, and every cashout is decided server-side.
+        CallableContract(name = "getWallet"),
+        CallableContract(
+            name = "requestWalletCashout",
+            required = mapOf(
+                "amountUgx" to CallableValueType.NUMBER,
+                "requestId" to CallableValueType.STRING
+            )
+        ),
+        CallableContract(
+            name = "cancelWalletCashout",
+            optional = mapOf(
+                "requestId" to CallableValueType.STRING,
+                "withdrawalId" to CallableValueType.STRING
+            )
+        ),
+        // R08-P2-07: refund status is provider-verified server-side, never inferred locally.
+        CallableContract(
+            name = "getRefundStatus",
+            required = mapOf("refundRef" to CallableValueType.STRING)
         )
     )
 

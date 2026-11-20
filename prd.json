@@ -5296,7 +5296,7 @@
       "title": "Wire escrow release end-to-end",
       "priority": "CRITICAL",
       "status": "IN_PROGRESS",
-      "status_note": "Completing a job as its client now calls releaseEscrowToWorker. The server ignores client amounts and wallets: it reads escrowAmount/budget from the job and the phone from the worker profile, requires FUNDS_LOCKED_IN_ESCROW, uses a deterministic PAYOUT-{jobId} id, and returns the existing payout on retry. 3 tests. Not verified: no MTN sandbox or deployed callable; Android cannot be compiled here.",
+      "status_note": "R08: the release now actually disburses. `performEscrowRelease` calls `initiatePayout` BEFORE it writes anything to the job, so a provider 202 becomes PAYOUT_PENDING with a server-minted reference and only then does the job flip to RELEASED_TO_WORKER; a provider failure throws and leaves the escrow funded so the release can be retried. The amount is the job's labour total, the payee is read from `users/{workerId}`, and the legacy momo_payouts mirror now carries the real provider state. 13 payout-core tests. Not verified: no MTN sandbox call was ever made (code-verified, provider-UNVERIFIED) and nothing is deployed; Android cannot be compiled here.",
       "independent_verification": "PENDING",
 
       "depends_on": [
@@ -5338,7 +5338,7 @@
       "title": "Implement refunds",
       "priority": "CRITICAL",
       "status": "IN_PROGRESS",
-      "status_note": "A refund is now a provider request: refunds are allowed only against a SUCCESS collection for the job, capped at the settled amount, once per job; the refund document records PENDING/FAILED and the job only becomes REFUND_PENDING when the provider accepts. The fake QUEUED payout plus immediate REFUNDED write in dispute resolution is gone. 3 tests. Not verified: MTN refund sandbox unavailable.",
+      "status_note": "A refund is a provider request and it is now polled: `getRefundStatus` (callable) and hourly `reconcileRefunds` settle the record from the provider instead of leaving it PENDING for ever, and `decideRefundStatus` flags an amount disagreement for a human. A partial refund now reduces the escrow via `applyRefundToEscrow`: the remainder stays FUNDS_LOCKED_IN_ESCROW and payable, only a full refund closes it as REFUNDED, and an over-refund never drives the escrow negative. 8 refund-status tests. Not verified: MTN refund sandbox unavailable; the sweep has never run against real data.",
       "independent_verification": "PENDING",
 
       "depends_on": [
@@ -5380,7 +5380,7 @@
       "title": "Delete the fabricated payout stub",
       "priority": "CRITICAL",
       "status": "IN_PROGRESS",
-      "status_note": "The synthetic device payout is gone: disburseEscrowPayoutToWorker now fails closed and getPayoutStatus reads the real momo_payouts record the server wrote, returning null for another account. Payouts are initiated only server-side. Not verified: no provider sandbox or Android build, so provider status has never been observed.",
+      "status_note": "The synthetic device payout is gone and so is the second server implementation: `submitDisbursement` is now the ONE place that talks to the disbursement provider, with `initiatePayout` (release and material advance) and `initiateWithdrawalPayout` (wallet cashout) as thin front ends over it. The idempotency gate is scoped by payoutKind so an advance cannot block the release it funds, and a legacy momo_payouts record that has no provider reference is reported as PAYOUT_UNCONFIRMED instead of being mistaken for a paid worker. Payouts are initiated only server-side. Not verified: no provider sandbox or Android build, so provider status has never been observed.",
       "independent_verification": "PENDING",
 
       "depends_on": [
@@ -5419,7 +5419,7 @@
       "title": "Make fees and totals server-authoritative",
       "priority": "HIGH",
       "status": "IN_PROGRESS",
-      "status_note": "pricing.ts computes the 10% fee and grand total; validateCollectionInput rejects a job whose stored platformFee/grandTotal disagree with the server calculation before any collection starts. 4 tests. The Android UI still computes a local estimate for display.",
+      "status_note": "R08: the fee is no longer only computed, it is ledgered and split. Every release writes one immutable `platform_fees/{FEE-<jobId>}` record built from the stored quote (`validateStoredQuote`), and `validateFeeLedger` proves labour + materials + fee equals the collected total and that the fee is the quoted 10% of labour. The worker is paid the labour bucket from escrow, the materials bucket funds the material advance, and the fee is platform revenue that is never disbursed. 4 fee-ledger tests. The Android UI still computes a local estimate for display only.",
       "independent_verification": "PENDING",
 
       "depends_on": [
@@ -5457,7 +5457,8 @@
       "phase": 19,
       "title": "Enforce escrow state transitions server-side",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
+      "status_note": "R08: the money transitions are now server-decided and ordered. A release asks the provider before marking the job released (a failure leaves FUNDS_LOCKED_IN_ESCROW), a material advance is authorized and claimed transactionally before any write, a cashout reserve and the wallet balance move in one Firestore transaction, and a refund only changes the escrow once the provider confirms it. Firestore rules pin the terminal states (R07) and deny every new money collection to clients, proved by 20 emulator tests. Not verified: no deploy, so the rules in the cloud are unchanged.",
       "depends_on": [
         "REM-029"
       ],
@@ -5495,7 +5496,8 @@
       "phase": 19,
       "title": "Create a server-side ledger and settlement record",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
+      "status_note": "R08: the wallet has a server ledger. `wallet_entries` holds immutable entries whose ids are derived (EARN-<payoutId>, WD-<requestId>, REVERSAL-<requestId>) so a retry, a status poll and a reconciliation sweep converge on one entry, and `wallets/{uid}` is the transactional balance with daily cashout counters. Payouts, the fee split (`platform_fees`), refunds and the sweep reports are server-written; both wallet collections are deny-all and the client reads its balance through `getWallet`. A release pays Mobile Money directly, so its ledger line is a statement (withdrawable: false) rather than a spendable balance - crediting it would allow a double withdrawal. 9 wallet tests + 6 client tests. Not verified: no deploy; the client suite was not executed here.",
       "depends_on": [
         "REM-026"
       ],
@@ -5533,7 +5535,8 @@
       "phase": 19,
       "title": "Add reconciliation and stuck-escrow alerting",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
+      "status_note": "R08: hourly `reconcilePayments` re-queries every open payout, applies the same transitions as the status callable, credits the wallet exactly once per payout, reverses a failed cashout reservation and writes an immutable `reconciliation_reports` entry (checked/settled/flagged/unchanged/unreadable); `reconcileRefunds` does the same for pending refunds. An amount or currency disagreement is flagged NEEDS_RECONCILIATION for a human instead of being credited, and an unreadable provider claims nothing. Cashout velocity limits (UGX 5,000 minimum, UGX 2,000,000 and three requests a day), a verified-destination requirement, a 24-hour re-verification cool-off and a sandbox allow-list are enforced in the same round. 8 reconciliation tests. Not verified: the sweeps have never run against real provider data and no alert channel is wired to the report.",
       "depends_on": [
         "REM-031"
       ],
