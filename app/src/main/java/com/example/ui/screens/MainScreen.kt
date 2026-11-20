@@ -31,6 +31,7 @@ import com.example.data.db.ServiceProviderEntity
 import com.example.ui.components.*
 import com.example.ui.theme.*
 import com.example.data.remote.DeletionStep
+import com.example.ui.viewmodel.ReportUiState
 import com.example.ui.viewmodel.SkillsExchangeViewModel
 import com.example.util.CurrencyRegion
 import com.example.util.DataBackupHelper
