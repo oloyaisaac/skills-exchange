@@ -2407,10 +2407,6 @@ class SkillsExchangeRepository(
         return RatingResult.Success
     }
 
-    fun getAverageRatingForUser(userId: String): Double? = db.ratingDao().getAverageRatingForUser(userId)
-
-    fun getRatingsForUser(userId: String): List<RatingEntity> = db.ratingDao().getRatingsForUser(userId)
-
     // ==================== NOTIF-001: Notification Methods ====================
 
     fun getNotificationsForUser(userId: String): Flow<List<NotificationEntity>> = db.notificationDao().getNotificationsForUser(userId)

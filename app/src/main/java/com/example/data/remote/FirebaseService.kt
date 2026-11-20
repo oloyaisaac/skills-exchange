@@ -714,7 +714,7 @@ class FirebaseService(private val context: Context? = null) {
      */
     suspend fun uploadProfilePhoto(userId: String, photoUri: Uri): String? {
     // Fail closed if no authentication context or userId doesn't match auth
-    val uid = firebaseAuth.currentUser?.uid
+    val uid = auth?.currentUser?.uid
     if (uid == null || uid.isBlank() || uid != userId) return null
 
     // Validate content type - must be an image
@@ -753,7 +753,7 @@ class FirebaseService(private val context: Context? = null) {
      * content type is not an image, when the file exceeds 10 MB, or when Storage is unavailable.
      */
     suspend fun uploadJobPostPhoto(jobId: String, photoUri: Uri): String? {
-        if (firebaseAuth.currentUser == null) return null
+        if (auth?.currentUser == null) return null
         if (jobId.isBlank()) return null
 
         val resolver = context?.contentResolver ?: return null

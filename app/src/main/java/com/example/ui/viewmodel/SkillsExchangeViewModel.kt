@@ -498,11 +498,11 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         viewModelScope.launch {
             otpVerifyState.value = null
             africaOtpError = null
-            val result = africaService.verifyOtp(phoneNumberFromUi.value, otpCode, africaStoredRequestId)
+            val result = africaService.verifyOtp(phoneNumberFromUi, otpCode, africaStoredRequestId)
             when (val v = result) {
                 is VerificationResponse.Valid -> {
                     otpVerifyState.value = v
-                    loginUser(v.userId ?: africaStoredRequestId ?: africaPhoneError ?: "", phoneNumberFromUi.value)
+                    loginUser(v.userId ?: africaStoredRequestId ?: africaPhoneError ?: "", phoneNumberFromUi)
                 }
                 is VerificationResponse.Error -> {
                     africaOtpError = v.message
@@ -2409,18 +2409,18 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             }
 
             try {
-                val result = africaService.verifyOtp(phoneNumberFromUi.value, otpCode, africaStoredRequestId)
+                val result = africaService.verifyOtp(phoneNumberFromUi, otpCode, africaStoredRequestId)
                 when (result) {
                     is VerificationResponse.Valid -> {
                         authState.value = AuthState.SignedIn
                         isAuthenticated.value = true
-                        currentUserPhone.value = phoneNumberFromUi.value
+                        currentUserPhone.value = phoneNumberFromUi
                         otpError.value = null
                         // AUTH-002: Persist session
                         val deviceId = sessionManager.getDeviceId(appContext)
                         sessionManager.saveSession(
                             isAuthenticated = true,
-                            phone = phoneNumberFromUi.value,
+                            phone = phoneNumberFromUi,
                             userId = result.userId ?: africaStoredRequestId ?: pendingPhoneNumber ?: "",
                             deviceId = deviceId
                         )
