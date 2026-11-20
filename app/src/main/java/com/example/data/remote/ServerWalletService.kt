@@ -30,7 +30,11 @@ class ServerWalletService(
     suspend fun requestCashout(amountUgx: Long, requestId: String): Result<ServerCashoutResult> {
         require(amountUgx > 0) { "amountUgx must be positive" }
         require(requestId.isNotBlank()) { "requestId is required for idempotency" }
-        return call("requestWalletCashout") { data ->
+        return call(
+            "requestWalletCashout",
+            "amountUgx" to amountUgx,
+            "requestId" to requestId
+        ) { data ->
             ServerWalletParser.parseCashout(data)
                 ?: throw IllegalStateException("The withdrawal response could not be read.")
         }
@@ -45,7 +49,7 @@ class ServerWalletService(
     /** Provider-verified refund status (R08-P2-07). */
     suspend fun fetchRefundStatus(refundRef: String): Result<ServerRefundStatus> {
         require(refundRef.isNotBlank()) { "refundRef is required" }
-        return call("getRefundStatus") { data ->
+        return call("getRefundStatus", "refundRef" to refundRef) { data ->
             ServerWalletParser.parseRefund(data)
                 ?: throw IllegalStateException("The refund response could not be read.")
         }
