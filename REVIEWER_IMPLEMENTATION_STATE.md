@@ -413,6 +413,15 @@ moved under later rounds and are recorded as such rather than re-fixed:
 
 ### Verification evidence (executed)
 
+- CI run **44784548015** / **44784547851** (final commit of the round): **all 7 checks pass** —
+  Compile and unit tests (3m37s), Backend build and tests, Backend handler tests, Firestore rules tests
+  (40s), Documentation checks, Secret scan and CodeRabbit.
+  The failing runs before it found what reading did not: `ReportUiState` was referenced as a nested
+  class when it is top-level, and the new migration test hand-wrote a partial `job_posts` INSERT that
+  violated a NOT NULL column added by a later migration. Both are fixed; the INSERT is now generated
+  from the exported schema so the next added column cannot break it the same way.
+- Android job: green. The run that preceded the fix reported **478** unit tests with 4 failures — all
+  four are the assertions and the helper fixed above; the suite count is unchanged.
 - Backend: `npm run build && npm test` in `functions/` — **310/310** `node --test` tests, the four new
   files registered in `functions/package.json` (guarantorIntake 12, reports 9, ratingsCore 9, sosStatus 7,
   on top of 273 after R09). `tsc` is clean.

@@ -22,6 +22,9 @@ I finished the work for this reviewer.
 
 ## Evidence
 
+- CI (runs 44784548015 / 44784547851): **7/7 checks pass** — Compile and unit tests (3m37s), Backend
+  build and tests, Backend handler tests, Firestore rules tests, Documentation checks, Secret scan,
+  CodeRabbit.
 - Backend `npm run build && npm test`: **310/310** `node --test` tests, all four new files
   registered in `functions/package.json` (guarantorIntake 12, reports 9, ratingsCore 9, sosStatus 7).
 - Firestore rules: **26** emulator tests (2 replaced, 3 new): reports are reporter/admin-readable and
@@ -29,6 +32,9 @@ I finished the work for this reviewer.
   `guarantor_intake_audit` admin-only.
 - Static guards: architecture guards, query limits, document map, doc links, traceability (30
   requirements), README claims, consent version, backup policy, secret scan and no-PII-logs all pass.
+- Client: the Android job is green (478 unit tests; the four failures an earlier run reported —
+  a nested-vs-top-level `ReportUiState` reference and a hand-written `job_posts` INSERT that missed a
+  NOT NULL column — are fixed, the INSERT now built from the exported schema).
 - Client: `SosRaiseAuthorizationSecurityTest` updated for `SosRaiseResult.Success(incidentId)`;
   `DatabaseMigrationChainTest` walks 11 → 29 and the new test proves `MIGRATION_28_29` clears the
   shared PIN while leaving a real one alone. Android compile/tests run in CI only (no JDK here).

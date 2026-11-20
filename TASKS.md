@@ -129,7 +129,7 @@ Kampala city-centre coordinates), and the residual shared PIN default is closed 
 (`MIGRATION_28_29` blanks rows holding `'4829'`). Metrics and runbook exist: `getSafetyMetrics`
 (unanswered emergencies, median acknowledgement, failed dispatches, open/breaching/closed reports)
 and `docs/safety/SAFETY_DESK_RUNBOOK.md`. Evidence: backend 310/310, rules 26/26, 10 static guards
-green. Not verified: deployment, live dispatch, any human triage; the desk is single-operator with no
+green, CI 7/7 (run 44784548015). Not verified: deployment, live dispatch, any human triage; the desk is single-operator with no
 dual control, stated as a gap.
 R11–R15 awaiting.
 

@@ -29,6 +29,10 @@
 - The shared PIN default is closed for existing installs: schema **v29** (`MIGRATION_28_29`) blanks
   `doorstepPin` rows still holding `'4829'`; the DDL default in the creating migration is `''`. A
   migration test proves a real PIN survives.
+- CI: 7/7 green (run 44784548015). CI caught two defects that reading did not: `ReportUiState` was
+  referenced as a nested class when it is top-level, and the new migration test hand-wrote a partial
+  `job_posts` INSERT that violated a NOT NULL column a later migration added; the INSERT is now
+  generated from the exported schema.
 - Evidence: backend `npm run build && npm test` **310/310** (four new files registered in
   `functions/package.json`), rules **26** tests in CI, ten static guards pass, traceability at 30
   requirements. Client compiles and tests run in CI only (no JDK here).
