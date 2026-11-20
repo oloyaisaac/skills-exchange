@@ -17,6 +17,9 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /**
  * H7/AUDIT-A-SOS — authoritative incident-state transitions.
@@ -24,6 +27,8 @@ import org.junit.Test
  * Verifies that acknowledge/resolve perform the authorized, in-state transition and never
  * rewrite the incident identity (actor/job/id/raisedAt) or an out-of-state row.
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35])
 class SosIncidentTransitionSecurityTest {
 
     private lateinit var db: AppDatabase
