@@ -68,6 +68,8 @@ fun AuthModal(
     var currentStep by remember { mutableStateOf(AuthStep.PHONE_ENTRY) }
     var resendCooldown by remember { mutableStateOf(0) }
     var isGoogleSigningIn by remember { mutableStateOf(false) }
+    // R06-P2-06: reason Google sign-in cannot start in this build (unset client id), if any.
+    var googleConfigMessage by remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -352,9 +354,16 @@ fun AuthModal(
                     // Google Sign-In button (Prominent Primary Social Action)
                     Button(
                         onClick = {
-                            isGoogleSigningIn = true
-                            val signInIntent = GoogleSignInHelper.getClient(context).signInIntent
-                            googleSignInLauncher.launch(signInIntent)
+                            // R06-P2-06: no client id means no Google flow at all — say why instead
+                            // of launching an intent with an empty `requestIdToken`.
+                            val client = GoogleSignInHelper.getClient(context)
+                            if (client == null) {
+                                googleConfigMessage = GoogleSignInHelper.NOT_CONFIGURED_MESSAGE
+                            } else {
+                                googleConfigMessage = null
+                                isGoogleSigningIn = true
+                                googleSignInLauncher.launch(client.signInIntent)
+                            }
                         },
                         enabled = !isGoogleSigningIn,
                         modifier = Modifier
@@ -392,6 +401,15 @@ fun AuthModal(
                                 color = Color.White
                             )
                         }
+                    }
+
+                    if (googleConfigMessage != null) {
+                        Text(
+                            text = googleConfigMessage!!,
+                            fontSize = 11.sp,
+                            color = RedDanger,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
                     }
 
                     // Divider separating Social and Phone Auth

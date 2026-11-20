@@ -30,6 +30,7 @@ import com.example.data.db.NotificationEntity
 import com.example.data.db.ServiceProviderEntity
 import com.example.ui.components.*
 import com.example.ui.theme.*
+import com.example.data.remote.DeletionStep
 import com.example.ui.viewmodel.SkillsExchangeViewModel
 import com.example.util.CurrencyRegion
 import com.example.util.LocationHelper
@@ -183,6 +184,27 @@ fun MainScreen(
     var isDataBackupOpen by remember { mutableStateOf(false) }
     var isPrivacyPolicyOpen by remember { mutableStateOf(false) }
     var isAccountDeletionOpen by remember { mutableStateOf(false) }
+    // R06-P2-03: linking Google sign-in to the current account (one person, one wallet).
+    var googleLinkMessage by remember { mutableStateOf<String?>(null) }
+    val linkGoogleLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            com.google.android.gms.auth.api.signin.GoogleSignIn
+                .getSignedInAccountFromIntent(result.data)
+                .addOnSuccessListener { account ->
+                    val token = account.idToken
+                    if (token.isNullOrBlank()) {
+                        googleLinkMessage = "Google did not return a verifiable token. Please try again."
+                    } else {
+                        viewModel.linkGoogleAccount(token) { message -> googleLinkMessage = message }
+                    }
+                }
+                .addOnFailureListener {
+                    googleLinkMessage = "Google sign-in was cancelled or failed. Your account was not changed."
+                }
+        }
+    }
     var isPermissionRationaleOpen by remember { mutableStateOf(false) }
 
     // AUDIT FIX (H3/H4/H7/M1): real destinations for the Account & Services drawer items.
@@ -806,6 +828,15 @@ fun MainScreen(
         // "Not verified" default, so the badge can never claim a false "Verified".
         isKycVerified = myWorkerKyc?.status == "APPROVED",
         kycStatusLabel = myWorkerKyc?.status?.replace('_', ' ') ?: "Not verified",
+        onOpenLinkGoogle = {
+            // R06-P2-06: no client id in this build → explain, do not launch an empty flow.
+            val client = com.example.util.GoogleSignInHelper.getClient(context)
+            if (client == null) {
+                googleLinkMessage = com.example.util.GoogleSignInHelper.NOT_CONFIGURED_MESSAGE
+            } else {
+                linkGoogleLauncher.launch(client.signInIntent)
+            }
+        },
         onOpenIdentity = {
             isIdentitySheetOpen = true
             viewModel.refreshGuarantorVerificationStatus()
@@ -818,7 +849,10 @@ fun MainScreen(
         onOpenAdminArbitration = { isAdminArbitrationOpen = true },
         onOpenDataBackup = { isDataBackupOpen = true },
         onOpenPrivacyPolicy = { isPrivacyPolicyOpen = true },
-        onOpenDeleteAccount = { isAccountDeletionOpen = true }
+        onOpenDeleteAccount = {
+            viewModel.resetAccountDeletionState()
+            isAccountDeletionOpen = true
+        }
     )
 
     // AUDIT FIX (H4): MoMo & Escrow Wallet — real escrow figures from the job records.
@@ -959,13 +993,45 @@ fun MainScreen(
         onDismiss = { isPrivacyPolicyOpen = false }
     )
 
+    // R06-P2-01: the dialog is driven by the deletion state, so it cannot report success (or close)
+    // before the server has confirmed that every record and photo is gone.
+    val deletionStep by viewModel.accountDeletionStep.collectAsStateWithLifecycle()
+    val deletionMessage by viewModel.accountDeletionMessage.collectAsStateWithLifecycle()
+    val deletionCodeSent by viewModel.accountDeletionCodeSent.collectAsStateWithLifecycle()
+    val accountPhone by viewModel.currentUserPhone.collectAsStateWithLifecycle()
     AccountDeletionDialog(
         isOpen = isAccountDeletionOpen,
-        onDismiss = { isAccountDeletionOpen = false },
+        step = deletionStep,
+        message = deletionMessage,
+        codeSent = deletionCodeSent,
+        accountPhone = accountPhone,
+        onDismiss = {
+            if (deletionStep != DeletionStep.PURGING) {
+                isAccountDeletionOpen = false
+                viewModel.resetAccountDeletionState()
+            }
+        },
         onConfirmDeleteAccount = {
+            // R06-P2-01: no more `onDismiss()` here. The dialog stays and shows what happened.
             viewModel.permanentlyDeleteUserAccountAndData()
-        }
+        },
+        onReauthWithGoogle = { idToken -> viewModel.reauthenticateForAccountDeletionWithGoogle(idToken) },
+        onStartPhoneReauth = { phone -> viewModel.startAccountDeletionPhoneReauth(phone) },
+        onConfirmPhoneReauth = { code -> viewModel.confirmAccountDeletionPhoneReauth(code) },
+        onReset = { viewModel.resetAccountDeletionState() }
     )
+
+    // R06-P2-03: the link outcome is always shown — a collision is never reported as success.
+    if (googleLinkMessage != null) {
+        AlertDialog(
+            onDismissRequest = { googleLinkMessage = null },
+            title = { Text("Google Sign-In", fontWeight = FontWeight.Bold) },
+            text = { Text(googleLinkMessage!!, fontSize = 13.sp) },
+            confirmButton = {
+                TextButton(onClick = { googleLinkMessage = null }) { Text("OK") }
+            }
+        )
+    }
 
     if (isAuthModalOpen) {
         val authState by viewModel.authState.collectAsStateWithLifecycle()
