@@ -5,9 +5,11 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.db.AppDatabase
 import com.example.data.db.JobPostEntity
+import com.example.data.db.ServiceProviderEntity
 import com.example.data.db.SosIncidentEntity
 import com.example.data.remote.FirebaseService
 import com.example.data.remote.SmsNotificationService
+import com.example.data.repository.SkillsExchangeRepository
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -16,6 +18,9 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /**
  * H7/AUDIT-A-SOS — authoritative incident-state transitions.
@@ -23,6 +28,8 @@ import org.junit.Test
  * Verifies that acknowledge/resolve perform the authorized, in-state transition and never
  * rewrite the incident identity (actor/job/id/raisedAt) or an out-of-state row.
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34])
 class SosIncidentTransitionSecurityTest {
 
     private lateinit var db: AppDatabase
@@ -37,6 +44,29 @@ class SosIncidentTransitionSecurityTest {
         repository = SkillsExchangeRepository(db, FirebaseService(), SmsNotificationService())
 
         runBlocking {
+            // job_posts.assignedProviderId has a foreign key to service_providers.id.
+            db.serviceProviderDao().insertProvider(
+                ServiceProviderEntity(
+                    id = "prov_1",
+                    name = "Elena Rostova",
+                    tagline = "Master Plumber & Pipe Specialist",
+                    category = "Plumbing",
+                    neighborhood = "Maplewood East",
+                    residenceYears = 4,
+                    hourlyRate = 75.0,
+                    distanceMiles = 0.8,
+                    rating = 4.9,
+                    completedJobsCount = 42,
+                    avgResponseTime = "12 mins",
+                    isVerifiedResident = true,
+                    isBackgroundChecked = true,
+                    bio = "Licensed master plumber.",
+                    skillsCsv = "Pipe Leak Repair, Drain Clearing",
+                    latitude = 37.7749,
+                    longitude = -122.4194,
+                    endorsementsCount = 31
+                )
+            )
             db.jobPostDao().insertJob(
                 JobPostEntity(
                     id = "job_1",

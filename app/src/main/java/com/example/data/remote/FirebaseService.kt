@@ -714,7 +714,7 @@ class FirebaseService(private val context: Context? = null) {
      */
     suspend fun uploadProfilePhoto(userId: String, photoUri: Uri): String? {
     // Fail closed if no authentication context or userId doesn't match auth
-    val uid = firebaseAuth.currentUser?.uid
+    val uid = auth?.currentUser?.uid
     if (uid == null || uid.isBlank() || uid != userId) return null
 
     // Validate content type - must be an image
@@ -735,7 +735,7 @@ class FirebaseService(private val context: Context? = null) {
 
     // Upload to storage/avatars/{userId}/profile_{timestamp}_{photoId}
     try {
-        val storageRef = storage?.child("avatars/${userId}/${fileName}") ?: return null
+        val storageRef = storage?.reference?.child("avatars/${userId}/${fileName}") ?: return null
         val uploadTask = storageRef.putBytes(bytes).await()
         val downloadUrl = storageRef.downloadUrl.await()
         return downloadUrl.toString()
@@ -753,7 +753,7 @@ class FirebaseService(private val context: Context? = null) {
      * content type is not an image, when the file exceeds 10 MB, or when Storage is unavailable.
      */
     suspend fun uploadJobPostPhoto(jobId: String, photoUri: Uri): String? {
-        if (firebaseAuth.currentUser == null) return null
+        if (auth?.currentUser == null) return null
         if (jobId.isBlank()) return null
 
         val resolver = context?.contentResolver ?: return null
@@ -769,7 +769,7 @@ class FirebaseService(private val context: Context? = null) {
 
         val photoId = java.util.UUID.randomUUID().toString()
         return try {
-            val storageRef = storage?.child("jobs/$jobId/initial_photos/$photoId") ?: return null
+            val storageRef = storage?.reference?.child("jobs/$jobId/initial_photos/$photoId") ?: return null
             storageRef.putBytes(bytes).await()
             storageRef.downloadUrl.await().toString()
         } catch (e: Exception) {

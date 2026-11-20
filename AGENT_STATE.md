@@ -1,3 +1,13 @@
+## 2026-11-20 (Prompt-4 R01 COMPLETE) - ANDROID BUILD GREEN, 355/355 TESTS
+
+- Added the Android build workflow; first compile exposed 186 errors, all fixed.
+- Java 11 toolchain replaced (17 compile, 21 test); Robolectric SDK pinned.
+- SOS acknowledge/resolve validate the explicit actor rather than re-reading Firebase.
+- Evidence: run 44694282419, compile success, 355/355 unit tests.
+- R01 gate passed; completion declaration written. R02 not started.
+
+---
+
 ## 2026-11-20 (Prompt-4 R01) - ONE GATEWAY, ARCHITECTURE GUARD, DECOMPOSITION ROADMAP
 
 - **R01-P2-02.** One private `FirebaseService` is created and injected into the repository; the UI no

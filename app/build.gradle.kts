@@ -48,8 +48,8 @@ android {
     }
   }
   compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
   }
   buildFeatures {
     compose = true
@@ -60,15 +60,15 @@ android {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
 tasks.withType<Test> {
-  // REM-006: one toolchain for compile and tests (the Java 11 toolchain above). The previous
-  // value (25) required a second, machine-local JDK that no clean clone has.
+  // R01-P2-01: one toolchain for compile and tests. Java 11 cannot run Robolectric's
+  // Android sandbox (SDK 34+ requires 17), so the whole project pins 17.
   javaLauncher = javaToolchains.launcherFor {
-    languageVersion.set(JavaLanguageVersion.of(11))
+    languageVersion.set(JavaLanguageVersion.of(21))
   }
 }
 

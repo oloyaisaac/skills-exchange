@@ -18,11 +18,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.db.JobPostEntity
+import com.example.data.db.JobStatus
 import com.example.ui.theme.*
 import com.example.util.CurrencyRegion
 
@@ -36,20 +40,22 @@ fun JobPipelineKanban(
     onOpenQuoteComparison: (JobPostEntity) -> Unit = {},
     onCancelTask: (JobPostEntity, String) -> Unit = { _, _ -> },
     onNavigateToSite: (JobPostEntity) -> Unit = { },
-
-    // AUDIT-W-NAV: Turn-by-turn navigation intent for job site
-    private val navigateByDistrict: (JobPostEntity) -> Unit = { job ->
-        if (job.district != null && job.district.isNotBlank()) {
-            val intent = android.content.Intent(Intent.ACTION_VIEW)
-            intent.data = android.net.Uri.parse("geo:0,0?q=${job.district}")
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    // AUDIT-W-NAV: open a geo: intent for the job's district; the caller may add its own handling.
+    val navigateByDistrict: (JobPostEntity) -> Unit = { job ->
+        if (job.district.isNotBlank()) {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=${job.district}"))
             try {
-                LocalContext.current.startActivity(intent)
-            } catch (e: Exception) {
-                // Google Maps not installed - silently fail
+                context.startActivity(intent)
+            } catch (_: Exception) {
+                // No maps application installed: the caller's fallback still runs.
             }
         }
+        onNavigateToSite(job)
     }
-) {
+
     val statuses = listOf("Requested", "Accepted", "In Progress", "Review", "Completed")
     var selectedTabStatus by remember { mutableStateOf("In Progress") }
 
@@ -554,6 +560,7 @@ fun QuoteComparisonSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
@@ -634,13 +641,25 @@ fun QuoteComparisonSheet(
 
                             // AUDIT-W-NAV: Navigate to site button
                             Button(
-                                onClick = { navigateByDistrict(job) },
+                                onClick = {
+                                    if (job.district.isNotBlank()) {
+                                        val intent = Intent(
+                                            Intent.ACTION_VIEW,
+                                            Uri.parse("geo:0,0?q=${job.district}")
+                                        )
+                                        try {
+                                            context.startActivity(intent)
+                                        } catch (_: Exception) {
+                                            // No maps application installed.
+                                        }
+                                    }
+                                },
                                 modifier = Modifier.padding(start = 8.dp, top = 4.dp),
-                                enabled = job.status == JobStatus.Accepted
+                                enabled = job.status == JobStatus.ACCEPTED.value
                             ) {
                                 Text(
                                     text = "Navigate",
-                                    style = MaterialTheme.typography.button
+                                    style = MaterialTheme.typography.labelLarge
                                 )
                             }
 

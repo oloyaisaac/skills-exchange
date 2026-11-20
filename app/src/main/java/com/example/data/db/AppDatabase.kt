@@ -29,9 +29,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SosIncidentEntity::class
     ],
     version = 27,
-    exportSchema = false,
-    converters = [TypeConverters::class]
+    exportSchema = false
 )
+@androidx.room.TypeConverters(TypeConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun serviceProviderDao(): ServiceProviderDao
     abstract fun skillEndorsementDao(): SkillEndorsementDao

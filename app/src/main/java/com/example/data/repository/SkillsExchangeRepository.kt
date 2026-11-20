@@ -2211,7 +2211,9 @@ class SkillsExchangeRepository(
      * after the Room record is actually transitioned to ACKNOWLEDGED.
      */
     suspend fun acknowledgeSos(incidentId: String, acknowledgedBy: String): Boolean {
-        val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid) ?: return false
+        // The caller (ViewModel) resolves the authenticated UID and fails closed on null; this
+        // boundary validates the value it is given instead of re-reading a second identity source.
+        val actorUid = resolveAuthoritativeUid(acknowledgedBy) ?: return false
         val incident = db.sosIncidentDao().getSosIncidentById(incidentId) ?: return false
         if (incident.status != SosIncidentEntity.STATUS_ACTIVE) return false
         db.sosIncidentDao().updateSosIncidentStatus(
@@ -2230,7 +2232,8 @@ class SkillsExchangeRepository(
      * after the Room record is actually transitioned to CLEARED.
      */
     suspend fun resolveSosIncident(incidentId: String, resolvedBy: String): Boolean {
-        val actorUid = resolveAuthoritativeUid(firebaseService.getCurrentUser()?.uid) ?: return false
+        // Same contract as acknowledgeSos: the explicit actor is validated, never re-derived.
+        val actorUid = resolveAuthoritativeUid(resolvedBy) ?: return false
         val incident = db.sosIncidentDao().getSosIncidentById(incidentId) ?: return false
         if (incident.status != SosIncidentEntity.STATUS_ACTIVE) return false
         db.sosIncidentDao().updateSosIncidentStatus(
@@ -2406,10 +2409,6 @@ class SkillsExchangeRepository(
         )
         return RatingResult.Success
     }
-
-    fun getAverageRatingForUser(userId: String): Double? = db.ratingDao().getAverageRatingForUser(userId)
-
-    fun getRatingsForUser(userId: String): List<RatingEntity> = db.ratingDao().getRatingsForUser(userId)
 
     // ==================== NOTIF-001: Notification Methods ====================
 

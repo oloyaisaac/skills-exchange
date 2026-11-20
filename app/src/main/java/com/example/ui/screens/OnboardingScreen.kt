@@ -72,13 +72,9 @@ fun OnboardingScreen(
     var selectedDistrict by remember { mutableStateOf("") }
     var resendCooldown by remember { mutableStateOf(0) }
 
-    var phoneNumber by remember { mutableStateOf("") }
-    var otpCode by remember { mutableStateOf("") }
     var showOtpInput by remember { mutableStateOf(false) }
     var isVerifying by remember { mutableStateOf(false) }
     var requestId by remember { mutableStateOf<String?>(null) }
-    var phoneError by remember { mutableStateOf<String?>(null) }
-    var otpError by remember { mutableStateOf<String?>(null) }
     var isGoogleSigningIn by remember { mutableStateOf(false) }
 
     val authState by viewModel.authState.collectAsStateWithLifecycle()

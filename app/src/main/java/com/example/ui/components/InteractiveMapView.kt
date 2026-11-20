@@ -69,26 +69,16 @@ private fun isMapsApiKeyPresent(context: android.content.Context): Boolean {
     }
 }
 
-    /** MapView shown only when a valid, non‑placeholder API key is present. */
+    /** MapView shown only when a valid, non-placeholder API key is present. */
 @Composable
-private fun MapWithFallbackFallback(modifier: Modifier = Modifier, googleMapState: MutableMap<GoogleMap, Boolean> = mutableOf()) {
-    val showMap = isMapsApiKeyPresent(LocalContext.current)
-    if (showMap) {
-        MapView(
-            modifier = modifier,
-            onMapReady = { googleMap -> }
-        ) {
-            // Defense‑in‑depth: if onCreate throws (e.g. Play Services missing),
-            // catch the error and surface the fallback.
-            try {
-                map?.onCreate(Bundle.EMPTY)
-            } catch (_: Exception) {
-                // Swallow – the outer conditional will re‑render the fallback.
-            }
-        }
-    } else {
-        MapUnavailableFallback(modifier = modifier)
+private fun MapWithFallbackFallback(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val mapView = remember { MapView(context) }
+    DisposableEffect(mapView) {
+        mapView.onCreate(null)
+        onDispose { mapView.onDestroy() }
     }
+    AndroidView(factory = { mapView }, modifier = modifier.fillMaxSize())
 }
 
 /** Main composable that renders either the map or the unavailable fallback
@@ -232,6 +222,7 @@ fun InteractiveMapView(
     var googleMapInstance: GoogleMap? by remember { mutableStateOf(null) }
     var markers by remember { mutableStateOf<List<Marker>>(emptyList()) }
     var mapViewReference by remember { mutableStateOf<MapView?>(null) }
+    var workerMarker by remember { mutableStateOf<Marker?>(null) }
 
     LaunchedEffect(providers, selectedProvider, googleMapInstance) {
         googleMapInstance?.setOnMarkerClickListener { marker ->
@@ -242,7 +233,6 @@ fun InteractiveMapView(
             true
         }
 
-        var workerMarker: Marker? = null
         markers.forEach { it.remove() }
         markers = providers.map { provider ->
             val position = LatLng(provider.latitude, provider.longitude)

@@ -137,7 +137,15 @@ cd functions
 npm test        # 171 tests on Node 22.22.3 (2026-11-20; the count grows with each new suite)
 ```
 
-> The Android commands above could not be executed in the assessment environment (no JDK/Android SDK). Treat historical build logs in the repository as stale until re-run on the current commit.
+Android unit tests (Robolectric, run on JDK 21 in CI):
+
+```bash
+./gradlew :app:testDebugUnitTest   # 355 tests, 0 failures (2026-11-20)
+```
+
+> The assessment sandbox had no JDK/Android SDK, so the Android build is executed by the
+> `Android build` GitHub workflow on every push and pull request; that is the evidence for a given
+> commit. Treat local historical logs in the repository as stale.
 
 ## License
 
