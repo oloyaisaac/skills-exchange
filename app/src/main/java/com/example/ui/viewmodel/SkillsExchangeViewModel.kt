@@ -69,10 +69,6 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     private val appContext: Application = application
 
-    private companion object {
-        const val TAG = "SkillsExchangeViewModel"
-    }
-
     private val db = AppDatabase.getDatabase(application)
     // REM-023/R01: ONE Firebase gateway per ViewModel. It is constructed before the repository and
     // injected into it, so authentication state has a single owner. A second instance used to be
@@ -2728,6 +2724,9 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     companion object {
+        /** R04: log tag for the best-effort startup collectors. */
+        const val TAG = "SkillsExchangeViewModel"
+
         /**
          * PAY-002: how often the app re-asks the trusted backend
          * (`getMoMoCollectionStatus`) for the provider-verified payment status, and how
