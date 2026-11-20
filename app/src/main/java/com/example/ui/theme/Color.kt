@@ -31,7 +31,10 @@ val IndustrialEmeraldLight = Color(0xFFECFDF5)
 val AmberUrgent = Color(0xFFD97706)
 val AmberUrgentLight = Color(0xFFFFFBEB)
 
-val RedDanger = Color(0xFFDC2626)
+// R12-P2-06: 0xFFDC2626 measured 4.41:1 on its own error surface (RedDangerLight) — a hair under the
+// body floor on the sentence that tells a user money did not move. One step darker: 5.24:1 on that
+// surface, 5.74:1 for white text on it.
+val RedDanger = Color(0xFFC81E1E)
 val RedDangerLight = Color(0xFFFEF2F2)
 
 val Emerald50 = Color(0xFFECFDF5)

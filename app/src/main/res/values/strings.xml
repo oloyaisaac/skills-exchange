@@ -18,7 +18,7 @@
     <string name="safety_desk_empty">No report is waiting triage right now.</string>
 
     <string name="escrow_release_action">Authorize &amp; Release (%1$s)</string>
-    <string name="escrow_releasing">Releasing with the server…</string>
+    <string name="escrow_releasing">Releasing with the server...</string>
     <string name="escrow_release_failed">Release failed: %1$s</string>
 
     <string name="offline_banner">Offline — showing saved data. Changes queue automatically.</string>

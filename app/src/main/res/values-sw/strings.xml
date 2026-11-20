@@ -14,7 +14,7 @@
     <string name="safety_desk_empty">Hakuna ripoti inayosubiri kuchunguzwa kwa sasa.</string>
 
     <string name="escrow_release_action">Idhinisha na Toa (%1$s)</string>
-    <string name="escrow_releasing">Inatoa kwa seva…</string>
+    <string name="escrow_releasing">Inatoa kwa seva...</string>
     <string name="escrow_release_failed">Utoaji umeshindikana: %1$s</string>
 
     <string name="offline_banner">Hakuna mtandao — unaona data iliyohifadhiwa. Mabadiliko yanasubiri.</string>
