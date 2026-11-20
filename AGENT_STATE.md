@@ -1,3 +1,21 @@
+## 2026-11-20 (Prompt-4 R05 IN PROGRESS) - API & EXTERNAL INTEGRATIONS, CI BLOCKED BY BILLING
+
+- All seven R05 findings are implemented in source on `arena/a0499936-skills-exchange` (PR #19).
+  P2-01 device SOS SMS stub deleted; P2-02 FCM token registered server-side via `registerPushToken`
+  and never logged; P2-03 UGX is the only money unit (`JobMoney`, seeds and escrow labels converted);
+  P2-04 Gemini key moved into Functions secrets behind `searchLocalPlaces`; P2-05 invented shop list
+  deleted, only Maps grounding chunks become places and unverified answers are labelled; P2-06 typed
+  `CallableContracts` for all 17 callables; P2-07 bounded `CallableRetry` + server timeouts/backoff.
+- **Verified locally:** `functions` build + `npm test` 179/179.
+- **Verified in CI for commit `fb1fa8d`:** `compileDebugKotlin` BUILD SUCCESSFUL (main sources compile).
+- **NOT verified:** the Android JVM test run. Since 2026-11-20 every workflow run fails before starting:
+  "The job was not started because recent account payments have failed or your spending limit needs
+  to be increased." That is a GitHub billing block, not a code failure.
+- **R05 gate NOT passed.** No reviewer completion file was written. Waiting on the account owner to
+  restore GitHub Actions; then re-run PR #19 checks and finish the gate.
+
+---
+
 ## 2026-11-20 (Prompt-4 R02 COMPLETE) - SERVER-CONFIRMED ESCROW, COMPOSE TESTS
 
 - Escrow release now requires the `releaseEscrowToWorker` callable; local status moves only on success.
