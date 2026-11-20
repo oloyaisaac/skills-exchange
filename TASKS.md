@@ -36,7 +36,20 @@ suspend-only (REM-052). Evidence: Android run 44748445356 (435 tests, 0 failures
 docs and secret checks pass. Not verified: deploy, live provider traffic, FCM delivery, a real Maps
 key (REM-053 partial).
 
-**R06 — identity, admin claims and account lifecycle — NEXT.** R07–R15 awaiting.
+**R06 — COMPLETE.** Account deletion is server-authoritative: `deleteMyAccount` purges Firestore
+documents **and** Cloud Storage objects (`users/{uid}/`, `avatars/{uid}/`, `jobs/{jobId}/`) with counted
+reports, refuses a missing or stale `auth_time`, and the client deletes the Firebase Auth user only after
+a complete purge — the old unconditional `deleteUserFirestoreData` + `deleteCurrentUser` pair is gone.
+The deletion dialog is state-driven (it no longer closes itself, and cannot claim success early), names
+the photos it removes, and offers in-app re-authentication (Google re-consent or an SMS code) instead of
+"sign out and back in". Google sign-in can be linked to the signed-in account (`linkWithCredential`) so
+one person cannot silently hold two wallets, a collision is shown as text, logout and deletion delete
+the FCM token locally and server-side, and the Google web client id moved out of source into build
+config (an unset id disables the button with an explanation). Evidence: Android run 44752473651
+(447 tests, 0 failures), backend 190/190, docs and secret checks pass. Not verified: live auth traffic,
+deploy, Storage deletion against a real bucket, and the REM-025 end-to-end link log.
+
+**R07 — next in the reviewer list.** R08–R15 awaiting.
 
 ## Review Track — 2026-11-19 (not started)
 

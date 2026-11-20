@@ -1,6 +1,7 @@
 package com.example.ui.viewmodel
 
 import android.app.Application
+import android.util.Log
 import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,10 +18,14 @@ import com.example.data.db.JobPostEntity
 import com.example.data.db.ServiceProviderEntity
 import com.example.data.db.SkillEndorsementEntity
 import com.example.data.db.UserProfileEntity
+import com.example.data.remote.AccountDeletionOutcome
+import com.example.data.remote.AccountDeletionRules
 import com.example.data.remote.AfricaTalkingService
 import com.example.data.remote.AfricaTalkingService.OtpResponse
 import com.example.data.remote.AfricaTalkingService.VerificationResponse
+import com.example.data.remote.DeletionStep
 import com.example.data.remote.FirebaseService
+import com.example.data.remote.IdentityLinkRules
 import com.example.data.remote.GeminiAudioTranscriptionService
 import com.example.data.remote.GeminiMapsGroundingService
 import com.example.data.remote.MapsGroundingResult
@@ -28,6 +33,7 @@ import com.example.data.remote.MoMoPaymentIntent
 import com.example.data.remote.MoMoPaymentPhase
 import com.example.data.remote.MoMoPaymentUiState
 import com.example.data.remote.mapBackendStatusToPhase
+import com.example.data.remote.SkillsExchangeMessagingService
 import com.example.data.remote.TranscribedVoiceJob
 import com.example.data.repository.SkillsExchangeRepository
 import com.example.util.AdminDisputeDecisions
@@ -36,10 +42,14 @@ import com.example.util.CurrencyRegion
 import com.example.util.DistanceUtil
 import com.example.util.ProfileValidators
 import com.google.firebase.auth.FirebaseUser
+import kotlin.coroutines.resume
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.withContext
 
 data class FilterState(
     val district: String = "Current Location",
@@ -1492,43 +1502,209 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    // ============ R06: account deletion (server-authoritative, ordered) ============
+
+    /**
+     * R06-P2-01 / R06-P2-02 / R06-P2-05: what the deletion dialog is doing right now.
+     *
+     * The dialog used to close itself the instant the button was tapped and then report either
+     * nothing or "partially failed" — after the account was already gone. It now renders this state,
+     * so it can only claim success once the server has confirmed the purge and the Firebase Auth user
+     * has actually been removed.
+     */
+    val accountDeletionStep = MutableStateFlow(DeletionStep.CONFIRM)
+    val accountDeletionMessage = MutableStateFlow<String?>(null)
+
+    /** True once a Firebase code has been sent for the re-authentication step. */
+    val accountDeletionCodeSent = MutableStateFlow(false)
+
+    /** Called when the dialog opens: a fresh attempt never inherits the previous outcome. */
+    fun resetAccountDeletionState() {
+        if (accountDeletionStep.value == DeletionStep.PURGING) return
+        accountDeletionStep.value = DeletionStep.CONFIRM
+        accountDeletionMessage.value = null
+        accountDeletionCodeSent.value = false
+    }
+
+    /**
+     * R06-P2-01: permanently delete the signed-in account — but only in the order that can be
+     * defended.
+     *
+     * 1. The server purges Firestore documents **and** Cloud Storage objects and reports counts.
+     * 2. The Firebase Auth user is deleted only if that report says `complete` (see
+     *    [AccountDeletionRules]).
+     * 3. Local Room data and the session are cleared last.
+     *
+     * Any other outcome leaves the session intact and the dialog open, because a deleted identity
+     * cannot finish removing its own data. The old code called `deleteCurrentUser()` unconditionally
+     * and reported the failure afterwards.
+     */
     fun permanentlyDeleteUserAccountAndData() {
+        if (accountDeletionStep.value == DeletionStep.PURGING) return
         viewModelScope.launch {
             // C2-2 Fix #3 (F7): account deletion must target the AUTHENTICATED account. The UID
             // comes from FirebaseAuth only — the newest Room row is no longer consulted, so a stale
             // device profile can neither delete nor shield another account's data.
-            val userId = currentAuthenticatedUid() ?: return@launch
-            // REM-024: account deletion is irreversible; require a recent sign-in before touching
-            // any data. The rules enforce the same five-minute window on owner deletes.
-            if (!firebaseService.hasFreshAuthentication()) {
-                authError.value = "Please sign in again before deleting your account."
+            val userId = currentAuthenticatedUid()
+            if (userId == null) {
+                accountDeletionStep.value = DeletionStep.FAILED
+                accountDeletionMessage.value =
+                    "Your session ended before deletion started. Sign in again and retry."
                 return@launch
             }
-            val userJobIds = repository.jobs.first().map { it.id }
+            // REM-024 / R06-P2-05: the server enforces the same five-minute window, but checking
+            // here avoids a pointless round trip and points the user at the re-authentication step.
+            if (!firebaseService.hasFreshAuthentication()) {
+                accountDeletionStep.value = DeletionStep.REAUTH
+                accountDeletionMessage.value = AccountDeletionRules.progressLabel(DeletionStep.REAUTH)
+                return@launch
+            }
 
-            val firestoreDeleted = firebaseService.deleteUserFirestoreData(userId, userJobIds)
-            val authDeleted = firebaseService.deleteCurrentUser()
+            accountDeletionStep.value = DeletionStep.PURGING
+            accountDeletionMessage.value = AccountDeletionRules.progressLabel(DeletionStep.PURGING)
 
-            repository.clearAllUserData()
-            sessionManager.clearSession()
+            // Only jobs this account posted; the server re-verifies ownership of each id before it
+            // deletes anything.
+            val userJobIds = repository.jobs.first()
+                .filter { it.postedByUid == userId }
+                .map { it.id }
 
-            authState.value = AuthState.SignedOut
-            isAuthenticated.value = false
-            authError.value = null
-            currentUserPhone.value = null
-            selectedProvider.value = null
-            selectedJob.value = null
-            isAuthModalOpen.value = false
-            authPendingAction.value = null
-            currentTraining.value = null
-            fcmToken.value = null
-            hasNotificationPermission.value = false
-            userRoleMode.value = "Hire a Neighbor"
-
-            if (!firestoreDeleted || !authDeleted) {
-                authError.value = "Account deletion partially failed. Please contact support."
+            when (val outcome = firebaseService.requestAccountDeletion(userJobIds)) {
+                is AccountDeletionOutcome.Purged -> {
+                    // R06-P2-04: drop this device's push token before the identity disappears.
+                    deleteDevicePushToken()
+                    if (!firebaseService.deleteCurrentUser()) {
+                        // Data is gone but the sign-in survived: say exactly that, keep the session,
+                        // and let the person retry (the purge is idempotent).
+                        accountDeletionStep.value = DeletionStep.FAILED
+                        accountDeletionMessage.value =
+                            "Your records and photos were deleted, but this sign-in could not be " +
+                                "removed. Sign in again and retry to finish removing the account."
+                        return@launch
+                    }
+                    clearLocalStateAfterSignOut()
+                    accountDeletionStep.value = DeletionStep.DONE
+                    accountDeletionMessage.value = AccountDeletionRules.progressLabel(DeletionStep.DONE)
+                    Log.i("ViewModel", "Account deletion completed (${outcome.storageDeleted} files, ${outcome.firestoreDocsDeleted} records)")
+                }
+                AccountDeletionOutcome.ReauthRequired -> {
+                    accountDeletionStep.value = DeletionStep.REAUTH
+                    accountDeletionMessage.value = AccountDeletionRules.progressLabel(DeletionStep.REAUTH)
+                }
+                is AccountDeletionOutcome.Incomplete -> {
+                    accountDeletionStep.value = DeletionStep.FAILED
+                    accountDeletionMessage.value = outcome.message
+                }
+                is AccountDeletionOutcome.Failed -> {
+                    accountDeletionStep.value = DeletionStep.FAILED
+                    accountDeletionMessage.value = outcome.message
+                }
             }
         }
+    }
+
+    /**
+     * R06-P2-05: refresh the five-minute window with a Google credential, then continue deleting.
+     *
+     * Re-authenticating keeps the same uid, so the purge targets the same account and the person does
+     * not lose their place by being told to sign out and back in.
+     */
+    fun reauthenticateForAccountDeletionWithGoogle(idToken: String) {
+        viewModelScope.launch {
+            accountDeletionMessage.value = "Checking it is you…"
+            firebaseService.reauthenticateWithGoogle(idToken)
+                .onSuccess {
+                    accountDeletionCodeSent.value = false
+                    permanentlyDeleteUserAccountAndData()
+                }
+                .onFailure { error ->
+                    accountDeletionStep.value = DeletionStep.REAUTH
+                    accountDeletionMessage.value = IdentityLinkRules.reauthMessage(error)
+                }
+        }
+    }
+
+    /** R06-P2-05: send a Firebase code to the account's own number for the re-authentication step. */
+    fun startAccountDeletionPhoneReauth(phoneNumber: String) {
+        viewModelScope.launch {
+            accountDeletionMessage.value = "Sending a code…"
+            firebaseService.sendPhoneVerificationCode(phoneNumber)
+                .onSuccess {
+                    accountDeletionCodeSent.value = true
+                    accountDeletionStep.value = DeletionStep.REAUTH
+                    accountDeletionMessage.value = "Enter the 6-digit code we sent to your phone."
+                }
+                .onFailure { error ->
+                    accountDeletionStep.value = DeletionStep.REAUTH
+                    accountDeletionMessage.value = IdentityLinkRules.reauthMessage(error)
+                }
+        }
+    }
+
+    /** R06-P2-05: exchange the code for a fresh `auth_time`, then continue deleting. */
+    fun confirmAccountDeletionPhoneReauth(code: String) {
+        viewModelScope.launch {
+            accountDeletionMessage.value = "Checking it is you…"
+            firebaseService.reauthenticateWithPhoneCode(code)
+                .onSuccess {
+                    accountDeletionCodeSent.value = false
+                    permanentlyDeleteUserAccountAndData()
+                }
+                .onFailure { error ->
+                    accountDeletionStep.value = DeletionStep.REAUTH
+                    accountDeletionMessage.value = IdentityLinkRules.reauthMessage(error)
+                }
+        }
+    }
+
+    /**
+     * R06-P2-04: forget this device's FCM token, locally and server-side.
+     *
+     * The token is a device credential that keeps delivering another person's notifications after
+     * sign-out, so it is deleted while the session can still prove ownership.
+     */
+    private suspend fun deleteDevicePushToken() {
+        val token = fcmToken.value
+        firebaseService.clearMyPushTokens(token)
+        withContext(Dispatchers.Main) {
+            suspendCancellableCoroutine<Unit> { continuation ->
+                SkillsExchangeMessagingService.deleteToken {
+                    if (continuation.isActive) continuation.resume(Unit)
+                }
+            }
+        }
+        fcmToken.value = null
+    }
+
+    /**
+     * R06-P2-03: attach Google sign-in to the account that is already signed in.
+     *
+     * One person, one uid, one wallet: a second Google account must not silently create a second
+     * profile, so the result is reported back to the UI as text instead of being swallowed.
+     */
+    fun linkGoogleAccount(idToken: String, onResult: (String) -> Unit) {
+        viewModelScope.launch {
+            val result = firebaseService.linkGoogleAccount(idToken)
+            onResult(IdentityLinkRules.linkMessage(result))
+        }
+    }
+
+    /** Shared teardown for sign-out and completed deletion; never runs before the server agrees. */
+    private suspend fun clearLocalStateAfterSignOut() {
+        repository.clearAllUserData()
+        sessionManager.clearSession()
+        authState.value = AuthState.SignedOut
+        isAuthenticated.value = false
+        authError.value = null
+        currentUserPhone.value = null
+        selectedProvider.value = null
+        selectedJob.value = null
+        isAuthModalOpen.value = false
+        authPendingAction.value = null
+        currentTraining.value = null
+        fcmToken.value = null
+        hasNotificationPermission.value = false
+        userRoleMode.value = "Hire a Neighbor"
     }
 
     // --- REG-003: WORKER BACKUP CONTACT ---
@@ -2623,6 +2799,9 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
             }
             // REM-024: revoke refresh tokens while the ID token is still valid, then clear locally.
             firebaseService.revokeMyTokens("LOGOUT")
+            // R06-P2-04: the push token is device state, not account state. Delete it before the
+            // session ends, otherwise this phone keeps receiving another person's notifications.
+            deleteDevicePushToken()
             repository.clearAllUserData()
             firebaseService.signOut()
             sessionManager.clearSession()

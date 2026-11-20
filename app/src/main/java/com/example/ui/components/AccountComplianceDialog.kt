@@ -32,25 +32,78 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.net.Uri
 import com.example.ui.viewmodel.SkillsExchangeViewModel
+import com.example.data.remote.AccountDeletionRules
+import com.example.data.remote.DeletionStep
+import androidx.compose.ui.platform.LocalContext
 import com.example.data.db.GuarantorEntity
 import com.example.ui.theme.*
 
+/**
+ * R06-P2-01 / R06-P2-02 / R06-P2-05: the account-deletion dialog.
+ *
+ * It is driven by the deletion [step] rather than closing itself on tap. The old version called the
+ * ViewModel and dismissed in the same frame, so a failed purge looked like success and a stale
+ * session left the person with no way forward. Now the dialog:
+ *
+ *  * names Cloud Storage photos as part of what is purged (they were never deleted before);
+ *  * stays open while the server purges, and cannot be dismissed mid-purge;
+ *  * offers a real in-app re-authentication step (Google re-consent or an SMS code) instead of
+ *    "sign out and sign in again";
+ *  * reports success only when the purge *and* the sign-in removal both succeeded.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountDeletionDialog(
     isOpen: Boolean,
-    onDismiss: () -> Unit,
-    onConfirmDeleteAccount: () -> Unit
+    step: DeletionStep = DeletionStep.CONFIRM,
+    message: String? = null,
+    codeSent: Boolean = false,
+    accountPhone: String? = null,
+    onDismiss: () -> Unit = {},
+    onConfirmDeleteAccount: () -> Unit = {},
+    onReauthWithGoogle: (idToken: String) -> Unit = {},
+    onStartPhoneReauth: (phone: String) -> Unit = {},
+    onConfirmPhoneReauth: (code: String) -> Unit = {},
+    onReset: () -> Unit = {}
 ) {
     // R02-P2-06: account/identity surface — block screenshots and recents preview.
     SecureScreen()
     if (!isOpen) return
 
     var confirmationText by remember { mutableStateOf("") }
+    var phoneNumber by remember(accountPhone) { mutableStateOf(accountPhone.orEmpty()) }
+    var otpCode by remember { mutableStateOf("") }
+    var googleUnavailable by remember { mutableStateOf<String?>(null) }
     val isConfirmed = confirmationText.trim().equals("DELETE", ignoreCase = true)
+    val context = LocalContext.current
+
+    // R06-P2-05: re-authentication with Google happens inside this dialog, so the person never has
+    // to leave the deletion flow (and lose what they were doing) to refresh the 5-minute window.
+    val googleLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            com.google.android.gms.auth.api.signin.GoogleSignIn
+                .getSignedInAccountFromIntent(result.data)
+                .addOnSuccessListener { account ->
+                    val token = account.idToken
+                    if (token.isNullOrBlank()) {
+                        googleUnavailable = "Google did not return a verifiable token. Use the SMS code instead."
+                    } else {
+                        googleUnavailable = null
+                        onReauthWithGoogle(token)
+                    }
+                }
+                .addOnFailureListener {
+                    googleUnavailable = "Google verification was cancelled or failed. Use the SMS code instead."
+                }
+        }
+    }
+
+    val busy = step == DeletionStep.PURGING
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!busy) onDismiss() },
         icon = {
             Box(
                 modifier = Modifier
@@ -68,7 +121,11 @@ fun AccountDeletionDialog(
         },
         title = {
             Text(
-                text = "Permanently Delete Account & Data",
+                text = when (step) {
+                    DeletionStep.REAUTH -> "Verify It Is You"
+                    DeletionStep.DONE -> "Account Deleted"
+                    else -> "Permanently Delete Account & Data"
+                },
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = Slate900
@@ -76,65 +133,191 @@ fun AccountDeletionDialog(
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "In compliance with App Store & Google Play privacy policies, account deletion will permanently purge:",
-                    fontSize = 12.5.sp,
-                    color = Slate600
-                )
+                if (step == DeletionStep.CONFIRM) {
+                    Text(
+                        text = "In compliance with App Store & Google Play privacy policies, account deletion will permanently purge:",
+                        fontSize = 12.5.sp,
+                        color = Slate600
+                    )
 
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = Slate50,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Slate200)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Slate50,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Slate200)
                     ) {
-                        Text("• Active job postings & quote bids", fontSize = 11.5.sp, color = Slate700)
-                        Text("• National ID verification records & documents", fontSize = 11.5.sp, color = Slate700)
-                        Text("• Mobile Money wallet links & transaction logs", fontSize = 11.5.sp, color = Slate700)
-                        Text("• Local device cache and authentication tokens", fontSize = 11.5.sp, color = Slate700)
+                        Column(
+                            modifier = Modifier.padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text("• Active job postings & quote bids", fontSize = 11.5.sp, color = Slate700)
+                            Text("• National ID verification records & documents", fontSize = 11.5.sp, color = Slate700)
+                            // R06-P2-02: Storage objects are now actually removed, and named.
+                            Text("• Uploaded photos: ID documents, certificates, guarantor photos, avatars & job photos", fontSize = 11.5.sp, color = Slate700)
+                            Text("• Mobile Money wallet links & transaction logs", fontSize = 11.5.sp, color = Slate700)
+                            Text("• Local device cache, push token and authentication tokens", fontSize = 11.5.sp, color = Slate700)
+                        }
+                    }
+
+                    Text(
+                        text = "Type 'DELETE' to confirm irreversible purge:",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Slate800
+                    )
+
+                    OutlinedTextField(
+                        value = confirmationText,
+                        onValueChange = { confirmationText = it },
+                        placeholder = { Text("DELETE") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                }
+
+                if (step == DeletionStep.REAUTH) {
+                    Text(
+                        text = "Deleting an account needs a sign-in from the last five minutes. " +
+                            "Verify below to continue — you will stay on this screen.",
+                        fontSize = 12.5.sp,
+                        color = Slate600
+                    )
+                    Button(
+                        onClick = {
+                            val client = com.example.util.GoogleSignInHelper.getClient(context)
+                            if (client == null) {
+                                googleUnavailable = com.example.util.GoogleSignInHelper.NOT_CONFIGURED_MESSAGE
+                            } else {
+                                googleUnavailable = null
+                                googleLauncher.launch(client.signInIntent)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Slate900, contentColor = Color.White)
+                    ) {
+                        Text("Verify with Google", fontWeight = FontWeight.Bold)
+                    }
+                    if (googleUnavailable != null) {
+                        Text(text = googleUnavailable!!, fontSize = 11.sp, color = RedDanger)
+                    }
+
+                    Text("Or verify with a code sent to your phone:", fontSize = 12.sp, color = Slate800)
+                    OutlinedTextField(
+                        value = phoneNumber,
+                        onValueChange = { phoneNumber = it },
+                        placeholder = { Text("+256 7xx xxx xxx") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    OutlinedButton(
+                        onClick = { onStartPhoneReauth(phoneNumber) },
+                        enabled = phoneNumber.trim().length >= 10,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(if (codeSent) "Resend Code" else "Send Code")
+                    }
+                    if (codeSent) {
+                        OutlinedTextField(
+                            value = otpCode,
+                            onValueChange = { otpCode = it.filter { ch -> ch.isDigit() }.take(6) },
+                            placeholder = { Text("6-digit code") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        Button(
+                            onClick = { onConfirmPhoneReauth(otpCode) },
+                            enabled = otpCode.length == 6,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Verify Code", fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
 
-                Text(
-                    text = "Type 'DELETE' to confirm irreversible purge:",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Slate800
-                )
+                if (step == DeletionStep.PURGING) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        Text(
+                            text = message ?: AccountDeletionRules.progressLabel(DeletionStep.PURGING),
+                            fontSize = 12.5.sp,
+                            color = Slate700
+                        )
+                    }
+                    Text(
+                        text = "Keep the app open until this finishes.",
+                        fontSize = 11.sp,
+                        color = Slate500
+                    )
+                }
 
-                OutlinedTextField(
-                    value = confirmationText,
-                    onValueChange = { confirmationText = it },
-                    placeholder = { Text("DELETE") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp)
-                )
+                if (step == DeletionStep.DONE) {
+                    Text(
+                        text = message ?: AccountDeletionRules.progressLabel(DeletionStep.DONE),
+                        fontSize = 12.5.sp,
+                        color = Slate700
+                    )
+                }
+
+                if (step == DeletionStep.FAILED) {
+                    Text(
+                        text = message ?: AccountDeletionRules.progressLabel(DeletionStep.FAILED),
+                        fontSize = 12.5.sp,
+                        color = RedDanger
+                    )
+                    Text(
+                        text = "Your account was kept. Nothing was lost.",
+                        fontSize = 11.sp,
+                        color = Slate500
+                    )
+                }
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    onConfirmDeleteAccount()
-                    onDismiss()
-                },
-                enabled = isConfirmed,
-                colors = ButtonDefaults.buttonColors(containerColor = RedDanger),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text("Delete Everything", fontWeight = FontWeight.Bold)
+            when (step) {
+                DeletionStep.DONE -> Button(
+                    onClick = { onReset(); onDismiss() },
+                    shape = RoundedCornerShape(8.dp)
+                ) { Text("Done", fontWeight = FontWeight.Bold) }
+
+                DeletionStep.FAILED -> Button(
+                    onClick = { onReset() },
+                    colors = ButtonDefaults.buttonColors(containerColor = RedDanger),
+                    shape = RoundedCornerShape(8.dp)
+                ) { Text("Try Again", fontWeight = FontWeight.Bold) }
+
+                DeletionStep.REAUTH -> TextButton(onClick = { if (!busy) onDismiss() }) { Text("Cancel") }
+
+                DeletionStep.PURGING -> Button(
+                    onClick = {},
+                    enabled = false,
+                    shape = RoundedCornerShape(8.dp)
+                ) { Text("Deleting…", fontWeight = FontWeight.Bold) }
+
+                DeletionStep.CONFIRM -> Button(
+                    onClick = { onConfirmDeleteAccount() },
+                    enabled = isConfirmed,
+                    colors = ButtonDefaults.buttonColors(containerColor = RedDanger),
+                    shape = RoundedCornerShape(8.dp)
+                ) { Text("Delete Everything", fontWeight = FontWeight.Bold) }
             }
         },
-        dismissButton = {
-            OutlinedButton(
-                onClick = onDismiss,
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text("Cancel")
+        dismissButton = if (step == DeletionStep.CONFIRM) {
+            {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    shape = RoundedCornerShape(8.dp)
+                ) { Text("Cancel") }
             }
+        } else {
+            null
         }
     )
 }

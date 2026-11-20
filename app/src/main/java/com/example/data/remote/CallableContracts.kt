@@ -84,6 +84,17 @@ object CallableContracts {
             name = "revokeMyTokens",
             optional = mapOf("reason" to CallableValueType.STRING)
         ),
+        // R06-P2-01: account deletion is a server-side purge; the client only supplies the job ids
+        // it believes it posted and the server verifies each one before deleting.
+        CallableContract(
+            name = "deleteMyAccount",
+            optional = mapOf("jobIds" to CallableValueType.LIST)
+        ),
+        // R06-P2-04: drop this device's push token before sign-out.
+        CallableContract(
+            name = "clearMyPushTokens",
+            optional = mapOf("token" to CallableValueType.STRING)
+        ),
         CallableContract(
             name = "recordConsent",
             required = mapOf(

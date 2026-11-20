@@ -69,6 +69,8 @@ fun AppNavigationDrawer(
     onOpenDataBackup: () -> Unit = {},
     onOpenPrivacyPolicy: () -> Unit = {},
     onOpenDeleteAccount: () -> Unit = {},
+    // R06-P2-03: attach Google sign-in to the account that is already signed in.
+    onOpenLinkGoogle: () -> Unit = {},
     /**
      * AUDIT FIX (H4): Real escrow figure supplied by MainScreen from the job records.
      * Previously this drawer hardcoded `CurrencyRegion.format(240.0)` and presented it to
@@ -542,6 +544,17 @@ fun AppNavigationDrawer(
                         )
 
                         if (isAuthenticated) {
+                            // R06-P2-03: one person, one uid, one wallet — link instead of
+                            // silently creating a second account on the next Google sign-in.
+                            DrawerMenuItem(
+                                icon = Icons.Outlined.Link,
+                                title = "Link Google Sign-In",
+                                subtitle = "Use Google to sign in to this same account",
+                                onClick = {
+                                    onDismiss()
+                                    onOpenLinkGoogle()
+                                }
+                            )
                             DrawerMenuItem(
                                 icon = Icons.Outlined.DeleteForever,
                                 title = "Delete Account & Data",

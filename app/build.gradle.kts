@@ -27,6 +27,17 @@ android {
     // To enable Maps: add MAPS_API_KEY=<your_key> to .env (never commit a real key).
     manifestPlaceholders["MAPS_API_KEY"] = "DEFAULT_MAPS_API_KEY"
 
+    // R06-P2-06: the Google web client id used to be a string literal inside
+    // GoogleSignInHelper.kt. It is a project identifier, not a secret, but a literal in source
+    // drifts the moment the project changes and cannot be set per build. It now comes from the
+    // environment, a Gradle property, or the untracked `.env` file — in that order — and an empty
+    // value simply disables the Google button instead of crashing.
+    buildConfigField(
+      "String",
+      "GOOGLE_WEB_CLIENT_ID",
+      "\"${googleWebClientId()}\""
+    )
+
   }
 
   signingConfigs {
@@ -166,4 +177,23 @@ dependencies {
   "ksp"(libs.androidx.room.compiler)
   "ksp"(libs.moshi.kotlin.codegen)
   implementation(libs.gson)
+}
+
+/**
+ * R06-P2-06: resolves `GOOGLE_WEB_CLIENT_ID` without ever embedding a value in the repository.
+ *
+ * Order: environment variable, Gradle property (`-PGOOGLE_WEB_CLIENT_ID=...`), then `KEY=value` in
+ * the untracked `.env` at the repository root. Returns an empty string when nothing is set, which
+ * makes `GoogleSignInHelper.isConfigured` false and the button explains why.
+ */
+fun googleWebClientId(): String {
+  val fromEnv = System.getenv("GOOGLE_WEB_CLIENT_ID")?.trim().orEmpty()
+  if (fromEnv.isNotEmpty()) return fromEnv
+  val fromProperty = (project.findProperty("GOOGLE_WEB_CLIENT_ID") as String?)?.trim().orEmpty()
+  if (fromProperty.isNotEmpty()) return fromProperty
+  val dotEnv = rootProject.file(".env")
+  if (!dotEnv.exists()) return ""
+  val line = dotEnv.readLines().firstOrNull { it.trim().startsWith("GOOGLE_WEB_CLIENT_ID=") }
+    ?: return ""
+  return line.substringAfter("=").trim().trim('"')
 }

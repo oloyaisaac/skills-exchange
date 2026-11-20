@@ -79,6 +79,8 @@ fun OnboardingScreen(
     var isVerifying by rememberSaveable { mutableStateOf(false) }
     var requestId by rememberSaveable { mutableStateOf<String?>(null) }
     var isGoogleSigningIn by rememberSaveable { mutableStateOf(false) }
+    // R06-P2-06: reason Google sign-in cannot start in this build (unset client id), if any.
+    var googleConfigMessage by remember { mutableStateOf<String?>(null) }
 
     val authState by viewModel.authState.collectAsStateWithLifecycle()
     val authError by viewModel.authError.collectAsStateWithLifecycle()
@@ -828,9 +830,15 @@ fun OnboardingScreen(
                     // Google Sign-In Button
                     OutlinedButton(
                         onClick = {
-                            isGoogleSigningIn = true
-                            val signInIntent = GoogleSignInHelper.getClient(context).signInIntent
-                            googleSignInLauncher.launch(signInIntent)
+                            // R06-P2-06: no client id in this build means no Google flow at all.
+                            val client = GoogleSignInHelper.getClient(context)
+                            if (client == null) {
+                                googleConfigMessage = GoogleSignInHelper.NOT_CONFIGURED_MESSAGE
+                            } else {
+                                googleConfigMessage = null
+                                isGoogleSigningIn = true
+                                googleSignInLauncher.launch(client.signInIntent)
+                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -855,6 +863,15 @@ fun OnboardingScreen(
                                 )
                             }
                         }
+                    }
+
+                    if (googleConfigMessage != null) {
+                        Text(
+                            text = googleConfigMessage!!,
+                            fontSize = 11.sp,
+                            color = RedDanger,
+                            modifier = Modifier.padding(top = 6.dp)
+                        )
                     }
 
                     // Divider

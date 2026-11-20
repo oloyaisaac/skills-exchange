@@ -24,6 +24,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
+import com.google.firebase.functions.FirebaseFunctionsException
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -133,6 +134,25 @@ class FirebaseService(private val context: Context? = null) {
             else -> "Phone verification failed. Please try again."
         }
     }
+
+        /**
+         * R06-P2-05: why a re-authentication attempt failed. A wrong code and a session that
+         * Firebase no longer accepts are different problems for the user, so they read differently.
+         */
+        private fun reauthFailureMessage(error: Throwable): String = when (error) {
+            is FirebaseAuthInvalidCredentialsException -> "That code or Google account was not accepted. Try again."
+            is FirebaseTooManyRequestsException -> "Too many attempts. Please wait a moment and try again."
+            is FirebaseNetworkException -> "Check your internet connection and try again."
+            is FirebaseAuthUserCollisionException -> "This sign-in belongs to another account. Use the account you are signed in with."
+            else -> IdentityLinkRules.reauthMessage(error)
+        }
+
+        /** R06-P2-03: why linking a Google identity failed. */
+        private fun identityLinkFailureMessage(error: Throwable): String = when (error) {
+            is FirebaseNetworkException -> "Check your internet connection and try again."
+            is FirebaseTooManyRequestsException -> "Too many attempts. Please wait a moment and try again."
+            else -> "Google sign-in could not be linked. Please try again."
+        }
 
     // ==================== C2-1: real phone verification state ====================
 
@@ -304,6 +324,11 @@ class FirebaseService(private val context: Context? = null) {
         }
     }
 
+    /**
+     * R06-P2-01: deletes the Firebase Auth user. Call this ONLY after
+     * [requestAccountDeletion] returned [AccountDeletionOutcome.Purged] — deleting the identity
+     * first strips the only actor able to remove the remaining personal data.
+     */
     suspend fun deleteCurrentUser(): Boolean {
         val authInstance = auth ?: return false
         return try {
@@ -318,49 +343,151 @@ class FirebaseService(private val context: Context? = null) {
         }
     }
 
-    suspend fun deleteUserFirestoreData(userId: String, userJobIds: List<String> = emptyList()): Boolean {
-        val db = firestore ?: return false
+    /**
+     * R06-P2-01 / R06-P2-02: ask the server to purge this account's Firestore records **and**
+     * Cloud Storage objects, in that order, before anything irreversible happens.
+     *
+     * The purge moved server-side because the client cannot be the judge of whether data is gone:
+     * it used to delete the Firebase Auth user unconditionally after a Firestore delete that may
+     * have failed, and it never touched Storage at all (KYC documents, guarantor portraits,
+     * avatars and job photos stayed behind). The server re-checks the five-minute fresh-auth
+     * window, verifies that every `jobId` really belongs to the caller, and reports counts.
+     *
+     * The Firebase Auth user is deleted by [deleteCurrentUser] ONLY when this returns
+     * [AccountDeletionOutcome.Purged]; every other outcome leaves the signed-in session alive so
+     * the account can still be finished or retried.
+     */
+    suspend fun requestAccountDeletion(jobIds: List<String> = emptyList()): AccountDeletionOutcome {
         return try {
-            db.collection("users").document(userId).delete().await()
-            db.collection("worker_kyc").document(userId).delete().await()
-            db.collection("worker_training").document(userId).delete().await()
-            db.collection("providers").document(userId).delete().await()
-
-            val guarantors = db.collection("guarantors").whereEqualTo("workerKycId", userId).get().await()
-            for (doc in guarantors) {
-                doc.reference.delete().await()
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val result = functions.getHttpsCallable("deleteMyAccount")
+                // R05-P2-06: validated against the typed contract before the network call.
+                .call(CallableContracts.payload("deleteMyAccount", "jobIds" to jobIds))
+                .await()
+            val data = result.data as? Map<*, *>
+                ?: return AccountDeletionOutcome.Failed("The server returned no deletion report. Your account was kept.")
+            if (data["complete"] == true) {
+                AccountDeletionOutcome.Purged(
+                    storageDeleted = (data["storageDeleted"] as? Number)?.toInt() ?: 0,
+                    firestoreDocsDeleted = (data["firestoreDocsDeleted"] as? Number)?.toInt() ?: 0
+                )
+            } else {
+                AccountDeletionOutcome.Incomplete(
+                    message = "Some of your data could not be removed, so your account was kept.",
+                    storagePending = (data["storagePending"] as? Number)?.toInt() ?: 1,
+                    firestorePending = (data["firestorePending"] as? Number)?.toInt() ?: 1
+                )
             }
-            // REG-002: the guarantor verification submission belongs to the account too.
-            db.collection("guarantor_submissions").document(userId).delete().await()
+        } catch (e: FirebaseFunctionsException) {
+            val details = (e.details as? Map<*, *>)
+                ?.entries
+                ?.associate { (key, value) -> key.toString() to value }
+                ?: emptyMap()
+            AccountDeletionRules.outcomeOf(
+                errorCode = e.code.name,
+                message = e.message,
+                details = details
+            )
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "deleteMyAccount failed: ${e.javaClass.simpleName}")
+            AccountDeletionOutcome.Failed(
+                "We could not reach the server, so nothing was deleted. Check your connection and try again."
+            )
+        }
+    }
 
-            val notifications = db.collection("notifications").whereEqualTo("userId", userId).get().await()
-            for (doc in notifications) {
-                doc.reference.delete().await()
-            }
-
-            val disputes1 = db.collection("disputes").whereEqualTo("reportedBy", userId).get().await()
-            val disputes2 = db.collection("disputes").whereEqualTo("reportedUserId", userId).get().await()
-            for (doc in disputes1.documents + disputes2.documents) {
-                doc.reference.delete().await()
-            }
-
-            val quotes = db.collection("job_quotes").whereEqualTo("workerId", userId).get().await()
-            for (doc in quotes) {
-                doc.reference.delete().await()
-            }
-
-            for (jobId in userJobIds) {
-                val messages = db.collection("jobs").document(jobId).collection("messages").get().await()
-                for (msg in messages) {
-                    msg.reference.delete().await()
-                }
-                db.collection("jobs").document(jobId).delete().await()
-            }
-
+    /**
+     * R06-P2-04: remove this device's push token from the account before the session ends.
+     *
+     * A token left registered server-side keeps delivering another person's notifications to a
+     * phone that has signed out — or, after a deletion, to an account that no longer exists.
+     */
+    suspend fun clearMyPushTokens(token: String? = null): Boolean {
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            functions.getHttpsCallable("clearMyPushTokens")
+                .call(CallableContracts.payload("clearMyPushTokens", "token" to token))
+                .await()
             true
         } catch (e: Exception) {
-            Log.d("FirebaseService", "Delete user Firestore data error: ${e.message}")
+            Log.w("FirebaseService", "clearMyPushTokens failed: ${e.javaClass.simpleName}")
             false
+        }
+    }
+
+    /**
+     * R06-P2-05: refresh the Firebase `auth_time` claim with a fresh Google credential.
+     *
+     * The five-minute window on account deletion used to have no in-app path to satisfy it: the
+     * user was told to sign out and back in, which loses the context of what they were doing (and,
+     * for a phone account, is not always possible). Re-authenticating keeps the same `uid` and
+     * refreshes the claim the server checks.
+     */
+    suspend fun reauthenticateWithGoogle(idToken: String): Result<Unit> {
+        val user = auth?.currentUser
+            ?: return Result.failure(Exception("Sign in again to continue."))
+        return try {
+            val credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(idToken, null)
+            user.reauthenticate(credential).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.d("FirebaseService", "Google re-authentication failed: ${e.javaClass.simpleName}")
+            Result.failure(Exception(reauthFailureMessage(e)))
+        }
+    }
+
+    /**
+     * R06-P2-05: refresh `auth_time` with a phone code for the account's own number.
+     *
+     * The pending Firebase verification (started by [sendPhoneVerificationCode]) is exchanged for a
+     * credential and used to re-authenticate the *existing* user — never to sign in a new one, so a
+     * failed re-authentication cannot silently move the person to another account.
+     */
+    suspend fun reauthenticateWithPhoneCode(otpCode: String): Result<Unit> {
+        val user = auth?.currentUser
+            ?: return Result.failure(Exception("Sign in again to continue."))
+        val verificationId = pendingPhoneVerificationId
+        val autoCredential = pendingAutoPhoneCredential
+        val requestedPhone = pendingVerificationPhoneNumber
+        if (verificationId.isNullOrBlank() && autoCredential == null) {
+            return Result.failure(Exception("Request a new code first."))
+        }
+        val digits = otpCode.trim()
+        if (digits.length != 6) return Result.failure(Exception("Enter the 6-digit code."))
+        return try {
+            val credential = autoCredential ?: PhoneAuthProvider.getCredential(verificationId!!, digits)
+            user.reauthenticate(credential).await()
+            clearPendingPhoneVerification()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.d("FirebaseService", "Phone re-authentication failed: ${e.javaClass.simpleName}")
+            Result.failure(Exception(reauthFailureMessage(e)))
+        } finally {
+            if (requestedPhone != null) pendingVerificationPhoneNumber = requestedPhone
+        }
+    }
+
+    /**
+     * R06-P2-03: attach a Google identity to the account that is already signed in.
+     *
+     * Previously a Google sign-in always called `signInWithCredential`, so a person who already had
+     * a phone account and then tapped "Continue with Google" either landed in a second account (a
+     * second wallet, a second set of jobs) or was dropped at a generic error. Linking keeps one
+     * uid and one wallet. A provider conflict is reported as [IdentityLinkResult.Collision] so the
+     * UI can explain it instead of guessing.
+     */
+    suspend fun linkGoogleAccount(idToken: String): IdentityLinkResult {
+        val user = auth?.currentUser ?: return IdentityLinkResult.NotSignedIn
+        return try {
+            val credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(idToken, null)
+            user.linkWithCredential(credential).await()
+            IdentityLinkResult.Linked
+        } catch (e: FirebaseAuthUserCollisionException) {
+            Log.d("FirebaseService", "Google link collision: credential already in use")
+            IdentityLinkResult.Collision(e.message)
+        } catch (e: Exception) {
+            Log.d("FirebaseService", "Google link failed: ${e.javaClass.simpleName}")
+            IdentityLinkResult.Failed(identityLinkFailureMessage(e))
         }
     }
 

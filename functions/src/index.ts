@@ -107,6 +107,16 @@ import { isFreshAuth, buildRevocationRecord } from "./session";
 import { decideEscrowRelease } from "./escrowRelease";
 import { decideRefund, buildRefundPayload } from "./refund";
 import {
+  FRESH_AUTH_WINDOW_SECONDS,
+  SINGLE_DOC_COLLECTIONS,
+  QUERY_DELETIONS,
+  isFreshAuth as isFreshAuthForDeletion,
+  storagePurgePrefixes,
+  mayDeleteAuthUser,
+  deletionRefusalReason,
+} from "./accountDeletion";
+import type { DeletionProgress } from "./accountDeletion";
+import {
   buildTranscriptionPrompt,
   buildGeminiTranscriptionRequest,
   extractGeminiText,
@@ -2719,4 +2729,192 @@ export const revokeMyTokens = functions.https.onCall(async (data, context) => {
   await admin.auth().revokeRefreshTokens(record.uid);
   console.info("Refresh tokens revoked", { uid: record.uid, reason: record.reason });
   return { revoked: true, at: record.revokedAt };
+});
+
+// ============ R06-P2-01 / R06-P2-02: server-authoritative account purge ============
+//
+// The Android client used to call `deleteUserFirestoreData(...)` and then `deleteCurrentUser()`
+// unconditionally, and it never touched Cloud Storage. A failed Firestore delete still destroyed
+// the Auth user, and every personal photograph (KYC documents, guarantor portraits, avatars, job
+// photos) stayed in the bucket with no owner able to request its removal.
+//
+// The purge now happens here, in a fixed order, and the client may only delete the Firebase Auth
+// user after this function reports `complete: true`. The reports are counted rather than boolean:
+// one failed object delete is enough to keep the account alive so it can be finished later.
+
+/** Deletes every object under `prefix` and counts what is left. */
+async function purgeStoragePrefix(
+  bucket: ReturnType<ReturnType<typeof admin.storage>["bucket"]>,
+  prefix: string
+): Promise<{ deleted: number; pending: number }> {
+  let deleted = 0;
+  let pending = 0;
+  try {
+    const [files] = await bucket.getFiles({ prefix, autoPaginate: true });
+    for (const file of files) {
+      try {
+        await file.delete({ ignoreNotFound: true });
+        deleted += 1;
+      } catch {
+        pending += 1;
+      }
+    }
+  } catch {
+    // A listing failure is not proof that the prefix is empty: treat it as pending work so the
+    // account is kept and can be purged again.
+    pending += 1;
+  }
+  return { deleted, pending };
+}
+
+export const deleteMyAccount = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to delete your account.");
+  }
+  // R06-P2-05: the client asks for a fresh sign-in before this call; the server enforces it so a
+  // stolen long-lived token cannot delete an account on its own.
+  const authTime = (context.auth.token as { auth_time?: unknown }).auth_time;
+  if (!isFreshAuthForDeletion(authTime, Date.now())) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Please verify your identity again before deleting your account.",
+      { code: "REAUTH_REQUIRED", windowSeconds: FRESH_AUTH_WINDOW_SECONDS }
+    );
+  }
+
+  const uid = context.auth.uid;
+  const requestedJobIds: string[] = Array.isArray(data?.jobIds)
+    ? data.jobIds.filter((id: unknown): id is string => typeof id === "string" && id.trim().length > 0)
+    : [];
+
+  // Only jobs this account really posted are touched, so a caller cannot delete somebody else's job.
+  const jobIds: string[] = [];
+  for (const jobId of requestedJobIds.slice(0, 200)) {
+    try {
+      const jobDoc = await db.collection("jobs").doc(jobId).get();
+      if (jobDoc.exists && jobDoc.data()?.["postedByUid"] === uid) jobIds.push(jobId);
+    } catch {
+      // Unreadable job: leave it out rather than deleting on an unproven assumption.
+    }
+  }
+
+  let storageDeleted = 0;
+  let storagePending = 0;
+  try {
+    const bucket = privatePhotoBucket();
+    if (bucket) {
+      for (const prefix of storagePurgePrefixes(uid, jobIds)) {
+        const result = await purgeStoragePrefix(bucket as any, prefix);
+        storageDeleted += result.deleted;
+        storagePending += result.pending;
+      }
+    } else {
+      storagePending += 1;
+    }
+  } catch {
+    storagePending += 1;
+  }
+
+  let firestoreDocsDeleted = 0;
+  let firestorePending = 0;
+  const deleteRef = async (ref: FirebaseFirestore.DocumentReference) => {
+    try {
+      await ref.delete();
+      firestoreDocsDeleted += 1;
+    } catch {
+      firestorePending += 1;
+    }
+  };
+  const deleteMatches = async (collection: string, field: string) => {
+    try {
+      const snapshot = await db.collection(collection).where(field, "==", uid).get();
+      for (const doc of snapshot.docs) await deleteRef(doc.ref);
+    } catch {
+      firestorePending += 1;
+    }
+  };
+
+  for (const jobId of jobIds) {
+    try {
+      const messages = await db.collection("jobs").doc(jobId).collection("messages").get();
+      for (const message of messages.docs) await deleteRef(message.ref);
+    } catch {
+      firestorePending += 1;
+    }
+  }
+  for (const collection of SINGLE_DOC_COLLECTIONS) {
+    await deleteRef(db.collection(collection).doc(uid));
+  }
+  // `users/{uid}` sub-collections survive the parent delete; push tokens are personal data too.
+  try {
+    const tokens = await db.collection("users").doc(uid).collection("push_tokens").get();
+    for (const token of tokens.docs) await deleteRef(token.ref);
+  } catch {
+    firestorePending += 1;
+  }
+  for (const rule of QUERY_DELETIONS) {
+    await deleteMatches(rule.collection, rule.field);
+  }
+  for (const jobId of jobIds) {
+    await deleteRef(db.collection("jobs").doc(jobId));
+  }
+
+  const progress: DeletionProgress = {
+    storageDeleted,
+    firestoreDocsDeleted,
+    storagePending,
+    firestorePending,
+  };
+  const complete = mayDeleteAuthUser(progress);
+  await db
+    .collection("account_deletions")
+    .doc(`${uid}_${Date.now()}`)
+    .set({
+      uid,
+      at: new Date(),
+      complete,
+      storageDeleted,
+      firestoreDocsDeleted,
+      storagePending,
+      firestorePending,
+    })
+    .catch(() => undefined);
+
+  if (!complete) {
+    throw new functions.https.HttpsError(
+      "internal",
+      deletionRefusalReason(progress),
+      { code: "PURGE_INCOMPLETE", ...progress }
+    );
+  }
+
+  console.info("Account data purged; auth user may now be deleted", { uid, ...progress });
+  return { complete: true, ...progress };
+});
+
+/**
+ * R06-P2-04: remove this device's push token (or all of them) from the signed-in account.
+ *
+ * Called before sign-out, because once the session is gone the client can no longer prove it owns
+ * the token record and the phone would keep receiving another person's notifications.
+ */
+export const clearMyPushTokens = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to clear push tokens.");
+  }
+  const uid = context.auth.uid;
+  const token = typeof data?.token === "string" ? data.token.trim() : "";
+  try {
+    if (token) {
+      await db.collection("users").doc(uid).collection("push_tokens").doc(encodeURIComponent(token)).delete();
+      return { cleared: true, count: 1 };
+    }
+    const snapshot = await db.collection("users").doc(uid).collection("push_tokens").get();
+    for (const doc of snapshot.docs) await doc.ref.delete();
+    return { cleared: true, count: snapshot.size };
+  } catch (error: any) {
+    throw new functions.https.HttpsError("internal", "Could not clear push tokens.", {
+      code: "PUSH_CLEAR_FAILED",
+    });
+  }
 });
