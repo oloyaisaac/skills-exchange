@@ -43,6 +43,24 @@
   Node 22 pin the same command passes locally (171/171) and is being re-run by CI.
 - Android compilation: **not executed** — no JDK/Android SDK.
 
+## Environment probe (2026-11-20, branch `arena/5ea38882`)
+
+| Capability | Result |
+|---|---|
+| `java` / `javac` preinstalled | absent |
+| JDK 17 obtainable without the user | **yes** — `pip install jdk4py==17.0.9.2` provides Temurin 17.0.9 |
+| `services.gradle.org`, `dl.google.com`, `repo1.maven.org`, `maven.google.com`, `api.adoptium.net` | DNS/TLS blocked (curl exit 000) |
+| GitHub release **assets** (`release-assets.githubusercontent.com`) | blocked (`SSL_ERROR_SYSCALL`); GitHub release metadata via API works |
+| npm registry, PyPI | reachable |
+| Gradle 9.5.0 distribution | not reachable (only GitHub release asset / services.gradle.org) |
+| Android SDK / AGP / Compose / Firebase AARs | not reachable (Google Maven + Maven Central blocked) |
+| Firebase emulator jars | not reachable (storage.googleapis.com); needs a Firebase project anyway |
+| Resources | 2 vCPU, 3 GB RAM, 20 GB free disk |
+
+**Consequence:** even with a JDK, `:app:compileDebugKotlin` cannot resolve a single Android dependency.
+R01-P2-01 and any further ViewModel refactor are blocked until either the allowlist is widened or a
+Gradle dependency cache + Android SDK are supplied.
+
 ## Blockers
 
 | Blocker | Impact | Needs |
