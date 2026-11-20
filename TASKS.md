@@ -153,7 +153,11 @@ longer states test counts it cannot keep true. The document-map guard was found 
 directory level and now walks `docs/` recursively (22 → 28 documents verified). Evidence: backend
 310/310 three times, rules 26/26, 10 static guards + 2 self-tests green, backend coverage measured;
 Android 478 tests and the JaCoCo tasks are CI-executed only (no JDK here) and the 14 new handler tests
-are emulator-executed only, so neither is claimed as locally verified.
+are CI-executed (no JDK, no emulator here). Evidence: backend 310/310 three times locally and three
+times per PR, backend coverage floors met, handler tests **19/19** on the emulator (run 44789646720),
+rules 26/26, 10 static guards + 2 self-tests, Android `Compile and unit tests` green with JaCoCo in run
+44789646910, CI **7/7**. The new handler gate failed on its first execution — one assertion treated
+`breachingSla` as an envelope field — and the exact-count assertion is what surfaced it.
 R12–R15 awaiting.
 
 ## Review Track — 2026-11-19 (not started)

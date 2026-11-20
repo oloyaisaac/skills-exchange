@@ -468,8 +468,8 @@ Four findings had already been closed by earlier rounds and are recorded as stal
 | Finding | Required correction | Status | Evidence |
 |---|---|---|---|
 | R11-P2-04 | HIGH: suites are hand-listed, so a test file can exist and never run | **IMPLEMENTED AND VERIFIED** | `functions/package.json` `test` = `node --test test/*.test.mjs`; `scripts/check_test_registration.mjs` rejects a test file no script runs, a `test:coverage` that covers a different set, and CI that stops invoking a suite; `--selftest` proves it can fail; wired into the documentation job |
-| R11-P2-05 | HIGH: no coverage tool and no coverage floor | **IMPLEMENTED (backend measured; client CI-executed, no JDK here)** | Backend `test:coverage` floors 90/80/90 against measured 96.38/85.94/96.81, and a `99` run fails. Client JaCoCo 0.8.12: `jacocoTestReport`, `jacocoTestCoverageVerification` (LINE 0.20), generated code excluded, both run in `android.yml` with `android-coverage` uploaded |
-| R11-P2-06 | HIGH: handler/E2E layer is thin and nothing repeats a run | **IMPLEMENTED (handler layer); CI-executed only** | `handlers.emulator.mjs` 5 → 19 tests (fileReport, queue, resolve, submitRating, dispatch status, metrics); CI asserts `# pass 19`; backend suite run three times per PR with an identical count (310 three times locally) |
+| R11-P2-05 | HIGH: no coverage tool and no coverage floor | **IMPLEMENTED (backend measured locally; client measured in CI)** | Backend `test:coverage` floors 90/80/90 against measured 96.38/85.94/96.81, and a `99` run fails. Client JaCoCo 0.8.12: `jacocoTestReport`, `jacocoTestCoverageVerification` (LINE 0.20), generated code excluded, both run in `android.yml` with `android-coverage` uploaded |
+| R11-P2-06 | HIGH: handler/E2E layer is thin and nothing repeats a run | **IMPLEMENTED AND VERIFIED** | `handlers.emulator.mjs` 5 → 19 tests (fileReport, queue, resolve, submitRating, dispatch status, metrics); CI asserts `# pass 19` and the job passes **19/19** (run 44789646720); backend suite run three times per PR with an identical count (310 three times locally). The first execution of the new tests failed on one wrong assertion, so the gate demonstrably bites |
 | R11-P2-07 | MEDIUM: README counts and stale artefacts contradict the code | **IMPLEMENTED AND VERIFIED** | 190 files / 74 MB deleted (`build.log`, `c123_verify_*.log`, `diag-*.txt`, `ui-*.xml`, two 32 MB APKs, `res/`, `META-INF/`); README no longer states counts, it names the command; new `docs/qa/TEST_STRATEGY.md` |
 | (beyond findings) | the document-map guard read only one level of `docs/` | **IMPLEMENTED AND VERIFIED** | recursive walk; 22 → 28 documents verified; a stray `docs/**` file fails the check |
 
@@ -483,9 +483,12 @@ Four findings had already been closed by earlier rounds and are recorded as stal
   a test), README claims, architecture guards, query limits, consent version, backup policy,
   no-PII-logs, secret scan and `check_test_registration` — all pass, plus both self-tests.
 - Firestore rules: 26 emulator tests (unchanged this round).
-- Android: 478 unit tests and the JaCoCo tasks run in CI only. **The 14 new handler tests are also
-  emulator-only.** Neither is presented as locally verified.
-- CI for this round's final commit: see `reviewer_completions/REVIEWER_11_DONE.md`.
+- Handler tests: **19/19** on the Firestore emulator (run **44789646720**). Their first run failed on
+  an assertion that treated `breachingSla` as an envelope field; fixed in the same round.
+- Android: 478 unit tests and the JaCoCo tasks run in CI — run **44789646910** passes `Unit-test
+  coverage (JaCoCo)`, `Summarise coverage` and `Upload coverage report`. The coverage figure lives in
+  the `android-coverage` artifact, which this sandbox cannot download, so no number is quoted.
+- CI for this round: **7/7 checks pass** (runs **44789646720**, **44789646910**).
 
 ### Not claimed
 

@@ -27,9 +27,12 @@
   `docs/privacy/`, `docs/safety/` and `docs/qa/` could be added unseen. It walks the tree now: 22 to
   28 documents verified.
 - Evidence: backend 310/310 three times, coverage floors met, rules 26, eleven static guards plus two
-  self-tests green, traceability at 32 requirements (2 without a test). Android (478 tests, JaCoCo)
-  and the 14 new handler tests are CI-executed only; no JDK and no emulator exist here, so neither is
-  claimed as locally verified.
+  self-tests green, traceability at 32 requirements (2 without a test). CI **7/7** (runs 44789646720
+  and 44789646910): handler tests 19/19 on the emulator, Android job green with the JaCoCo steps. The
+  new handler gate failed its first execution, on an assertion that treated `breachingSla` as an
+  envelope field; the exact-count assertion surfaced it, and the fix is in the same round. Android's
+  coverage figure is in the `android-coverage` artifact, which this sandbox cannot download, so no
+  number is quoted here.
 - Not verified, and said so in the docs: no instrumented device test (`app/src/androidTest` is the
   template), no coverage number for `lib/index.js`, no flake evidence for the Android or rules suites,
   no provider sandbox tests, no screenshot baseline, no load testing. Nothing is deployed. `REM-065`

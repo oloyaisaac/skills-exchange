@@ -13,7 +13,7 @@ remediation sandbox it is marked **UNVERIFIED** rather than estimated.
 |---|---|---|---|---|---|
 | Backend units (pure TypeScript cores) | `functions/test/*.test.mjs` | `cd functions && npm test` | **310** in 32 files | local + CI (`Backend build and tests`) | yes |
 | Backend coverage floor | same files | `npm run test:coverage` | 310 | CI, same job | yes |
-| Callable handlers | `functions/test/handlers.emulator.mjs` | `npm run test:handlers` under `firebase emulators:exec --only firestore` | **19** | CI (`Backend handler tests`) | yes |
+| Callable handlers | `functions/test/handlers.emulator.mjs` | `npm run test:handlers` under `firebase emulators:exec --only firestore` | **19** | CI (`Backend handler tests`), 19/19 in run 44789646720 | yes |
 | Firestore rules (emulator) | `rules-test/firestore.rules.test.mjs` | `npm --prefix rules-test test` under the emulator | **26** | CI (`Firestore rules tests`) | yes |
 | Storage rules | `rules-test/storage.rules.check.mjs` | `node rules-test/storage.rules.check.mjs` | static | CI (same job) | yes |
 | Android JVM + Robolectric + Compose | `app/src/test` (62 files) | `./gradlew :app:testDebugUnitTest` | **478** | CI (`Compile and unit tests`) | yes |
@@ -77,6 +77,9 @@ follow-up, and it should be raised only against a measured number.
 - The rules suite runs against the emulator with a fixed project id and explicit allow/deny
   expectations; denials are asserted before any document is created (a mistake that R09's CI caught).
 - Android tests use Robolectric with a fixed SDK and an in-memory Room database.
+- The handler gate proved itself the day it was added: its first execution failed on an assertion that
+  treated `breachingSla` as an envelope field when the queue returns it per row. The exact-count
+  assertion (`# pass 19`) is what made the failure visible instead of silent.
 - **No repeated-run evidence exists for the Android or rules suites.** Three Android runs cost ~11
   minutes of CI each; that is a deliberate, stated gap (§7, gap 3), not an oversight.
 

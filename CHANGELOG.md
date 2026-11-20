@@ -23,7 +23,9 @@
   attributed; `submitRating` recorded once and refusing strangers; `getSosDispatchStatus` scoped to the
   caller's incident; `getSafetyMetrics` admin-only and reporting a failed read as unknown rather than
   zero. The CI step asserts `# pass 19`, so a suite that silently executes nothing turns the job red.
-  The backend unit suite is repeated three times per pull request with an identical pass count.
+  The backend unit suite is repeated three times per pull request with an identical pass count. The
+  first execution of the new tests failed — one assertion treated `breachingSla` as an envelope field
+  when the queue returns it per row — and the exact-count gate is what surfaced it: 19/19 after the fix.
 - **Stale evidence that described other commits is gone (R11-P2-07, MEDIUM).** 190 tracked artefacts —
   `build.log`, nine `c123_verify_*.log` files, forty `diag-*.txt` dumps, `ui-*.xml`, `build_result*.txt`,
   two 32 MB APKs and stray `res/`/`META-INF/` build output — 74 MB testifying to builds that no longer
@@ -37,10 +39,12 @@
 - **Four findings were already closed and were not re-implemented (R11-P2-01/02/03).** The rules suite
   (26 emulator tests), the Compose tests (7 in 3 files) and the Android CI job all exist and run; they
   are recorded as stale, with the stale `ci.yml` header that still claimed the job was absent corrected.
-- Not verified, and not claimed: the 14 new handler tests and every Gradle/JaCoCo change are executed
-  in CI only (no emulator, no JDK here); there is still no instrumented device test, no coverage number
-  for `lib/index.js`, no flake evidence for Android or rules, no provider sandbox tests and no
-  screenshot baseline.
+- Evidence: backend 310/310 three times locally and three times per PR in CI; handler tests 19/19 on
+  the emulator; rules 26; eleven static guards plus two self-tests; CI 7/7 (runs 44789646720 and
+  44789646910). Not verified, and not claimed: the Gradle/JaCoCo changes are executed in CI only (no
+  JDK here) and the coverage figure is in the `android-coverage` artifact rather than in any document;
+  there is still no instrumented device test, no coverage number for `lib/index.js`, no flake evidence
+  for Android or rules, no provider sandbox tests and no screenshot baseline.
 
 ### [2026-11-20] [PROMPT-4 / R10] Safety: reports that reach a person, alerts that tell the truth
 
