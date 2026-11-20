@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-20T19:42:44.327Z",
+  "generatedAt": "2026-11-20T20:01:12.126Z",
   "packages": [
     {
       "dir": "functions",
@@ -44,7 +44,7 @@
     "specVersion": "1.5",
     "version": 1,
     "metadata": {
-      "timestamp": "2026-11-20T19:42:44.327Z",
+      "timestamp": "2026-11-20T20:01:12.127Z",
       "tools": [
         {
           "vendor": "skills-exchange",

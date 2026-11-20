@@ -1,5 +1,38 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [PROMPT-4 / R14] DevOps and supply chain: a repository that stops accepting artefacts, a lint gate that found a crash, and a dependency set that is audited
+
+- **A device database and JVM crash logs were tracked, with no rule to stop them (R14-P2-01, HIGH).** R11
+  removed 64 MB of APKs; five files survived — `_device_test/ondevice_db.sqlite` (a real Room database),
+  two `hs_err_pid*.log` and two JFR `replay_pid*.log` — and `.gitignore` had no matching pattern.
+  Deleted, rules added, and `check_repo_hygiene.mjs` now refuses both a forbidden tracked path and a
+  missing ignore rule.
+- **Lint had never run, and its first run found a device-crashing defect (R14-P2-02, HIGH).** The UI
+  formats times with `java.time` while `minSdk` is 24, so Android 7.0/7.1 devices would throw
+  `NoClassDefFoundError` — 54 of the 56 errors lint reported. Fixed with core library desugaring instead
+  of raising minSdk; `CALL_PHONE` no longer implies telephony hardware; one rule is allowlisted with a
+  written reason and the gate fails if that entry goes stale.
+- **The dependency set was two majors behind and carried a critical advisory (R14-P2-04, MEDIUM).**
+  `firebase-admin` 11 → 12, `firebase-functions` 4 → 6 (through the v1 entry point, so the deployed gen-1
+  shape is unchanged), rules-test on firebase 11 with rules-unit-testing 4. Advisories went from
+  1 critical / 10 high to **0 / 0** in the backend and from 6 high to 0 in the harness. `npm audit
+  --audit-level=high` is now a CI gate.
+- **Nothing could answer "what are we shipping, under what licence" (R14-P2-06, MEDIUM).**
+  `report_dependencies.mjs` writes a CycloneDX SBOM and a licence inventory from the installed tree — 234
+  production components, all permissive — and refuses copyleft or unknown licences, with OR/AND semantics
+  that let a dual-licensed package ship under its permissive option and a LICENSE-file fallback that says
+  where the answer came from.
+- **The version was a literal and a missing key was a confusing crash (R14-P2-05, MEDIUM).**
+  `version.properties` owns `VERSION_CODE`/`VERSION_NAME` with validated formats and per-build overrides;
+  a release build without a signing key fails at configuration time naming the variables to set. R8 was
+  already on — that part of the review was stale.
+- **Deployment was undocumented (R14-P2-03/P2-07).** `docs/ops/DEPLOY_AND_ROLLBACK.md` writes the deploy,
+  the ordering, promotion, per-layer rollback and a drill. No staging project exists and no drill has been
+  run; both are stated rather than implied.
+- **Evidence:** CI **8/8** green (run 44806181215 for Android, 44806181092 for CI) on `424ce6b`: 318
+  backend tests, 494 Android tests, lint gate, release build, SBOM, audits. 16 guards, 7 self-tests, 32
+  documents, 46 requirements.
+
 ### [2026-11-20] [PROMPT-4 / R13] Performance, scale and reliability: queues that drain, listeners that stop, money that is not retried twice
 
 - **The offline queue could only grow (R13-P2-01, HIGH).** `flushPendingActions()` snapshotted the queue,

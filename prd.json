@@ -4502,7 +4502,8 @@
       "source_finding": "MR-005",
       "reviewer": "R14",
       "review_report": "review_results/R14_DEVOPS.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "status_note": "R14 re-verified the pipeline and widened it: CI now runs six jobs (backend build and tests with a three-run flake check and a coverage floor, supply chain with SBOM/licence/hygiene, callable handlers on the Firestore emulator, Firestore rules on the emulator, documentation guards, secret scan) and the Android workflow runs two (compile, unit tests, Android Lint, JaCoCo, release build with R8). The dependency-audit gate is new this round. What is still absent: no deployment job (nothing can be deployed from here, no project or credentials), no staging promotion, no SBOM consumption by a downstream scanner, and no artefact or release upload.",
+      "notes": "Updated in R14; the status_note records exactly what was and was not done."
     },
     {
       "id": "REM-006",
@@ -4542,14 +4543,15 @@
       "source_finding": "MR-006",
       "reviewer": "R14",
       "review_report": "review_results/R14_DEVOPS.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "status_note": "R14 re-verified portability rather than assuming it: gradle.properties has no absolute paths, the wrapper is executable, engines.node is 22 (the earlier Node 18 mismatch is gone), and a clean-clone build on a GitHub runner succeeds in the Compile and unit tests job. The version now comes from version.properties with validated formats and environment overrides, so no machine-local value is baked in. What remains unverified: there is no local JDK or Android SDK in this environment, so portability is proven only by the CI runner, never reproduced here; and the release build only exists with a throwaway key generated inside the job.",
+      "notes": "Updated in R14; the status_note records exactly what was and was not done."
     },
     {
       "id": "REM-007",
       "phase": 19,
       "title": "Restore release signing and hardening",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "depends_on": [
         "REM-001",
         "REM-006"
@@ -4581,14 +4583,15 @@
       "source_finding": "MR-007",
       "reviewer": "R14",
       "review_report": "review_results/R14_DEVOPS.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "status_note": "R14 found the finding half stale: R8 minification and resource shrinking were already enabled in R07, and CI already assembles the release variant (APK 6.3 MB, mapping 679,287 lines in run 44799912835). What was still live is now fixed: versionCode/versionName were the placeholders 1/1.0 and now come from version.properties with format validation (positive integer, MAJOR.MINOR.PATCH) and per-build environment overrides; a missing keystore used to surface as an AGP validateSigningRelease error and now fails at configuration time with a message naming KEYSTORE_PATH, STORE_PASSWORD and KEY_PASSWORD. What is not done: no Play upload, no App Bundle, no staged rollout, no versionCode monotonicity check against a published track - all of which need a Play account. The APK CI builds is throwaway-signed and is not distributable.",
+      "notes": "Updated in R14; the status_note records exactly what was and was not done."
     },
     {
       "id": "REM-008",
       "phase": 19,
       "title": "Remediate vulnerable and mismatched dependencies",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "depends_on": [
         "REM-002"
       ],
@@ -4620,7 +4623,8 @@
       "source_finding": "MR-008",
       "reviewer": "R14",
       "review_report": "review_results/R14_DEVOPS.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "status_note": "R14 measured the finding and closed the high end of it. firebase-admin 11 -> 12, firebase-functions 4 -> 6 (imported through firebase-functions/v1, so the deployed gen-1 shape is unchanged and all 318 backend tests still pass), rules-test moved to firebase 11 with @firebase/rules-unit-testing 4 and an @grpc/grpc-js override. npm audit went from 1 critical / 10 high / 24 moderate / 1 low to 0 critical / 0 high / 28 moderate in functions, and from 6 high to 0 in rules-test. CI now fails on any high or critical advisory in either tree. scripts/report_dependencies.mjs writes a CycloneDX SBOM and a licence inventory from the installed tree (234 production components) and refuses copyleft or unlicensed production dependencies, with real double-licence semantics and a LICENSE-file fallback. What is not done: the 28 moderate advisories are recorded rather than resolved, no SBOM has been consumed by a third-party scanner, and moving the functions to the v2 API is a separate migration.",
+      "notes": "Updated in R14; the status_note records exactly what was and was not done."
     },
     {
       "id": "REM-009",
