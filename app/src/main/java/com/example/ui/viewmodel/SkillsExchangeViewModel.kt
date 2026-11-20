@@ -237,8 +237,16 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         viewModelScope.launch {
             firebaseService.currentUserState.collect { user -> syncPushTopic(user?.uid) }
         }
-        viewModelScope.launch {
-            repository.seedInitialDataIfNeeded()
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            // R04: seeding is best-effort device bootstrap. It used to run on the main dispatcher
+            // and its failures escaped as uncaught coroutine exceptions (which surfaced as the
+            // intermittent CI failure in the Compose tests). It now runs off the main thread and
+            // logs instead of crashing the screen.
+            try {
+                repository.seedInitialDataIfNeeded()
+            } catch (error: Exception) {
+                android.util.Log.e("SkillsExchangeViewModel", "Initial data seeding failed", error)
+            }
             // AUTH-002: Restore session from DataStore
             restoreSession()
             // C2-2 Fix #2 (F2): sync the initial mode from the AUTHENTICATED identity only —

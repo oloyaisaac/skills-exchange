@@ -506,24 +506,31 @@ abstract class AppDatabase : RoomDatabase() {
          */
         val MIGRATION_22_23 = object : Migration(22, 23) {
             override fun migrate(database: SupportSQLiteDatabase) {
+                // R04-P2-02: the table must match `SosIncidentEntity` exactly. Two defects were
+                // fixed here: `jobId TEXT NOT NULL UNIQUE` created an implicit, unnamed unique
+                // index in addition to the named one below, and the named index was created
+                // non-unique although the entity declares `Index(value = ["jobId"], unique =
+                // true)`. Room validated neither, so an upgraded database failed
+                // `Migration didn't properly handle: sos_incidents` on open. The column-level
+                // UNIQUE is gone; uniqueness lives only in the named index Room expects.
                 database.execSQL(
                     "CREATE TABLE IF NOT EXISTS sos_incidents (" +
                         "id TEXT PRIMARY KEY NOT NULL, " +
-                        "jobId TEXT NOT NULL UNIQUE, " +
+                        "jobId TEXT NOT NULL, " +
                         "postedByUid TEXT NOT NULL, " +
                         "assignedProviderId TEXT, " +
-                        "status TEXT NOT NULL DEFAULT 'ACTIVE', " +
-                        "latitude REAL NOT NULL DEFAULT 0.0, " +
-                        "longitude REAL NOT NULL DEFAULT 0.0, " +
-                        "district TEXT NOT NULL DEFAULT '', " +
-                        "raisedAt INTEGER NOT NULL DEFAULT 0, " +
-                        "acknowledgedAt INTEGER NOT NULL DEFAULT 0, " +
-                        "clearedAt INTEGER NOT NULL DEFAULT 0, " +
+                        "status TEXT NOT NULL, " +
+                        "latitude REAL NOT NULL, " +
+                        "longitude REAL NOT NULL, " +
+                        "district TEXT NOT NULL, " +
+                        "raisedAt INTEGER NOT NULL, " +
+                        "acknowledgedAt INTEGER NOT NULL, " +
+                        "clearedAt INTEGER NOT NULL, " +
                         "clearedBy TEXT, " +
-                        "firestoreMirrored INTEGER NOT NULL DEFAULT 0, " +
+                        "firestoreMirrored INTEGER NOT NULL, " +
                         "FOREIGN KEY(jobId) REFERENCES job_posts(id) ON DELETE CASCADE)"
                 )
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_sos_incidents_jobId ON sos_incidents(jobId)")
+                database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_sos_incidents_jobId ON sos_incidents(jobId)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_sos_incidents_status ON sos_incidents(status)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_sos_incidents_postedByUid ON sos_incidents(postedByUid)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_sos_incidents_assignedProviderId ON sos_incidents(assignedProviderId)")
