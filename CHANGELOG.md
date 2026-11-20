@@ -1,5 +1,22 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [PROMPT-4 / R04] Room schema export, migration proof, exact money, mirror reconciliation
+
+- **Schema (R04-P2-01).** `exportSchema = true`; `27.json` and `28.json` are committed and CI
+  publishes the generated schema to a `ci-schema` branch, so the committed file is never hand-edited.
+- **Migrations (R04-P2-02).** `DatabaseMigrationChainTest` builds a real v11 database, seeds rows and
+  lets Room run all 17 migrations; Room validates the result. It found two real defects, both fixed:
+  `MIGRATION_13_14` dropped `job_posts.photos`/`scheduledAt` (with `SELECT *`), and `MIGRATION_22_23`
+  created `sos_incidents` with an implicit unique index plus a non-unique named one.
+- **Doorstep PIN (R04-P2-03).** No default PIN in the entity; `DoorstepPinPolicy` fails closed.
+- **Money (R04-P2-04).** Wallet ledger and withdrawals store `amountMinor` (`Long`); balances are
+  exact integer sums; v27→v28 converts existing rows with `ROUND(amount*100)`; `Money` formats and
+  rejects non-finite amounts. Job pricing fields remain `Double` (recorded, not claimed).
+- **Mirror reconciliation (R04-P2-05).** `syncSosIncidentToFirestore` returns its outcome, the flag is
+  recorded, failures are queued durably and `reconcilePendingMirrors()` retries with a cap.
+- **Scoped reads (R04-P2-06).** Provider feed is KYC-approved only; job feed is open + own + assigned.
+- Evidence: Android run 44730703469, 383/383 tests; backend, docs and secret checks pass.
+
 ### [2026-11-20] [PROMPT-4 / R03] Backend hardening; handler tests on the Firestore emulator
 
 - **Runtime (R03-P2-01).** `functions/package.json` moves from the end-of-life Node 18 to Node 22.

@@ -16,7 +16,16 @@ limited to 20 per IP per hour; documentation counts corrected to 27 exports / 17
 CI run 44709995723 — 172/172 backend tests, 5/5 Firestore-emulator handler tests, docs and secret
 checks pass. Deployment and live provider traffic stay UNVERIFIED.
 
-**R04 — data and persistence — NEXT.** R05–R15 awaiting.
+**R04 — COMPLETE.** Room schemas are exported and committed (v27, v28); all 17 migrations run and are
+validated in CI, which found and fixed two real upgrade defects (`job_posts.photos`/`scheduledAt`
+dropped by MIGRATION_13_14, and a mismatched unique index on `sos_incidents`); the shared default
+doorstep PIN is gone; wallet money is stored and summed as exact integer minor units with a v27→v28
+conversion; the SOS Firestore mirror records its outcome and is retried from a durable queue; and the
+job/provider feeds are viewer-scoped. Evidence: Android run 44730703469 — 383/383 tests. Remaining
+and stated: job-pricing fields are still `Double`, on-device migration and live Firestore mirroring
+are UNVERIFIED.
+
+**R05 — API & integrations — NEXT.** R06–R15 awaiting.
 
 ## Review Track — 2026-11-19 (not started)
 
@@ -27,7 +36,7 @@ Independent review programme defined after a repository assessment found the com
 | RVW-001 | P0 | R01 Architecture & Codebase Integrity | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_01.md`) | G0 build — FAIL |
 | RVW-002 | P1 | R02 Android Client | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_02.md`) | — |
 | RVW-003 | P0 | R03 Backend & Cloud Functions | ✅ Prompt-4 PASS (`REVIEWER_03_DONE.md`) | — |
-| RVW-004 | P1 | R04 Data & Persistence | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_04.md`) | — |
+| RVW-004 | P1 | R04 Data & Persistence | ✅ Prompt-4 PASS (`REVIEWER_04_DONE.md`) | — |
 | RVW-005 | P1 | R05 API & Integrations | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_05.md`) | — |
 | RVW-006 | P0 | R06 Auth & Identity | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_06.md`) | G6 identity — FAIL |
 | RVW-007 | P0 | R07 Application Security | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_07.md`) | G2 security — FAIL |
