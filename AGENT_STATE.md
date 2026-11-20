@@ -1,3 +1,39 @@
+## 2026-11-20 (Prompt-4 R12 COMPLETE) - UI/UX AND ACCESSIBILITY GATE PASSED
+
+- R12 closed on `arena/e2ab81c4-skills-exchange`. The review could not render, so its findings were
+  re-checked against the code first: two were already closed (escrow in-flight states and
+  `FLAG_SECURE`, both R02) and are recorded as stale rather than re-implemented.
+- Screens are navigable now. `app/src/main/java/com/example/ui/a11y/Accessibility.kt` adds
+  `sectionHeading`, `emergencyLiveRegion`, `announcementLiveRegion`, `describeState` and
+  `minTouchTarget`, applied to the panic control, the dispatch verdict, release feedback, onboarding
+  errors, the safety desk and the offline banner. `AccessibilitySemanticsTest` reads the tree: Heading
+  on the role question, assertive LiveRegion on the dispatch verdict, polite on the offline banner,
+  a stateDescription on the panic button. The 58 null descriptions were triaged (decorative or beside
+  a label), not counted.
+- Ten controls were too small to hit: a 40 dp panic button, a 28 dp auth dismiss, and eight
+  `IconButton`s at 20-36 dp because an explicit `Modifier.size` overrode Material's 48 dp. All are
+  48 dp, two are asserted at that floor, and a guard refuses a sub-48 dp `IconButton`.
+- Contrast is measured by `ContrastTest`, not eyeballed. It found white on `IndustrialEmerald` at
+  3.77:1 (now 5.48:1) and `Slate400` at 2.56:1 while painting real sentences (now a 3.5:1 graphics
+  tone, 19 text usages moved to `Slate500` at 4.76:1); a later run caught `RedDanger` on its own error
+  surface at 4.41:1 (now 5.24:1). The escrow sheet is rendered at a 200 percent font scale.
+- Copy: 15 critical strings externalised to `values/strings.xml` with a drafted `values-sw` locale and
+  a Swahili render asserted in CI. The translations are DRAFTS with no native-speaker review. The
+  other 472 inline sentences are baselined by `scripts/check_ui_copy.mjs`, which fails if the number
+  rises and also refuses an unlabelled `IconButton`. Luganda, Kinyarwanda and pseudo-locales are not
+  started.
+- The privacy sheet no longer claims a "24/7 neighborhood arbitration protocol": the desk is
+  single-operator with no on-call rota, and the copy now says what happens and what to do instead.
+- Evidence: Android **489/489** (run 44795261468); eleven static guards plus the UI-copy guard and its
+  self-test; 29 documents; 36 requirements. Three Android runs failed before the green one, and each
+  failure is fixed in the round: a missing Compose `assert` import, RedDanger at 4.41:1, and an
+  ellipsis mismatch in an existing test.
+- Not verified, and said so: no TalkBack, Accessibility Scanner, switch-access or screen-curtain pass;
+  no native-speaker translation review; no screenshot baseline; no dark-theme contrast; no RTL; and
+  nothing rendered on a device. `REM-055` to `REM-058` stay `IN_PROGRESS`. R13 is next.
+
+---
+
 ## 2026-11-20 (Prompt-4 R11 COMPLETE) - QA GATE PASSED
 
 - R11 closed on `arena/f11c33ea-skills-exchange`. The review

@@ -6423,7 +6423,8 @@
       "phase": 19,
       "title": "Label all interactive controls",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+  "status": "IN_PROGRESS",
+  "status_note": "R12 triaged the null descriptions instead of counting them: every icon with contentDescription = null is either decorative or sits beside a text label, and the three candidates inside clickable contexts all have adjacent labels. A semantics layer (ui/a11y/Accessibility.kt) now supplies headings, live regions and state descriptions, asserted in AccessibilitySemanticsTest. scripts/check_ui_copy.mjs refuses an IconButton with no accessible name. What is not done: no Accessibility Scanner run and no TalkBack pass on a device, so the acceptance criterion 'scanner has no critical issues' stays unverified.",
       "depends_on": [
         "REM-001"
       ],
@@ -6459,7 +6460,8 @@
       "phase": 19,
       "title": "Fix typography and add localisation",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+  "status": "IN_PROGRESS",
+  "status_note": "Localisation started rather than finished: 15 safety/money/onboarding strings now live in res/values/strings.xml with a drafted values-sw locale (no native-speaker review), and a Swahili render is asserted in CI. scripts/check_ui_copy.mjs holds the remaining 472 inline sentences as a baseline that may fall but not rise, so the debt is counted and frozen instead of estimated. Typography: the contrast and font-scale tests cover legibility; a 200% font-scale render is asserted. Not met: 'zero hardcoded UI strings'.",
       "depends_on": [
         "REM-001"
       ],
@@ -6498,7 +6500,8 @@
       "phase": 19,
       "title": "Standardise money and error presentation",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+  "status": "IN_PROGRESS",
+  "status_note": "The error-presentation half is done where it was measurable: release failures and confirmations, field errors, an unreadable safety desk and the offline banner are polite live regions, and the palette now clears the WCAG AA floor for error text on its own surface (RedDanger 4.41:1 -> 5.24:1). Not verified: the claim about money truncation (toInt) and raw exception text needs a fresh audit against the current repository, which this round did not do.",
       "depends_on": [
         "REM-056"
       ],
@@ -6534,7 +6537,8 @@
       "phase": 19,
       "title": "Add UI test hooks and screenshot tests",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+  "status": "IN_PROGRESS",
+  "status_note": "Test hooks exist where they were needed: 11 new Compose/semantics tests select controls by their accessible text or state, and ContrastTest needs no UI hook at all. Still missing: any screenshot baseline is still uncompared (Roborazzi is configured, no committed images), so 'visual diffs gated' is not met, and testTag usage was not introduced.",
       "depends_on": [
         "REM-001",
         "REM-005"

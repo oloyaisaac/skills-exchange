@@ -166,7 +166,7 @@ fun AppNavigationDrawer(
                                     Text(
                                         text = "Hyperlocal Resident Network",
                                         fontSize = 9.5.sp,
-                                        color = Slate400
+                                        color = Slate500
                                     )
                                 }
                             }
@@ -174,7 +174,8 @@ fun AppNavigationDrawer(
                             // Close Button with proper padding
                             IconButton(
                                 onClick = onDismiss,
-                                modifier = Modifier.size(36.dp)
+                                // R12-P2-04: 48dp touch target.
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
@@ -260,7 +261,7 @@ fun AppNavigationDrawer(
                                         Text(
                                             text = currentUserPhone,
                                             fontSize = 11.5.sp,
-                                            color = Slate400
+                                            color = Slate500
                                         )
                                     }
                                 }
@@ -629,7 +630,7 @@ fun AppNavigationDrawer(
                     Text(
                         text = "Skills Exchange App v2.4.0 • Hyperlocal Network",
                         fontSize = 10.sp,
-                        color = Slate400,
+                        color = Slate500,
                         modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
                     )
                 }

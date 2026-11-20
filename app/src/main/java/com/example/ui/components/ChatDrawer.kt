@@ -259,7 +259,7 @@ fun ChatDrawer(
                 OutlinedTextField(
                     value = inputText,
                     onValueChange = { inputText = it },
-                    placeholder = { Text("Type message or response...", fontSize = 13.sp, color = Slate400) },
+                    placeholder = { Text("Type message or response...", fontSize = 13.sp, color = Slate500) },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(6.dp),
                     colors = OutlinedTextFieldDefaults.colors(

@@ -153,6 +153,9 @@ jobs:
       - run: node scripts/check_backup_policy.mjs
       - run: node scripts/check_test_registration.mjs --selftest
       - run: node scripts/check_test_registration.mjs
+      # R12: locale parity, the inline-copy baseline and the palette's text tones.
+      - run: node scripts/check_ui_copy.mjs --selftest
+      - run: node scripts/check_ui_copy.mjs
       - run: node scripts/secret_scan.mjs
 
   secret-scan:

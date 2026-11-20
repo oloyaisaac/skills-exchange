@@ -130,11 +130,20 @@ jobs:
         run: |
           mkdir -p ci-logs
           sdkmanager --list > ci-logs/sdkmanager.txt 2>&1 || true
-          cp compile.log ci-logs/ 2>/dev/null || true
-          cp unit-tests.log ci-logs/ 2>/dev/null || true
+          # R12: copy every log the job writes, not a fixed list — a step that fails before its own
+          # log is named was exactly the case that left no evidence to read.
+          cp -f *.log ci-logs/ 2>/dev/null || true
           mkdir -p ci-logs/test-results
           cp app/build/test-results/testDebugUnitTest/*.xml ci-logs/test-results/ 2>/dev/null || true
-          printf 'run: %s\ncommit: %s\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > ci-logs/README.txt
+          mkdir -p ci-logs/reports
+          cp -r app/build/reports/jacoco ci-logs/reports/ 2>/dev/null || true
+          {
+            printf 'run: %s\ncommit: %s\n' "$GITHUB_RUN_ID" "$GITHUB_SHA"
+            printf '\n-- workspace logs --\n'
+            ls -la *.log 2>/dev/null || echo '(none)'
+            printf '\n-- test results --\n'
+            ls -la app/build/test-results/testDebugUnitTest 2>/dev/null | head -20 || echo '(none)'
+          } > ci-logs/README.txt
           git config user.email "ci@users.noreply.github.com"
           git config user.name "CI diagnostics"
           git checkout --orphan ci-logs-publish

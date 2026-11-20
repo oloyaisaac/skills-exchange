@@ -1,17 +1,17 @@
 # REVIEWER IMPLEMENTATION STATE — Prompt 4 (strict one-reviewer-at-a-time)
 
 **Programme:** ASMT-2026-11-19 · **Cycle:** Prompt-4 remediation
-**Updated:** 2026-11-20 · **Branch:** `arena/f11c33ea-skills-exchange`
+**Updated:** 2026-11-20 · **Branch:** `arena/e2ab81c4-skills-exchange`
 
 ## Position
 
 | Field | Value |
 |---|---|
 | Total original reviewers | **15** |
-| Current reviewer | **R11 — COMPLETE** (evidence below) |
-| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R11 (11 of 15)** |
-| Reviewers awaiting implementation | R12 … R15 |
-| Next reviewer number | **12** |
+| Current reviewer | **R12 — COMPLETE** (evidence below) |
+| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R11, R12 (12 of 15)** |
+| Reviewers awaiting implementation | R13 … R15 |
+| Next reviewer number | **13** |
 
 ## R01 — COMPLETE (gate passed)
 
@@ -499,6 +499,44 @@ Four findings had already been closed by earlier rounds and are recorded as stal
 - Provider sandboxes remain untested; `REM-066` stays `IN_PROGRESS`.
 - Nothing is deployed and no test has run against a real Firebase project, handset or provider.
 
+## R12 — COMPLETE (gate passed)
+
+Source: `review_results/prompt2/REVIEW_12.md` (verdict **FAIL**, 7 findings, written against `aa4a0bc`
+with no rendering). Two findings had already moved under later rounds and are recorded as such:
+
+- **R12-P2-05 (MEDIUM)** — closed by **R02**: `isReleasingFunds` disables both escrow actions and
+  renders "Releasing with the server...", with `releaseError`/`releaseMessage` shown above them.
+- **R12-P2-07 (LOW)** — closed by **R02**: `com/example/util/SecureScreen.kt` sets `FLAG_SECURE` on the
+  identity, PIN, escrow and privacy surfaces.
+
+| Finding | Required correction | Status | Evidence |
+|---|---|---|---|
+| R12-P2-01 | One string resource; hardcoded English for four countries | **PARTIAL AND COUNTED** | 15 critical strings in `values/` + drafted `values-sw`; a Swahili render asserted in CI; the remaining 472 inline sentences baselined by `scripts/check_ui_copy.mjs` (may fall, not rise). No native-speaker review |
+| R12-P2-02 | No semantics: headings, labels, live regions | **IMPLEMENTED AND VERIFIED** | `ui/a11y/Accessibility.kt` + `AccessibilitySemanticsTest` (Heading, LiveRegion assertive/polite, `stateDescription`); 58 null descriptions triaged as decorative-or-labelled; guard refuses an unlabelled `IconButton` |
+| R12-P2-03 | Safety/money copy overstates outcomes | **STALE (R02/R09/R10) + residual fixed** | The privacy sheet's "24/7 neighborhood arbitration protocol" is replaced with what actually happens, including that nobody is on call |
+| R12-P2-04 | Interactive targets below 48 dp | **IMPLEMENTED AND VERIFIED** | Ten controls raised to 48 dp (panic, auth dismiss, filter, GPS ×2, drawer, notifications, share, notification settings, remove-photo); asserted with `assertHeightIsAtLeast(48.dp)`; guard refuses a sub-48 dp `IconButton` |
+| R12-P2-06 | No contrast, font-scale, TalkBack or pseudo-locale evidence | **PARTIAL: measured and gated, not rendered** | `ContrastTest` (11 assertions) found IndustrialEmerald 3.77:1 → 5.48:1, Slate400 2.56:1 → 3.5:1 with 19 text usages moved, RedDanger 4.41:1 → 5.24:1; 200 % font-scale render asserted. No TalkBack, scanner, screenshot baseline or dark-theme assertions |
+
+### Verification evidence (executed)
+
+- Android: **489/489** unit tests (run **44795261468**) — 484 existing plus 7 semantics and 4 contrast
+  tests. Three runs failed before it and each failure is fixed in this round: a missing
+  `androidx.compose.ui.test.assert` import, `RedDanger` at 4.41:1, and an externalised label whose
+  ellipsis did not match the existing test's expectation.
+- `node scripts/check_ui_copy.mjs` and `--selftest`: locale parity, the 472-sentence baseline, the
+  text-tone rule, unlabelled and sub-48 dp `IconButton`s — all five refusals proven.
+- The eleven pre-existing guards still pass; 29 documents; 36 requirements.
+
+### Not claimed
+
+- No TalkBack, Accessibility Scanner, switch-access or screen-curtain pass. Nothing has been rendered
+  on a device in this round.
+- `values-sw` is a draft with no native-speaker review; Luganda, Kinyarwanda and pseudo-locales are not
+  started.
+- 472 inline sentences remain.
+- No screenshot baseline, no dark-theme contrast assertions, no RTL evidence.
+- `REM-055` … `REM-058` stay `IN_PROGRESS` for exactly those reasons.
+
 ## Completion declarations
 
 - `reviewer_completions/REVIEWER_01_DONE.md`
@@ -512,7 +550,8 @@ Four findings had already been closed by earlier rounds and are recorded as stal
 - `reviewer_completions/REVIEWER_09_DONE.md`
 - `reviewer_completions/REVIEWER_10_DONE.md`
 - `reviewer_completions/REVIEWER_11_DONE.md`
+- `reviewer_completions/REVIEWER_12_DONE.md`
 
 ## Blockers
 
-None. R01–R11 complete; R12 is next.
+None. R01–R12 complete; R13 is next.

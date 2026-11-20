@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  R12-P2-01: Swahili, because the app targets Uganda, Kenya, Tanzania and Rwanda and shipped English
+  only. DRAFT: these translations were written for this round and have NOT been reviewed by a native
+  speaker or a professional translator. Ship-blocking before release — `docs/ux/LOCALISATION.md`
+  records that as an open item rather than presenting this as a finished locale.
+-->
+<resources>
+    <string name="safety_sos_panic">MSAADA WA HARAKA</string>
+    <string name="safety_sos_stand_down">SIMAMISHA</string>
+    <string name="safety_sos_active_note">Tahadhari ya dharura inaendelea. Maelezo ya jukwaa kuhusu ujumbe uliotumwa yanaonekana hapa chini.</string>
+    <string name="safety_dispatch_heading">Jukwaa lilifanya nini kwa hakika</string>
+    <string name="safety_desk_title">Dawati la usalama</string>
+    <string name="safety_desk_empty">Hakuna ripoti inayosubiri kuchunguzwa kwa sasa.</string>
+
+    <string name="escrow_release_action">Idhinisha na Toa (%1$s)</string>
+    <string name="escrow_releasing">Inatoa kwa seva...</string>
+    <string name="escrow_release_failed">Utoaji umeshindikana: %1$s</string>
+
+    <string name="offline_banner">Hakuna mtandao — unaona data iliyohifadhiwa. Mabadiliko yanasubiri.</string>
+
+    <string name="onboarding_role_question">Unajielezaje?</string>
+    <string name="onboarding_profile_title">Kamilisha Taarifa za Wasifu</string>
+    <string name="onboarding_send_code">Tuma Msimbo wa Uthibitisho</string>
+    <string name="onboarding_verify_continue">Thibitisha na Uendelee</string>
+</resources>

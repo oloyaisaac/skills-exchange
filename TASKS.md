@@ -158,7 +158,25 @@ times per PR, backend coverage floors met, handler tests **19/19** on the emulat
 rules 26/26, 10 static guards + 2 self-tests, Android `Compile and unit tests` green with JaCoCo in run
 44789646910, CI **7/7**. The new handler gate failed on its first execution — one assertion treated
 `breachingSla` as an envelope field — and the exact-count assertion is what surfaced it.
-R12–R15 awaiting.
+**R12 — COMPLETE.** The app was usable but not navigable, and English-only for a four-country market.
+Screens now carry semantics: `ui/a11y/Accessibility.kt` supplies headings, assertive and polite live
+regions, `stateDescription` and a 48 dp touch floor, applied to the panic control, the dispatch verdict,
+release feedback, onboarding errors, the safety desk and the offline banner — and asserted in
+`AccessibilitySemanticsTest` (the role question is a `Heading`; the dispatch verdict is an assertive
+`LiveRegion`; the panic button is ≥48 dp and says "No emergency alert is active."). Ten controls were
+too small to hit (a 40 dp panic button, a 28 dp auth dismiss, eight `IconButton`s sized 20–36 dp by an
+explicit `Modifier.size`); all are 48 dp, and a guard refuses a sub-48 dp one. Contrast is now
+computed, not eyeballed: white on `IndustrialEmerald` measured 3.77:1 and is now 5.48:1, `Slate400`
+measured 2.56:1 while painting sentences (now a 3.5:1 graphics tone, 19 text usages moved to
+`Slate500`), and `RedDanger` on its own error surface measured 4.41:1, now 5.24:1. Fifteen critical
+strings are externalised with a drafted `values-sw` locale and a Swahili render in CI; the other 472
+inline sentences are baselined by `scripts/check_ui_copy.mjs`, which also refuses an unlabelled
+`IconButton`. The privacy sheet no longer promises a 24/7 arbitration line. Stale and recorded as
+such: the escrow in-flight states (R02) and `FLAG_SECURE` (R02). Evidence: Android **489/489** (run
+44795261468), eleven static guards plus the UI-copy guard and self-test. Not verified: no TalkBack or
+Accessibility Scanner run, no native-speaker translation review, no screenshot baseline, no dark-theme
+contrast, no RTL, nothing on a device.
+R13–R15 awaiting.
 
 ## Review Track — 2026-11-19 (not started)
 

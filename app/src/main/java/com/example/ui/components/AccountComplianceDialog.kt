@@ -395,9 +395,16 @@ fun PrivacyAndTermsSheet(
 
             LegalSection(
                 title = "2. Mobile Money Escrow & Payments",
+                // R12-P2-03: "24/7 neighborhood arbitration protocol" described a service that does
+                // not exist. There is one safety/trust desk, it is not staffed around the clock, and
+                // nobody is on call: docs/safety/SAFETY_DESK_RUNBOOK.md says so in writing. Telling a
+                // low-literacy user that arbitration is always awake is the deception this round is
+                // about.
                 body = "Payments held in Escrow via MTN MoMo are locked until resident approval or " +
-                    "mutual release. In case of dispute, our 24/7 neighborhood arbitration protocol " +
-                    "freezes funds pending review."
+                    "mutual release. A dispute freezes the funds while an operator reviews it. " +
+                    "Review happens during desk hours and may take up to the response target for the " +
+                    "category; there is no round-the-clock arbitration line. If money is at risk and " +
+                    "someone is in danger, call the police or an ambulance yourself."
             )
 
             LegalSection(
@@ -1103,7 +1110,7 @@ fun WorkerTrainingScreen(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(module.title, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Slate800)
                                 Text(module.description, fontSize = 10.sp, color = Slate500, lineHeight = 14.sp)
-                                Text("${module.durationMinutes} min", fontSize = 9.sp, color = Slate400, fontWeight = FontWeight.Medium)
+                                Text("${module.durationMinutes} min", fontSize = 9.sp, color = Slate500, fontWeight = FontWeight.Medium)
                             }
                             if (!isCompleted) {
                                 OutlinedButton(

@@ -133,7 +133,8 @@ fun NotificationDrawer(
                             onClick = {
                                 context.startActivity(SystemNotificationHelper.openNotificationSettingsIntent(context))
                             },
-                            modifier = Modifier.size(28.dp)
+                            // R12-P2-04: 48dp touch target.
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Settings,

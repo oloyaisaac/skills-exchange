@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -37,6 +38,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.remote.AfricaTalkingService.OtpResponse
 import com.example.data.remote.AfricaTalkingService.VerificationResponse
 import com.example.ui.theme.*
+import com.example.R
+import com.example.ui.a11y.announcementLiveRegion
+import com.example.ui.a11y.sectionHeading
 import com.example.ui.viewmodel.SkillsExchangeViewModel
 import com.example.util.GoogleSignInHelper
 import com.example.util.LocationHelper
@@ -324,12 +328,15 @@ fun OnboardingScreen(
                         )
 
                         Text(
-                            text = "What describes you?",
+                            text = stringResource(R.string.onboarding_role_question),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = Slate800,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            // R12-P2-02: TalkBack's heading navigation starts with knowing what is one.
+                            modifier = Modifier
+                                .padding(bottom = 16.dp)
+                                .sectionHeading()
                         )
 
                         // Existing Client Card
@@ -886,7 +893,8 @@ fun OnboardingScreen(
                             text = "OR USE PHONE",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Slate400,
+                            // R12-P2-06: a label users must read, so it clears the body floor.
+                            color = Slate500,
                             modifier = Modifier.padding(horizontal = 12.dp),
                             letterSpacing = 1.sp
                         )
@@ -919,6 +927,7 @@ fun OnboardingScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(bottom = 6.dp)
+                                .announcementLiveRegion()
                         )
                     }
 
@@ -951,6 +960,7 @@ fun OnboardingScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(bottom = 6.dp)
+                                        .announcementLiveRegion()
                                 )
                             }
                         }
@@ -961,7 +971,9 @@ fun OnboardingScreen(
                             text = authError ?: "",
                             color = MaterialTheme.colorScheme.error,
                             fontSize = 12.sp,
-                            modifier = Modifier.padding(bottom = 8.dp)
+                            modifier = Modifier
+                                .padding(bottom = 8.dp)
+                                .announcementLiveRegion()
                         )
                     }
 
@@ -989,7 +1001,7 @@ fun OnboardingScreen(
                             if (isSendingOtp) {
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
                             } else {
-                                Text("Send Verification Code", fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.onboarding_send_code), fontWeight = FontWeight.Bold)
                             }
                         }
                     } else {
@@ -1013,7 +1025,7 @@ fun OnboardingScreen(
                             if (isVerifyingOtp) {
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
                             } else {
-                                Text("Verify & Continue", fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.onboarding_verify_continue), fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -1039,12 +1051,14 @@ fun OnboardingScreen(
                     }
 
                     Text(
-                        text = "Complete Profile Information",
+                        text = stringResource(R.string.onboarding_profile_title),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Black,
                         color = Slate900,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(bottom = 6.dp)
+                        modifier = Modifier
+                            .padding(bottom = 6.dp)
+                            .sectionHeading()
                     )
 
                     Text(
@@ -1216,6 +1230,7 @@ fun OnboardingScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(bottom = 6.dp)
+                                .announcementLiveRegion()
                         )
                     }
 

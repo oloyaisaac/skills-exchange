@@ -57,8 +57,10 @@ fun FilterBar(
                 // Filter Drawer Trigger Button
                 IconButton(
                     onClick = onOpenFilterDrawer,
+                    // R12-P2-04: a 24dp hit target. The visual treatment stays; the touch area grows.
                     modifier = Modifier
-                        .size(24.dp)
+                        .heightIn(min = 48.dp)
+                        .widthIn(min = 48.dp)
                         .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(6.dp))
                         .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp))
                 ) {

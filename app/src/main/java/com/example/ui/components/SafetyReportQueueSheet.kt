@@ -25,10 +25,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.remote.ReportCategories
+import com.example.ui.a11y.announcementLiveRegion
+import com.example.ui.a11y.sectionHeading
 import com.example.ui.theme.RedDanger
 import com.example.ui.theme.Slate200
 import com.example.ui.theme.Slate50
@@ -80,10 +84,12 @@ fun SafetyReportQueueSheet(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
-                text = "Safety desk",
+                // R12-P2-01/P2-02: translatable, and a heading so TalkBack can jump to it.
+                text = stringResource(R.string.safety_desk_title),
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
-                color = Slate900
+                color = Slate900,
+                modifier = Modifier.sectionHeading()
             )
             Text(
                 // The desk's own line, composed on the server. Null is "unknown", never "clear".
@@ -91,7 +97,9 @@ fun SafetyReportQueueSheet(
                     ?: "Desk metrics unavailable — the queue below may be incomplete. Do not read this as a clear desk.",
                 fontSize = 11.sp,
                 fontWeight = if (metricsLine == null) FontWeight.Bold else FontWeight.Normal,
-                color = if (metricsLine == null) RedDanger else Slate600
+                color = if (metricsLine == null) RedDanger else Slate600,
+                // R12-P2-02: an unreadable desk is the state an operator must hear about.
+                modifier = Modifier.announcementLiveRegion()
             )
 
             if (decisionMessage != null) {
@@ -112,7 +120,7 @@ fun SafetyReportQueueSheet(
                 Text(text = "Loading…", fontSize = 11.sp, color = Slate500)
             } else if (queue.isEmpty()) {
                 Text(
-                    text = "No report is waiting triage right now.",
+                    text = stringResource(R.string.safety_desk_empty),
                     fontSize = 11.sp,
                     color = Slate500
                 )

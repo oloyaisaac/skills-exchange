@@ -82,7 +82,8 @@ fun TopHeaderBar(
             // 1. Left: Hamburger Menu Button
             IconButton(
                 onClick = onOpenNavigationDrawer,
-                modifier = Modifier.size(36.dp)
+                // R12-P2-04: 48dp touch target.
+                modifier = Modifier.size(48.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Menu,
@@ -212,7 +213,8 @@ fun TopHeaderBar(
                                         "Acquiring satellite lock..."
                                     else
                                         "Auto-detect precise neighborhood & radius",
-                                    color = Slate400,
+                                    // R12-P2-06: this is a sentence, not an icon.
+                                    color = Slate500,
                                     fontSize = 10.sp
                                 )
                             }
@@ -270,7 +272,8 @@ fun TopHeaderBar(
             Box {
                 IconButton(
                     onClick = onOpenNotifications,
-                    modifier = Modifier.size(36.dp)
+                    // R12-P2-04: 48dp touch target.
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Notifications,

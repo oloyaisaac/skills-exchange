@@ -165,7 +165,8 @@ fun JobPhotoPicker(
                     )
                     IconButton(
                         onClick = { onUrisChange(selectedUris - uri) },
-                        modifier = Modifier.size(20.dp).align(Alignment.TopEnd)
+                        // R12-P2-04: 48dp touch target for removing a photo.
+                        modifier = Modifier.size(48.dp).align(Alignment.TopEnd)
                     ) {
                         Icon(Icons.Default.Close, contentDescription = "Remove photo", tint = RedDanger)
                     }
@@ -278,7 +279,7 @@ fun AppointmentsDatePicker(
         ) {
             Text(displayDate, fontSize = 12.sp)
             if (selectedDate <= 0) {
-                Text("  (pick date)", color = Slate400, fontSize = 12.sp)
+                Text("  (pick date)", color = Slate500, fontSize = 12.sp)
             }
         }
 
@@ -342,7 +343,7 @@ fun AppointmentsTimePicker(
         ) {
             Text(displayTime, fontSize = 12.sp)
             if (selectedTime <= 0) {
-                Text("  (pick time)", color = Slate400, fontSize = 12.sp)
+                Text("  (pick time)", color = Slate500, fontSize = 12.sp)
             }
         }
 

@@ -165,7 +165,8 @@ fun ProviderDetailSheet(
                                     district = provider.neighborhood
                                 )
                             },
-                            modifier = Modifier.size(28.dp)
+                            // R12-P2-04: 48dp touch target for the share action.
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Share,
