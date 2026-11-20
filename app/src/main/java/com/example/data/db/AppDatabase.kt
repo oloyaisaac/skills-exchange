@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
@@ -32,7 +31,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
     version = 27,
     exportSchema = false
 )
-@TypeConverters(TypeConverters::class)
+@androidx.room.TypeConverters(TypeConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun serviceProviderDao(): ServiceProviderDao
     abstract fun skillEndorsementDao(): SkillEndorsementDao
