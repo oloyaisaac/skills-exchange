@@ -107,10 +107,10 @@ class DatabaseMigrationChainTest {
     }
 
     @Test
-    fun `every consecutive version from 11 to 28 has exactly one migration`() {
+    fun `every consecutive version from 11 to 29 has exactly one migration`() {
         val pairs = AppDatabase.ALL_MIGRATIONS.map { it.startVersion to it.endVersion }
         assertEquals(
-            (11 until 28).map { it to it + 1 },
+            (11 until 29).map { it to it + 1 },
             pairs
         )
     }
@@ -125,7 +125,7 @@ class DatabaseMigrationChainTest {
 
         // Opening the database is the validation: Room compares the migrated schema with the
         // entity definitions and throws if they disagree.
-        assertEquals(28, db!!.openHelper.writableDatabase.version)
+        assertEquals(29, db!!.openHelper.writableDatabase.version)
 
         val job = runBlocking { db!!.jobPostDao().getJobById("job_v11") }
         assertNotNull("the pre-migration job row must survive", job)
@@ -215,13 +215,78 @@ class DatabaseMigrationChainTest {
             .allowMainThreadQueries()
             .build()
 
-        assertEquals(28, db!!.openHelper.writableDatabase.version)
+        assertEquals(29, db!!.openHelper.writableDatabase.version)
         val entries = runBlocking { db!!.walletLedgerDao().getEntriesForWorker("worker_1") }
         assertEquals(1, entries.size)
         assertEquals(10_050L, entries.single().amountMinor)
         val withdrawals = runBlocking { db!!.walletWithdrawalDao().getWithdrawalsForWorker("worker_1") }
         assertEquals(1, withdrawals.size)
         assertEquals(25_025L, withdrawals.single().amountMinor)
+    }
+
+    @Test
+    fun `migration 28 to 29 clears the shared default door PIN and leaves real ones alone`() {
+        // R10-P2-01: the migration that created `job_posts` gave `doorstepPin` the literal default
+        // '4829'. A row written through it therefore holds a PIN anyone reading this repository knows.
+        // The step must clear exactly those rows and touch nothing else.
+        val file = context.getDatabasePath(dbName)
+        file.parentFile?.mkdirs()
+        val raw = SQLiteDatabase.openOrCreateDatabase(file, null)
+        installSchema(raw, version = 28)
+        raw.version = 28
+        insertJobRow(raw, id = "job_default_pin", pin = "4829")
+        insertJobRow(raw, id = "job_real_pin", pin = "7319")
+        raw.close()
+
+        db = Room.databaseBuilder(context, AppDatabase::class.java, dbName)
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+
+        assertEquals(29, db!!.openHelper.writableDatabase.version)
+        val cleared = runBlocking { db!!.jobPostDao().getJobById("job_default_pin") }
+        assertNotNull("the row itself must survive", cleared)
+        assertEquals("the shared default PIN must be gone", "", cleared!!.doorstepPin)
+        val kept = runBlocking { db!!.jobPostDao().getJobById("job_real_pin") }
+        assertEquals("a job's own PIN is not the migration's business", "7319", kept!!.doorstepPin)
+    }
+
+    /**
+     * Inserts a `job_posts` row with every column the v28 schema declares.
+     *
+     * Written from the exported schema rather than by hand: `job_posts` gained NOT NULL columns without
+     * defaults over seven versions, and a hand-written partial INSERT fails on whichever one the
+     * migration added last (this is exactly how the first version of this test failed in CI).
+     */
+    private fun insertJobRow(raw: SQLiteDatabase, id: String, pin: String) {
+        val json = org.json.JSONObject(readSchemaAsset("com.example.data.db.AppDatabase/28.json"))
+        val entities = json.getJSONObject("database").getJSONArray("entities")
+        var jobPosts: org.json.JSONObject? = null
+        for (index in 0 until entities.length()) {
+            val entity = entities.getJSONObject(index)
+            if (entity.getString("tableName") == "job_posts") jobPosts = entity
+        }
+        val entity = jobPosts ?: error("job_posts is not in the v28 schema")
+        val fields = entity.getJSONArray("fields")
+        val columns = mutableListOf<String>()
+        val values = mutableListOf<String>()
+        for (index in 0 until fields.length()) {
+            val field = fields.getJSONObject(index)
+            val column = field.getString("columnName")
+            val affinity = field.getString("affinity")
+            columns += column
+            values += when {
+                column == "id" -> "'$id'"
+                column == "doorstepPin" -> "'$pin'"
+                affinity == "TEXT" -> "''"
+                affinity == "INTEGER" -> "0"
+                affinity == "REAL" -> "0.0"
+                else -> "NULL"
+            }
+        }
+        raw.execSQL(
+            "INSERT INTO job_posts (${columns.joinToString(", ")}) VALUES (${values.joinToString(", ")})"
+        )
     }
 
     /** Creates every table/index of an exported schema version, straight from `app/schemas`. */

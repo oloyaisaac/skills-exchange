@@ -1,3 +1,49 @@
+## 2026-11-20 (Prompt-4 R10 COMPLETE) - SAFETY GATE PASSED
+
+- R10 closed on `arena/a19ae51b-skills-exchange`. The review (`review_results/prompt2/REVIEW_10.md`,
+  written against `aa4a0bc`) said safety was a set of screens, not records. Each finding re-checked
+  before any change; two had moved under later rounds and are recorded that way rather than re-fixed:
+  the client-side PIN comparison (R07) and the `0,0` sentinel on the SOS raise path (R02).
+- Reports are now records. `reports.ts` owns validation, the priority ladder (`SAFETY` always P0;
+  `FRAUD`/`HARASSMENT` escalate at one prior open report, the rest at two) and a forward-only triage
+  state machine; `fileReport` writes the record and pages `notifications/safety_desk` for a P0;
+  `getReportsQueue`/`resolveReport` are admin-gated; the rules give the reporter read access and give
+  clients no write. The app files through the callable and shows the server's sentence; the new
+  `SafetyReportQueueSheet` is the operator console, with a metrics line that renders "unavailable"
+  rather than zeros when the read fails.
+- SOS copy is honest. `sosStatus.ts` describes the recorded `dispatch` (`SENT`/`FAILED`/
+  `NO_RECIPIENTS`/`PENDING`/`STALE`/`UNKNOWN`), appends "call the police or an ambulance yourself now"
+  to everything that is not a confirmed send, and the view model polls while pending, shows the
+  sentence in the banner and writes it to the job chat.
+- Guarantor identity reuse is refused server-side (salted NIN fingerprints, last-nine-digit phone
+  keys, self-guarantee, duplicate, already-used, 4th submission in <24h) and audited in
+  `guarantor_intake_audit` with codes and counts only. `guarantors`/`guarantor_submissions` are
+  server-only in the rules; the client may not write a guarantor row at all.
+- Ratings moved to the server (`ratingsCore.ts`, `ratings/{jobId}_{raterUid}`, `worker_stats`
+  aggregate in one transaction). The device keeps a copy only after the server accepts, and a refusal
+  reaches the sheet as the server's own sentence.
+- The invented location is gone from the failure path: `requestGpsDetection` reports no fix (no
+  coordinates, no district, `isUsingCurrentLocation = false`), `GpsLocationState` no longer defaults
+  to claiming a position, `LocationHelper` returns an error instead of Kampala city-centre
+  coordinates, and `updateWorkerLocation` keeps the stored position when there is no fix.
+- The shared PIN default is closed for existing installs: schema **v29** (`MIGRATION_28_29`) blanks
+  `doorstepPin` rows still holding `'4829'`; the DDL default in the creating migration is `''`. A
+  migration test proves a real PIN survives.
+- CI: 7/7 green (run 44784548015). CI caught two defects that reading did not: `ReportUiState` was
+  referenced as a nested class when it is top-level, and the new migration test hand-wrote a partial
+  `job_posts` INSERT that violated a NOT NULL column a later migration added; the INSERT is now
+  generated from the exported schema.
+- Evidence: backend `npm run build && npm test` **310/310** (four new files registered in
+  `functions/package.json`), rules **26** tests in CI, ten static guards pass, traceability at 30
+  requirements. Client compiles and tests run in CI only (no JDK here).
+- Not verified, and said so in the docs: nothing deployed, no live SMS/FCM dispatch, no operator has
+  ever triaged a report, the desk is single-operator with no dual control and no on-call rota
+  (`docs/safety/SAFETY_DESK_RUNBOOK.md`), the seeded demo provider rows still carry illustrative
+  coordinates (demo data, never a device fix), and off-platform-contact detection (review section 6,
+  no finding id) remains unimplemented. R11 is next.
+
+---
+
 ## 2026-11-20 (R09 gate audit, PR #25) - THREE OPEN CONDITIONS CLOSED
 
 - After the R09 merge I audited the reviewer's section 11 PASSING CONDITIONS, not just the seven

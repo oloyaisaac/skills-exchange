@@ -1,5 +1,7 @@
 package com.example.ui.components
 
+import com.example.data.remote.ReportCategories
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -34,6 +36,10 @@ fun ProviderDetailSheet(
     onEndorseSkill: (String) -> Unit,
     onRequestJob: (ServiceProviderEntity) -> Unit,
     onReportUser: (ReportEntity) -> Unit = {},
+    // R10-P2-02: the server's acknowledgement (or refusal) for the last report.
+    reportMessage: String? = null,
+    reportIsError: Boolean = false,
+    onDismissReportMessage: () -> Unit = {},
     activeRegion: CurrencyRegion = CurrencyRegion.currentRegion,
     isAuthenticated: Boolean = false,
     onTriggerAuth: (String) -> Unit = {},
@@ -44,23 +50,45 @@ fun ProviderDetailSheet(
     var reportReason by remember { mutableStateOf("") }
     var reportDescription by remember { mutableStateOf("") }
 
+    // R10-P2-02: the server's answer about the report — a report nobody confirms is not filed.
+    if (!reportMessage.isNullOrBlank()) {
+        AlertDialog(
+            onDismissRequest = onDismissReportMessage,
+            title = { Text(if (reportIsError) "Report not filed" else "Report received") },
+            text = {
+                Text(
+                    text = reportMessage,
+                    fontSize = 12.sp,
+                    color = if (reportIsError) MaterialTheme.colorScheme.error else Slate600
+                )
+            },
+            confirmButton = {
+                Button(onClick = onDismissReportMessage) { Text("OK") }
+            }
+        )
+    }
+
     if (isReportDialogOpen) {
         AlertDialog(
             onDismissRequest = { isReportDialogOpen = false },
             title = { Text("Report User") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // R10-P2-02: the category is one the server accepts, chosen from a list rather
+                    // than typed — a free-text reason cannot drive a priority or an SLA.
                     Text("Why are you reporting ${provider.name}?", fontSize = 12.sp, color = Slate600)
-                    OutlinedTextField(
-                        value = reportReason,
-                        onValueChange = { reportReason = it },
-                        label = { Text("Reason") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    ReportCategories.ALL.forEach { category ->
+                        FilterChip(
+                            selected = reportReason == category,
+                            onClick = { reportReason = category },
+                            label = { Text(ReportCategories.label(category), fontSize = 12.sp) }
+                        )
+                    }
                     OutlinedTextField(
                         value = reportDescription,
                         onValueChange = { reportDescription = it },
-                        label = { Text("Description (optional)") },
+                        label = { Text("What happened? (required)") },
+                        minLines = 3,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -84,7 +112,8 @@ fun ProviderDetailSheet(
                             reportDescription = ""
                         }
                     },
-                    enabled = reportReason.isNotBlank()
+                    // A report needs a category and a sentence: the server refuses anything shorter.
+                    enabled = reportReason.isNotBlank() && reportDescription.trim().length >= 10
                 ) {
                     Text("Submit Report")
                 }

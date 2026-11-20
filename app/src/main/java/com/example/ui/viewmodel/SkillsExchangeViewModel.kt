@@ -21,6 +21,9 @@ import com.example.data.db.UserProfileEntity
 import com.example.data.remote.AccountDeletionOutcome
 import com.example.data.remote.ConsentOutcome
 import com.example.data.remote.ConsentVersions
+import com.example.data.remote.ReportResolutionOutcome
+import com.example.data.remote.ReportSubmissionOutcome
+import com.example.data.remote.SosDispatchInfo
 import com.example.data.remote.AccountDeletionRules
 import com.example.data.remote.AfricaTalkingService
 import com.example.data.remote.AfricaTalkingService.OtpResponse
@@ -68,7 +71,8 @@ data class GpsLocationState(
     val isLocating: Boolean = false,
     val isPermissionGranted: Boolean = false,
     val isBannerDismissed: Boolean = false,
-    val isUsingCurrentLocation: Boolean = true,
+    // R10-P2-05: false until a real fix arrives — the old default claimed a position nobody had.
+    val isUsingCurrentLocation: Boolean = false,
     val latitude: Double? = null,
     val longitude: Double? = null,
     val detectedNeighborhood: String = "Current Location",
@@ -1043,12 +1047,49 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                 // instead of Kampala city-centre coordinates that look real but may be wrong.
                 val latitude = gps.latitude ?: user?.latitude ?: 0.0
                 val longitude = gps.longitude ?: user?.longitude ?: 0.0
-                repository.triggerEmergencySos(jobId, latitude, longitude, jobPost.district)
+                val raised = repository.triggerEmergencySos(jobId, latitude, longitude, jobPost.district)
                 val updatedJob = repository.jobs.first().find { it.id == jobId }
                 selectedJob.value = updatedJob
+                // R10-P2-03: ask the server what actually happened to the alert, and keep asking for a
+                // short while while the answer is still pending. Until it answers, the app says so.
+                if (raised is SkillsExchangeRepository.SosRaiseResult.Success) {
+                    watchSosDispatch(raised.incidentId, jobId)
+                }
             } finally {
                 sosDispatchInFlight = false
             }
+        }
+    }
+
+    /**
+     * R10-P2-03: the platform's own account of what happened to an emergency alert.
+     *
+     * The app used to print "broadcasted to local emergency contacts and platform security" the
+     * instant the button was pressed. It now shows the sentence the server composes from the dispatch
+     * record (`functions/src/sosStatus.ts`), and keeps that sentence visible with the job so the person
+     * can see whether anyone was actually reached.
+     */
+    val sosDispatch = MutableStateFlow<SosDispatchInfo?>(null)
+
+    private suspend fun watchSosDispatch(incidentId: String, jobId: String) {
+        sosDispatch.value = null
+        var info: SosDispatchInfo? = null
+        var attempt = 0
+        // The mirror may not have landed yet, or the trigger may not have reported: keep asking, but
+        // only while the answer is genuinely pending. Anything else — including "could not read" — is
+        // shown as it is rather than retried into a better answer.
+        while (attempt < SOS_DISPATCH_POLLS) {
+            info = repository.fetchSosDispatch(incidentId)
+            val current = info
+            if (current != null && !current.isPending) break
+            attempt += 1
+            if (attempt < SOS_DISPATCH_POLLS) kotlinx.coroutines.delay(SOS_DISPATCH_POLL_MS)
+        }
+        val settled = info
+        sosDispatch.value = settled
+        if (settled != null && settled.chatMessage.isNotBlank()) {
+            // Recorded in the job's chat so the outcome survives the session, not just this screen.
+            repository.appendSystemChatMessage(jobId, "Emergency Dispatch", settled.chatMessage)
         }
     }
 
@@ -1194,23 +1235,29 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         setDistrict(neighborhood)
     }
 
-    fun requestGpsDetection(targetNeighborhood: String = "Sunnyside District") {
+    /**
+     * R10-P2-05: the fix did not arrive.
+     *
+     * This used to answer a failed GPS read by pretending a fix had succeeded — Kampala city-centre
+     * coordinates, "Sunnyside District", an 8-metre accuracy and `isPermissionGranted = true`. That
+     * fabricated position could then travel into an SOS alert. Now a failed read leaves the position
+     * unknown, says so, and changes neither the coordinates nor the chosen district.
+     */
+    fun requestGpsDetection(targetNeighborhood: String = "") {
         viewModelScope.launch {
-            gpsLocationState.update { it.copy(isLocating = true, errorMessage = null, isUsingCurrentLocation = true) }
-            kotlinx.coroutines.delay(600) // Fast responsive transition
             gpsLocationState.update {
                 it.copy(
                     isLocating = false,
-                    isPermissionGranted = true,
-                    isUsingCurrentLocation = true,
-                    latitude = 0.3476,
-                    longitude = 32.5825,
-                    detectedNeighborhood = targetNeighborhood,
-                    accuracyMeters = 8f,
-                    errorMessage = null
+                    isUsingCurrentLocation = false,
+                    latitude = null,
+                    longitude = null,
+                    errorMessage = if (targetNeighborhood.isBlank()) {
+                        "No GPS fix — your position is unknown. Type your district instead."
+                    } else {
+                        "No GPS fix near $targetNeighborhood — your position is unknown. Type your district instead."
+                    }
                 )
             }
-            setDistrict(targetNeighborhood)
         }
     }
 
@@ -1492,10 +1539,22 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     /**
      * LOC-003: Update worker operating district and coordinates
      */
-    fun updateWorkerLocation(district: String, lat: Double = 0.3476, lng: Double = 32.5825, address: String? = null) {
+    fun updateWorkerLocation(district: String, lat: Double?, lng: Double?, address: String? = null) {
         viewModelScope.launch {
             // C2-2 Fix #3 (F7): the location write targets the AUTHENTICATED UID's exact row.
             val user = currentUserByUid.value ?: return@launch
+            // R10-P2-05: a write with no fix keeps the stored coordinates rather than replacing a real
+            // position with a default that looks like Kampala city centre.
+            if (lat == null || lng == null) {
+                val updatedWithoutFix = user.copy(
+                    district = district,
+                    address = address,
+                    updatedAtTimestamp = System.currentTimeMillis()
+                )
+                repository.saveUserProfile(updatedWithoutFix)
+                setDistrict(district)
+                return@launch
+            }
             val updated = user.copy(
                 district = district,
                 latitude = lat,
@@ -2317,6 +2376,52 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    // ==================== R10: Safety Desk (report triage) ====================
+
+    /** R10-P2-02: rows from the admin-gated `getReportsQueue`. Priorities come from the server. */
+    val adminReportsQueue = MutableStateFlow<List<Map<String, Any>>>(emptyList())
+
+    val isAdminReportsLoading = MutableStateFlow(false)
+
+    /**
+     * R10-P2-07: the desk metrics line, or null when it could not be read. The console shows
+     * "unknown" for null — never a reassuring zero it did not receive.
+     */
+    val adminSafetyMetrics = MutableStateFlow<String?>(null)
+
+    /** R10-P2-02: the server's sentence for the last triage decision. */
+    val reportResolutionMessage = MutableStateFlow<String?>(null)
+
+    fun loadAdminReportsQueue() {
+        if (isAdminReportsLoading.value) return
+        isAdminReportsLoading.value = true
+        viewModelScope.launch {
+            try {
+                adminReportsQueue.value = repository.getReportsQueue()
+                adminSafetyMetrics.value = repository.getSafetyMetrics()
+            } finally {
+                isAdminReportsLoading.value = false
+            }
+        }
+    }
+
+    fun submitReportResolution(reportId: String, status: String, outcome: String, notes: String = "") {
+        viewModelScope.launch {
+            when (val result = repository.resolveReport(reportId, status, outcome, notes)) {
+                is ReportResolutionOutcome.Recorded -> {
+                    reportResolutionMessage.value = result.message
+                    loadAdminReportsQueue()
+                }
+                is ReportResolutionOutcome.Rejected ->
+                    reportResolutionMessage.value = result.message
+            }
+        }
+    }
+
+    fun clearReportResolutionMessage() {
+        reportResolutionMessage.value = null
+    }
+
     /** REM-023: true only after the server confirms the signed-in account holds the admin claim. */
     val isAdminVerified = MutableStateFlow(false)
 
@@ -2899,15 +3004,49 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    /** R10-P2-02: the outcome of the last report, shown to the person who filed it. */
+    val reportState = MutableStateFlow<ReportUiState>(ReportUiState.Idle)
+
+    fun resetReportState() {
+        if (reportState.value is ReportUiState.Filing) return
+        reportState.value = ReportUiState.Idle
+    }
+
+    /**
+     * R10-P2-02: file a report the platform can act on.
+     *
+     * The local row used to be the whole report: invisible to every operator, gone on reinstall. The
+     * category is chosen in the dialog (and validated on the server), the priority and the response
+     * target come back from the server, and the confirmation shows that — not a generic "thanks".
+     */
     fun reportUser(report: com.example.data.db.ReportEntity) {
+        if (reportState.value is ReportUiState.Filing) return
         viewModelScope.launch {
             // C2: reports need a real reporter id — drop unauthenticated reports instead
             // of filing them under an "anonymous" placeholder nobody can audit.
             // C2-2 Fix #3 (F7): and never file them under the newest Room row's id, which may
             // belong to a different account on this device.
-            val currentUserId = currentAuthenticatedUid() ?: return@launch
+            val currentUserId = currentAuthenticatedUid()
+            if (currentUserId == null) {
+                reportState.value = ReportUiState.Failed(
+                    "Sign in first — a report has to be attributable to reach an operator."
+                )
+                return@launch
+            }
+            if (report.description.trim().length < 10) {
+                reportState.value = ReportUiState.Failed(
+                    "Describe what happened, in at least a sentence, so an operator can act on it."
+                )
+                return@launch
+            }
+            reportState.value = ReportUiState.Filing
             val updatedReport = report.copy(reportedBy = currentUserId)
-            repository.reportUser(updatedReport)
+            when (val outcome = repository.reportUser(updatedReport)) {
+                is ReportSubmissionOutcome.Filed ->
+                    reportState.value = ReportUiState.Filed(outcome.message)
+                is ReportSubmissionOutcome.Rejected ->
+                    reportState.value = ReportUiState.Failed(outcome.message)
+            }
         }
     }
 
@@ -3026,6 +3165,10 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                         RatingSubmissionState.Error("You are not authorized to rate this job")
                     is com.example.data.repository.SkillsExchangeRepository.RatingResult.AlreadyRated ->
                         RatingSubmissionState.Error("You have already rated this job")
+                    // R10-P2-06: the server refused or could not record it, and nothing was stored
+                    // locally — the message is the server's own sentence.
+                    is com.example.data.repository.SkillsExchangeRepository.RatingResult.NotRecorded ->
+                        RatingSubmissionState.Error(result.message)
                 }
             } catch (e: Exception) {
                 ratingSubmissionState.value = RatingSubmissionState.Error(e.message ?: "Failed to submit rating")
@@ -3257,3 +3400,15 @@ enum class PrivacyConsentState { IDLE, RECORDING, RECORDED, FAILED }
 
 /** R09-P2-03: the subject-access export's state. */
 enum class DataExportState { IDLE, WORKING, DONE, FAILED }
+
+/** R10-P2-03: how long the app keeps asking the server for a dispatch outcome (5 × 3s). */
+private const val SOS_DISPATCH_POLLS = 5
+private const val SOS_DISPATCH_POLL_MS = 3_000L
+
+/** R10-P2-02: what the reporter should see about their report. */
+sealed interface ReportUiState {
+    data object Idle : ReportUiState
+    data object Filing : ReportUiState
+    data class Filed(val message: String) : ReportUiState
+    data class Failed(val message: String) : ReportUiState
+}

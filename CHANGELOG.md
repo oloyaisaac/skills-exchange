@@ -1,5 +1,55 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [PROMPT-4 / R10] Safety: reports that reach a person, alerts that tell the truth
+
+- **A report is now a record an operator can act on (R10-P2-02, CRITICAL).** `reportUser` wrote a row
+  into the reporter's own Room table: no Firestore collection, no rules entry, no queue — invisible to
+  every operator on every other device, and gone on reinstall. `functions/src/reports.ts` now owns the
+  record, the priority ladder (`SAFETY` is always P0; `FRAUD`/`HARASSMENT` escalate at one prior open
+  report, the rest at two) and the triage state machine (`OPEN → TRIAGING → ACTIONED | DISMISSED`,
+  forward only, attributed). `fileReport` writes it and pages `notifications/safety_desk` for a P0;
+  `getReportsQueue` and `resolveReport` are admin-gated; the rules let the reporter read their own
+  report and nobody write one. The app files through the callable, shows the server's acknowledgement,
+  and the new safety desk (`SafetyReportQueueSheet`) lists rows with the server-decided response target
+  and breach flag, then shows the server's own sentence after a decision.
+- **An emergency alert no longer promises help it cannot confirm (R10-P2-03, HIGH).** The app used to
+  print "Live GPS location & job telemetry broadcasted to local emergency contacts and platform
+  security" the instant the button was pressed, while the dispatch trigger wrote `NO_RECIPIENTS` or
+  `FAILED` on the server and nobody read it. `functions/src/sosStatus.ts` describes the recorded
+  dispatch; `getSosDispatchStatus` returns that sentence to the participants; the view model keeps
+  asking while it is pending, shows it in the SOS banner and records it in the job chat. Every state
+  that is not a confirmed send appends *"call the police or an ambulance yourself now."*
+- **The same person cannot vouch for every account (R10-P2-04, HIGH).** There was no duplicate
+  detection at all. `functions/src/guarantorIntake.ts` fingerprints the NIN under a salt, keys the phone
+  by its last nine digits, and refuses self-guaranteeing, duplicates inside one submission, a NIN or
+  phone already used by another submission, the wrong count, missing consent, missing evidence and a
+  fourth submission in 24 hours. Refusals write `guarantor_intake_audit` rows with codes and counts
+  only — a pattern can be read later without keeping a second copy of the identity. `guarantors` and
+  `guarantor_submissions` are server-only in `firestore.rules`, so the checks cannot be bypassed.
+- **Ratings are earned, not written by the client (R10-P2-06, MEDIUM).** Ratings lived only in Room, so
+  a modified client could fabricate its own reputation and nothing contradicted it.
+  `functions/src/ratingsCore.ts` decides participation, completion and one-per-direction;
+  `submitRating` writes `ratings/{jobId}_{raterUid}` and the `worker_stats` aggregate in one
+  transaction; the device stores a copy only after the server accepts and reports a refusal with the
+  server's sentence (`RatingResult.NotRecorded`).
+- **The invented location is gone (R10-P2-05, MEDIUM).** A failed GPS read answered with Kampala
+  city-centre coordinates, "Sunnyside District", an 8-metre accuracy and `isPermissionGranted = true`,
+  and that position could travel into an SOS. `requestGpsDetection` now reports that there is no fix
+  and leaves the coordinates unknown; `GpsLocationState` no longer defaults to claiming a position;
+  `LocationHelper` returns an error instead of coordinates; `updateWorkerLocation` requires a real fix
+  and otherwise keeps the stored position.
+- **The shared doorstep PIN default is closed (R10-P2-01 residual, CRITICAL).** The client-side
+  comparison was removed in R07 and the entity default with it, but the migration that created
+  `job_posts` still gave `doorstepPin` the literal default `'4829'`, so rows written through it carried
+  a value anyone reading this repository knows. The DDL default is now `''`, and schema **v29**
+  (`MIGRATION_28_29`) blanks the rows that still hold it — a job's own PIN is untouched.
+- **The desk can be measured and is written down (R10-P2-07, LOW).** `getSafetyMetrics` reports
+  emergencies raised, acknowledged and never answered, the median time to acknowledge, failed
+  dispatches, open/breaching/closed reports and the first-response median, plus a summary line the
+  console shows verbatim — a failed read renders as unknown, never as a healthy zero.
+  `docs/safety/SAFETY_DESK_RUNBOOK.md` is the procedure, including the gaps: single-operator decisions
+  with no dual control, no on-call rota and no paging provider.
+
 ### [2026-11-20] [PROMPT-4 / R09] Privacy: consent you can prove, data you can delete, retention that exists
 
 - **Erasure reaches the chat (R09-P2-01, CRITICAL).** `deleteMyAccount` verified fresh authentication

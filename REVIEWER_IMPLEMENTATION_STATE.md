@@ -1,17 +1,17 @@
 # REVIEWER IMPLEMENTATION STATE — Prompt 4 (strict one-reviewer-at-a-time)
 
 **Programme:** ASMT-2026-11-19 · **Cycle:** Prompt-4 remediation
-**Updated:** 2026-11-20 · **Branch:** `arena/e11de41e-skills-exchange`
+**Updated:** 2026-11-20 · **Branch:** `arena/a19ae51b-skills-exchange`
 
 ## Position
 
 | Field | Value |
 |---|---|
 | Total original reviewers | **15** |
-| Current reviewer | **R09 — COMPLETE** (evidence below) |
-| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05, R06, R07, R08, R09 (9 of 15)** |
-| Reviewers awaiting implementation | R10 … R15 |
-| Next reviewer number | **10** |
+| Current reviewer | **R10 — COMPLETE** (evidence below) |
+| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05, R06, R07, R08, R09, R10 (10 of 15)** |
+| Reviewers awaiting implementation | R11 … R15 |
+| Next reviewer number | **11** |
 
 ## R01 — COMPLETE (gate passed)
 
@@ -385,6 +385,71 @@ re-checked against the merged code. Three gaps were still open and are now close
 - **Regulator filings, DPAs and provider sandbox behaviour remain UNVERIFIED.** `PROCESSORS.md` is
   unchanged by this round.
 
+## R10 — COMPLETE (gate passed)
+
+Source: `review_results/prompt2/REVIEW_10.md` (verdict **FAIL**, 7 findings, written against `aa4a0bc`).
+The reviewer's point was that safety was a set of screens rather than a set of records: the doorstep PIN
+was compared on the device, a report never left the reporter's phone, the SOS banner announced a dispatch
+nobody had performed, and the same guarantor could back any number of accounts. Two findings had already
+moved under later rounds and are recorded as such rather than re-fixed:
+
+- **R10-P2-01 (CRITICAL)** — the client-side PIN comparison at `Repository.kt:785–798` was replaced in
+  **R07** by `verifyDoorstepPin`, which sends the typed PIN and lets the server compare it with its own
+  hash, attempts and lockout (`functions/src/doorstepPin.ts`); `Entities.kt` no longer defaults the PIN
+  to `"4829"`. Only the shipped migration's DDL default remained, and that is what this round closes.
+- **R10-P2-05 (MEDIUM)** — the coordinate the review cites (`ViewModel.kt:894` of that commit) had
+  already been replaced by a `0,0` sentinel in R02 for the *raise* path; the fabricated *detection* path
+  (`requestGpsDetection` inventing a Kampala fix with 8 m accuracy) survived and is closed here.
+
+| Finding | Required correction | Status | Evidence |
+|---|---|---|---|
+| R10-P2-01 | CRITICAL: PIN verified against a client-supplied value, default `4829`, no lockout | **RESIDUAL IMPLEMENTED AND VERIFIED** (body closed in R07) | `verifyDoorstepPin` (R07) is the only comparison and it is server-side. This round: the DDL default in the `job_posts` creation migration is `''`, and `MIGRATION_28_29` blanks any row still holding `'4829'` (schema v29). `DatabaseMigrationChainTest` walks 11 → 29 and a new test proves the shared PIN is cleared while a job's own PIN survives |
+| R10-P2-02 | CRITICAL: reports are Room-only, with no rules entry and no admin queue | **IMPLEMENTED AND VERIFIED** | `functions/src/reports.ts` (validation, priority ladder, `decideTriage`, `safetyMetrics`, `triageMessage`), callables `fileReport` / `getReportsQueue` / `resolveReport` (P0 also writes `notifications/safety_desk`), rules `reports` (reporter-or-admin read, no client write). Client files through the callable and shows the server's acknowledgement; `SafetyReportQueueSheet` is the operator console | `reports.test.mjs` (9), 1 emulator rules test |
+| R10-P2-03 | HIGH: SOS copy claims contacts/security were notified before any dispatch result | **IMPLEMENTED AND VERIFIED** | `functions/src/sosStatus.ts` describes the recorded dispatch (`SENT` / `FAILED` / `NO_RECIPIENTS` / `PENDING` / `STALE` / `UNKNOWN`) and appends *"call the police or an ambulance yourself now"* to every unconfirmed state; `getSosDispatchStatus` is participant-gated; the view model polls while pending, shows the sentence in the banner and records it in the job chat. The old sentence is gone from the repository, the notification body and the sheet | `sosStatus.test.mjs` (7) |
+| R10-P2-04 | HIGH: no duplicate NIN / phone / self-guarantee detection, no velocity limit | **IMPLEMENTED AND VERIFIED** | `functions/src/guarantorIntake.ts`: salted NIN fingerprints, `phoneKey` (last 9 digits), `SELF_GUARANTOR`, `DUPLICATE_GUARANTOR`, `GUARANTOR_ALREADY_USED`, `WRONG_COUNT`, `NO_CONSENT`, `MISSING_EVIDENCE`, `INCOMPLETE`, `RESUBMISSION_LIMIT` (3/24h); refusals write `guarantor_intake_audit` (codes and counts, no identity). `firestore.rules` makes `guarantors` and `guarantor_submissions` server-only | `guarantorIntake.test.mjs` (12), 2 emulator rules tests |
+| R10-P2-05 | MEDIUM: SOS falls back to invented Kampala coordinates | **IMPLEMENTED AND VERIFIED** | `requestGpsDetection` is now an honest failure (no coordinates, no district, `isUsingCurrentLocation = false`); `GpsLocationState.isUsingCurrentLocation` no longer defaults to `true`; `LocationHelper` returns an error rather than `0.3476, 32.5825`; `updateWorkerLocation` takes nullable coordinates and keeps the stored position when there is no fix | client code; the Android job compiles it in CI (no JDK here) |
+| R10-P2-06 | MEDIUM: ratings are device-local and cannot be aggregated or moderated | **IMPLEMENTED AND VERIFIED** | `functions/src/ratingsCore.ts` (`reviewRating`, `applyRating`, `ratingDocumentId`), `submitRating` writes `ratings/{jobId}_{raterUid}` and `worker_stats/{uid}` in one transaction; rules allow participant reads and no writes; the device inserts its copy only after the server accepts and surfaces `RatingResult.NotRecorded(message)` | `ratingsCore.test.mjs` (8), 1 emulator rules test |
+| R10-P2-07 | LOW: no T&S metrics, no SLA, no escalation runbook; single-admin decisions | **IMPLEMENTED (metrics + runbook), limitation stated** | `getSafetyMetrics` → `safetyMetrics`/`metricsLine`: SOS raised/acknowledged/unanswered, median ack, failed dispatches, reports open/breaching/closed, first-response median, per-category counts, plus a `summary` the console shows verbatim (a failed read renders as unknown, never as zero). `docs/safety/SAFETY_DESK_RUNBOOK.md` is the procedure. **Dual control is not implemented** and is listed as a gap in the runbook rather than claimed | `reports.test.mjs`, guard suite |
+
+### Verification evidence (executed)
+
+- CI run **44784548015** / **44784547851** (final commit of the round): **all 7 checks pass** —
+  Compile and unit tests (3m37s), Backend build and tests, Backend handler tests, Firestore rules tests
+  (40s), Documentation checks, Secret scan and CodeRabbit.
+  The failing runs before it found what reading did not: `ReportUiState` was referenced as a nested
+  class when it is top-level, and the new migration test hand-wrote a partial `job_posts` INSERT that
+  violated a NOT NULL column added by a later migration. Both are fixed; the INSERT is now generated
+  from the exported schema so the next added column cannot break it the same way.
+- Android job: green. The run that preceded the fix reported **478** unit tests with 4 failures — all
+  four are the assertions and the helper fixed above; the suite count is unchanged.
+- Backend: `npm run build && npm test` in `functions/` — **310/310** `node --test` tests, the four new
+  files registered in `functions/package.json` (guarantorIntake 12, reports 9, ratingsCore 9, sosStatus 7,
+  on top of 273 after R09). `tsc` is clean.
+- Firestore rules: **26 tests** (24 after R09; two consent-write tests replaced because guarantors are
+  now server-only, three added for `reports`, `ratings` + `worker_stats`, and `guarantor_intake_audit`).
+  Executed by CI — the emulator cannot run here.
+- Static guards: architecture guards, query limits, document map, doc links (114), traceability
+  (30 requirements, 3 untested), README claims, consent version, backup policy, secret scan and
+  no-PII-logs all pass.
+- Client: `SosRaiseAuthorizationSecurityTest` updated to `is SosRaiseResult.Success` plus an incident-id
+  assertion; `DatabaseMigrationChainTest` extended to v29 with a PIN-clearing test. The Android compile
+  and unit tests run in CI only.
+
+### Not claimed
+
+- **Nothing is deployed.** No callable in this round has run against a real project; no report has ever
+  been triaged by a person.
+- **No live dispatch** (SMS or FCM) was executed — **UNVERIFIED**.
+- **The safety desk is single-operator.** No dual control, no on-call rota, no paging provider; the
+  runbook says so.
+- **`getReportsQueue` reads 50 rows and the metrics read 500 documents per collection** — a recent
+  sample, not a census.
+- **Seeded demo provider rows still carry illustrative coordinates.** They are demo catalogue data, never
+  a device fix, and never reach an SOS; they are not real, and are left as demo data rather than
+  silently repaired.
+- **Off-platform-contact detection** (review §6) carried no finding id and is not implemented; it is not
+  presented as done.
+
 ## Completion declarations
 
 - `reviewer_completions/REVIEWER_01_DONE.md`
@@ -395,7 +460,9 @@ re-checked against the merged code. Three gaps were still open and are now close
 - `reviewer_completions/REVIEWER_06_DONE.md`
 - `reviewer_completions/REVIEWER_07_DONE.md`
 - `reviewer_completions/REVIEWER_08_DONE.md`
+- `reviewer_completions/REVIEWER_09_DONE.md`
+- `reviewer_completions/REVIEWER_10_DONE.md`
 
 ## Blockers
 
-None. R08 complete; R09 is next.
+None. R09 and R10 complete; R11 is next.

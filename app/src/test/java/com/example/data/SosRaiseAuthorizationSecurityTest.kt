@@ -188,7 +188,9 @@ class SosRaiseAuthorizationSecurityTest {
 
         val result = repository.triggerSosAlertInternal("job_1", "uid_owner")
 
-        assertEquals(SosRaiseResult.Success, result)
+        assertTrue(result is SosRaiseResult.Success)
+        // R10-P2-03: the success carries the incident id the app uses to ask what dispatch did.
+        assertEquals("sos_job_1", (result as SosRaiseResult.Success).incidentId)
         assertTrue(db.jobPostDao().getJobById("job_1")!!.isSosTriggered)
         val incident = db.sosIncidentDao().getSosIncidentByJobId("job_1")
         assertNotNull(incident)
@@ -203,7 +205,7 @@ class SosRaiseAuthorizationSecurityTest {
 
         val result = repository.triggerSosAlertInternal("job_1", "uid_provider")
 
-        assertEquals(SosRaiseResult.Success, result)
+        assertTrue(result is SosRaiseResult.Success)
         assertTrue(db.jobPostDao().getJobById("job_1")!!.isSosTriggered)
     }
 
@@ -246,8 +248,8 @@ class SosRaiseAuthorizationSecurityTest {
     fun `re-raising on an already active job stays ACTIVE and is idempotent`() = runBlocking {
         db.jobPostDao().insertJob(job())
 
-        assertEquals(SosRaiseResult.Success, repository.triggerSosAlertInternal("job_1", "uid_owner"))
-        assertEquals(SosRaiseResult.Success, repository.triggerSosAlertInternal("job_1", "uid_owner"))
+        assertTrue(repository.triggerSosAlertInternal("job_1", "uid_owner") is SosRaiseResult.Success)
+        assertTrue(repository.triggerSosAlertInternal("job_1", "uid_owner") is SosRaiseResult.Success)
 
         val incident = db.sosIncidentDao().getSosIncidentByJobId("job_1")
         assertNotNull(incident)
@@ -260,7 +262,7 @@ class SosRaiseAuthorizationSecurityTest {
 
         val result = repository.triggerEmergencySosInternal("job_1", 0.3476, 32.5825, "Nakawa", "uid_owner")
 
-        assertEquals(SosRaiseResult.Success, result)
+        assertTrue(result is SosRaiseResult.Success)
         val incident = db.sosIncidentDao().getSosIncidentByJobId("job_1")
         assertNotNull(incident)
         assertEquals(0.3476, incident!!.latitude, 0.0001)

@@ -145,6 +145,25 @@ import {
   maskNin,
   scrubForLog,
 } from "./pii";
+import {
+  SUBMISSION_WINDOW_MS,
+  describeRejections,
+  normaliseName,
+  phoneKey,
+  reviewGuarantorIntake,
+} from "./guarantorIntake";
+import type { ExistingGuarantor, GuarantorCandidate } from "./guarantorIntake";
+import {
+  REPORT_STATUS,
+  buildReportRecord,
+  decideTriage,
+  metricsLine,
+  safetyMetrics,
+  triageMessage,
+} from "./reports";
+import type { ReportRecord, ReportStatus } from "./reports";
+import { applyRating, ratingDocumentId, reviewRating } from "./ratingsCore";
+import { describeSosDispatch, dispatchChatMessage } from "./sosStatus";
 import { decideRefund, buildRefundPayload } from "./refund";
 import { decideRefundStatus, applyRefundToEscrow } from "./refundStatus";
 import { APP_CHECK, withAppCheck } from "./appCheck";
@@ -2765,6 +2784,488 @@ export const getDisputesQueue = functions.runWith(APP_CHECK).https.onCall(async 
   }));
 
   return { success: true, disputes };
+});
+
+// =====================================================================================
+// R10: trust & safety — guarantor intake, reports, ratings, SOS dispatch truth, metrics.
+//
+// Every one of these replaces a client-side decision the review found to be unenforceable:
+//   * guarantors were written straight from the device, so the same person could back many accounts;
+//   * a report lived only in the reporter's own Room table — no collection, no queue, no rule;
+//   * a rating lived only in Room, so a tampered client invented its own stars;
+//   * the SOS dispatch outcome was written server-side and never read back, while the app claimed
+//     contacts had been messaged.
+// =====================================================================================
+
+/** Salt for NIN fingerprints. Without it no fingerprint is written, and intake refuses to proceed. */
+function piiSalt(): string {
+  return (process.env.PII_SALT || "").trim();
+}
+
+/**
+ * R10-P2-04: file a guarantor submission from the server.
+ *
+ * The client uploads photographs to its own private Storage prefix; the *records* are written here, so
+ * uniqueness is enforced by the only actor that can see every submission. Refusals are specific
+ * enough to act on and never echo an identity number.
+ */
+export const submitGuarantorVerification = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to file your guarantors.");
+  }
+  const workerUid = context.auth.uid;
+  const salt = piiSalt();
+  const rawGuarantors: unknown = data?.guarantors;
+  const receivedAt = Date.now();
+
+  if (!Array.isArray(rawGuarantors)) {
+    throw new functions.https.HttpsError("invalid-argument", "A guarantor submission needs two guarantors.");
+  }
+
+  // 1. The third-party consent receipt must exist before any identity data is written. The client
+  //    cannot assert consent: it must have recorded it through `recordGuarantorConsent` first.
+  const consentVersion = typeof data?.consentVersion === "string" ? data.consentVersion.trim() : "";
+  if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(consentVersion)) {
+    throw new functions.https.HttpsError("failed-precondition", "Record your guarantors' consent first.");
+  }
+  const receipt = await db
+    .collection("users")
+    .doc(workerUid)
+    .collection("guarantor_consents")
+    .doc(consentVersion)
+    .get();
+  if (!receipt.exists) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "No recorded consent for that policy version. Ask each guarantor again, then retry."
+    );
+  }
+
+  // 2. Shape and normalisation. Nothing the client sends is trusted as an identity; the fingerprint is
+  //    computed here from the NIN the worker typed.
+  const candidates: GuarantorCandidate[] = [];
+  const records: Array<Record<string, unknown>> = [];
+  for (let index = 0; index < rawGuarantors.length; index += 1) {
+    const raw = (rawGuarantors[index] ?? {}) as Record<string, unknown>;
+    const nin = typeof raw.nationalIdNumber === "string" ? raw.nationalIdNumber.trim().toUpperCase() : "";
+    const phone = typeof raw.phoneNumber === "string" ? raw.phoneNumber.trim() : "";
+    const fullName = typeof raw.fullName === "string" ? raw.fullName.trim() : "";
+    const consentProvided = raw.consentProvided === true;
+    const guarantorPhotoStoragePath = String(raw.guarantorPhotoStoragePath ?? "");
+    const workerWithGuarantorPhotoStoragePath = String(raw.workerWithGuarantorPhotoStoragePath ?? "");
+    const id = typeof raw.id === "string" && raw.id.trim() ? raw.id.trim() : `guarantor_${workerUid}_${index}`;
+
+    const ownsBothPhotos =
+      guarantorPhotoStoragePath.startsWith(`users/${workerUid}/`) &&
+      workerWithGuarantorPhotoStoragePath.startsWith(`users/${workerUid}/`);
+
+    candidates.push({
+      index,
+      ninFingerprint: ninFingerprint(nin, salt),
+      phoneKey: phoneKey(phone),
+      normalisedName: normaliseName(fullName),
+      district: typeof raw.district === "string" ? raw.district.trim() : "",
+      consentProvided,
+      hasBothPhotos: ownsBothPhotos && guarantorPhotoStoragePath !== "" && workerWithGuarantorPhotoStoragePath !== "",
+    });
+
+    records.push({
+      id,
+      fullName,
+      nationalIdNumber: nin,
+      phoneNumber: phone,
+      relationship: typeof raw.relationship === "string" ? raw.relationship.trim() : "",
+      district: typeof raw.district === "string" ? raw.district.trim() : "",
+      guarantorPhotoStoragePath,
+      workerWithGuarantorPhotoStoragePath,
+      consentProvided,
+      consentVersion,
+    });
+  }
+
+  // 3. Evidence the decision needs: the worker's own identifiers, everybody already on file (bounded),
+  //    and how often this worker has filed recently.
+  const workerDoc = await db.collection("users").doc(workerUid).get();
+  const workerNin = String(workerDoc.get("nationalIdNumber") || "");
+  const workerPhone = String(workerDoc.get("phoneNumber") || "");
+
+  const [existingSnapshot, recentSubmissions] = await Promise.all([
+    db.collection("guarantors").limit(500).get(),
+    db
+      .collection("guarantors")
+      .where("workerKycId", "==", workerUid)
+      .where("submittedAt", ">", receivedAt - SUBMISSION_WINDOW_MS)
+      .limit(20)
+      .get()
+      .catch(() => null),
+  ]);
+
+  const existing: ExistingGuarantor[] = existingSnapshot.docs.map((doc) => ({
+    workerUid: String(doc.get("workerKycId") || ""),
+    ninFingerprint: String(doc.get("ninFingerprintHash") || ""),
+    phoneKey: String(doc.get("phoneKey") || ""),
+  }));
+
+  // The stored NIN is plaintext in the guarantor document today, so a fingerprint can be derived for
+  // records written before this round — otherwise older duplicates stay invisible.
+  for (let index = 0; index < existingSnapshot.docs.length; index += 1) {
+    const doc = existingSnapshot.docs[index];
+    if (existing[index].ninFingerprint) continue;
+    const storedNin = String(doc.get("nationalIdNumber") || "");
+    existing[index].ninFingerprint = ninFingerprint(storedNin, salt);
+    if (!existing[index].phoneKey) existing[index].phoneKey = phoneKey(String(doc.get("phoneNumber") || ""));
+  }
+
+  const submissionsInWindow = recentSubmissions ? new Set(recentSubmissions.docs.map((doc) => doc.id)).size : 0;
+
+  const decision = reviewGuarantorIntake({
+    workerUid,
+    workerNinFingerprint: ninFingerprint(workerNin, salt),
+    workerPhoneKey: phoneKey(workerPhone),
+    candidates,
+    existing,
+    submissionsInWindow,
+  });
+
+  await db.collection("guarantor_intake_audit").add({
+    workerUid,
+    at: receivedAt,
+    accepted: decision.ok,
+    rejectionCodes: describeRejections(decision.rejections),
+    flags: decision.flags,
+    guarantorCount: candidates.length,
+  }).catch(() => undefined);
+
+  if (!decision.ok) {
+    const first = decision.rejections[0];
+    throw new functions.https.HttpsError("failed-precondition", first.message, {
+      code: first.code,
+      index: first.index ?? null,
+      rejections: decision.rejections,
+    });
+  }
+
+  // 4. Write. The consent version is stored, the reviewer's fields are initialised, and no status is
+  //    ever taken from the client.
+  const batch = db.batch();
+  records.forEach((record, index) => {
+    const ref = db.collection("guarantors").doc(String(record.id));
+    batch.set(ref, {
+      workerKycId: workerUid,
+      fullName: record.fullName,
+      nationalIdNumber: record.nationalIdNumber,
+      phoneNumber: record.phoneNumber,
+      relationship: record.relationship,
+      district: record.district,
+      guarantorPhotoStoragePath: record.guarantorPhotoStoragePath,
+      workerWithGuarantorPhotoStoragePath: record.workerWithGuarantorPhotoStoragePath,
+      consentProvided: true,
+      consentVersion,
+      consentRecordedAt: Number(receipt.get("recordedAt") || receivedAt),
+      ninFingerprintHash: candidates[index].ninFingerprint,
+      phoneKey: candidates[index].phoneKey,
+      ninVerificationStatus: "PENDING",
+      submittedAt: receivedAt,
+      updatedAt: receivedAt,
+    });
+  });
+  batch.set(db.collection("guarantor_submissions").doc(workerUid), {
+    workerId: workerUid,
+    guarantorIds: records.map((record) => String(record.id)),
+    guarantorCount: records.length,
+    groupPhotoStoragePath: String(data?.groupPhotoStoragePath ?? ""),
+    consentConfirmed: true,
+    consentVersion,
+    consentRecordedAt: Number(receipt.get("recordedAt") || receivedAt),
+    submittedAt: receivedAt,
+    status: "PENDING_REVIEW",
+    flags: decision.flags,
+  });
+  await batch.commit();
+
+  return { status: "PENDING_REVIEW", flags: decision.flags, submittedAt: receivedAt };
+});
+
+/**
+ * R10-P2-02: file a report that an operator can actually see.
+ *
+ * Authentication comes from the token, the category and size are validated server-side, the priority
+ * and the first-response deadline are computed here, and the record lands in a collection with rules
+ * and an admin queue. The reporter keeps a local copy for display; the server copy is the one an
+ * administrator triages.
+ */
+export const fileReport = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to report an account.");
+  }
+  const reporterUid = context.auth.uid;
+  const subjectUid = typeof data?.subjectUid === "string" ? data.subjectUid.trim() : "";
+
+  const priorSnapshot = await db
+    .collection("reports")
+    .where("subjectUid", "==", subjectUid)
+    .where("status", "in", [REPORT_STATUS.open, REPORT_STATUS.triaging])
+    .limit(10)
+    .get()
+    .catch(() => null);
+
+  let record: ReportRecord;
+  try {
+    record = buildReportRecord(
+      {
+        subjectUid,
+        subjectName: data?.subjectName,
+        jobId: data?.jobId,
+        category: data?.category,
+        details: data?.details,
+      },
+      {
+        id: `report_${reporterUid}_${Date.now()}`,
+        reporterUid,
+        now: Date.now(),
+        priorOpenReportsAgainstSubject: priorSnapshot ? priorSnapshot.size : 0,
+      }
+    );
+  } catch (error) {
+    throw new functions.https.HttpsError("invalid-argument", (error as Error).message);
+  }
+
+  await db.collection("reports").doc(record.id).set(record);
+
+  // A SAFETY report is also a safety event: the dispatch desk is paged on the same channel SOS uses.
+  if (record.priority === "P0") {
+    await db.collection("notifications").add({
+      userId: "safety_desk",
+      type: "SAFETY_REPORT",
+      message: `A ${record.category} report needs review within ${Math.round((record.slaDueAt - record.createdAt) / 60000)} minutes.`,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      read: false,
+    }).catch(() => undefined);
+  }
+
+  return {
+    id: record.id,
+    status: record.status,
+    priority: record.priority,
+    slaDueAt: record.slaDueAt,
+    message: "Report received. An operator will review it against the response target for this category.",
+  };
+});
+
+/** R10-P2-02: the operator queue, with the SLA deadline on every row. */
+export const getReportsQueue = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
+  const adminUid = authorizeAdmin(context);
+  const status = typeof data?.status === "string" ? data.status : "";
+  let query = db.collection("reports").orderBy("createdAt", "desc");
+  if (status) query = query.where("status", "==", status);
+  const snapshot = await query.limit(50).get();
+  const now = Date.now();
+  const reports = snapshot.docs.map((doc) => {
+    const record = doc.data() as Record<string, unknown>;
+    const slaDueAt = Number(record.slaDueAt || 0);
+    return {
+      id: doc.id,
+      ...record,
+      // Details are the reporter's words about a third party: an operator sees them, a log never does.
+      breachingSla: slaDueAt > 0 && now > slaDueAt && String(record.status) === REPORT_STATUS.open,
+    };
+  });
+  return { reports, operatorUid: adminUid, generatedAt: now };
+});
+
+/** R10-P2-02: close or progress a report — attributed, forward-only, with a readable outcome. */
+export const resolveReport = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
+  const adminUid = authorizeAdmin(context);
+  const reportId = typeof data?.reportId === "string" ? data.reportId.trim() : "";
+  const status = String(data?.status ?? "").toUpperCase() as ReportStatus;
+  if (!reportId) {
+    throw new functions.https.HttpsError("invalid-argument", "A report id is required.");
+  }
+
+  const ref = db.collection("reports").doc(reportId);
+  const snapshot = await ref.get();
+  if (!snapshot.exists) {
+    throw new functions.https.HttpsError("not-found", "That report does not exist.");
+  }
+
+  let updated: ReportRecord;
+  try {
+    updated = decideTriage({
+      report: snapshot.data() as ReportRecord,
+      status,
+      outcome: typeof data?.outcome === "string" ? data.outcome : "",
+      notes: typeof data?.notes === "string" ? data.notes : "",
+      adminUid,
+      now: Date.now(),
+    });
+  } catch (error) {
+    throw new functions.https.HttpsError("failed-precondition", (error as Error).message);
+  }
+
+  await ref.set(updated);
+  console.info("report triaged", {
+    reportId,
+    status: updated.status,
+    priority: updated.priority,
+    operator: adminUid,
+  });
+  return {
+    id: reportId,
+    status: updated.status,
+    triagedAt: updated.triagedAt,
+    message: triageMessage(updated),
+  };
+});
+
+/**
+ * R10-P2-06: a rating the server owns.
+ *
+ * The job, the participants, the completion state and the one-per-direction rule all come from the
+ * server's copy of the job; the reputation aggregate is derived from the recorded ratings, so no
+ * client can write a number that was never earned.
+ */
+export const submitRating = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to rate.");
+  }
+  const raterUid = context.auth.uid;
+  const jobId = typeof data?.jobId === "string" ? data.jobId.trim() : "";
+  const subjectUid = typeof data?.subjectUid === "string" ? data.subjectUid.trim() : "";
+  if (!jobId || !subjectUid) {
+    throw new functions.https.HttpsError("invalid-argument", "A rating needs a job and the account it is about.");
+  }
+
+  const jobDoc = await db.collection("jobs").doc(jobId).get();
+  const job = jobDoc.exists
+    ? {
+        jobId,
+        status: String(jobDoc.get("status") || ""),
+        postedByUid: jobDoc.get("postedByUid") as string | undefined,
+        assignedProviderUid: jobDoc.get("assignedProviderUid") as string | undefined,
+      }
+    : null;
+
+  let ratingId = "";
+  try {
+    ratingId = ratingDocumentId(jobId, raterUid);
+  } catch (error) {
+    throw new functions.https.HttpsError("invalid-argument", (error as Error).message);
+  }
+  const existing = await db.collection("ratings").doc(ratingId).get();
+
+  const decision = reviewRating(
+    { raterUid, subjectUid, stars: data?.stars, review: data?.review },
+    job,
+    existing.exists ? ratingId : null
+  );
+  if (!decision.ok) {
+    throw new functions.https.HttpsError(
+      decision.code === "JOB_NOT_FOUND" ? "not-found" : "failed-precondition",
+      decision.message || "That rating cannot be recorded.",
+      { code: decision.code }
+    );
+  }
+
+  const now = Date.now();
+  const statsRef = db.collection("worker_stats").doc(subjectUid);
+  let average = 0;
+  await db.runTransaction(async (transaction) => {
+    const stats = await transaction.get(statsRef);
+    const aggregate = applyRating(
+      stats.exists ? { count: stats.get("count"), sum: stats.get("sum") } : undefined,
+      decision.stars,
+      now
+    );
+    transaction.set(db.collection("ratings").doc(ratingId), {
+      jobId,
+      fromUid: raterUid,
+      toUid: subjectUid,
+      stars: decision.stars,
+      review: decision.review,
+      createdAt: now,
+    });
+    transaction.set(
+      statsRef,
+      { count: aggregate.count, sum: aggregate.sum, average: aggregate.average, updatedAt: now },
+      { merge: true }
+    );
+    average = aggregate.average;
+  });
+
+  return { recorded: true, ratingId, average };
+});
+
+/**
+ * R10-P2-03: what actually happened to an emergency alert.
+ *
+ * The dispatch trigger writes `sosIncidents/{id}.dispatch`; this returns the sentence the app shows,
+ * composed on the server so the app cannot be more reassuring than the evidence. Owner, assigned
+ * worker and admins may read it — nobody else.
+ */
+export const getSosDispatchStatus = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Sign in to check an alert.");
+  }
+  const incidentId = typeof data?.incidentId === "string" ? data.incidentId.trim() : "";
+  if (!incidentId) {
+    throw new functions.https.HttpsError("invalid-argument", "An incident id is required.");
+  }
+  const snapshot = await db.collection("sosIncidents").doc(incidentId).get();
+  if (!snapshot.exists) {
+    throw new functions.https.HttpsError("not-found", "That alert is not on the server yet.");
+  }
+  const uid = context.auth.uid;
+  const isParty =
+    snapshot.get("postedByUid") === uid ||
+    snapshot.get("assignedProviderUid") === uid ||
+    isAdmin(context);
+  if (!isParty) {
+    throw new functions.https.HttpsError("permission-denied", "This alert is not yours.");
+  }
+
+  const description = describeSosDispatch(snapshot.get("dispatch"), Date.now());
+  return {
+    ...description,
+    chatMessage: dispatchChatMessage(description, new Date().toISOString().slice(11, 16)),
+    incidentId,
+  };
+});
+
+/** R10-P2-07: the trust & safety numbers, computed from the records rather than asserted. */
+export const getSafetyMetrics = functions.runWith(APP_CHECK).https.onCall(async (data, context) => {
+  authorizeAdmin(context);
+  const windowDays = Number(data?.windowDays);
+  const now = Date.now();
+  const [incidents, reports] = await Promise.all([
+    db.collection("sosIncidents").orderBy("raisedAt", "desc").limit(500).get(),
+    db.collection("reports").orderBy("createdAt", "desc").limit(500).get(),
+  ]);
+
+  const metrics = safetyMetrics({
+    now,
+    windowDays: Number.isFinite(windowDays) && windowDays > 0 && windowDays <= 365 ? Math.floor(windowDays) : 30,
+    incidents: incidents.docs.map((doc) => ({
+      id: doc.id,
+      status: String(doc.get("status") || ""),
+      raisedAt: Number(doc.get("raisedAt") || 0),
+      acknowledgedAt: Number(doc.get("acknowledgedAt") || 0) || undefined,
+      dispatchStatus: String((doc.get("dispatch") || {}).status || ""),
+    })),
+    reports: reports.docs.map((doc) => ({
+      id: doc.id,
+      category: String(doc.get("category") || ""),
+      priority: String(doc.get("priority") || ""),
+      status: String(doc.get("status") || ""),
+      createdAt: Number(doc.get("createdAt") || 0),
+      slaDueAt: Number(doc.get("slaDueAt") || 0),
+      triagedAt: Number(doc.get("triagedAt") || 0) || undefined,
+    })),
+  });
+
+  // R10-P2-07: the console shows the server's own line, so a desk that cannot be read never renders
+  // as a reassuring zero.
+  console.log(metricsLine(metrics));
+  return { ...metrics, summary: metricsLine(metrics) };
 });
 
 /**

@@ -28,7 +28,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         WalletWithdrawalEntity::class,
         SosIncidentEntity::class
     ],
-    version = 28,
+    version = 29,
     exportSchema = true
 )
 @androidx.room.TypeConverters(TypeConverters::class)
@@ -200,7 +200,7 @@ abstract class AppDatabase : RoomDatabase() {
                         paymentChannel TEXT NOT NULL DEFAULT 'MTN_MOMO',
                         momoPhoneNumber TEXT NOT NULL DEFAULT '+256 772 198 420',
                         escrowStatus TEXT NOT NULL DEFAULT 'QUOTE_PENDING',
-                        doorstepPin TEXT NOT NULL DEFAULT '4829',
+                        doorstepPin TEXT NOT NULL DEFAULT '',
                         isDoorstepVerified INTEGER NOT NULL DEFAULT 0,
                         materialAdvanceRequested INTEGER NOT NULL DEFAULT 0,
                         materialAdvanceAmount REAL NOT NULL DEFAULT 0.0,
@@ -639,6 +639,23 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         /**
+         * R10-P2-01: the shared PIN default, removed from every device that has it.
+         *
+         * `MIGRATION_*` that created `job_posts` gave `doorstepPin` the literal default '4829', so a
+         * row inserted without a PIN carried a value every reader of this repository knew. Room always
+         * binds every column, and the entity default is now `""` (R07), so no *new* row can inherit it —
+         * but the rows already written by that migration still hold the shared value. Blanking them is
+         * safe: the PIN is verified server-side from the server's own record, so the local column is
+         * presentation only, and a blank value is honest ("not available on this device") rather than a
+         * candidate the worker could type in.
+         */
+        val MIGRATION_28_29 = object : Migration(28, 29) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("UPDATE job_posts SET doorstepPin = '' WHERE doorstepPin = '4829'")
+            }
+        }
+
+        /**
          * R04-P2-02: every retained migration, in order. `getDatabase` applies this array and the
          * migration test walks it, so a migration cannot exist without being exercised.
          */
@@ -646,7 +663,8 @@ abstract class AppDatabase : RoomDatabase() {
             MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15,
             MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19,
             MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23,
-            MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28
+            MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28,
+            MIGRATION_28_29
         )
 
         fun getDatabase(context: Context): AppDatabase {

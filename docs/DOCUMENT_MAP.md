@@ -23,6 +23,7 @@ be corrected rather than followed.
 | `docs/privacy/DSAR.md` | Operating procedure for access and erasure requests | 3 | Engineering lead | Must describe what the code does; corrected in the same change as `deleteMyAccount` / `exportMyData` |
 | `docs/privacy/ROPA.md` | Record of processing: category, subject, purpose, basis, location, recipient, retention | 3 | Engineering lead | Updated with `RETENTION_POLICY` and `storage.rules`; gaps are listed rather than smoothed over |
 | `docs/privacy/PROCESSORS.md` | Processor list, data categories, transfer basis | 3 | Engineering lead | A processor is added here before it is enabled in production |
+| `docs/safety/SAFETY_DESK_RUNBOOK.md` | Operating procedure for the safety desk: priorities, response targets, triage states, dispatch outcomes, escalation | 3 | Trust & Safety lead | Every number in it is a constant in `functions/src/reports.ts` or `sosStatus.ts`; gaps are listed rather than smoothed over |
 | `review_results/`, `review_results/prompt2/` | Independent review reports and cycle matrices | 14 (snapshot; not current state) | Review lead | Append-only; never rewritten to change a verdict |
 | `docs/DOCUMENT_MAP.md` | This precedence map | 0 (meta) | Engineering lead | Updated whenever a document is added, removed or changes role |
 | `SECURITY.md` | Security policy and reporting | 13 | Security lead | Changed only with a security decision |

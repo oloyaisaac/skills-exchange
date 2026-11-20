@@ -111,6 +111,44 @@ object CallableContracts {
                 "grants" to CallableValueType.MAP
             )
         ),
+        // R10-P2-04: guarantor records are written by the server, which is the only actor that can see
+        // every account's guarantors and therefore detect duplicates and self-guaranteeing.
+        CallableContract(
+            name = "submitGuarantorVerification",
+            required = mapOf(
+                "guarantors" to CallableValueType.LIST,
+                "consentVersion" to CallableValueType.STRING
+            ),
+            optional = mapOf("groupPhotoStoragePath" to CallableValueType.STRING)
+        ),
+        // R10-P2-02: reports reach an operator, with a server-computed priority and SLA.
+        CallableContract(
+            name = "fileReport",
+            required = mapOf(
+                "subjectUid" to CallableValueType.STRING,
+                "category" to CallableValueType.STRING,
+                "details" to CallableValueType.STRING
+            ),
+            optional = mapOf(
+                "subjectName" to CallableValueType.STRING,
+                "jobId" to CallableValueType.STRING
+            )
+        ),
+        // R10-P2-06: one rating per job per direction, decided server-side.
+        CallableContract(
+            name = "submitRating",
+            required = mapOf(
+                "jobId" to CallableValueType.STRING,
+                "subjectUid" to CallableValueType.STRING,
+                "stars" to CallableValueType.NUMBER
+            ),
+            optional = mapOf("review" to CallableValueType.STRING)
+        ),
+        // R10-P2-03: the sentence the app shows about an emergency alert comes from the server.
+        CallableContract(
+            name = "getSosDispatchStatus",
+            required = mapOf("incidentId" to CallableValueType.STRING)
+        ),
         CallableContract(name = "exportMyData"),
         // R09-P2-02: the third-party guarantor grant. `confirmed` must be true — the server refuses
         // anything else — and the count is validated against the policy maximum server-side.
@@ -129,6 +167,24 @@ object CallableContracts {
             optional = mapOf("reason" to CallableValueType.STRING)
         ),
         CallableContract(name = "getAdminAccess"),
+        // R10: operator surfaces for reports and the trust & safety numbers.
+        CallableContract(
+            name = "getReportsQueue",
+            optional = mapOf("status" to CallableValueType.STRING)
+        ),
+        CallableContract(
+            name = "resolveReport",
+            required = mapOf(
+                "reportId" to CallableValueType.STRING,
+                "status" to CallableValueType.STRING,
+                "outcome" to CallableValueType.STRING
+            ),
+            optional = mapOf("notes" to CallableValueType.STRING)
+        ),
+        CallableContract(
+            name = "getSafetyMetrics",
+            optional = mapOf("windowDays" to CallableValueType.NUMBER)
+        ),
         CallableContract(name = "getPendingVerificationQueue"),
         CallableContract(
             name = "reviewWorkerApplication",

@@ -110,7 +110,28 @@ REM-037 stays `IN_PROGRESS` on purpose: R09 erases both sides' dispute records w
 "preserve the complaint while erasing the complainant" is not implemented — it needs a product
 decision about who may read a preserved complaint afterwards, and the erasure does not pretend
 otherwise.
-R10–R15 awaiting.
+**R10 — COMPLETE.** Safety was a set of screens, not a set of records. A report now reaches an
+operator: `reports.ts` owns the shape, the priority ladder (`SAFETY` always P0; `FRAUD`/`HARASSMENT`
+escalate at one prior open report; the rest at two) and the triage state machine (`OPEN → TRIAGING →
+ACTIONED | DISMISSED`, forward only, attributed, never client-writable); `fileReport` also pages
+`notifications/safety_desk` for a P0, the app shows the server's own acknowledgement, and the new
+safety desk lists every row with the server-decided target and breach flag. An emergency alert no
+longer announces a dispatch nobody performed: `sosStatus.ts` describes the recorded dispatch, the app
+polls while it is pending, shows the sentence verbatim, appends "call the police or an ambulance
+yourself now" to every unconfirmed state and records the outcome in the job chat. Guarantor identity
+reuse is refused server-side (salted NIN fingerprints, last-nine-digit phone keys, self-guarantee,
+duplicate, already-used, 3 submissions per 24h) and audited without storing a second copy of the
+identity; `guarantors` and `guarantor_submissions` are now server-only in the rules. Ratings moved to
+the server (`ratingsCore.ts`, `ratings/{jobId}_{raterUid}`, `worker_stats` aggregate in one
+transaction); the device copies only what the server accepted. The fabricated location is gone from
+the failure path (`requestGpsDetection` reports no fix, `LocationHelper` returns an error instead of
+Kampala city-centre coordinates), and the residual shared PIN default is closed by schema v29
+(`MIGRATION_28_29` blanks rows holding `'4829'`). Metrics and runbook exist: `getSafetyMetrics`
+(unanswered emergencies, median acknowledgement, failed dispatches, open/breaching/closed reports)
+and `docs/safety/SAFETY_DESK_RUNBOOK.md`. Evidence: backend 310/310, rules 26/26, 10 static guards
+green, CI 7/7 (run 44784548015). Not verified: deployment, live dispatch, any human triage; the desk is single-operator with no
+dual control, stated as a gap.
+R11–R15 awaiting.
 
 ## Review Track — 2026-11-19 (not started)
 
@@ -118,16 +139,16 @@ Independent review programme defined after a repository assessment found the com
 
 | ID | Priority | Reviewer | Status | Gate |
 |---|---|---|---|---|
-| RVW-001 | P0 | R01 Architecture & Codebase Integrity | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_01.md`) | G0 build — FAIL |
-| RVW-002 | P1 | R02 Android Client | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_02.md`) | — |
+| RVW-001 | P0 | R01 Architecture & Codebase Integrity | ✅ Prompt-4 PASS (`REVIEWER_01_DONE.md`) | — |
+| RVW-002 | P1 | R02 Android Client | ✅ Prompt-4 PASS (`REVIEWER_02_DONE.md`) | — |
 | RVW-003 | P0 | R03 Backend & Cloud Functions | ✅ Prompt-4 PASS (`REVIEWER_03_DONE.md`) | — |
 | RVW-004 | P1 | R04 Data & Persistence | ✅ Prompt-4 PASS (`REVIEWER_04_DONE.md`) | — |
-| RVW-005 | P1 | R05 API & Integrations | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_05.md`) | — |
-| RVW-006 | P0 | R06 Auth & Identity | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_06.md`) | G6 identity — FAIL |
-| RVW-007 | P0 | R07 Application Security | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_07.md`) | G2 security — FAIL |
-| RVW-008 | P0 | R08 Payments & Financial Controls | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_08.md`) | G4 money — FAIL |
-| RVW-009 | P0 | R09 Privacy, KYC & Compliance | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_09.md`) | G5 compliance — FAIL |
-| RVW-010 | P0 | R10 Safety, Trust & Fraud | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_10.md`) | G3 safety — FAIL |
+| RVW-005 | P1 | R05 API & Integrations | ✅ Prompt-4 PASS (`REVIEWER_05_DONE.md`) | — |
+| RVW-006 | P0 | R06 Auth & Identity | ✅ Prompt-4 PASS (`REVIEWER_06_DONE.md`) | — |
+| RVW-007 | P0 | R07 Application Security | ✅ Prompt-4 PASS (`REVIEWER_07_DONE.md`) | — |
+| RVW-008 | P0 | R08 Payments & Financial Controls | ✅ Prompt-4 PASS (`REVIEWER_08_DONE.md`) | — |
+| RVW-009 | P0 | R09 Privacy, KYC & Compliance | ✅ Prompt-4 PASS (`REVIEWER_09_DONE.md`) | — |
+| RVW-010 | P0 | R10 Safety, Trust & Fraud | ✅ Prompt-4 PASS (`REVIEWER_10_DONE.md`) | — |
 | RVW-011 | P1 | R11 QA & Test Engineering | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_11.md`) | G7 evidence — FAIL |
 | RVW-012 | P1 | R12 UI/UX & Accessibility | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_12.md`) | — |
 | RVW-013 | P1 | R13 Performance & Reliability | ❌ Submitted — FAIL (`reviewers/reports/REVIEW_13.md`) | — |

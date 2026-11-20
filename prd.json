@@ -4970,7 +4970,7 @@
       "phase": 19,
       "title": "Persist abuse reports for moderators",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "DONE",
       "depends_on": [
         "REM-010",
         "REM-023"
@@ -5002,8 +5002,8 @@
       "evidence_required": "E2E log and rules test output",
       "source_finding": "MR-018",
       "reviewer": "R07",
-      "review_report": "review_results/R07_SECURITY.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "review_report": "review_results/prompt2/REVIEW_10.md",
+      "notes": "R10: reports are a server record. `fileReport` validates category/details, writes `reports/{id}` and pages notifications/safety_desk for a P0; `getReportsQueue`/`resolveReport` are admin-gated; rules allow reporter-or-admin read and no client write; the safety desk triages against a server-decided SLA. Evidence: reports.test.mjs (9), rules test, docs/safety/SAFETY_DESK_RUNBOOK.md. Not verified: no operator has ever triaged one."
     },
     {
       "id": "REM-019",
@@ -5644,8 +5644,8 @@
       "evidence_required": "Delivery receipt and callable log",
       "source_finding": "MR-034",
       "reviewer": "R10",
-      "review_report": "review_results/R10_SAFETY.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "review_report": "review_results/prompt2/REVIEW_10.md",
+      "notes": "R10: the client no longer claims a dispatch nobody performed. `sosStatus.ts` describes the recorded dispatch, `getSosDispatchStatus` returns that sentence to the participants, the app shows it (appending \"call the police or an ambulance yourself now\" to every unconfirmed state) and records it in the chat. Evidence: sosStatus.test.mjs (7). Still unverified: real SMS/FCM delivery to a handset."
     },
     {
       "id": "REM-035",
@@ -5692,7 +5692,7 @@
       "phase": 19,
       "title": "Harden the doorstep PIN",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "DONE",
       "depends_on": [
         "REM-022"
       ],
@@ -5725,8 +5725,8 @@
       "evidence_required": "Test output and screenshot",
       "source_finding": "MR-036",
       "reviewer": "R10",
-      "review_report": "review_results/R10_SAFETY.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "review_report": "review_results/prompt2/REVIEW_10.md",
+      "notes": "R07 removed the client-side comparison and the entity default; R10 closes the residual shared default: the job_posts creation migration no longer defaults doorstepPin to '4829' and schema v29 (MIGRATION_28_29) blanks rows that still hold it. Evidence: doorstepPin.test.mjs, DatabaseMigrationChainTest (11->29 plus a PIN-clearing test)."
     },
     {
       "id": "REM-037",
@@ -5802,15 +5802,15 @@
       "evidence_required": "Rules test and audit sample",
       "source_finding": "MR-038",
       "reviewer": "R10",
-      "review_report": "review_results/R10_SAFETY.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "review_report": "review_results/prompt2/REVIEW_10.md",
+      "notes": "Not implemented by R10 and not claimed: there is still no server-side SOS dedup or rate limit (R02 added a client single-flight only), and admin SOS actions are attributed but not written to one action log. R10 fixed the dispatch-outcome reporting, which is a different finding (R10-P2-03)."
     },
     {
       "id": "REM-039",
       "phase": 19,
       "title": "Strengthen guarantor and identity checks",
       "priority": "MEDIUM",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "status_note": "Guarantor reuse detection is implemented server-side: duplicate NIN/phone inside one application and reuse across workers are flagged in getPendingVerificationQueue (pure module + 7 tests). The admin UI does not render riskFlags yet, so the review-queue acceptance criterion is not met.",
       "independent_verification": "PENDING",
 
@@ -5842,8 +5842,8 @@
       "evidence_required": "Test fixtures and queue output",
       "source_finding": "MR-039",
       "reviewer": "R10",
-      "review_report": "review_results/R10_SAFETY.md",
-      "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
+      "review_report": "review_results/prompt2/REVIEW_10.md",
+      "notes": "R10: `guarantorIntake.ts` fingerprints NINs under a salt, keys phones by the last nine digits and refuses self-guaranteeing, duplicates, an already-used NIN/phone, the wrong count, missing consent/evidence and a fourth submission in 24h; refusals write `guarantor_intake_audit` rows with codes and counts only, and `guarantors`/`guarantor_submissions` are server-only in the rules. Evidence: guarantorIntake.test.mjs (12), 2 rules tests."
     },
     {
       "id": "REM-040",
