@@ -6,7 +6,11 @@
 - SecureScreen (FLAG_SECURE) on escrow/PIN, guarantor and account surfaces.
 - Four Compose flow tests run on the JVM; 362/362 tests. R02 gate passed.
 - R03 gate passed: 172/172 backend tests plus 5/5 Firestore-emulator handler tests (run 44709995723);
-  deploy and live provider traffic remain UNVERIFIED. R04 is next.
+  deploy and live provider traffic remain UNVERIFIED.
+- R04 gate passed: schemas exported (v27/v28), all 17 migrations executed and validated, two upgrade
+  defects fixed, wallet money in exact minor units, SOS mirror reconciliation, viewer-scoped feeds.
+  Evidence: Android run 44730703469, 383/383 tests. On-device migration and live Firestore mirroring
+  remain UNVERIFIED. R05 is next.
 
 ---
 

@@ -68,6 +68,7 @@ data class GpsLocationState(
 class SkillsExchangeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val appContext: Application = application
+
     private val db = AppDatabase.getDatabase(application)
     // REM-023/R01: ONE Firebase gateway per ViewModel. It is constructed before the repository and
     // injected into it, so authentication state has a single owner. A second instance used to be
@@ -235,7 +236,13 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
 
     init {
         viewModelScope.launch {
-            firebaseService.currentUserState.collect { user -> syncPushTopic(user?.uid) }
+            try {
+                firebaseService.currentUserState.collect { user -> syncPushTopic(user?.uid) }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                android.util.Log.e(TAG, "Push-topic collector stopped", error)
+            }
         }
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             // R04: seeding is best-effort device bootstrap. It used to run on the main dispatcher
@@ -258,21 +265,43 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
                         if (profile.currentActiveMode == "WORKER") "Offer Skills" else "Hire a Neighbor"
                 }
         }
+        // R04: the startup collectors are long-lived and best-effort. An uncaught exception inside
+        // one of them crashes the screen and, in tests, leaks into the next test as
+        // `UncaughtExceptionsBeforeTest` — which is the intermittent failure CI was seeing. Each
+        // collector now logs and stops instead of throwing; cancellation still propagates.
         viewModelScope.launch {
-            repository.currentTraining.collect { training ->
-                currentTraining.value = training
-            }
-        }
-        viewModelScope.launch {
-            repository.getPendingActions().collect { actions ->
-                pendingActions.value = actions
-            }
-        }
-        viewModelScope.launch {
-            networkObserver.observe().collect { isConnected ->
-                if (isConnected && pendingActions.value.isNotEmpty()) {
-                    flushPendingActions()
+            try {
+                repository.currentTraining.collect { training ->
+                    currentTraining.value = training
                 }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                android.util.Log.e(TAG, "Training collector stopped", error)
+            }
+        }
+        viewModelScope.launch {
+            try {
+                repository.getPendingActions().collect { actions ->
+                    pendingActions.value = actions
+                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                android.util.Log.e(TAG, "Pending-action collector stopped", error)
+            }
+        }
+        viewModelScope.launch {
+            try {
+                networkObserver.observe().collect { isConnected ->
+                    if (isConnected && pendingActions.value.isNotEmpty()) {
+                        flushPendingActions()
+                    }
+                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                android.util.Log.e(TAG, "Connectivity collector stopped", error)
             }
         }
     }
@@ -2695,6 +2724,9 @@ class SkillsExchangeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     companion object {
+        /** R04: log tag for the best-effort startup collectors. */
+        const val TAG = "SkillsExchangeViewModel"
+
         /**
          * PAY-002: how often the app re-asks the trusted backend
          * (`getMoMoCollectionStatus`) for the provider-verified payment status, and how

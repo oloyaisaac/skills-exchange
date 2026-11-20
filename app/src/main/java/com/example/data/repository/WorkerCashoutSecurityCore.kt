@@ -109,7 +109,8 @@ enum class LedgerEntryType(val value: String) {
 /** A single immutable ledger entry as consumed by the pure core (decoupled from Room). */
 data class WalletLedgerEntrySnapshot(
     val entryType: String,
-    val amount: Double,
+    /** R04-P2-04: exact minor units (1 UGX = 100); the balance is an integer sum. */
+    val amountMinor: Long,
     val withdrawalId: String? = null
 )
 
@@ -117,7 +118,8 @@ data class WalletLedgerEntrySnapshot(
 data class WithdrawalSnapshot(
     val id: String,
     val workerId: String,
-    val amount: Double,
+    /** R04-P2-04: exact minor units (1 UGX = 100). */
+    val amountMinor: Long,
     val status: String,
     /**
      * AUDIT-W-CASHOUT: the caller's retry token as stored on the row. The idempotency gate MUST
@@ -146,7 +148,7 @@ enum class CashoutRejectReason(val value: String) {
 
 /** The outcome of the pure amount/destination validation step. */
 sealed class CashoutRequestValidation {
-    data class Valid(val normalizedAmount: Double, val normalizedDestination: String) : CashoutRequestValidation()
+    data class Valid(val normalizedAmountMinor: Long, val normalizedDestination: String) : CashoutRequestValidation()
     data class Invalid(val reason: CashoutRejectReason) : CashoutRequestValidation()
 }
 
@@ -197,19 +199,20 @@ fun normalizeMomoDestination(raw: String): String? {
  * Rejects: zero, negative, NaN, +Inf, -Inf, amount greater than available, blank/short destination.
  */
 fun validateCashoutRequest(
-    amount: Double,
+    amountMinor: Long,
     destination: String,
-    availableBalance: Double
+    availableBalanceMinor: Long
 ): CashoutRequestValidation {
-    if (amount.isNaN() || amount.isInfinite() || amount <= 0.0) {
+    // R04-P2-04: integer minor units, so this is an exact comparison — no rounding mode, no epsilon.
+    if (amountMinor <= 0L) {
         return CashoutRequestValidation.Invalid(CashoutRejectReason.INVALID_AMOUNT)
     }
-    // Guard against a non-finite authoritative balance (corrupt ledger) so we never authorize a
+    // Guard against a negative authoritative balance (corrupt ledger) so we never authorize a
     // withdrawal against an unknown amount.
-    if (availableBalance.isNaN() || availableBalance.isInfinite() || availableBalance < 0.0) {
+    if (availableBalanceMinor < 0L) {
         return CashoutRequestValidation.Invalid(CashoutRejectReason.AMOUNT_EXCEEDS_AVAILABLE)
     }
-    if (amount > availableBalance) {
+    if (amountMinor > availableBalanceMinor) {
         return CashoutRequestValidation.Invalid(CashoutRejectReason.AMOUNT_EXCEEDS_AVAILABLE)
     }
     val normalizedDestination = normalizeMomoDestination(destination)
@@ -217,7 +220,7 @@ fun validateCashoutRequest(
             if (destination.isBlank()) CashoutRejectReason.DESTINATION_NOT_SET
             else CashoutRejectReason.DESTINATION_INVALID
         )
-    return CashoutRequestValidation.Valid(amount, normalizedDestination)
+    return CashoutRequestValidation.Valid(amountMinor, normalizedDestination)
 }
 
 /**
@@ -228,23 +231,24 @@ fun validateCashoutRequest(
  * This is the ONLY number a withdrawal may be checked against. It is deterministic and auditable:
  * any change to the wallet must appear as a ledger entry, so a worker can never inflate this by
  * editing a balance field. ADJUSTMENT entries are server-authoritative and fold their sign into
- * [WalletLedgerEntrySnapshot.amount] (negative = reduce, positive = increase).
+ * [WalletLedgerEntrySnapshot.amountMinor] (negative = reduce, positive = increase).
  */
-fun computeAvailableBalance(entries: List<WalletLedgerEntrySnapshot>): Double {
-    var available = 0.0
+fun computeAvailableBalanceMinor(entries: List<WalletLedgerEntrySnapshot>): Long {
+    var available = 0L
     for (entry in entries) {
         val type = LedgerEntryType.fromValue(entry.entryType) ?: continue
-        val amount = entry.amount
-        if (amount.isNaN() || amount.isInfinite()) continue
+        val amountMinor = entry.amountMinor
         when {
-            type in LedgerEntryType.INCREASING -> available += amount
-            type in LedgerEntryType.DECREASING -> available -= amount
-            type == LedgerEntryType.ADJUSTMENT -> available += amount
+            type in LedgerEntryType.INCREASING -> available += amountMinor
+            type in LedgerEntryType.DECREASING -> available -= amountMinor
+            type == LedgerEntryType.ADJUSTMENT -> available += amountMinor
         }
     }
-    // Never expose a negative available balance; a well-formed ledger can never produce one, but
-    // clamp so a corrupt row can't be read as "spendable negative money".
-    return if (available.isNaN() || available.isInfinite() || available < 0.0) 0.0 else available
+    // R04-P2-04: exact integer arithmetic means this is the only correction needed — there is no
+    // floating-point residue to round, and the result is order-independent (credits and debits
+    // commute). Never expose a negative balance: a well-formed ledger cannot produce one, but a
+    // corrupt row must not read as "spendable negative money".
+    return if (available < 0L) 0L else available
 }
 
 /**

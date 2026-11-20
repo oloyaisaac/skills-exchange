@@ -1,17 +1,17 @@
 # REVIEWER IMPLEMENTATION STATE — Prompt 4 (strict one-reviewer-at-a-time)
 
 **Programme:** ASMT-2026-11-19 · **Cycle:** Prompt-4 remediation
-**Updated:** 2026-11-20 · **Branch:** `arena/55b27a05-skills-exchange`
+**Updated:** 2026-11-20 · **Branch:** `arena/41eb7c49-skills-exchange`
 
 ## Position
 
 | Field | Value |
 |---|---|
 | Total original reviewers | **15** |
-| Current reviewer | **R04 — Data & Persistence** (next to start) |
-| Reviewers fully implemented and verified | **R01, R02, R03 (3 of 15)** |
-| Reviewers awaiting implementation | R04 … R15 |
-| Next reviewer number | **4** |
+| Current reviewer | **R05 — API & Integrations** (next to start) |
+| Reviewers fully implemented and verified | **R01, R02, R03, R04 (4 of 15)** |
+| Reviewers awaiting implementation | R05 … R15 |
+| Next reviewer number | **5** |
 
 ## R01 — COMPLETE (gate passed)
 
@@ -91,12 +91,47 @@ callable refused every client-created job.
   recorded here for R11 rather than treated as resolved.
 - App Check and webhook-level rate limiting remain open and belong to later reviewers (R07).
 
+## R04 — COMPLETE (gate passed)
+
+| Finding | Required correction | Status | Evidence |
+|---|---|---|---|
+| R04-P2-01 | `exportSchema = false`, no committed schema | **IMPLEMENTED AND VERIFIED** | `exportSchema = true`; `app/schemas/…/27.json` and `28.json` committed; CI publishes the freshly generated JSON to `ci-schema` so the committed file is always a generated artifact, never hand-written |
+| R04-P2-02 | 15 of 16 migrations untested | **IMPLEMENTED AND VERIFIED** | `DatabaseMigrationChainTest` builds a real v11 database from `src/test/resources/migration/v11_baseline.sql`, seeds rows, and lets Room run **all 17 migrations**; Room then validates the result against the entities (a forgotten column/index/FK fails the build). A second test builds a v27 database from the exported schema and proves the money conversion |
+| R04-P2-03 | Default doorstep PIN `"4829"` in the entity | **IMPLEMENTED AND VERIFIED** | default is `""`; `DoorstepPinPolicy` requires exactly four digits and fails closed (blank never matches blank); 5 tests |
+| R04-P2-04 | Money is `Double`, balances drift | **IMPLEMENTED AND VERIFIED (ledger and balance path)** | `Money` (minor units, `Long`); `wallet_ledger.amountMinor` and `wallet_withdrawals.amountMinor` are `INTEGER`; `computeAvailableBalanceMinor` is an exact integer sum; `validateCashoutRequest` compares integers; `MIGRATION_27_28` converts existing rows with `ROUND(amount*100)` and a test proves 100.50 → 10050 and 250.25 → 25025; `MoneyTest` (6 tests) proves no drift over repeated credits |
+| R04-P2-05 | No Room↔Firestore reconciliation; SOS mirror best-effort | **IMPLEMENTED AND VERIFIED (queue mechanics)** | the mirror now returns its outcome, records it on the incident, and enqueues a durable retry; `reconcilePendingMirrors()` adopts un-mirrored incidents, retries, and abandons after the cap; 5 tests drive success, failure, cap, recovery and no-op through an injectable sync |
+| R04-P2-06 | Unscoped `getAllJobs`/`getAllProviders` | **IMPLEMENTED AND VERIFIED** | provider feed is KYC-approved only; job feed is open work + own + assigned rows (`getJobsVisibleTo`); unscoped reads are deprecated and documented as maintenance-only; 3 tests |
+
+### Verification evidence (executed)
+
+- Android CI run 44730703469: compile success, **383 tests, 0 failures** (371 before R04's second
+  phase; the new tests are `MoneyTest` 6, `MirrorReconciliationTest` 5, the v27→v28 conversion test
+  and the DoorstepPin/scope tests).
+- Backend, documentation and secret checks pass on the same commit.
+- Two real defects were found and fixed by the new migration test, not by inspection:
+  `MIGRATION_13_14` dropped `job_posts.photos`/`scheduledAt` (and used `SELECT *`), and
+  `MIGRATION_22_23` created `sos_incidents` with an implicit unique index plus a non-unique named
+  index, so an upgraded database failed Room validation.
+
+### Not claimed
+
+- **Job pricing fields are still `Double`** (`budget`, `laborTotal`, `platformFee`, `grandTotal`,
+  `hourlyRate`, `resolutionAmount`, …). They are inputs to a computation that is rounded once, not an
+  accumulating balance, so they do not drift the way the ledger did, but they are not minor units
+  yet. Converting them touches every pricing screen and belongs with the server-authoritative
+  pricing work in R08; it is recorded here rather than described as done.
+- Migrations are executed by Robolectric's SQLite, **not on a physical device**; no on-device upgrade
+  was performed.
+- The reconciliation *mechanics* are verified through an injected sync; the **live Firestore mirror**
+  still cannot be exercised here (no project), so real network behaviour remains UNVERIFIED.
+
 ## Completion declarations
 
 - `reviewer_completions/REVIEWER_01_DONE.md`
 - `reviewer_completions/REVIEWER_02_DONE.md`
 - `reviewer_completions/REVIEWER_03_DONE.md`
+- `reviewer_completions/REVIEWER_04_DONE.md`
 
 ## Blockers
 
-None. R03 complete; R04 (Data & Persistence) is next.
+None. R04 complete; R05 (API & Integrations) is next.

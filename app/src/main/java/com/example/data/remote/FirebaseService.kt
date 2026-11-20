@@ -611,8 +611,12 @@ class FirebaseService(private val context: Context? = null) {
      * collection that the admin-gated `getSosQueue` callable reads. Room remains the source of
      * truth; this write is best-effort and never rolls back the local incident.
      */
-    suspend fun syncSosIncidentToFirestore(incident: SosIncidentEntity) {
-        val db = firestore ?: return
+    /**
+     * R04-P2-05: returns whether the mirror actually landed. It used to return Unit and swallow the
+     * failure, so "mirrored" could not be recorded and nothing could retry it.
+     */
+    suspend fun syncSosIncidentToFirestore(incident: SosIncidentEntity): Boolean {
+        val db = firestore ?: return false
         try {
             val incidentData = mapOf(
                 "id" to incident.id,
@@ -635,8 +639,10 @@ class FirebaseService(private val context: Context? = null) {
                 .set(incidentData)
                 .await()
             Log.d("FirebaseService", "Successfully synced sos incident ${incident.id} to Firestore")
+            return true
         } catch (e: Exception) {
             Log.d("FirebaseService", "Firestore sync sos incident notice: ${e.message}")
+            return false
         }
     }
 

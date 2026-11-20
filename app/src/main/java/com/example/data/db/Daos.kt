@@ -186,6 +186,9 @@ interface PendingActionDao {
     @Query("DELETE FROM pending_actions WHERE id = :id")
     suspend fun deleteAction(id: String)
 
+    @Query("SELECT * FROM pending_actions WHERE id = :id LIMIT 1")
+    suspend fun getActionById(id: String): PendingActionEntity?
+
     @Query("SELECT COUNT(*) FROM pending_actions WHERE status = 'PENDING'")
     suspend fun countPendingActions(): Int
 
@@ -601,6 +604,14 @@ interface SosIncidentDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSosIncident(incident: SosIncidentEntity)
+
+    /** R04-P2-05: the mirror state is written only with the outcome of an actual sync attempt. */
+    @Query("UPDATE sos_incidents SET firestoreMirrored = :mirrored WHERE id = :id")
+    suspend fun setFirestoreMirrored(id: String, mirrored: Boolean)
+
+    /** R04-P2-05: incidents the mirror has not accepted yet (reconciliation input). */
+    @Query("SELECT * FROM sos_incidents WHERE firestoreMirrored = 0 ORDER BY raisedAt ASC LIMIT 100")
+    suspend fun getUnmirroredIncidents(): List<SosIncidentEntity>
 
     @Query("UPDATE sos_incidents SET status = :status, acknowledgedAt = :acknowledgedAt, clearedAt = :clearedAt, clearedBy = :clearedBy WHERE id = :id")
     suspend fun updateSosIncidentStatus(
