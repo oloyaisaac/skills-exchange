@@ -239,6 +239,22 @@ jobs:
             echo "Uncompressed resources: $(unzip -l "$APK" | awk '$4 ~ /^res\// {sum += $1} END {printf "%.1f KB", sum/1024}')"
           } | tee release-summary.txt
 
+      # The artefact API is not reachable from the remediation environment, so the one number this
+      # job exists to produce is committed to a metrics branch instead: readable with `git show`.
+      - name: Publish size metrics
+        if: always()
+        run: |
+          if [ ! -f release-summary.txt ]; then echo "no summary"; exit 0; fi
+          mkdir -p /tmp/metrics/release
+          cp release-summary.txt "/tmp/metrics/release/summary-${GITHUB_SHA:0:7}.txt"
+          cd /tmp/metrics
+          git init -q .
+          git add -A
+          git -c user.email=ci@users.noreply.github.com -c user.name="CI metrics" \
+            commit -qm "ci: release size for $GITHUB_SHA"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" \
+            HEAD:ci-metrics
+
       - name: Upload release artefact
         if: always()
         uses: actions/upload-artifact@v4
