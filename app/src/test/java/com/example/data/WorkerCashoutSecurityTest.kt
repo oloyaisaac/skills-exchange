@@ -202,14 +202,14 @@ class WorkerCashoutSecurityTest {
 
     @Test
     fun workerCannotAdvanceOrCancelProcessing() = runBlocking {
-        val snap = WithdrawalSnapshot("w1", workerA, 10.0, WithdrawalStatus.PROCESSING.value)
+        val snap = WithdrawalSnapshot("w1", workerA, 1000L, WithdrawalStatus.PROCESSING.value)
         assertTrue(evaluateWithdrawalTransition(snap, WithdrawalStatus.PROCESSING, WithdrawalStatus.CANCELLED, workerA, actorIsServerAuthority = false) is WithdrawalTransitionOutcome.Reject)
         assertTrue(evaluateWithdrawalTransition(snap, WithdrawalStatus.PROCESSING, WithdrawalStatus.COMPLETED, workerA, actorIsServerAuthority = false) is WithdrawalTransitionOutcome.Reject)
     }
 
     @Test
     fun terminalWithdrawalCannotBeModified() = runBlocking {
-        val snap = WithdrawalSnapshot("w1", workerA, 10.0, WithdrawalStatus.CANCELLED.value)
+        val snap = WithdrawalSnapshot("w1", workerA, 1000L, WithdrawalStatus.CANCELLED.value)
         // Even a server authority cannot resurrect a terminal withdrawal (no double-pay).
         val outcome = evaluateWithdrawalTransition(snap, WithdrawalStatus.CANCELLED, WithdrawalStatus.COMPLETED, workerA, actorIsServerAuthority = true)
         assertTrue(outcome is WithdrawalTransitionOutcome.NoOpTerminal)
@@ -217,7 +217,7 @@ class WorkerCashoutSecurityTest {
 
     @Test
     fun mismatchedFromState_rejected() = runBlocking {
-        val snap = WithdrawalSnapshot("w1", workerA, 10.0, WithdrawalStatus.PENDING.value)
+        val snap = WithdrawalSnapshot("w1", workerA, 1000L, WithdrawalStatus.PENDING.value)
         // Claiming the row is PROCESSING when it is actually PENDING -> reject (no bypass).
         val outcome = evaluateWithdrawalTransition(snap, WithdrawalStatus.PROCESSING, WithdrawalStatus.CANCELLED, workerA, actorIsServerAuthority = false)
         assertTrue(outcome is WithdrawalTransitionOutcome.Reject)
@@ -225,14 +225,14 @@ class WorkerCashoutSecurityTest {
 
     @Test
     fun foreignActorCannotTransitionAnotherWorkersWithdrawal() = runBlocking {
-        val snap = WithdrawalSnapshot("w1", workerA, 10.0, WithdrawalStatus.PENDING.value)
+        val snap = WithdrawalSnapshot("w1", workerA, 1000L, WithdrawalStatus.PENDING.value)
         val outcome = evaluateWithdrawalTransition(snap, WithdrawalStatus.PENDING, WithdrawalStatus.CANCELLED, workerB, actorIsServerAuthority = true)
         assertTrue(outcome is WithdrawalTransitionOutcome.Reject)
     }
 
     @Test
     fun validPendingToCancelled_requiresOwner() = runBlocking {
-        val snap = WithdrawalSnapshot("w1", workerA, 10.0, WithdrawalStatus.PENDING.value)
+        val snap = WithdrawalSnapshot("w1", workerA, 1000L, WithdrawalStatus.PENDING.value)
         val outcome = evaluateWithdrawalTransition(snap, WithdrawalStatus.PENDING, WithdrawalStatus.CANCELLED, workerA, actorIsServerAuthority = false)
         val apply = outcome as WithdrawalTransitionOutcome.Apply
         assertEquals(WithdrawalStatus.CANCELLED, apply.nextStatus)
@@ -333,7 +333,7 @@ class WorkerCashoutSecurityTest {
 
     @Test
     fun completionRequiresServerAuthority() = runBlocking {
-        val snap = WithdrawalSnapshot("w1", workerA, 10.0, WithdrawalStatus.PENDING.value)
+        val snap = WithdrawalSnapshot("w1", workerA, 1000L, WithdrawalStatus.PENDING.value)
         val asWorker = evaluateWithdrawalTransition(snap, WithdrawalStatus.PENDING, WithdrawalStatus.COMPLETED, workerA, actorIsServerAuthority = false)
         val asServer = evaluateWithdrawalTransition(snap, WithdrawalStatus.PENDING, WithdrawalStatus.COMPLETED, workerA, actorIsServerAuthority = true)
         assertTrue(asWorker is WithdrawalTransitionOutcome.Reject)
