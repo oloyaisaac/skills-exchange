@@ -1,8 +1,9 @@
 package com.example.ui
 
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import com.example.ui.screens.OnboardingScreen
@@ -30,8 +31,10 @@ class OnboardingComposeTest {
         compose.setContent { OnboardingScreen(viewModel = viewModel) }
 
         compose.onNodeWithText("What describes you?").assertExists()
-        compose.onNodeWithText("New Here").performClick()
-        compose.onAllNodesWithText("Continue")[0].performClick()
-        compose.onNodeWithText("What do you want to do?").assertExists()
+        compose.onNodeWithText("Continue").assertIsNotEnabled()
+
+        compose.onNodeWithText("I want to create a brand new account").performClick()
+
+        compose.onNodeWithText("Continue").assertIsEnabled()
     }
 }
