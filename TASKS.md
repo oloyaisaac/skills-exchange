@@ -25,7 +25,18 @@ job/provider feeds are viewer-scoped. Evidence: Android run 44730703469 — 383/
 and stated: job-pricing fields are still `Double`, on-device migration and live Firestore mirroring
 are UNVERIFIED.
 
-**R05 — API & integrations — NEXT.** R06–R15 awaiting.
+**R05 — COMPLETE.** The device SOS SMS stub that reported `SENT` is deleted (the server trigger is
+the only sender); the FCM token is registered server-side under the authenticated uid and never
+logged; money has one unit (UGX) with a half-up whole-shilling rule identical on client and server;
+the Gemini key moved out of the APK into Secret Manager behind `searchLocalPlaces`; the invented
+shop list is gone and only Google-grounded places are drawn; all 17 callables have typed contracts;
+retries are bounded and every server HTTP call has a timeout. Also closed under this reviewer:
+Airtel/card are no longer selectable channels (REM-033) and the Africa's Talking client is
+suspend-only (REM-052). Evidence: Android run 44748445356 (435 tests, 0 failures), backend 182/182,
+docs and secret checks pass. Not verified: deploy, live provider traffic, FCM delivery, a real Maps
+key (REM-053 partial).
+
+**R06 — identity, admin claims and account lifecycle — NEXT.** R07–R15 awaiting.
 
 ## Review Track — 2026-11-19 (not started)
 
