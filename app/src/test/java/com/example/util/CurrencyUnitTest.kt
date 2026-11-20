@@ -16,21 +16,21 @@ class CurrencyUnitTest {
 
     @Test
     fun `a stored UGX amount is shown as itself, never multiplied`() {
-        assertEquals("UGX 37,000", CurrencyRegion.format(37_000.0))
-        assertNotEquals("UGX 136,900,000", CurrencyRegion.format(37_000.0))
+        assertEquals("UGX 37,000", CurrencyRegion.format(37_000.0, CurrencyRegion.UGANDA))
+        assertNotEquals("UGX 136,900,000", CurrencyRegion.format(37_000.0, CurrencyRegion.UGANDA))
     }
 
     @Test
     fun `shillings are displayed whole`() {
-        assertEquals("UGX 12,346", CurrencyRegion.format(12_345.6))
-        assertEquals("UGX 0", CurrencyRegion.format(0.4))
+        assertEquals("UGX 12,346", CurrencyRegion.format(12_345.6, CurrencyRegion.UGANDA))
+        assertEquals("UGX 0", CurrencyRegion.format(0.4, CurrencyRegion.UGANDA))
     }
 
     @Test
     fun `NaN and infinity never render as money or crash`() {
-        assertEquals("UGX 0", CurrencyRegion.format(Double.NaN))
-        assertEquals("UGX 0", CurrencyRegion.format(Double.POSITIVE_INFINITY))
-        assertEquals("UGX 0", CurrencyRegion.format(Double.NEGATIVE_INFINITY))
+        assertEquals("UGX 0", CurrencyRegion.format(Double.NaN, CurrencyRegion.UGANDA))
+        assertEquals("UGX 0", CurrencyRegion.format(Double.POSITIVE_INFINITY, CurrencyRegion.UGANDA))
+        assertEquals("UGX 0", CurrencyRegion.format(Double.NEGATIVE_INFINITY, CurrencyRegion.UGANDA))
     }
 
     @Test
@@ -44,8 +44,8 @@ class CurrencyUnitTest {
 
     @Test
     fun `compact form is still UGX`() {
-        assertEquals("UGX 37k", CurrencyRegion.formatCompact(37_000.0))
-        assertEquals("UGX 500", CurrencyRegion.formatCompact(500.0))
+        assertEquals("UGX 37k", CurrencyRegion.formatCompact(37_000.0, CurrencyRegion.UGANDA))
+        assertEquals("UGX 500", CurrencyRegion.formatCompact(500.0, CurrencyRegion.UGANDA))
     }
 
     @Test

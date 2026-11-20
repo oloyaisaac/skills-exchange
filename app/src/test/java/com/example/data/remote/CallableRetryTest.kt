@@ -16,13 +16,12 @@ import org.junit.runners.JUnit4
  * Before this, a single `UNAVAILABLE` while a phone changed networks was shown to the user as a hard
  * failure, and no call had a backoff policy at all. These tests pin the policy: at most three
  * attempts, only for retryable codes, and never for a decision the server already made.
+ *
+ * The SDK's `FirebaseFunctionsException` constructors are internal, so the retry loop is exercised
+ * through its explicit predicate overload with ordinary exceptions.
  */
 @RunWith(JUnit4::class)
 class CallableRetryTest {
-
-    private fun failure(code: FirebaseFunctionsException.Code) =
-        // Android SDK signature: (message, code, details[, cause]).
-        FirebaseFunctionsException("test failure", code, null)
 
     @Test
     fun `transient codes are retryable`() {
@@ -52,11 +51,19 @@ class CallableRetryTest {
     }
 
     @Test
+    fun `only callable exceptions are retryable failures`() {
+        assertFalse(
+            "a plain exception is not a transient callable failure",
+            CallableRetry.isRetryableFailure(IllegalStateException("boom"))
+        )
+    }
+
+    @Test
     fun `a transient failure succeeds on the next attempt`() = runTest {
         var attempts = 0
-        val value = CallableRetry.withRetry { attempt ->
+        val value = CallableRetry.withRetry<String>({ true }) { attempt ->
             attempts = attempt
-            if (attempt < 2) throw failure(FirebaseFunctionsException.Code.UNAVAILABLE)
+            if (attempt < 2) throw IllegalStateException("transient")
             "ok"
         }
         assertEquals("ok", value)
@@ -67,13 +74,13 @@ class CallableRetryTest {
     fun `retries stop after three attempts`() = runTest {
         var attempts = 0
         try {
-            CallableRetry.withRetry<Unit> {
+            CallableRetry.withRetry<Unit>({ true }) {
                 attempts++
-                throw failure(FirebaseFunctionsException.Code.UNAVAILABLE)
+                throw IllegalStateException("always failing")
             }
             fail("the retry must give up")
-        } catch (error: FirebaseFunctionsException) {
-            assertEquals(FirebaseFunctionsException.Code.UNAVAILABLE, error.code)
+        } catch (error: IllegalStateException) {
+            assertEquals("always failing", error.message)
         }
         assertEquals(CallableRetry.MAX_ATTEMPTS, attempts)
     }
@@ -82,13 +89,13 @@ class CallableRetryTest {
     fun `a non-retryable failure fails immediately`() = runTest {
         var attempts = 0
         try {
-            CallableRetry.withRetry<Unit> {
+            CallableRetry.withRetry<Unit>({ false }) {
                 attempts++
-                throw failure(FirebaseFunctionsException.Code.PERMISSION_DENIED)
+                throw IllegalStateException("permission denied")
             }
             fail("permission denied must not be retried")
-        } catch (error: FirebaseFunctionsException) {
-            assertEquals(FirebaseFunctionsException.Code.PERMISSION_DENIED, error.code)
+        } catch (error: IllegalStateException) {
+            assertEquals("permission denied", error.message)
         }
         assertEquals(1, attempts)
     }

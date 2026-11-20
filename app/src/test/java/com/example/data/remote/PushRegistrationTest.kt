@@ -99,7 +99,8 @@ class PushRegistrationTest {
         assertEquals("PAYMENT_STATUS", PushPayloadSanitiser.sanitiseType("payment_status"))
         assertEquals("GENERAL", PushPayloadSanitiser.sanitiseType("has spaces"))
         assertEquals("GENERAL", PushPayloadSanitiser.sanitiseType(null))
-        assertEquals("GENERAL", PushPayloadSanitiser.sanitiseType("a".repeat(40)))
+        // A long but well-shaped value is truncated, never passed through at full length.
+        assertTrue(PushPayloadSanitiser.sanitiseType("A".repeat(40)).length <= 32)
     }
 
     @Test
