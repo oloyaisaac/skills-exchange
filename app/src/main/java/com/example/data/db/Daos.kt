@@ -5,6 +5,19 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ServiceProviderDao {
+    /**
+     * R04-P2-06: the marketplace listing is scoped to providers the directory may show —
+     * only a provider whose KYC is APPROVED is visible. Unverified/rejected rows stay on the
+     * device for the owner's own screens but never enter the browse feed.
+     */
+    @Query("SELECT * FROM service_providers WHERE kycStatus = 'APPROVED' ORDER BY rating DESC LIMIT 500")
+    fun getApprovedProviders(): Flow<List<ServiceProviderEntity>>
+
+    /**
+     * R04-P2-06: DEVICE-LOCAL and unfiltered. It exists for seeding and maintenance only; it is
+     * not a viewer-scoped read and must not back a user-facing list or an authorization decision.
+     */
+    @Deprecated("Unscoped local read: use getApprovedProviders() for anything user-facing.")
     @Query("SELECT * FROM service_providers LIMIT 500")
     fun getAllProviders(): Flow<List<ServiceProviderEntity>>
 
@@ -48,6 +61,24 @@ interface JobPostDao {
     @Query("SELECT * FROM job_posts WHERE postedByUid IS NULL ORDER BY createdTimestamp DESC LIMIT 200")
     fun getJobsWithUnknownOwner(): Flow<List<JobPostEntity>>
 
+    /**
+     * R04-P2-06: the job feed a given viewer may see. Open work is public; anything else is only
+     * visible to the resident who posted it or the worker assigned to it. Rows with an unknown
+     * owner (created before authorship existed) stay visible for local display but are never
+     * treated as anybody's job by the authorization paths.
+     */
+    @Query(
+        "SELECT * FROM job_posts WHERE status IN ('POSTED', 'QUOTING') " +
+            "OR postedByUid = :viewerUid OR assignedProviderUid = :viewerUid " +
+            "OR postedByUid IS NULL ORDER BY createdTimestamp DESC LIMIT 200"
+    )
+    fun getJobsVisibleTo(viewerUid: String): Flow<List<JobPostEntity>>
+
+    /**
+     * R04-P2-06: DEVICE-LOCAL and unfiltered. Maintenance/seeding only — every user-facing list
+     * and every authorization decision goes through [getJobsVisibleTo] or [getJobById].
+     */
+    @Deprecated("Unscoped local read: use getJobsVisibleTo(viewerUid) for anything user-facing.")
     @Query("SELECT * FROM job_posts ORDER BY createdTimestamp DESC LIMIT 200")
     fun getAllJobs(): Flow<List<JobPostEntity>>
 

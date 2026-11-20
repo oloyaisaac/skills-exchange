@@ -29,7 +29,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SosIncidentEntity::class
     ],
     version = 27,
-    exportSchema = false
+    exportSchema = true
 )
 @androidx.room.TypeConverters(TypeConverters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -214,10 +214,19 @@ abstract class AppDatabase : RoomDatabase() {
                         recurringContractProposal TEXT NOT NULL DEFAULT '',
                         recurringNegotiatedRate REAL NOT NULL DEFAULT 0.0,
                         recurringProposalStatus TEXT NOT NULL DEFAULT 'NONE',
+                        photos TEXT NOT NULL,
+                        scheduledAt INTEGER NOT NULL,
                         FOREIGN KEY (assignedProviderId) REFERENCES service_providers(id) ON DELETE SET NULL
                     )
                 """.trimIndent())
-                database.execSQL("INSERT INTO job_posts_new SELECT * FROM job_posts")
+                database.execSQL(
+                    // R04-P2-02: explicit projection. `SELECT *` copied whatever the old
+                    // table happened to hold, which silently dropped the two columns the
+                    // entity declares but this recreate forgot (see the comment on the
+                    // columns above). Every listed column is carried over; only the two
+                    // defaults are synthesised.
+                    "INSERT INTO job_posts_new (id, title, category, description, postedByResident, district, budget, urgency, status, assignedProviderId, assignedProviderName, createdTimestamp, estimatedHours, materialsCost, safetyFee, materialsProvidedBy, laborHours, laborRate, laborTotal, materialsSubtotal, platformFee, grandTotal, materialReceiptsCsv, beforePhotoUrl, afterPhotoUrl, emergencyAddonRequested, emergencyAddonAmount, emergencyAddonReason, emergencyAddonReceiptUrl, emergencyAddonStatus, paymentChannel, momoPhoneNumber, escrowStatus, doorstepPin, isDoorstepVerified, materialAdvanceRequested, materialAdvanceAmount, materialAdvanceReceiptUrl, materialAdvanceStatus, isSosTriggered, calloutFee, jobType, recurringSchedule, recurringStartDate, recurringContractProposal, recurringNegotiatedRate, recurringProposalStatus, photos, scheduledAt) SELECT id, title, category, description, postedByResident, district, budget, urgency, status, assignedProviderId, assignedProviderName, createdTimestamp, estimatedHours, materialsCost, safetyFee, materialsProvidedBy, laborHours, laborRate, laborTotal, materialsSubtotal, platformFee, grandTotal, materialReceiptsCsv, beforePhotoUrl, afterPhotoUrl, emergencyAddonRequested, emergencyAddonAmount, emergencyAddonReason, emergencyAddonReceiptUrl, emergencyAddonStatus, paymentChannel, momoPhoneNumber, escrowStatus, doorstepPin, isDoorstepVerified, materialAdvanceRequested, materialAdvanceAmount, materialAdvanceReceiptUrl, materialAdvanceStatus, isSosTriggered, calloutFee, jobType, recurringSchedule, recurringStartDate, recurringContractProposal, recurringNegotiatedRate, recurringProposalStatus, '[]', 0 FROM job_posts"
+                )
                 database.execSQL("DROP TABLE job_posts")
                 database.execSQL("ALTER TABLE job_posts_new RENAME TO job_posts")
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_job_posts_assignedProviderId ON job_posts(assignedProviderId)")
@@ -497,24 +506,31 @@ abstract class AppDatabase : RoomDatabase() {
          */
         val MIGRATION_22_23 = object : Migration(22, 23) {
             override fun migrate(database: SupportSQLiteDatabase) {
+                // R04-P2-02: the table must match `SosIncidentEntity` exactly. Two defects were
+                // fixed here: `jobId TEXT NOT NULL UNIQUE` created an implicit, unnamed unique
+                // index in addition to the named one below, and the named index was created
+                // non-unique although the entity declares `Index(value = ["jobId"], unique =
+                // true)`. Room validated neither, so an upgraded database failed
+                // `Migration didn't properly handle: sos_incidents` on open. The column-level
+                // UNIQUE is gone; uniqueness lives only in the named index Room expects.
                 database.execSQL(
                     "CREATE TABLE IF NOT EXISTS sos_incidents (" +
                         "id TEXT PRIMARY KEY NOT NULL, " +
-                        "jobId TEXT NOT NULL UNIQUE, " +
+                        "jobId TEXT NOT NULL, " +
                         "postedByUid TEXT NOT NULL, " +
                         "assignedProviderId TEXT, " +
-                        "status TEXT NOT NULL DEFAULT 'ACTIVE', " +
-                        "latitude REAL NOT NULL DEFAULT 0.0, " +
-                        "longitude REAL NOT NULL DEFAULT 0.0, " +
-                        "district TEXT NOT NULL DEFAULT '', " +
-                        "raisedAt INTEGER NOT NULL DEFAULT 0, " +
-                        "acknowledgedAt INTEGER NOT NULL DEFAULT 0, " +
-                        "clearedAt INTEGER NOT NULL DEFAULT 0, " +
+                        "status TEXT NOT NULL, " +
+                        "latitude REAL NOT NULL, " +
+                        "longitude REAL NOT NULL, " +
+                        "district TEXT NOT NULL, " +
+                        "raisedAt INTEGER NOT NULL, " +
+                        "acknowledgedAt INTEGER NOT NULL, " +
+                        "clearedAt INTEGER NOT NULL, " +
                         "clearedBy TEXT, " +
-                        "firestoreMirrored INTEGER NOT NULL DEFAULT 0, " +
+                        "firestoreMirrored INTEGER NOT NULL, " +
                         "FOREIGN KEY(jobId) REFERENCES job_posts(id) ON DELETE CASCADE)"
                 )
-                database.execSQL("CREATE INDEX IF NOT EXISTS index_sos_incidents_jobId ON sos_incidents(jobId)")
+                database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_sos_incidents_jobId ON sos_incidents(jobId)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_sos_incidents_status ON sos_incidents(status)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_sos_incidents_postedByUid ON sos_incidents(postedByUid)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_sos_incidents_assignedProviderId ON sos_incidents(assignedProviderId)")
@@ -561,6 +577,17 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * R04-P2-02: every retained migration, in order. `getDatabase` applies this array and the
+         * migration test walks it, so a migration cannot exist without being exercised.
+         */
+        val ALL_MIGRATIONS: Array<Migration> = arrayOf(
+            MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15,
+            MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19,
+            MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23,
+            MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27
+        )
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -568,7 +595,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "skills_exchange_database"
                 )
-                    .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27)
+                    .addMigrations(*ALL_MIGRATIONS)
                     .build()
                 INSTANCE = instance
                 instance

@@ -56,6 +56,18 @@ android {
     buildConfig = true
   }
   testOptions { unitTests { isIncludeAndroidResources = true } }
+
+  // R04-P2-01: Room schema export. The JSON Room generates for every version is the contract the
+  // migration tests validate against, so it is committed under `app/schemas` and never edited by
+  // hand.
+  sourceSets {
+    getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    getByName("test").assets.srcDir("$projectDir/schemas")
+  }
+}
+
+ksp {
+  arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 java {

@@ -257,7 +257,13 @@ data class JobPostEntity(
     var momoPhoneNumber: String = "+256 772 198 420",
     var escrowStatus: String = "QUOTE_PENDING", // "QUOTE_PENDING", "DEPOSIT_PROMPTED", "FUNDS_LOCKED_IN_ESCROW", "WORK_IN_PROGRESS", "PROOF_SUBMITTED", "RELEASED_TO_WORKER"
     // Real-World Operational Safeguards
-    var doorstepPin: String = "4829",
+    //
+    // R04-P2-03: there is NO default PIN. A shared constant such as "4829" is a business/security
+    // decision hidden in the schema: any row created without an explicit PIN would accept it at the
+    // doorstep. The repository generates a random 4-digit PIN per job and
+    // `verifyDoorstepPin` refuses an empty PIN, so a job that somehow lost its PIN cannot be
+    // "verified" by typing nothing.
+    var doorstepPin: String = "",
     var isDoorstepVerified: Boolean = false,
     var materialAdvanceRequested: Boolean = false,
     var materialAdvanceAmount: Double = 0.0,

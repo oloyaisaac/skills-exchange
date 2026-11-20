@@ -1,3 +1,5 @@
+@file:OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+
 package com.example.data.repository
 
 import android.util.Log
@@ -5,10 +7,12 @@ import android.net.Uri
 import com.example.data.db.*
 import com.example.data.remote.FirebaseService
 import com.example.data.remote.SmsNotificationService
+import com.example.util.DoorstepPinPolicy
 import com.example.util.GuarantorInput
 import com.example.util.GuarantorValidators
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 
 class SkillsExchangeRepository(
@@ -16,8 +20,13 @@ class SkillsExchangeRepository(
     private val firebaseService: FirebaseService = FirebaseService(),
     private val smsNotificationService: SmsNotificationService = SmsNotificationService()
 ) {
-    val providers: Flow<List<ServiceProviderEntity>> = db.serviceProviderDao().getAllProviders()
-    val jobs: Flow<List<JobPostEntity>> = db.jobPostDao().getAllJobs()
+    // R04-P2-06: both feeds are viewer-scoped. Providers must be KYC-approved to be listed; jobs
+    // are open work plus the viewer's own or assigned jobs. Neither flow is an authorization
+    // boundary — every mutation still reloads the row and checks the actor.
+    val providers: Flow<List<ServiceProviderEntity>> = db.serviceProviderDao().getApprovedProviders()
+    val jobs: Flow<List<JobPostEntity>> = firebaseService.currentUserState.flatMapLatest { user ->
+        db.jobPostDao().getJobsVisibleTo(user?.uid.orEmpty())
+    }
     /**
      * LEGACY / NON-AUTHORITATIVE (C2-2 Fix #3, audit finding **F7**): "the most recently updated
      * profile row on this device" is a cache of device state — it is NOT an identity. It must never
@@ -508,6 +517,7 @@ class SkillsExchangeRepository(
     }
 
     suspend fun seedInitialDataIfNeeded() {
+        @Suppress("DEPRECATION") // seeding inspects every stored row, scoped by nothing
         val existingProviders = db.serviceProviderDao().getAllProviders().first()
         if (existingProviders.isEmpty()) {
             db.serviceProviderDao().insertProviders(initialProviders)
@@ -681,7 +691,7 @@ class SkillsExchangeRepository(
             else -> "Escrow status updated to $newEscrowStatus."
         }
 
-        val job = db.jobPostDao().getAllJobs().first().find { it.id == jobId }
+        val job = db.jobPostDao().getJobById(jobId)
         val assignedProviderId = job?.assignedProviderId
 
         if (assignedProviderId != null && (newEscrowStatus == "FUNDS_LOCKED_IN_ESCROW" || newEscrowStatus == "RELEASED_TO_WORKER")) {
@@ -833,23 +843,26 @@ class SkillsExchangeRepository(
         val job = db.jobPostDao().getJobById(jobId) ?: return false
         if (job.postedByUid == null || job.postedByUid != actorUid) return false
 
-        if (enteredPin.trim() == expectedPin.trim()) {
-            db.jobPostDao().verifyDoorstepPin(jobId)
-            db.chatMessageDao().insertMessage(
-                ChatMessageEntity(
-                    id = "msg_${System.currentTimeMillis()}",
-                    jobId = jobId,
-                    senderName = "Doorstep Security",
-                    isFromUser = false,
-                    message = "🔑 4-Digit Doorstep PIN Verified! Resident & Worker confirmed physically present. Job status officially set to IN_PROGRESS.",
-                    timestampText = "Just now",
-                    isSystemNotification = true
-                )
-            )
-            return true
-        } else {
+        // R04-P2-03: a PIN is only meaningful when both sides are a real 4-digit code. A blank
+        // expected PIN (a row written without one) or a blank entry must never match, otherwise
+        // "no PIN configured" would degrade into "any PIN works".
+        if (!DoorstepPinPolicy.matches(enteredPin, expectedPin)) {
             return false
         }
+
+        db.jobPostDao().verifyDoorstepPin(jobId)
+        db.chatMessageDao().insertMessage(
+            ChatMessageEntity(
+                id = "msg_${System.currentTimeMillis()}",
+                jobId = jobId,
+                senderName = "Doorstep Security",
+                isFromUser = false,
+                message = "🔑 4-Digit Doorstep PIN Verified! Resident & Worker confirmed physically present. Job status officially set to IN_PROGRESS.",
+                timestampText = "Just now",
+                isSystemNotification = true
+            )
+        )
+        return true
     }
 
     suspend fun requestMaterialAdvance(jobId: String, amount: Double) {
