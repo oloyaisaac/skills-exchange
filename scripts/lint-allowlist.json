@@ -1,1 +1,6 @@
-[]
+[
+  {
+    "id": "MissingTranslation",
+    "reason": "The Swahili locale is a partial draft by design (R12): 15 critical strings are translated and the rest of the copy is a baselined debt with no native-speaker review, so machine-translating it would be worse than shipping English. Remove this entry when values-sw is complete - the gate fails on a stale entry, so it cannot outlive the reason."
+  }
+]

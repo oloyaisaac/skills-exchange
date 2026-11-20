@@ -87,6 +87,11 @@ android {
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
+    // R14-P2-02: `minSdk` is 24, but the UI formats times and schedules with `java.time`, which is
+    // API 26+. Lint found 54 `NewApi` errors the moment it ran: on Android 7.0/7.1 those calls throw
+    // NoClassDefFoundError, so the defect was a crash on devices the app still installs on. Desugaring
+    // is the fix that keeps those devices supported, rather than raising minSdk to 26 and dropping them.
+    isCoreLibraryDesugaringEnabled = true
   }
   buildFeatures {
     compose = true
@@ -209,6 +214,8 @@ googleServices { missingGoogleServicesStrategy = MissingGoogleServicesStrategy.W
 // Some unused dependencies are commented out below instead of being removed.
 // This makes it easy to add them back in the future if needed.
 dependencies {
+  // R14-P2-02: the backport that makes `java.time` available on API 24/25 (see compileOptions).
+  coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
   implementation(platform(libs.androidx.compose.bom))
   implementation(platform(libs.firebase.bom))
   // implementation(libs.accompanist.permissions)
