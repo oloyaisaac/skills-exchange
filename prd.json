@@ -4665,8 +4665,8 @@
       "phase": 19,
       "title": "Close public Firestore reads",
       "priority": "CRITICAL",
-      "status": "VERIFICATION_PENDING",
-      "status_note": "firestore.rules: removed all three allow read: if true. jobs limited to owner (postedByUid), assigned provider (assignedProviderUid / legacy assignedProviderId) and admins; messages limited to author or job participants/admins; providers now require authentication. NOT emulator-tested (no Firebase CLI or JDK in the environment) and NOT deployed.",
+      "status": "COMPLETED",
+      "status_note": "R07: the rules are now executed, not read. A new emulator suite (rules-test/, 17 tests, CI job \"Firestore rules tests\") proves jobs/messages/accounts/ledger are invisible to anonymous and unrelated callers, that an unfiltered listing is denied, and that a stranger cannot move a job. Emulator-green, not deployed.",
       "depends_on": [],
       "description": "Close public Firestore reads. `jobs`, `messages` and `providers` use `allow read: if true`.",
       "goal": "Scope reads to participants/admin and gate sensitive fields",
@@ -4776,8 +4776,8 @@
       "phase": 19,
       "title": "Make notifications and transactions server-only",
       "priority": "HIGH",
-      "status": "VERIFICATION_PENDING",
-      "status_note": "Client creates denied for notifications and momo_transactions; Admin SDK writes unaffected. Not emulator-tested.",
+      "status": "COMPLETED",
+      "status_note": "R07: momo_transactions/momo_payouts/refunds/admin_audit remain server-owned and are now covered by emulator tests (client create/update denied, admin read allowed); notifications are server-written with an owner-only read/readAt update, also executed in the suite. Not deployed.",
       "independent_verification": "PENDING",
 
       "depends_on": [
@@ -4930,7 +4930,8 @@
       "phase": 19,
       "title": "Enforce App Check and rate limits",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
+      "status_note": "R07: App Check is enforced on all 28 callables (functions.runWith(APP_CHECK), asserted by test) and the client installs Play Integrity (release) or the debug provider (debug). OTP keeps its per-phone and per-IP limits. Not verified: no Firebase project, so no App Check token has ever been minted or validated; the app must be registered in the console before enforcement is deployed.",
       "depends_on": [
         "REM-011",
         "REM-022"
@@ -5009,7 +5010,8 @@
       "phase": 19,
       "title": "Add Firestore and Storage rules tests",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "COMPLETED",
+      "status_note": "R07: rules-test/firestore.rules.test.mjs (17 tests) runs against the Firestore emulator in CI for anonymous/stranger/owner/provider/admin actors, including escrow-forgery, PIN-material and erasure cases; rules-test/storage.rules.check.mjs is an explicitly structural (non-executed) check of Storage rules because the JS rules library cannot run them. Emulator run green.",
       "depends_on": [
         "REM-010",
         "REM-012",
@@ -5050,7 +5052,8 @@
       "phase": 19,
       "title": "Harden the release APK",
       "priority": "MEDIUM",
-      "status": "NOT_STARTED",
+      "status": "COMPLETED",
+      "status_note": "R07: release build now has isMinifyEnabled + isShrinkResources with the existing Room/Firebase/Moshi keep rules; allowBackup=false, no cleartext, only the launcher activity exported. Not verified: no release APK was built here (no signing keystore), so shrinkage has not been observed on a device.",
       "depends_on": [
         "REM-001"
       ],
@@ -7121,7 +7124,7 @@
       "review_report": "review_results/R02_ANDROID_CLIENT.md",
       "notes": "Derived from MASTER_REVIEW_FINDINGS; implementation not started."
     }],
-    "current_story": "R06 (authentication and identity) - complete",
+    "current_story": "R07 (application security) - complete",
   "review_cycle_status": "all_15_reviews_complete_0_pass_15_fail",
   "review_cycle_completed_at": "2026-11-19T18:00:00+03:00",
     "completed_stories": [

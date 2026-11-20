@@ -1,17 +1,17 @@
 # REVIEWER IMPLEMENTATION STATE — Prompt 4 (strict one-reviewer-at-a-time)
 
 **Programme:** ASMT-2026-11-19 · **Cycle:** Prompt-4 remediation
-**Updated:** 2026-11-20 · **Branch:** `arena/2029ee23-skills-exchange`
+**Updated:** 2026-11-20 · **Branch:** `arena/503811fb-skills-exchange`
 
 ## Position
 
 | Field | Value |
 |---|---|
 | Total original reviewers | **15** |
-| Current reviewer | **R07 — next in the reviewer list** (reviewer 6 complete) |
-| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05, R06 (6 of 15)** |
-| Reviewers awaiting implementation | R07 … R15 |
-| Next reviewer number | **7** |
+| Current reviewer | **R08 — next in the reviewer list** (reviewer 7 complete) |
+| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05, R06, R07 (7 of 15)** |
+| Reviewers awaiting implementation | R08 … R15 |
+| Next reviewer number | **8** |
 
 ## R01 — COMPLETE (gate passed)
 
@@ -210,6 +210,50 @@ Firestore document **and** every Storage object is gone.
 - Firestore rules were not changed: the client no longer performs the deletes at all, so the existing
   fresh-auth owner-delete rules remain as a second barrier that this round does not exercise.
 
+## R07 — COMPLETE (gate passed)
+
+Source: `review_results/prompt2/REVIEW_07.md` (verdict **FAIL**, 7 findings). Two of them were about
+rules whose behaviour nobody had ever executed, so this round also added the first **executable**
+Firestore rules suite: the invariants below are proven against the emulator, not read from a file.
+
+| Finding | Required correction | Status | Evidence |
+|---|---|---|---|
+| R07-P2-01 | CRITICAL: doorstep PIN compared with a caller-supplied expected value, default `4829`, plaintext, no lockout | **IMPLEMENTED AND VERIFIED** | `DoorstepPinPolicy` (the local comparator) is deleted; `setDoorstepPin` stores a salted SHA-256 in `job_secrets/{jobId}` (a collection every client — admin included — is denied) and `verifyDoorstepPin` compares in constant time, counts attempts, locks for 15 minutes after 5, and is the only path that starts the job; the client sends only the typed PIN; the worker is no longer shown the PIN at all. `doorstepPin.test.mjs` (8), `DoorstepPinContractTest` (7) |
+| R07-P2-02 | CRITICAL: no `users` delete rule and admin-only `worker_kyc` delete, so auth could be removed while data survived | **IMPLEMENTED AND VERIFIED** | owner-delete rules with `hasFreshAuth()` for `users/{uid}`, `worker_kyc`, `worker_training` and `providers`; R06's server purge uses the Admin SDK, so both paths now exist. Proven by emulator tests (owner+fresh succeeds, stale session and stranger fail) and `SecurityRulesInvariantsTest` |
+| R07-P2-03 | HIGH: `escrowStatus` and money fields not pinned; owner could forge `RELEASED_TO_WORKER` | **IMPLEMENTED AND VERIFIED** | `serverOwnedJobFieldsTouched()`, `escrowTransitionAllowed()`, `jobMoneyPinned()` on the `jobs` update rule; terminal escrow outcomes (`RELEASED_TO_WORKER`, `REFUND_*`) and priced amounts after funding are Admin-SDK-only; the client now withholds those fields (`JobSyncPolicy`) and merges instead of replacing the document. Emulator tests prove the exact forgery is denied while the legal transition still works |
+| R07-P2-04 | MEDIUM: no App Check on callables | **IMPLEMENTED AND VERIFIED (code)** | `APP_CHECK`/`withAppCheck` applied to all 28 callables and asserted by test; the client installs Play Integrity (release) or the debug provider (debug). No token has ever been minted — see "Not claimed" |
+| R07-P2-05 | MEDIUM: release build not minified | **IMPLEMENTED AND VERIFIED (config)** | `isMinifyEnabled = true` + `isShrinkResources = true` with the existing Room/Firebase/Moshi keep rules; asserted statically. No release APK was built (no signing keystore) |
+| R07-P2-06 | MEDIUM: FCM token logged; no `FLAG_SECURE` | **CLOSED (already fixed in R02/R05)** | the token is logged only redacted (`PushTokenRegistrar.redacted`); `SecureScreen()` covers the identity, PIN and escrow surfaces (8 call sites) |
+| R07-P2-07 | LOW: avatars world-readable | **IMPLEMENTED AND VERIFIED** | both avatar prefixes now require a session; `public/` remains the only anonymous prefix, enforced by the Storage structural check and `SecurityRulesInvariantsTest` |
+| REM-019 | No Firestore/Storage rules tests | **IMPLEMENTED AND VERIFIED** | `rules-test/firestore.rules.test.mjs` — 17 tests over anonymous / stranger / owner / provider / admin actors, run in CI against the Firestore emulator; `storage.rules.check.mjs` is labelled structural because the JS rules library cannot execute Storage rules |
+| REM-020 | Release APK not hardened | **IMPLEMENTED (config)** | as R07-P2-05, plus `allowBackup=false`, no cleartext, single exported activity |
+
+### Verification evidence (executed)
+
+- CI run **44758119411** (`android.yml`): compile success, unit tests green, 7 of 7 checks pass.
+  Client suite: the readable per-test XML from run 44757449348 (same test set) totals **466** cases
+  (447 after R06 + 7 `DoorstepPinContractTest` + 7 `SecurityRulesInvariantsTest` + 5
+  `JobSyncPolicyTest`); that run's two failures were an error in one of the new policy tests, fixed
+  before the green run ⇒ **466 tests, 0 failures**.
+- CI run **44758119327**: backend **202/202** `node --test` tests (190 + 8 doorstep-PIN + 4 App Check),
+  handler tests and documentation/secret checks pass.
+- **New job "Firestore rules tests (emulator)" green in 32s** — the rules are executed against real
+  Firestore semantics for the first time in this programme.
+- One real defect was found by CI rather than by reading: the job-sync policy test assumed escrow
+  withholding and money withholding were independent, which they are not.
+
+### Not claimed
+
+- **No `firebase deploy`**: `firestore.rules`, `storage.rules` and the two new callables are exercised
+  in the emulator only. Production rules are still whatever was last deployed.
+- **App Check has never attested anything**: no Firebase project, so no Play Integrity or debug token
+  was ever minted and no enforced call has been accepted or rejected. Deploying `enforceAppCheck`
+  before registering the apps in the console would reject every call — ordering is documented.
+- **No release APK**: R8/`isShrinkResources` are configuration, not observed output; the signing
+  keystore does not exist here.
+- **Storage rules are not executed**, only checked structurally.
+- **No device or on-device PEN test**: bypass attempts are the emulator's, not a real client's.
+
 ## Completion declarations
 
 - `reviewer_completions/REVIEWER_01_DONE.md`
@@ -218,7 +262,8 @@ Firestore document **and** every Storage object is gone.
 - `reviewer_completions/REVIEWER_04_DONE.md`
 - `reviewer_completions/REVIEWER_05_DONE.md`
 - `reviewer_completions/REVIEWER_06_DONE.md`
+- `reviewer_completions/REVIEWER_07_DONE.md`
 
 ## Blockers
 
-None. R06 complete; R07 is next.
+None. R07 complete; R08 is next.
