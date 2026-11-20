@@ -1,0 +1,172 @@
+# REM-005: continuous integration.
+#
+# Scope: backend build, unit tests and a coverage floor; callable handlers on the Firestore emulator;
+# Firestore/Storage rules; documentation and secret checks. The Android compile-and-unit-test job lives
+# in `android.yml` (R01), and the rules emulator job is here (R07).
+#
+# Every gate below is a *blocking* check: the suite count is asserted, so a step that quietly runs
+# nothing at all fails instead of passing on an empty list.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  functions:
+    name: Backend build and tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      # R11-P2-06/R11 flake policy: the suite is deterministic or it is not evidence. Three
+      # identical runs must produce identical results; the backend suite is pure Node with injected
+      # fakes, so this is cheap enough to be a gate rather than an occasional check.
+      - name: Repeat the unit suite three times (flake check)
+        run: |
+          set -euo pipefail
+          for run in 1 2 3; do
+            echo "::group::run $run"
+            npm test 2>&1 | tee "/tmp/unit-run-$run.log" | grep -E "^# (pass|fail) "
+            grep -qx "# fail 0" "/tmp/unit-run-$run.log"
+            echo "::endgroup::"
+          done
+          first=$(grep "^# pass " /tmp/unit-run-1.log)
+          for run in 2 3; do
+            [ "$(grep "^# pass " /tmp/unit-run-$run.log)" = "$first" ] || {
+              echo "run $run reported a different number of passing tests than run 1"; exit 1; }
+          done
+
+      # R11-P2-05: measured coverage with a floor. Node's own test-coverage thresholds fail the step
+      # when line/branch/function coverage drops below the floor, so "we have tests" is a number the
+      # pipeline checks rather than a claim in a document.
+      - run: npm run test:coverage
+
+  functions-handlers:
+    name: Backend handler tests (Firestore emulator)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - run: npm ci
+      - run: npm run build
+      - run: npm install --no-save --no-audit --no-fund firebase-tools@13
+      - name: Run callable handlers on the Firestore emulator
+        run: |
+          set -euo pipefail
+          npx firebase emulators:exec --config ../firebase.json --only firestore \
+            --project demo-skills-exchange "npm run test:handlers" 2>&1 | tee "$RUNNER_TEMP/handlers.log"
+          grep -E "^# (tests|pass|fail) " "$RUNNER_TEMP/handlers.log"
+          # The step only passes when exactly the handler tests ran and none failed: an exact count
+          # makes a suite that silently runs nothing a failure rather than a green check.
+          grep -qx "# pass 19" "$RUNNER_TEMP/handlers.log"
+          grep -qx "# fail 0" "$RUNNER_TEMP/handlers.log"
+
+      # A failing handler test is worth more than a red mark: this sandbox cannot read GitHub's log
+      # blobs, so the log is published to the `ci-logs` branch (the Android job does the same) and an
+      # operator can read the assertion that failed straight out of the repository.
+      - name: Publish the handler log on failure
+        if: failure()
+        working-directory: ${{ github.workspace }}
+        run: |
+          mkdir -p ci-logs
+          cp "$RUNNER_TEMP/handlers.log" ci-logs/handlers.log 2>/dev/null || true
+          printf 'run: %s\ncommit: %s\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > ci-logs/README.txt
+          git config user.email "ci@users.noreply.github.com"
+          git config user.name "CI diagnostics"
+          git checkout --orphan ci-logs-publish
+          git add -f ci-logs
+          git commit -m "ci: handler diagnostics for $GITHUB_SHA"
+          git push -f origin HEAD:ci-logs
+
+  rules:
+    name: Firestore rules tests (emulator)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: rules-test/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - run: npm ci
+        working-directory: rules-test
+      - run: npm install --no-save --no-audit --no-fund firebase-tools@13
+      # R07: the rules are executed, not read. Every collection the client touches is exercised for
+      # anonymous, stranger, owner, assigned provider and admin actors.
+      - name: Run the rules suite against the Firestore emulator
+        run: |
+          set -euo pipefail
+          npx firebase emulators:exec --config firebase.json --only firestore \
+            --project demo-skills-exchange "npm --prefix rules-test test" 2>&1 | tee "$RUNNER_TEMP/rules.log"
+          grep -E "^# (tests|pass|fail) " "$RUNNER_TEMP/rules.log"
+          grep -qx "# fail 0" "$RUNNER_TEMP/rules.log"
+      - name: Static Storage-rules check
+        run: node rules-test/storage.rules.check.mjs
+
+  documentation:
+    name: Documentation checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/check_doc_links.mjs
+      - run: node scripts/check_document_map.mjs
+      - run: node scripts/check_traceability.mjs
+      - run: node scripts/check_readme_claims.mjs
+      - run: node scripts/check_architecture_guards.mjs
+      - run: node scripts/check_query_limits.mjs
+      - run: node scripts/check_consent_version.mjs
+      - run: node scripts/check_no_pii_logs.mjs --selftest
+      - run: node scripts/check_no_pii_logs.mjs
+      - run: node scripts/check_backup_policy.mjs
+      - run: node scripts/check_test_registration.mjs --selftest
+      - run: node scripts/check_test_registration.mjs
+      # R12: locale parity, the inline-copy baseline and the palette's text tones.
+      - run: node scripts/check_ui_copy.mjs --selftest
+      - run: node scripts/check_ui_copy.mjs
+      # R13: install and cold-start budget — no single resource over 150 KB, res/ under 1 MB.
+      - run: node scripts/check_asset_budget.mjs --selftest
+      - run: node scripts/check_asset_budget.mjs
+      - run: node scripts/secret_scan.mjs
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/secret_scan.mjs

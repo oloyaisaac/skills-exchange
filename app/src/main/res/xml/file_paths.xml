@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  R09-P2-03: the only paths a FileProvider may hand out.
+  Exports live in the app's private cache (`cacheDir/exports`); nothing else is exposed, so a URI
+  grant can never reach the database, preferences or uploaded photographs.
+-->
+<paths>
+    <cache-path name="exports" path="exports/" />
+</paths>

@@ -1,0 +1,117 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
+    // REM-014: job-photo authorization is derived from the Firestore job document, never from
+    // client-supplied object metadata. `jobOwnerId`/`assignedProviderId` metadata could be set
+    // to any value by the uploader, which let a stranger write into another job's folder.
+    function jobDoc(jobId) {
+      return firestore.get(/databases/(default)/documents/jobs/$(jobId)).data;
+    }
+
+    function isJobParticipant(jobId) {
+      return isAuthenticated() && (
+        jobDoc(jobId).postedByUid == request.auth.uid ||
+        jobDoc(jobId).assignedProviderUid == request.auth.uid
+      );
+    }
+
+    // --- SEC-003: PRIVATE KYC & IDENTITY DOCUMENT STORAGE ---
+    // Strict isolation: National IDs, guarantor documents, selfie verifications, and qualification certificates
+    // are accessible ONLY by the document owner and authorized administrators.
+    match /users/{userId}/kyc/{allPaths=**} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) || isAdmin();
+    }
+
+    match /users/{userId}/guarantors/{allPaths=**} {
+      // REG-002: third-party NIN images and verification photographs stay private —
+      // owner and admins only, with no public read and no signed URLs issued to clients.
+      // Uploads are constrained to reasonable image sizes; reviewers fetch them through
+      // the admin-only Cloud Function.
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isAdmin() || (
+        isOwner(userId)
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*')
+      );
+    }
+
+    match /users/{userId}/certificates/{allPaths=**} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) || isAdmin();
+    }
+
+    match /users/{userId}/verification/{allPaths=**} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) || isAdmin();
+    }
+
+    // Private documents bucket prefix
+    match /private_docs/{userId}/{allPaths=**} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) || isAdmin();
+    }
+
+    // --- SEC-008 / REM-014: JOB BEFORE/AFTER PHOTOS & RECEIPTS ---
+    // Only the job's owner, its assigned provider (by Firebase UID on the job document) and
+    // admins may read or upload evidence. Existing objects are immutable: updates (overwrites)
+    // are denied so submitted proof cannot be swapped after the fact. Deletion is admin-only.
+    match /jobs/{jobId}/{allPaths=**} {
+      allow read: if isAuthenticated() && (isAdmin() || isJobParticipant(jobId));
+      allow create: if isAuthenticated() && (
+        isAdmin() || (
+          isJobParticipant(jobId)
+          && request.resource.size < 10 * 1024 * 1024
+          && request.resource.contentType.matches('image/.*')
+        )
+      );
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // --- PUBLIC ASSETS & AVATARS ---
+    // Public assets (app icons, branding): publicly readable, but write operations are restricted
+    // to administrators to prevent arbitrary public file hosting or asset tampering.
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // R07-P2-07: avatars were world-readable, so anyone holding a URL could retrieve a user's
+    // photo. Every surface that shows an avatar is behind sign-in, so reads now require a session.
+    match /avatars/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || (
+        isOwner(userId)
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*')
+      );
+    }
+
+    // DEPLOY-01 Storage avatar-gap cover: same avatar policy under the per-user
+    // prefix (public read for profile display, admin-or-owner write, owner
+    // uploads constrained to images < 5MB, fail closed otherwise).
+    match /users/{userId}/avatars/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || (
+        isOwner(userId)
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*')
+      );
+    }
+  }
+}

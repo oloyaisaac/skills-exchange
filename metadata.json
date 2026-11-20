@@ -1,0 +1,6 @@
+{
+  "name": "Skills Exchange",
+  "description": "Hyperlocal skills marketplace connecting verified local service providers with nearby residents.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
