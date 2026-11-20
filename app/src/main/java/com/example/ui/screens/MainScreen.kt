@@ -575,11 +575,11 @@ fun MainScreen(
             onReportUser = { report -> viewModel.reportUser(report) },
             // R10-P2-02: the server's answer about the report, shown to the reporter.
             reportMessage = when (val rs = reportState) {
-                is SkillsExchangeViewModel.ReportUiState.Filed -> rs.message
-                is SkillsExchangeViewModel.ReportUiState.Failed -> rs.message
+                is ReportUiState.Filed -> rs.message
+                is ReportUiState.Failed -> rs.message
                 else -> null
             },
-            reportIsError = reportState is SkillsExchangeViewModel.ReportUiState.Failed,
+            reportIsError = reportState is ReportUiState.Failed,
             onDismissReportMessage = { viewModel.resetReportState() },
             isAuthenticated = isAuthenticated,
                 onTriggerAuth = { viewModel.triggerAuthFlow(it) },
