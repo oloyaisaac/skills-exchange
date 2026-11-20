@@ -94,7 +94,11 @@ fun AppNavigationDrawer(
     /** AUDIT-A-ARBITRATE: opens the dispute arbitration console. UI visibility only —
      * the `resolveDispute` callable + firestore.rules remain the real authorizer.
      */
-    onOpenAdminArbitration: () -> Unit = {}
+    onOpenAdminArbitration: () -> Unit = {},
+    /** R10-P2-02: opens the safety desk (report triage). UI visibility only — the
+     * `getReportsQueue` / `resolveReport` callables require the admin claim.
+     */
+    onOpenSafetyDesk: () -> Unit = {}
 ) {
     if (!isOpen) return
 
@@ -520,6 +524,18 @@ fun AppNavigationDrawer(
                             onClick = {
                                 onDismiss()
                                 onOpenAdminArbitration()
+                            }
+                        )
+
+                        // R10-P2-02: the safety desk. Reports used to live only on the
+                        // reporter's phone; this is the operator's view of them.
+                        DrawerMenuItem(
+                            icon = Icons.Outlined.Report,
+                            title = "Safety Desk",
+                            subtitle = "Triage safety, fraud and abuse reports against their SLA",
+                            onClick = {
+                                onDismiss()
+                                onOpenSafetyDesk()
                             }
                         )
 

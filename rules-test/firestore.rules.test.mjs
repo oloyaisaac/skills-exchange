@@ -323,55 +323,31 @@ const submissionPayload = (overrides = {}) => ({
   ...overrides,
 });
 
-test("a guarantor row is filed only with a dated, recorded third-party consent", async () => {
+test("guarantor records are server-written, so a client cannot bypass the duplicate checks", async () => {
   const worker = as(WORKER, freshAuth());
 
-  // One field removed at a time: the consent proof is what the rule is there for. Each denial uses a
-  // fresh document id, so each is a create rather than an update.
-  const missingVersion = guarantorPayload();
-  delete missingVersion.consentVersion;
-  await assertFails(setDoc(doc(worker, "guarantors", "g_no_version"), missingVersion));
+  // R10-P2-04: the duplicate/collusion checks need to see every account's guarantors, which a client
+  // cannot. The callable owns the write; every client write is denied — including one that looks
+  // perfectly valid, which is the point.
+  await assertFails(setDoc(doc(worker, "guarantors", "g_valid"), guarantorPayload()));
+  await assertFails(setDoc(doc(worker, "guarantor_submissions", WORKER), submissionPayload()));
+  await assertFails(setDoc(doc(as(ADMIN, adminAuth()), "guarantors", "g_admin"), guarantorPayload()));
 
-  const missingTimestamp = guarantorPayload();
-  delete missingTimestamp.consentRecordedAt;
-  await assertFails(setDoc(doc(worker, "guarantors", "g_no_time"), missingTimestamp));
+  // The worker may still read their own rows, and nobody else may.
+  await env.withSecurityRulesDisabled(async (context) => {
+    const db = context.firestore();
+    await setDoc(doc(db, "guarantors", "g_seed"), guarantorPayload());
+    await setDoc(doc(db, "guarantor_submissions", WORKER), submissionPayload());
+  });
+  await assertSucceeds(getDoc(doc(worker, "guarantors", "g_seed")));
+  await assertFails(getDoc(doc(as(STRANGER, freshAuth()), "guarantors", "g_seed")));
+  await assertSucceeds(getDoc(doc(worker, "guarantor_submissions", WORKER)));
+  await assertFails(getDoc(doc(as(STRANGER, freshAuth()), "guarantor_submissions", WORKER)));
 
-  await assertFails(
-    setDoc(doc(worker, "guarantors", "g_bad_version"), guarantorPayload({ consentVersion: "latest" }))
-  );
-  await assertFails(
-    setDoc(doc(worker, "guarantors", "g_false_consent"), guarantorPayload({ consentProvided: false }))
-  );
-  // The same row with the dated receipt is accepted.
-  await assertSucceeds(setDoc(doc(worker, "guarantors", "g_ok"), guarantorPayload()));
-
-  // The consent proof is immutable after filing, and the reviewer's own fields stay admin-only.
-  await assertFails(
-    updateDoc(doc(worker, "guarantors", "g_ok"), { consentRecordedAt: 1_760_000_009_999 })
-  );
-  await assertFails(updateDoc(doc(worker, "guarantors", "g_ok"), { ninMasked: "CM*********ABC" }));
-});
-
-test("a guarantor submission must name the consent version it was filed under", async () => {
-  const worker = as(WORKER, freshAuth());
-
-  // The denials run first, so each one is a *create* (the document does not exist yet) and the create
-  // rule is what rejects it. Re-ordering these after the success would silently test the update rule.
-  const noVersion = submissionPayload();
-  delete noVersion.consentVersion;
-  await assertFails(setDoc(doc(worker, "guarantor_submissions", WORKER), noVersion));
-  await assertFails(
-    setDoc(doc(worker, "guarantor_submissions", WORKER), submissionPayload({ consentVersion: "v2" }))
-  );
-  await assertFails(
-    setDoc(doc(worker, "guarantor_submissions", WORKER), submissionPayload({ consentRecordedAt: 1 }))
-  );
-  // A submission is never filed for someone else's account.
-  await assertFails(
-    setDoc(doc(as(STRANGER, freshAuth()), "guarantor_submissions", WORKER), submissionPayload())
-  );
-  // The same payload with a dated version and a real receipt timestamp is accepted.
-  await assertSucceeds(setDoc(doc(worker, "guarantor_submissions", WORKER), submissionPayload()));
+  // Nor can a client edit or delete what the server filed.
+  await assertFails(updateDoc(doc(worker, "guarantors", "g_seed"), { ninVerificationStatus: "VERIFIED" }));
+  await assertFails(deleteDoc(doc(worker, "guarantors", "g_seed")));
+  await assertFails(updateDoc(doc(worker, "guarantor_submissions", WORKER), { status: "APPROVED" }));
 });
 
 test("consent receipts are readable by their owner and forgeable by nobody", async () => {
@@ -412,4 +388,71 @@ test("the retention and erasure reports are admin evidence, never client data", 
     await assertFails(setDoc(doc(as(WORKER, freshAuth()), collectionName, "forged"), { forged: true }));
     await assertFails(setDoc(doc(as(ADMIN, adminAuth()), collectionName, "forged"), { forged: true }));
   }
+});
+
+// ------------------------------------------------------- R10 safety, reports and ratings
+
+test("reports are server-written and readable only by the reporter or an operator", async () => {
+  const report = {
+    reportedBy: OWNER,
+    subjectUid: WORKER,
+    subjectName: "Provider Two",
+    jobId: JOB,
+    category: "SAFETY",
+    details: "They would not leave the compound.",
+    priority: "P0",
+    status: "OPEN",
+    createdAt: 1_760_000_000_000,
+    slaDueAt: 1_760_000_003_600,
+  };
+  await env.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), "reports", "r1"), report);
+  });
+
+  await assertSucceeds(getDoc(doc(as(OWNER, freshAuth()), "reports", "r1")));
+  await assertSucceeds(getDoc(doc(as(ADMIN, adminAuth()), "reports", "r1")));
+  await assertFails(getDoc(doc(as(WORKER, freshAuth()), "reports", "r1")));
+  await assertFails(getDoc(doc(as(STRANGER, freshAuth()), "reports", "r1")));
+  await assertFails(getDoc(doc(anon(), "reports", "r1")));
+
+  // Filing and triage are callables; no client may write a report by hand.
+  for (const actor of [as(OWNER, freshAuth()), as(ADMIN, adminAuth())]) {
+    await assertFails(setDoc(doc(actor, "reports", "forged"), report));
+    await assertFails(updateDoc(doc(actor, "reports", "r1"), { status: "DISMISSED" }));
+    await assertFails(deleteDoc(doc(actor, "reports", "r1")));
+  }
+});
+
+test("ratings and the reputation aggregate are server-owned", async () => {
+  await env.withSecurityRulesDisabled(async (context) => {
+    const db = context.firestore();
+    await setDoc(doc(db, "ratings", `${JOB}_${OWNER}`), {
+      jobId: JOB, fromUid: OWNER, toUid: WORKER, stars: 5, review: "Good work", createdAt: 1,
+    });
+    await setDoc(doc(db, "worker_stats", WORKER), { count: 1, sum: 5, average: 5, updatedAt: 1 });
+  });
+
+  // Participants may read the rating they gave or received; a stranger may not.
+  await assertSucceeds(getDoc(doc(as(OWNER, freshAuth()), "ratings", `${JOB}_${OWNER}`)));
+  await assertSucceeds(getDoc(doc(as(WORKER, freshAuth()), "ratings", `${JOB}_${OWNER}`)));
+  await assertFails(getDoc(doc(as(STRANGER, freshAuth()), "ratings", `${JOB}_${OWNER}`)));
+
+  // The aggregate is public to signed-in accounts, and writable by none of them.
+  await assertSucceeds(getDoc(doc(as(STRANGER, freshAuth()), "worker_stats", WORKER)));
+  for (const actor of [as(OWNER, freshAuth()), as(WORKER, freshAuth()), as(ADMIN, adminAuth())]) {
+    await assertFails(setDoc(doc(actor, "worker_stats", WORKER), { count: 999, sum: 4995, average: 5 }));
+    await assertFails(setDoc(doc(actor, "ratings", `${JOB}_${OWNER}`), { stars: 1 }));
+    await assertFails(setDoc(doc(actor, "ratings", "forged"), { jobId: JOB, fromUid: OWNER, toUid: WORKER, stars: 1 }));
+  }
+});
+
+test("guarantor intake audit is operator evidence, never client data", async () => {
+  await env.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), "guarantor_intake_audit", "a1"), {
+      workerUid: WORKER, at: 1, accepted: false, rejectionCodes: "DUPLICATE_GUARANTOR", flags: [],
+    });
+  });
+  await assertSucceeds(getDoc(doc(as(ADMIN, adminAuth()), "guarantor_intake_audit", "a1")));
+  await assertFails(getDoc(doc(as(WORKER, freshAuth()), "guarantor_intake_audit", "a1")));
+  await assertFails(setDoc(doc(as(WORKER, freshAuth()), "guarantor_intake_audit", "forged"), { accepted: true }));
 });

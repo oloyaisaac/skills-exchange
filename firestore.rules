@@ -123,38 +123,19 @@ service cloud.firestore {
       allow read: if isAdmin() ||
         (isAuthenticated() && resource.data.workerKycId == request.auth.uid);
 
-      // R09-P2-02: a guarantor row must carry the dated third-party consent it was filed under, not
-      // just a boolean. `consentVersion` is the policy revision the worker recorded, and
-      // `consentRecordedAt` the server time of the receipt — both written from the callable's answer.
-      allow create: if isAuthenticated()
-        && request.resource.data.workerKycId == request.auth.uid
-        && request.resource.data.fullName is string
-        && request.resource.data.fullName.size() >= 3
-        && request.resource.data.nationalIdNumber is string
-        && request.resource.data.nationalIdNumber.size() >= 5
-        && request.resource.data.phoneNumber is string
-        && request.resource.data.consentProvided == true
-        && request.resource.data.consentVersion is string
-        && request.resource.data.consentVersion.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-        && request.resource.data.consentRecordedAt is int
-        && request.resource.data.consentRecordedAt > 1700000000000
-        && isPrivatePhotoPath(request.resource.data.guarantorPhotoStoragePath, request.auth.uid)
-        && isPrivatePhotoPath(request.resource.data.workerWithGuarantorPhotoStoragePath, request.auth.uid)
-        && request.resource.data.ninVerificationStatus == 'PENDING';
+      // R10-P2-04: guarantor records are written by `submitGuarantorVerification` only.
+      //
+      // They used to be written straight from the device, so the duplicate checks could not exist:
+      // a client cannot see the other accounts that already list the same person. The callable holds
+      // the whole picture (salted NIN fingerprints, phone keys, submission velocity) and refuses
+      // duplicates before anything is stored; this rule makes that the only path. The consent receipt
+      // is verified there too, against `users/{uid}/guarantor_consents/{version}`.
+      allow create: if false;
 
-      allow update: if isAdmin() || (
-        isAuthenticated()
-        && resource.data.workerKycId == request.auth.uid
-        && request.resource.data.workerKycId == resource.data.workerKycId
-        && request.resource.data.consentProvided == true
-        && request.resource.data.consentVersion == resource.data.consentVersion
-        && request.resource.data.consentRecordedAt == resource.data.consentRecordedAt
-        && !request.resource.data.diff(resource.data).affectedKeys()
-             .hasAny(['ninVerificationStatus', 'verifiedAt', 'verifiedBy', 'ninMasked', 'ninFingerprintHash', 'ninDuplicateOfWorker'])
-      );
+      allow update: if false;
 
-      allow delete: if isAdmin() ||
-        (isAuthenticated() && resource.data.workerKycId == request.auth.uid);
+      // Deletion is account erasure (Admin SDK) or an operator removing a fraudulent row.
+      allow delete: if false;
     }
 
     // REG-002: One verification submission per worker (the two guarantors + the group
@@ -168,26 +149,14 @@ service cloud.firestore {
       // the third-party consent through `recordGuarantorConsent` first (which writes the receipt in
       // `users/{uid}/guarantor_consents/{version}`), and the submission must name that policy version.
       // A missing or malformed version, or a timestamp that is not a plausible epoch millis, is denied.
-      allow create: if isDocOwner(workerId)
-        && request.resource.data.workerId == workerId
-        && request.resource.data.guarantorCount == 2
-        && request.resource.data.consentConfirmed == true
-        && request.resource.data.consentVersion is string
-        && request.resource.data.consentVersion.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-        && request.resource.data.consentRecordedAt is int
-        && request.resource.data.consentRecordedAt > 1700000000000
-        && request.resource.data.status == 'PENDING_REVIEW'
-        && isPrivatePhotoPath(request.resource.data.groupPhotoStoragePath, request.auth.uid);
+      // R10-P2-04: filed by `submitGuarantorVerification` only (see the note on /guarantors).
+      allow create: if false;
 
       // Re-submitting after a "changes required" decision: delete then re-create, so the
       // status always returns to PENDING_REVIEW through the create rule above.
-      allow update: if isAdmin() || (
-        isDocOwner(workerId)
-        && !request.resource.data.diff(resource.data).affectedKeys()
-             .hasAny(['status', 'reviewFeedback', 'reviewedAt', 'reviewedBy', 'ninVerificationStatus'])
-      );
+      allow update: if false;
 
-      allow delete: if isAdmin() || (isDocOwner(workerId) && hasFreshAuth());
+      allow delete: if false;
     }
 
     // SEC-006 / AUDIT-W-QUOTE: Rules for job_quotes collection
@@ -224,6 +193,40 @@ service cloud.firestore {
     }
 
     // SEC-006: Rules for disputes collection
+    // R10-P2-02: reports live on the server. Filing goes through `fileReport` (which validates the
+    // category, the size, the SLA and the priority ladder); triage is admin-only through
+    // `resolveReport`. The reporter may read the outcome of their own report; nobody may rewrite the
+    // history of a triaged report from a client.
+    match /reports/{reportId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() || resource.data.reportedBy == request.auth.uid
+      );
+      allow write: if false;
+    }
+
+    // R10-P2-06: one rating per job per direction, written by `submitRating`. A client can read the
+    // rating it gave or received, and nothing else — and it can write none of it.
+    match /ratings/{ratingId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() || resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid
+      );
+      allow write: if false;
+    }
+
+    // R10-P2-06: the reputation aggregate is derived from the ratings above. Everybody may read it
+    // (it is what the profile shows); nobody may write it.
+    match /worker_stats/{workerUid} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // R10-P2-04: intake refusals are audit evidence — who filed, when, and which codes refused it.
+    // Counts and codes only, so an operator can read them and the reporter cannot.
+    match /guarantor_intake_audit/{auditId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     match /disputes/{disputeId} {
       allow read: if isAuthenticated() &&
         (resource.data.reportedBy == request.auth.uid || resource.data.reportedUserId == request.auth.uid || isAdmin());

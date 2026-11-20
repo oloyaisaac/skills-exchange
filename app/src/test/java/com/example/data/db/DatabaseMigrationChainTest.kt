@@ -107,10 +107,10 @@ class DatabaseMigrationChainTest {
     }
 
     @Test
-    fun `every consecutive version from 11 to 28 has exactly one migration`() {
+    fun `every consecutive version from 11 to 29 has exactly one migration`() {
         val pairs = AppDatabase.ALL_MIGRATIONS.map { it.startVersion to it.endVersion }
         assertEquals(
-            (11 until 28).map { it to it + 1 },
+            (11 until 29).map { it to it + 1 },
             pairs
         )
     }
@@ -125,7 +125,7 @@ class DatabaseMigrationChainTest {
 
         // Opening the database is the validation: Room compares the migrated schema with the
         // entity definitions and throws if they disagree.
-        assertEquals(28, db!!.openHelper.writableDatabase.version)
+        assertEquals(29, db!!.openHelper.writableDatabase.version)
 
         val job = runBlocking { db!!.jobPostDao().getJobById("job_v11") }
         assertNotNull("the pre-migration job row must survive", job)
@@ -215,13 +215,50 @@ class DatabaseMigrationChainTest {
             .allowMainThreadQueries()
             .build()
 
-        assertEquals(28, db!!.openHelper.writableDatabase.version)
+        assertEquals(29, db!!.openHelper.writableDatabase.version)
         val entries = runBlocking { db!!.walletLedgerDao().getEntriesForWorker("worker_1") }
         assertEquals(1, entries.size)
         assertEquals(10_050L, entries.single().amountMinor)
         val withdrawals = runBlocking { db!!.walletWithdrawalDao().getWithdrawalsForWorker("worker_1") }
         assertEquals(1, withdrawals.size)
         assertEquals(25_025L, withdrawals.single().amountMinor)
+    }
+
+    @Test
+    fun `migration 28 to 29 clears the shared default door PIN and leaves real ones alone`() {
+        // R10-P2-01: the migration that created `job_posts` gave `doorstepPin` the literal default
+        // '4829'. A row written through it therefore holds a PIN anyone reading this repository knows.
+        // The step must clear exactly those rows and touch nothing else.
+        val file = context.getDatabasePath(dbName)
+        file.parentFile?.mkdirs()
+        val raw = SQLiteDatabase.openOrCreateDatabase(file, null)
+        installSchema(raw, version = 28)
+        raw.version = 28
+        fun insertJob(id: String, pin: String) {
+            raw.execSQL(
+                "INSERT INTO job_posts (id, title, category, description, postedByResident, district, " +
+                    "budget, urgency, status, assignedProviderId, assignedProviderName, createdTimestamp, " +
+                    "estimatedHours, materialsCost, safetyFee, escrowStatus, doorstepPin) VALUES (" +
+                    "'$id', 'Fix the tap', 'PLUMBING', 'Kitchen tap drips', 'Robert K.', 'Kampala', " +
+                    "50000.0, 'NORMAL', 'POSTED', NULL, NULL, 1700000000000, 2.0, 0.0, 0.0, " +
+                    "'FUNDS_LOCKED_IN_ESCROW', '$pin')"
+            )
+        }
+        insertJob("job_default_pin", "4829")
+        insertJob("job_real_pin", "7319")
+        raw.close()
+
+        db = Room.databaseBuilder(context, AppDatabase::class.java, dbName)
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+
+        assertEquals(29, db!!.openHelper.writableDatabase.version)
+        val cleared = runBlocking { db!!.jobPostDao().getJobById("job_default_pin") }
+        assertNotNull("the row itself must survive", cleared)
+        assertEquals("the shared default PIN must be gone", "", cleared!!.doorstepPin)
+        val kept = runBlocking { db!!.jobPostDao().getJobById("job_real_pin") }
+        assertEquals("a job's own PIN is not the migration's business", "7319", kept!!.doorstepPin)
     }
 
     /** Creates every table/index of an exported schema version, straight from `app/schemas`. */

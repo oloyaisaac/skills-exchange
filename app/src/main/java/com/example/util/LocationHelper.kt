@@ -62,16 +62,10 @@ object LocationHelper {
         val isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
 
         if (!isGpsEnabled && !isNetworkEnabled) {
-            // Still provide a fallback neighborhood for demo if device sensors are disabled
-            onLocationReceived(
-                DeviceLocationResult(
-                    latitude = 0.3476,
-                    longitude = 32.5825,
-                    neighborhoodName = "Sunnyside District",
-                    accuracy = 15f,
-                    isRealGps = false
-                )
-            )
+            // R10-P2-05: no invented fix. The old fallback returned Kampala city-centre coordinates
+            // with a district name and a plausible accuracy, so an SOS could carry a location the
+            // phone never had. Unknown location is reported as unknown.
+            onError("Location services are off, so your position is unknown. Turn them on, or type your district.")
             return
         }
 
@@ -126,16 +120,8 @@ object LocationHelper {
         try {
             locationManager.requestSingleUpdate(provider, listener, Looper.getMainLooper())
         } catch (e: Exception) {
-            // Fallback gracefully
-            onLocationReceived(
-                DeviceLocationResult(
-                    latitude = 0.3476,
-                    longitude = 32.5825,
-                    neighborhoodName = "Sunnyside District",
-                    accuracy = 10f,
-                    isRealGps = false
-                )
-            )
+            // R10-P2-05: a failed fix is a failure, not a pair of made-up coordinates.
+            onError("Could not read your position. Type your district instead.")
         }
     }
 

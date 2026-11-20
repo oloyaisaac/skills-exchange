@@ -434,6 +434,181 @@ class FirebaseService(private val context: Context? = null) {
     }
 
     /**
+     * R10-P2-04: file the guarantor submission through the server.
+     *
+     * The records are no longer written from this device: uniqueness (the same person cannot guarantee
+     * two accounts, a worker cannot guarantee themselves) can only be checked by an actor that sees
+     * every submission. Photographs are uploaded first, to this account's private prefix; the
+     * callable receives their paths and writes the rows, including the consent receipt it verifies
+     * against `users/{uid}/guarantor_consents/{version}`.
+     *
+     * Fail closed: a rejection carries the server's own sentence, and a network failure is reported as
+     * a failure — never as a filed submission.
+     */
+    suspend fun submitGuarantorVerification(
+        guarantors: List<GuarantorEntity>,
+        consentVersion: String,
+        groupPhotoStoragePath: String
+    ): GuarantorSubmissionOutcome {
+        val callable = "submitGuarantorVerification"
+        if (guarantors.size != GuarantorValidators.REQUIRED_GUARANTOR_COUNT) {
+            return GuarantorSubmissionOutcome.Rejected("Two guarantors are required.")
+        }
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val payload = guarantors.map { guarantor ->
+                mapOf(
+                    "id" to guarantor.id,
+                    "fullName" to guarantor.fullName.trim(),
+                    "nationalIdNumber" to guarantor.nationalIdNumber.trim(),
+                    "phoneNumber" to guarantor.phoneNumber.trim(),
+                    "relationship" to guarantor.relationship.trim(),
+                    "district" to guarantor.district.trim(),
+                    "guarantorPhotoStoragePath" to guarantor.guarantorPhotoStoragePath,
+                    "workerWithGuarantorPhotoStoragePath" to guarantor.workerWithGuarantorPhotoStoragePath,
+                    "consentProvided" to guarantor.consentProvided
+                )
+            }
+            val result = functions.getHttpsCallable(callable)
+                .call(
+                    CallableContracts.payload(
+                        callable,
+                        "guarantors" to payload,
+                        "consentVersion" to consentVersion,
+                        "groupPhotoStoragePath" to groupPhotoStoragePath
+                    )
+                )
+                .await()
+            val data = result.data as? Map<*, *>
+            GuarantorSubmissionOutcome.Filed(
+                status = data?.get("status") as? String ?: "PENDING_REVIEW",
+                flags = (data?.get("flags") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+            )
+        } catch (e: FirebaseFunctionsException) {
+            val serverMessage = e.message?.takeIf { it.isNotBlank() }
+            GuarantorSubmissionOutcome.Rejected(
+                serverMessage ?: "We could not file your guarantors. Check the details and try again."
+            )
+        } catch (e: Exception) {
+            Log.w("FirebaseService", "$callable failed: ${e.javaClass.simpleName}")
+            GuarantorSubmissionOutcome.Rejected(
+                "We could not reach the server, so nothing was submitted. Check your connection and try again."
+            )
+        }
+    }
+
+    /**
+     * R10-P2-02: file a report on the server, where an operator can see it.
+     *
+     * Returns the server's own acknowledgement (priority and response target) — the confirmation the
+     * UI shows, rather than a local "thanks" for something no human will ever read.
+     */
+    suspend fun fileReport(
+        subjectUid: String,
+        subjectName: String,
+        jobId: String,
+        category: String,
+        details: String
+    ): ReportSubmissionOutcome {
+        val callable = "fileReport"
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val result = functions.getHttpsCallable(callable)
+                .call(
+                    CallableContracts.payload(
+                        callable,
+                        "subjectUid" to subjectUid,
+                        "subjectName" to subjectName,
+                        "jobId" to jobId,
+                        "category" to category,
+                        "details" to details
+                    )
+                )
+                .await()
+            val data = result.data as? Map<*, *>
+            ReportSubmissionOutcome.Filed(
+                reportId = data?.get("id") as? String ?: "",
+                priority = data?.get("priority") as? String ?: "",
+                message = data?.get("message") as? String
+                    ?: "Report received. An operator will review it."
+            )
+        } catch (e: FirebaseFunctionsException) {
+            ReportSubmissionOutcome.Rejected(
+                e.message?.takeIf { it.isNotBlank() }
+                    ?: "We could not file that report. Check the details and try again."
+            )
+        } catch (e: Exception) {
+            Log.w("FirebaseService", "$callable failed: ${e.javaClass.simpleName}")
+            ReportSubmissionOutcome.Rejected(
+                "We could not reach the server, so the report was not filed."
+            )
+        }
+    }
+
+    /**
+     * R10-P2-06: record a rating on the server.
+     *
+     * One per job per direction, only after completion, only between the two participants — all
+     * decided server-side from the stored job. The device keeps no authority over the stars.
+     */
+    suspend fun submitRating(jobId: String, subjectUid: String, stars: Int, review: String): RatingSubmissionOutcome {
+        val callable = "submitRating"
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val result = functions.getHttpsCallable(callable)
+                .call(
+                    CallableContracts.payload(
+                        callable,
+                        "jobId" to jobId,
+                        "subjectUid" to subjectUid,
+                        "stars" to stars,
+                        "review" to review
+                    )
+                )
+                .await()
+            val data = result.data as? Map<*, *>
+            RatingSubmissionOutcome.Recorded((data?.get("average") as? Number)?.toDouble() ?: 0.0)
+        } catch (e: FirebaseFunctionsException) {
+            RatingSubmissionOutcome.Rejected(
+                e.message?.takeIf { it.isNotBlank() } ?: "That rating could not be recorded."
+            )
+        } catch (e: Exception) {
+            Log.w("FirebaseService", "$callable failed: ${e.javaClass.simpleName}")
+            RatingSubmissionOutcome.Rejected("We could not reach the server, so your rating was not recorded.")
+        }
+    }
+
+    /**
+     * R10-P2-03: ask the server what actually happened to an emergency alert.
+     *
+     * The sentence is composed server-side from the dispatch record, so the app cannot claim a
+     * delivery that did not happen.
+     */
+    suspend fun fetchSosDispatchStatus(incidentId: String): SosDispatchInfo? {
+        val callable = "getSosDispatchStatus"
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val result = functions.getHttpsCallable(callable)
+                .call(CallableContracts.payload(callable, "incidentId" to incidentId))
+                .await()
+            val data = result.data as? Map<*, *> ?: return null
+            SosDispatchInfo(
+                state = data["state"] as? String ?: "UNKNOWN",
+                message = data["message"] as? String ?: "",
+                chatMessage = data["chatMessage"] as? String ?: "",
+                adviseDirectCall = data["adviseDirectCall"] == true
+            )
+        } catch (e: FirebaseFunctionsException) {
+            if (e.code == FirebaseFunctionsException.Code.NOT_FOUND) return null
+            Log.w("FirebaseService", "$callable failed: ${e.javaClass.simpleName}")
+            null
+        } catch (e: Exception) {
+            Log.w("FirebaseService", "$callable failed: ${e.javaClass.simpleName}")
+            null
+        }
+    }
+
+    /**
      * R06-P2-01 / R06-P2-02: ask the server to purge this account's Firestore records **and**
      * Cloud Storage objects, in that order, before anything irreversible happens.
      *
@@ -1421,6 +1596,102 @@ class FirebaseService(private val context: Context? = null) {
             data["success"] as? Boolean ?: false
         } catch (e: Exception) {
             false
+        }
+    }
+
+    /**
+     * R10-P2-02/P2-07: the safety-desk queue.
+     *
+     * Admin-gated server-side (`getReportsQueue`). Rows carry the server-decided priority and the
+     * response target; the client never computes either. An empty list is returned on failure — an
+     * empty queue is indistinguishable from an unreadable one, so the console says "could not load"
+     * from [fetchSafetyMetrics] being null, never from this returning nothing.
+     */
+    suspend fun getReportsQueue(status: String? = null): List<Map<String, Any>> {
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val result = functions
+                .getHttpsCallable("getReportsQueue")
+                .call(CallableContracts.payload("getReportsQueue", "status" to status))
+                .await()
+            @Suppress("UNCHECKED_CAST")
+            val data = result.data as? Map<String, Any> ?: emptyMap()
+            data["reports"] as? List<Map<String, Any>> ?: emptyList()
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "getReportsQueue failed: ${e.message}")
+            emptyList()
+        }
+    }
+
+    /**
+     * R10-P2-02: record a triage decision on a report.
+     *
+     * Returns the server's own sentence, or a refusal sentence when the callable declines. Never
+     * returns a generic success: the console shows exactly what the server said.
+     */
+    suspend fun resolveReport(
+        reportId: String,
+        status: String,
+        outcome: String,
+        notes: String = ""
+    ): ReportResolutionOutcome {
+        // A decision the server does not know is refused here: the operator is told nothing was sent,
+        // rather than being shown a success for a write that never happened.
+        if (!ReportCategories.isKnownDecision(status)) {
+            return ReportResolutionOutcome.Rejected(
+                "Unknown decision '" + status + "' — nothing was sent."
+            )
+        }
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val result = functions
+                .getHttpsCallable("resolveReport")
+                .call(
+                    CallableContracts.payload(
+                        "resolveReport",
+                        "reportId" to reportId,
+                        "status" to status,
+                        // The server's field names: `outcome` is what an auditor reads, `notes` is
+                        // the operator's own commentary.
+                        "outcome" to outcome,
+                        "notes" to notes
+                    )
+                )
+                .await()
+            @Suppress("UNCHECKED_CAST")
+            val data = result.data as? Map<String, Any> ?: emptyMap()
+            // The sentence is the server's; with no sentence nothing is claimed beyond the status.
+            ReportResolutionOutcome.Recorded(
+                data["message"] as? String
+                    ?: ("Report is now " + ((data["status"] as? String) ?: status) + ".")
+            )
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "resolveReport failed: ${e.message}")
+            ReportResolutionOutcome.Rejected(
+                e.message ?: "The report could not be updated."
+            )
+        }
+    }
+
+    /**
+     * R10-P2-07: the trust-and-safety dashboard line — open reports, breached SLAs, oldest open.
+     *
+     * Null means "could not read", which the console renders as unknown rather than as a healthy
+     * zero. A metrics surface that lies about an empty desk is worse than one that admits it failed.
+     */
+    suspend fun fetchSafetyMetrics(): String? {
+        return try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            val result = functions
+                .getHttpsCallable("getSafetyMetrics")
+                .call(CallableContracts.payload("getSafetyMetrics"))
+                .await()
+            @Suppress("UNCHECKED_CAST")
+            val data = result.data as? Map<String, Any> ?: return null
+            data["summary"] as? String
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "getSafetyMetrics failed: ${e.message}")
+            null
         }
     }
 

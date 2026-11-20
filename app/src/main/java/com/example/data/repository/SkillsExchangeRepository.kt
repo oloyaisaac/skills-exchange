@@ -7,7 +7,14 @@ import android.net.Uri
 import com.example.data.db.*
 import com.example.data.remote.DoorstepPinResult
 import com.example.data.remote.DoorstepPinRules
+import com.example.data.remote.ConsentVersions
 import com.example.data.remote.FirebaseService
+import com.example.data.remote.GuarantorSubmissionOutcome
+import com.example.data.remote.RatingSubmissionOutcome
+import com.example.data.remote.ReportCategories
+import com.example.data.remote.ReportResolutionOutcome
+import com.example.data.remote.ReportSubmissionOutcome
+import com.example.data.remote.SosDispatchInfo
 import com.example.data.remote.ServerCashoutResult
 import com.example.data.remote.ServerRefundStatus
 import com.example.data.remote.ServerWalletService
@@ -249,19 +256,26 @@ class SkillsExchangeRepository(
         db.guarantorDao().deleteGuarantorsForWorker(workerId)
         db.guarantorDao().insertGuarantors(uploaded)
 
-        // File for admin review, then mirror the outcome locally: SUBMITTED is only recorded
-        // once the remote copy exists, so the state never claims more than admins can see.
-        val filed = firebaseService.submitGuarantorVerification(workerId, uploaded, groupPhotoPath)
+        // R10-P2-04: file through the server, which owns the uniqueness checks (duplicate NIN,
+        // duplicate phone, self-guaranteeing, submission velocity) and verifies the consent receipt.
+        // A refusal carries the server's own sentence, so the worker learns *why* rather than seeing
+        // a generic failure for a duplicate they cannot see.
+        val outcome = firebaseService.submitGuarantorVerification(
+            guarantors = uploaded,
+            consentVersion = ConsentVersions.GUARANTOR_VERSION,
+            groupPhotoStoragePath = groupPhotoPath
+        )
+        val filed = outcome is GuarantorSubmissionOutcome.Filed
         db.workerKycDao().updateGuarantorStep(
             userId = workerId,
             guarantorStatus = if (filed) "SUBMITTED" else "DRAFT",
             groupPhotoStoragePath = groupPhotoPath,
             submittedAt = if (filed) now else 0L
         )
-        return if (filed) {
-            Result.success(Unit)
-        } else {
-            Result.failure(GuarantorSubmissionException(GUARANTOR_SUBMIT_MESSAGE))
+        return when (outcome) {
+            is GuarantorSubmissionOutcome.Filed -> Result.success(Unit)
+            is GuarantorSubmissionOutcome.Rejected ->
+                Result.failure(GuarantorSubmissionException(outcome.message.ifBlank { GUARANTOR_SUBMIT_MESSAGE }))
         }
     }
 
@@ -1118,6 +1132,34 @@ class SkillsExchangeRepository(
     suspend fun setWorkerActivation(userId: String, activate: Boolean): Boolean {
         return firebaseService.setWorkerActivationStatus(userId, activate)
     }
+
+    // ==================== R10: Safety Desk (reports triage) ====================
+
+    /** R10-P2-02/P2-07: the safety-desk queue, admin-gated on the server. */
+    suspend fun getReportsQueue(status: String? = null): List<Map<String, Any>> {
+        return firebaseService.getReportsQueue(status)
+    }
+
+    /** R10-P2-02: record a triage decision; the server's sentence comes back verbatim. */
+    suspend fun resolveReport(
+        reportId: String,
+        status: String,
+        outcome: String,
+        notes: String = ""
+    ): ReportResolutionOutcome {
+        if (reportId.isBlank()) {
+            return ReportResolutionOutcome.Rejected("No report selected — nothing was sent.")
+        }
+        if (ReportCategories.closesReport(status) && outcome.trim().length < 5) {
+            return ReportResolutionOutcome.Rejected(
+                "Closing a report needs an outcome an auditor can read — nothing was sent."
+            )
+        }
+        return firebaseService.resolveReport(reportId, status, outcome, notes)
+    }
+
+    /** R10-P2-07: the desk's metrics line. Null means it could not be read, not that the desk is clear. */
+    suspend fun getSafetyMetrics(): String? = firebaseService.fetchSafetyMetrics()
 
     // ==================== AUDIT-A-ARBITRATE: Dispute Arbitration ====================
 
@@ -2206,7 +2248,10 @@ class SkillsExchangeRepository(
                 jobId = jobId,
                 senderName = "🚨 EMERGENCY SOS",
                 isFromUser = false,
-                message = "🚨 EMERGENCY PANIC BUTTON TRIGGERED! Live GPS location & job telemetry broadcasted to local emergency contacts and platform security.",
+                // R10-P2-03: this used to claim that contacts and security had been alerted before
+                // anything left the phone. The server writes the real outcome and the app reports it.
+                message = "🚨 Emergency SOS raised on this device. Sending your alert to the platform — " +
+                    "the dispatch result will be reported here.",
                 timestampText = "Just now",
                 isSystemNotification = true
             )
@@ -2245,7 +2290,9 @@ class SkillsExchangeRepository(
                         userId = currentUserId,
                         type = "SOS_EVENT",
                         title = "Emergency SOS Triggered",
-                        body = "Your emergency alert has been sent. Help is on the way.",
+                        // R10-P2-03: no promise of rescue before the platform reports a delivery.
+                        body = "Your alert is being sent to the platform. We will tell you whether your " +
+                            "emergency contacts were reached.",
                         jobId = jobId,
                         createdAt = System.currentTimeMillis()
                     )
@@ -2260,7 +2307,47 @@ class SkillsExchangeRepository(
             }
         }
 
-        return SosRaiseResult.Success
+        return SosRaiseResult.Success(incidentId = incident.id)
+    }
+
+    /**
+     * R10-P2-03: record a system line in a job's chat.
+     *
+     * Used for outcomes that must survive the screen that produced them — the dispatch result of an
+     * emergency, for instance. The message is not user-authored (`isFromUser = false`), so it carries
+     * no authorship claim and cannot be mistaken for a participant's words.
+     */
+    suspend fun appendSystemChatMessage(jobId: String, senderName: String, message: String) {
+        if (jobId.isBlank() || message.isBlank()) return
+        db.chatMessageDao().insertMessage(
+            ChatMessageEntity(
+                id = "msg_${System.currentTimeMillis()}_system",
+                jobId = jobId,
+                senderName = senderName,
+                isFromUser = false,
+                message = message,
+                timestampText = "Just now",
+                isSystemNotification = true
+            )
+        )
+        firebaseService.sendChatMessage(
+            jobId = jobId,
+            senderId = "system",
+            senderName = senderName,
+            text = message,
+            isFromUser = false
+        )
+    }
+
+    /**
+     * R10-P2-03: read back what the platform actually did with an emergency alert.
+     *
+     * Returns null when the server has not stored the incident yet (the mirror is still in flight);
+     * the caller polls while the state is pending and then records the sentence it gets.
+     */
+    suspend fun fetchSosDispatch(incidentId: String): SosDispatchInfo? {
+        if (incidentId.isBlank()) return null
+        return firebaseService.fetchSosDispatchStatus(incidentId)
     }
 
     /**
@@ -2427,6 +2514,9 @@ class SkillsExchangeRepository(
         object JobNotFound : RatingResult()
         object NotAuthorized : RatingResult()
         object AlreadyRated : RatingResult()
+
+        /** R10-P2-06: the server refused or could not record it — nothing was stored locally. */
+        data class NotRecorded(val message: String) : RatingResult()
     }
 
     /**
@@ -2446,7 +2536,8 @@ class SkillsExchangeRepository(
      * honest message and tests can assert each failure path without a persisted side effect.
      */
     sealed class SosRaiseResult {
-        object Success : SosRaiseResult()
+        /** R10-P2-03: the incident id lets the caller ask the server what actually happened. */
+        data class Success(val incidentId: String) : SosRaiseResult()
         object NotAuthenticated : SosRaiseResult()
         object JobNotFound : SosRaiseResult()
         object NotAuthorized : SosRaiseResult()
@@ -2496,6 +2587,19 @@ class SkillsExchangeRepository(
         // 5. Duplicate prevention.
         if (db.ratingDao().getRatingFromToJob(actorUid, toUserId, jobId) != null) {
             return RatingResult.AlreadyRated
+        }
+
+        // R10-P2-06: the server records the rating. If it refuses (already rated, job not actually
+        // completed on the server's copy, not a participant) the device does not store a row that
+        // would show a rating nobody else can see.
+        val outcome = firebaseService.submitRating(
+            jobId = jobId,
+            subjectUid = toUserId,
+            stars = rating,
+            review = review
+        )
+        if (outcome is RatingSubmissionOutcome.Rejected) {
+            return RatingResult.NotRecorded(outcome.message)
         }
 
         db.ratingDao().insertRating(
@@ -2724,8 +2828,35 @@ class SkillsExchangeRepository(
 
     fun getReportsForUser(userId: String): Flow<List<ReportEntity>> = db.reportDao().getReportsForUser(userId)
 
-    suspend fun reportUser(report: ReportEntity) {
-        db.reportDao().insertReport(report)
+    /**
+     * R10-P2-02: file a report where an operator can see it.
+     *
+     * The local row used to be the *only* record, so a report filed on one phone was invisible to
+     * every operator and disappeared with a reinstall. The server record is the report; the local row
+     * is a copy for display, written only after the server accepts it.
+     *
+     * The category comes from [ReportEntity.reason], which the report dialog sets to one of the
+     * server's categories; anything unrecognised is filed as OTHER rather than guessed at.
+     */
+    suspend fun reportUser(report: ReportEntity): ReportSubmissionOutcome {
+        val outcome = firebaseService.fileReport(
+            subjectUid = report.reportedUserId,
+            subjectName = report.reportedUserName,
+            // The report dialog is about a person, not a job; the server accepts an empty job id.
+            jobId = "",
+            category = ReportCategories.normalise(report.reason),
+            details = report.description
+        )
+        if (outcome is ReportSubmissionOutcome.Filed) {
+            db.reportDao().insertReport(
+                report.copy(
+                    reason = ReportCategories.normalise(report.reason),
+                    status = "PENDING",
+                    updatedAt = System.currentTimeMillis()
+                )
+            )
+        }
+        return outcome
     }
 
     suspend fun getPendingReports(): List<ReportEntity> {

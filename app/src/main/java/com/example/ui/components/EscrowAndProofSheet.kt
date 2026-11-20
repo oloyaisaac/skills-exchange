@@ -77,7 +77,11 @@ fun EscrowAndProofSheet(
     ratingSubmissionSuccess: Boolean = false,
     ratingSubmissionError: String? = null,
     isClearingSos: Boolean = false,
-    sosClearError: String? = null
+    sosClearError: String? = null,
+    // R10-P2-03: the platform's own account of the alert. Null until the server answers; the banner
+    // above never promises more than this says.
+    sosDispatchMessage: String? = null,
+    sosDispatchAdvisesCall: Boolean = false
 ) {
     // R02-P2-06: identity/PIN surface — block screenshots and recents preview.
     SecureScreen()
@@ -760,7 +764,10 @@ fun EscrowAndProofSheet(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(text = "🛡️ Safety Firewall & Emergency Panic", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Slate800)
                             Text(
-                                text = if (job.isSosTriggered) "🚨 EMERGENCY SOS ACTIVE: Live GPS broadcasted to emergency contacts & security."
+                                // R10-P2-03: was "Live GPS broadcasted to emergency contacts & security",
+                                // which claimed a delivery nobody had confirmed. The dispatch outcome is
+                                // reported by the server and shown below the banner.
+                                text = if (job.isSosTriggered) "🚨 EMERGENCY SOS ACTIVE: your alert is with the platform. The dispatch result appears below once confirmed."
                                 else "Tap panic button if safety risk occurs during physical site visit.",
                                 fontSize = 9.sp,
                                 color = if (job.isSosTriggered) Color.Red else Slate500
@@ -781,6 +788,16 @@ fun EscrowAndProofSheet(
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(text = if (job.isSosTriggered) "STAND DOWN" else "SOS PANIC", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
                         }
+                    }
+                    // R10-P2-03: what the platform actually did, in the server's words.
+                    if (job.isSosTriggered && sosDispatchMessage != null) {
+                        Text(
+                            text = sosDispatchMessage,
+                            fontSize = 10.sp,
+                            fontWeight = if (sosDispatchAdvisesCall) FontWeight.Bold else FontWeight.Normal,
+                            color = if (sosDispatchAdvisesCall) Color.Red else Slate600,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
                     }
                     // H7/SAFE-003: a rejected stand-down (not owner / not signed in) is surfaced
                     // here so the panic banner is never silently stuck with no explanation.

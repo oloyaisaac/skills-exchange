@@ -108,7 +108,8 @@ fun MainScreen(
                     )
                 },
                 onError = {
-                    viewModel.requestGpsDetection("Sunnyside District")
+                    // R10-P2-05: a failed fix is reported as unknown — no district is invented either.
+                    viewModel.requestGpsDetection()
                 }
             )
         } else {
@@ -130,7 +131,8 @@ fun MainScreen(
                     )
                 },
                 onError = {
-                    viewModel.requestGpsDetection("Sunnyside District")
+                    // R10-P2-05: a failed fix is reported as unknown — no district is invented either.
+                    viewModel.requestGpsDetection()
                 }
             )
         } else {
@@ -158,7 +160,8 @@ fun MainScreen(
                     )
                 },
                 onError = {
-                    viewModel.requestGpsDetection("Sunnyside District")
+                    // R10-P2-05: a failed fix is reported as unknown — no district is invented either.
+                    viewModel.requestGpsDetection()
                 }
             )
         } else {
@@ -217,10 +220,34 @@ fun MainScreen(
     var isProfileSettingsSheetOpen by remember { mutableStateOf(false) }
     // AUDIT-A-CONSOLE: first operator surface for the admin verification queue.
     var isAdminQueueOpen by remember { mutableStateOf(false) }
+    // R10-P2-02: safety-desk (report triage) entry.
+    var isSafetyDeskOpen by remember { mutableStateOf(false) }
     // REM-023: no local unlock; the server decides whether this account is an operator.
     val isAdminUnlocked by viewModel.isAdminVerified.collectAsStateWithLifecycle()
     val adminQueue by viewModel.adminVerificationQueue.collectAsStateWithLifecycle()
     val isAdminQueueLoading by viewModel.isAdminQueueLoading.collectAsStateWithLifecycle()
+    // R10-P2-02: the reporter's own outcome, and the safety desk's rows / metrics / last decision.
+    val reportState by viewModel.reportState.collectAsStateWithLifecycle()
+    val adminReportsQueue by viewModel.adminReportsQueue.collectAsStateWithLifecycle()
+    val adminSafetyMetrics by viewModel.adminSafetyMetrics.collectAsStateWithLifecycle()
+    val isAdminReportsLoading by viewModel.isAdminReportsLoading.collectAsStateWithLifecycle()
+    val reportResolutionMessage by viewModel.reportResolutionMessage.collectAsStateWithLifecycle()
+
+    // R10-P2-02 / P2-07: the safety desk. Rows and the metrics line come only from the
+    // admin-gated callables; the sentence after a decision is the server's.
+    SafetyReportQueueSheet(
+        isOpen = isSafetyDeskOpen,
+        queue = adminReportsQueue,
+        metricsLine = adminSafetyMetrics,
+        isLoading = isAdminReportsLoading,
+        decisionMessage = reportResolutionMessage,
+        onRefresh = { viewModel.loadAdminReportsQueue() },
+        onResolve = { reportId, status, outcome ->
+            viewModel.submitReportResolution(reportId, status, outcome)
+        },
+        onDismissDecisionMessage = { viewModel.clearReportResolutionMessage() },
+        onDismiss = { isSafetyDeskOpen = false }
+    )
 
     // AUDIT-A-ARBITRATE: admin dispute arbitration console.
     var isAdminArbitrationOpen by remember { mutableStateOf(false) }
@@ -545,6 +572,14 @@ fun MainScreen(
                 viewModel.setQuickRequestOpen(true)
             },
             onReportUser = { report -> viewModel.reportUser(report) },
+            // R10-P2-02: the server's answer about the report, shown to the reporter.
+            reportMessage = when (val rs = reportState) {
+                is SkillsExchangeViewModel.ReportUiState.Filed -> rs.message
+                is SkillsExchangeViewModel.ReportUiState.Failed -> rs.message
+                else -> null
+            },
+            reportIsError = reportState is SkillsExchangeViewModel.ReportUiState.Failed,
+            onDismissReportMessage = { viewModel.resetReportState() },
             isAuthenticated = isAuthenticated,
                 onTriggerAuth = { viewModel.triggerAuthFlow(it) },
             onDismiss = { viewModel.selectProvider(null) }
@@ -588,6 +623,7 @@ fun MainScreen(
         val disputeState by viewModel.disputeSubmissionState.collectAsStateWithLifecycle()
         val ratingState by viewModel.ratingSubmissionState.collectAsStateWithLifecycle()
         val sosClearState by viewModel.sosClearState.collectAsStateWithLifecycle()
+        val sosDispatchInfo by viewModel.sosDispatch.collectAsStateWithLifecycle()
         // PAY-002: provider-verified payment state published by the trusted backend.
         val momoPaymentState by viewModel.momoPaymentState.collectAsStateWithLifecycle()
         val escrowReleaseState by viewModel.escrowReleaseState.collectAsStateWithLifecycle()
@@ -688,6 +724,9 @@ fun MainScreen(
             ratingSubmissionError = (ratingState as? SkillsExchangeViewModel.RatingSubmissionState.Error)?.message,
             isClearingSos = sosClearState is SkillsExchangeViewModel.SosClearState.Clearing,
             sosClearError = (sosClearState as? SkillsExchangeViewModel.SosClearState.Error)?.message,
+            // R10-P2-03: the dispatch outcome, in the server's words.
+            sosDispatchMessage = sosDispatchInfo?.message,
+            sosDispatchAdvisesCall = sosDispatchInfo?.adviseDirectCall == true,
             onDismiss = {
                 isEscrowSheetOpen = false
                 escrowJobTarget = null
@@ -850,6 +889,8 @@ fun MainScreen(
         onOpenAdminQueue = { isAdminQueueOpen = true },
         // AUDIT-A-ARBITRATE: dispute arbitration console entry.
         onOpenAdminArbitration = { isAdminArbitrationOpen = true },
+        // R10-P2-02: the safety desk.
+        onOpenSafetyDesk = { isSafetyDeskOpen = true },
         onOpenDataBackup = { isDataBackupOpen = true },
         onOpenPrivacyPolicy = { isPrivacyPolicyOpen = true },
         onOpenDeleteAccount = {
