@@ -52,6 +52,28 @@ class MirrorReconciliationTest {
         db.close()
     }
 
+    /** `sos_incidents.jobId` is a real foreign key, so every incident needs a local job row. */
+    private suspend fun job(id: String) = db.jobPostDao().insertJob(
+        com.example.data.db.JobPostEntity(
+            id = id,
+            title = "Job $id",
+            category = "PLUMBING",
+            description = "d",
+            postedByResident = "Resident",
+            district = "Kampala",
+            budget = 10.0,
+            urgency = "NORMAL",
+            status = "IN_PROGRESS",
+            assignedProviderId = null,
+            assignedProviderName = null,
+            estimatedHours = 2.0,
+            materialsCost = 0.0,
+            safetyFee = 0.0,
+            createdTimestamp = System.currentTimeMillis(),
+            postedByUid = "user_1"
+        )
+    )
+
     private fun incident(id: String, jobId: String, mirrored: Boolean = false) =
         SosIncidentEntity(
             id = id,
@@ -68,6 +90,7 @@ class MirrorReconciliationTest {
 
     @Test
     fun `an unmirrored incident is adopted and a successful sync marks it mirrored`() = runBlocking {
+        job("job_a")
         db.sosIncidentDao().insertSosIncident(incident("sos_a", "job_a"))
 
         val report = repository.reconcilePendingMirrors { true }
@@ -84,6 +107,7 @@ class MirrorReconciliationTest {
 
     @Test
     fun `a failed sync keeps the incident local and schedules a retry`() = runBlocking {
+        job("job_b")
         db.sosIncidentDao().insertSosIncident(incident("sos_b", "job_b"))
 
         val report = repository.reconcilePendingMirrors { false }
@@ -101,6 +125,7 @@ class MirrorReconciliationTest {
 
     @Test
     fun `repeated failures hit the retry cap and the action is abandoned`() = runBlocking {
+        job("job_c")
         db.sosIncidentDao().insertSosIncident(incident("sos_c", "job_c"))
 
         // maxRetries is 3 on a new pending action, so the third failed attempt abandons it.
@@ -117,6 +142,7 @@ class MirrorReconciliationTest {
 
     @Test
     fun `a recovered network finishes an abandoned incident on the next pass`() = runBlocking {
+        job("job_d")
         db.sosIncidentDao().insertSosIncident(incident("sos_d", "job_d"))
         repository.reconcilePendingMirrors { false }
         repository.reconcilePendingMirrors { false }
@@ -131,6 +157,7 @@ class MirrorReconciliationTest {
 
     @Test
     fun `already-mirrored incidents are left alone`() = runBlocking {
+        job("job_e")
         db.sosIncidentDao().insertSosIncident(incident("sos_e", "job_e", mirrored = true))
 
         val report = repository.reconcilePendingMirrors { error("must not sync") }

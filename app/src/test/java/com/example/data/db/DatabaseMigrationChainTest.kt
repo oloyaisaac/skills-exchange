@@ -90,6 +90,10 @@ class DatabaseMigrationChainTest {
     private fun readResource(path: String): String =
         javaClass.classLoader!!.getResourceAsStream(path)!!.bufferedReader().use { it.readText() }
 
+    /** The exported Room schema is a TEST ASSET (see `app/build.gradle.kts`), not a classpath file. */
+    private fun readSchemaAsset(path: String): String =
+        context.assets.open(path).bufferedReader().use { it.readText() }
+
     @Test
     fun `every consecutive version from 11 to 28 has exactly one migration`() {
         val pairs = AppDatabase.ALL_MIGRATIONS.map { it.startVersion to it.endVersion }
@@ -210,7 +214,7 @@ class DatabaseMigrationChainTest {
 
     /** Creates every table/index of an exported schema version, straight from `app/schemas`. */
     private fun installSchema(raw: SQLiteDatabase, version: Int) {
-        val json = org.json.JSONObject(readResource("com.example.data.db.AppDatabase/$version.json"))
+        val json = org.json.JSONObject(readSchemaAsset("com.example.data.db.AppDatabase/$version.json"))
         val entities = json.getJSONObject("database").getJSONArray("entities")
         for (index in 0 until entities.length()) {
             val entity = entities.getJSONObject(index)
