@@ -1,17 +1,17 @@
 # REVIEWER IMPLEMENTATION STATE — Prompt 4 (strict one-reviewer-at-a-time)
 
 **Programme:** ASMT-2026-11-19 · **Cycle:** Prompt-4 remediation
-**Updated:** 2026-11-20 · **Branch:** `arena/b2e695fc-skills-exchange`
+**Updated:** 2026-11-20 · **Branch:** `arena/29125468-skills-exchange`
 
 ## Position
 
 | Field | Value |
 |---|---|
 | Total original reviewers | **15** |
-| Current reviewer | **R13 — COMPLETE** (evidence below) |
-| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R11, R12, R13 (13 of 15)** |
-| Reviewers awaiting implementation | R14, R15 |
-| Next reviewer number | **14** |
+| Current reviewer | **R14 — COMPLETE** (evidence below) |
+| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R11, R12, R13, R14 (14 of 15)** |
+| Reviewers awaiting implementation | R15 |
+| Next reviewer number | **15** |
 
 ## R01 — COMPLETE (gate passed)
 
@@ -575,6 +575,44 @@ with no deployment, no device and no profile). One finding was stale; one was wo
 - `REM-059`, `REM-060`, `REM-062`, `REM-063` stay `IN_PROGRESS`; `REM-061` (push over polling) was not
   part of this round's findings and stays `NOT_STARTED`.
 
+## R14 — COMPLETE (gate passed)
+
+Source: `review_results/prompt2/REVIEW_14.md` (verdict **FAIL**, 7 findings, written against `aa4a0bc`).
+Two were largely stale by the time it was implemented; five were live, and the tool the review asked for
+found something the review did not:
+
+- **R14-P2-06 / P2-05 (part)** — **STALE**: R8 and resource shrinking since R07; `predeploy`,
+  `firestore.indexes.json` and `.firebaserc` since R03/R11; `engines.node` already 22.
+- **R14-P2-02** — running lint for the first time found 54 `NewApi` errors: `java.time` on `minSdk` 24.
+
+| Finding | Required correction | Status | Evidence |
+|---|---|---|---|
+| R14-P2-01 | APKs, a device DB and crash logs tracked; no ignore rules | **IMPLEMENTED AND VERIFIED** | Five files deleted (DB with 8 rows, 2 `hs_err_pid`, 2 JFR replays), ignore rules added, `check_repo_hygiene.mjs` gates both with a selftest; 452 → 447 tracked files |
+| R14-P2-02 | No Android/lint gate in CI | **IMPLEMENTED AND VERIFIED** | Lint runs per PR, `check_lint_report.mjs` gates Error/Fatal and stale allowlist entries; first run 56 errors → desugaring fix for 54 `NewApi`, `uses-feature` for telephony, one reasoned allowlist entry |
+| R14-P2-03 | No predeploy, no indexes, no aliases | **MOSTLY STALE + gap closed** | predeploy/indexes/`.firebaserc` already present; `emulators` block added; deploy procedure written. No staging project — stated |
+| R14-P2-04 | Node engine mismatch, SDK majors behind | **IMPLEMENTED AND VERIFIED** | admin 12, functions 6 via `firebase-functions/v1`, rules-test firebase 11 + RUT 4 + grpc override; advisories 1 critical/10 high → 0/0 and 6 high → 0; `npm audit --audit-level=high` gate |
+| R14-P2-05 | Unminified release, placeholder version, implicit signing | **IMPLEMENTED AND VERIFIED** | R8 was already on (stale); `version.properties` with validated formats and env overrides; release without a key fails at configuration time naming the variables |
+| R14-P2-06 | No audit, SBOM or licence inventory | **IMPLEMENTED AND VERIFIED** | `report_dependencies.mjs`: CycloneDX SBOM + licence inventory, 234 production components, copyleft/unknown refused, OR/AND semantics and LICENSE-file fallback; SBOM uploaded per run |
+| R14-P2-07 | No runbooks, no rollback drill | **PARTIAL: written, not exercised** | `docs/ops/DEPLOY_AND_ROLLBACK.md` documents deploy, ordering, promotion, rollback caveats and a 5-step drill. **The drill has never been run**; no staging project exists |
+
+### Verification evidence (executed)
+
+- CI **8/8** on `424ce6b`: Backend build and tests (318/318), Backend handler tests (emulator),
+  Firestore rules (emulator), **Supply chain** (hygiene + SBOM + licence gate + rules-test audit),
+  Documentation checks, Secret scan, Compile and unit tests (494/494 **and** the lint gate), Release
+  build with R8.
+- Lint: 120 issues on the first run; errors are 0 outside the single allowlisted rule after the fixes.
+- `npm audit`: 0 high / 0 critical in `functions` and `rules-test`; 28 moderate recorded in the backend.
+- 16 static guards, 7 with `--selftest`; 32 documents; 46 requirements (`REQ-REL-01`…`05`).
+
+### Not claimed
+
+- No deployment, no staging project, no promotion path beyond one environment.
+- The rollback drill has never been run; a rollback plan is not a control.
+- No Play upload, App Bundle or staged rollout; the CI release APK is throwaway-signed.
+- 28 moderate advisories are recorded, not resolved; no SBOM has been consumed by a third-party scanner.
+- Lint has never run in this environment; its evidence is the CI job.
+
 ## Completion declarations
 
 - `reviewer_completions/REVIEWER_01_DONE.md`
@@ -590,7 +628,8 @@ with no deployment, no device and no profile). One finding was stale; one was wo
 - `reviewer_completions/REVIEWER_11_DONE.md`
 - `reviewer_completions/REVIEWER_12_DONE.md`
 - `reviewer_completions/REVIEWER_13_DONE.md`
+- `reviewer_completions/REVIEWER_14_DONE.md`
 
 ## Blockers
 
-None. R01–R13 complete; R14 is next.
+None. R01–R14 complete; R15 is the last round.

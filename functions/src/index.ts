@@ -1,4 +1,13 @@
-import * as functions from "firebase-functions";
+/**
+ * R14-P2-04: the v1 handler API, imported from the v1 entry point.
+ *
+ * `firebase-functions` v6 re-typed the package root as the v2 API, so a bare import no longer carries
+ * `runWith`, `.https.onCall` or `.firestore.document`. Every function in this backend is gen-1 (v1)
+ * runtime options: `runWith({ timeoutSeconds, memory, secrets, enforceAppCheck })`. Importing the v1
+ * entry point keeps the deployed shape identical while the package moves to a supported major; moving
+ * to v2 is a separate, per-function migration (different options and a different callable wire shape).
+ */
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { defineSecret } from "firebase-functions/params";
 import * as crypto from "crypto";

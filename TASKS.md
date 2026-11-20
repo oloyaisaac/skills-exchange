@@ -199,7 +199,26 @@ Evidence: backend **318/318**, Android **494/494** (runs 44799076234, 4479991283
 real — a release-only visibility error and a foreign key the tests had guessed past. Not verified: no
 deployment, no device, no crash/ANR/startup figure, no Baseline Profile, no circuit breaker, no region
 pinning.
-R14–R15 awaiting.
+**R14 — COMPLETE.** The repository shipped what it should not, built release variants nobody had proven,
+and described a supply chain nobody could name. Half of the review was already fixed: R11 had removed the
+APKs, R07 had switched R8 on, R03 had added `predeploy` and a composite-index file. The live half was
+worse than the wording. Five files were still tracked — a device Room database with 8 provider rows, two
+JVM crash logs and two JFR replays — with **no ignore rule for any of them**; they are deleted and
+`check_repo_hygiene.mjs` now refuses both the file and the missing rule. Android Lint had never run: its
+first run reported 56 errors, and 54 were real — the UI uses `java.time` while `minSdk` is 24, which is a
+`NoClassDefFoundError` on Android 7.0/7.1. Core library desugaring fixes it without dropping those
+devices; `CALL_PHONE` became an optional feature; one rule is allowlisted with a written reason and the
+gate fails when the reason expires. Dependencies moved two majors (`firebase-admin` 12,
+`firebase-functions` 6 through its v1 entry point) and advisories went 1 critical / 10 high → **0 / 0**,
+with `npm audit --audit-level=high` as a gate. `report_dependencies.mjs` writes a CycloneDX SBOM and a
+licence inventory from the installed tree (234 production components) and refuses copyleft or unknown
+licences with proper dual-licence semantics. `version.properties` owns the version; a release without a
+key now fails immediately and says which variables to set. Deploy and rollback are written down in
+`docs/ops/DEPLOY_AND_ROLLBACK.md` — including that no staging project exists and that the rollback drill
+has never been run. Evidence: CI **8/8** on `424ce6b` (318 backend tests, 494 Android tests, lint gate,
+release build, SBOM, audits), 16 guards with 7 self-tests. Not verified: no deployment, no Play upload,
+no drill, 28 moderate advisories recorded not resolved.
+R15 awaiting.
 
 ## Review Track — 2026-11-19 (not started)
 

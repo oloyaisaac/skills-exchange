@@ -1,3 +1,49 @@
+## 2026-11-20 (Prompt-4 R14 COMPLETE) - DEVOPS AND SUPPLY CHAIN GATE PASSED
+
+- R14 closed on `arena/29125468-skills-exchange` (PR #30), from `main` at `6f659d7`. Each finding was
+  re-verified first: two were largely stale (R8/shrinking since R07; predeploy, indexes and .firebaserc
+  since R03/R11), five were live, and running the tool the review asked for found a defect the review
+  did not name.
+- P2-01: five artefact files were still tracked - `_device_test/ondevice_db.sqlite` (a real Room
+  database, 8 service_providers rows), two `hs_err_pid*.log` and two `replay_pid*.log` - and .gitignore
+  had no rule for any of them. Deleted; `scripts/check_repo_hygiene.mjs` refuses a forbidden tracked
+  path and a missing ignore rule, with a selftest. Tracked files 452 -> 447. google-services.json stays,
+  deliberately: client config, no secret, named in the guard's selftest.
+- P2-02: Android Lint had never run. `:app:lintDebug` now runs per PR and
+  `scripts/check_lint_report.mjs` gates Error/Fatal, counts warnings, and fails on a stale allowlist
+  entry. First run: 120 issues, 56 errors. 54 were `NewApi` - java.time (API 26+) on minSdk 24, a
+  NoClassDefFoundError on Android 7.0/7.1 - fixed with core library desugaring rather than raising
+  minSdk. One was `CALL_PHONE` implying telephony hardware (now an optional uses-feature). One is
+  MissingTranslation, allowlisted with a written reason because the partial Swahili locale is a
+  deliberate R12 state.
+- P2-04: `engines.node` was already 22. The SDKs were behind: firebase-admin 11 -> 12 and
+  firebase-functions 4 -> 6. Version 6 re-types the package root as the v2 API, so src/index.ts imports
+  `firebase-functions/v1`; all 43 functions are gen-1 and the deployed shape is unchanged. rules-test
+  moved to firebase 11 + rules-unit-testing 4 with an @grpc/grpc-js override. npm audit: functions
+  1 critical / 10 high -> 0 / 0, rules-test 6 high -> 0. `npm audit --audit-level=high` is a CI gate.
+- P2-05: R8 was already on. versionCode/versionName were placeholders; `version.properties` now owns
+  both with format validation and VERSION_CODE/VERSION_NAME overrides, and a release build graph without
+  a signing key fails at configuration time with a message naming KEYSTORE_PATH, STORE_PASSWORD and
+  KEY_PASSWORD instead of an AGP validateSigningRelease error.
+- P2-06: `scripts/report_dependencies.mjs` writes a CycloneDX 1.5 SBOM plus a licence inventory from the
+  installed tree - 234 production components, MIT 176 / Apache-2.0 31 / BSD-3-Clause 12 / ISC 11 /
+  BSD-2-Clause 1 / 0BSD 1 - and refuses copyleft or unknown licences. OR expressions are treated as a
+  choice (node-forge `(BSD-3-Clause OR GPL-2.0)` ships as BSD) and a package with no metadata field is
+  resolved from its LICENSE file, visibly (`limiter@1.1.5`).
+- P2-03/P2-07: firebase.json gained an `emulators` block; `docs/ops/DEPLOY_AND_ROLLBACK.md` writes the
+  one-command deploy, the ordering, promotion, per-layer rollback and a five-step drill. No staging
+  project exists and the drill has never been run - both are stated, and
+  `docs/ops/RELEASE_AND_SUPPLY_CHAIN.md` records each finding against measured evidence.
+- New CI: a `supply-chain` job (hygiene, SBOM, licence gate, rules-test audit) and a lint gate in the
+  Android job; the functions job audits too. CI is now 6 + 2 jobs on every PR.
+- Evidence: CI 8/8 on 424ce6b - backend 318/318, handler suite, rules suite, supply chain, documentation,
+  secret scan, Android 494/494 with the lint gate, release build with R8. Guards: 16 static with 7
+  selftests. Docs: 32 documents, 46 requirements (REQ-REL-01..05). prd.json: REM-005/007/008
+  IN_PROGRESS, REM-006 VERIFICATION_PENDING, each with a status_note.
+- Not claimed: no deployment, no staging project, no rollback drill, no Play upload, throwaway-signed CI
+  APK, 28 moderate advisories recorded not resolved, no SBOM consumed downstream, lint never run
+  locally. Next: R15.
+
 ## 2026-11-20 (Prompt-4 R13 COMPLETE) - PERFORMANCE, SCALE AND RELIABILITY GATE PASSED
 
 - R13 closed on `arena/b2e695fc-skills-exchange` (PR #29), from `main` at `94362a1`. Each of the

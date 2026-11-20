@@ -48,3 +48,18 @@ jdk17/
 # dependency files. No file is deleted by these rules.
 node_modules/
 functions/lib/
+
+# R14-P2-01: build artefacts, device captures and secrets never belong in the repository.
+# The round removed a committed device database, two JVM crash logs and two JFR replays; these rules
+# stop the next one. `scripts/check_repo_hygiene.mjs` fails the build if a forbidden file is tracked.
+*.apk
+*.aab
+*.hprof
+*.sqlite
+*.sqlite3
+hs_err_pid*.log
+replay_pid*.log
+*.jks
+*.keystore
+my-upload-key.jks
+_device_test/*.sqlite

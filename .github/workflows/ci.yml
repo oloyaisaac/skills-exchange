@@ -31,6 +31,27 @@ jobs:
           cache: npm
           cache-dependency-path: functions/package-lock.json
       - run: npm ci
+      # R14-P2-04/P2-06: a known-vulnerable dependency fails the build. High and critical only — a
+      # moderate advisory in a dev-only chain is reported by `report_dependencies.mjs`, not a red mark.
+      - name: Dependency audit (high and critical)
+        run: |
+          set -o pipefail
+          npm audit --audit-level=high --json > audit.json 2>/dev/null || {
+            cat audit.json | node -e '
+              let raw = "";
+              process.stdin.on("data", (chunk) => (raw += chunk)).on("end", () => {
+                const report = JSON.parse(raw);
+                for (const [name, entry] of Object.entries(report.vulnerabilities || {})) {
+                  if (["high", "critical"].includes(entry.severity)) {
+                    console.error(`${entry.severity} ${name}: ${entry.range}`);
+                  }
+                }
+                process.exit(1);
+              });
+            '
+            exit 1
+          }
+          echo "audit passed: no high or critical advisories"
       - run: npm run build
       - run: npm test
       # R11-P2-06/R11 flake policy: the suite is deterministic or it is not evidence. Three
@@ -55,6 +76,36 @@ jobs:
       # when line/branch/function coverage drops below the floor, so "we have tests" is a number the
       # pipeline checks rather than a claim in a document.
       - run: npm run test:coverage
+
+  supply-chain:
+    name: Supply chain (SBOM, licences, hygiene)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+        working-directory: functions
+      - run: npm ci
+        working-directory: rules-test
+
+      # R14-P2-01: the repository is not a scratch directory.
+      - run: node scripts/check_repo_hygiene.mjs --selftest
+      - run: node scripts/check_repo_hygiene.mjs
+
+      # R14-P2-06: an SBOM and a licence inventory built from the installed tree, gated on copyleft.
+      - run: node scripts/report_dependencies.mjs --selftest
+      - run: node scripts/report_dependencies.mjs --out dependency-report.json
+      - run: npm audit --audit-level=high
+        working-directory: rules-test
+
+      - name: Upload the SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-report
+          path: dependency-report.json
+          if-no-files-found: error
 
   functions-handlers:
     name: Backend handler tests (Firestore emulator)
@@ -159,6 +210,10 @@ jobs:
       # R13: install and cold-start budget — no single resource over 150 KB, res/ under 1 MB.
       - run: node scripts/check_asset_budget.mjs --selftest
       - run: node scripts/check_asset_budget.mjs
+      # R14: release hygiene and supply chain, each with a self-test.
+      - run: node scripts/check_repo_hygiene.mjs --selftest
+      - run: node scripts/check_repo_hygiene.mjs
+      - run: node scripts/check_lint_report.mjs --selftest
       - run: node scripts/secret_scan.mjs
 
   secret-scan:

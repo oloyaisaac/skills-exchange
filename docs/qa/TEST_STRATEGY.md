@@ -22,8 +22,11 @@ remediation sandbox it is marked **UNVERIFIED** rather than estimated.
 | Colour contrast (WCAG maths, no rendering) | `app/src/test/java/com/example/ui/theme/ContrastTest.kt` | part of the Android unit suite | **4** | CI, same job | yes |
 | Offline queue drain | `app/src/test/java/com/example/data/PendingActionDrainTest.kt` | part of the Android unit suite | **5** | CI, same job, after two rounds of failures it caught | yes |
 | Provider retry rule | `functions/test/providerRetry.test.mjs` | `cd functions && npm test` | **7** | CI (`Backend build and tests`) | yes |
+| Supply chain: SBOM, licences, hygiene | `scripts/report_dependencies.mjs`, `scripts/check_repo_hygiene.mjs` | `node scripts/report_dependencies.mjs`, from the installed tree | 234 production components | CI (`Supply chain`), SBOM uploaded as an artefact | yes |
+| Android Lint | `./gradlew :app:lintDebug` | `node scripts/check_lint_report.mjs` reads the XML | 120 issues, 1 allowlisted rule | CI (`Compile and unit tests`); first run found 54 `NewApi` errors | yes (Error/Fatal) |
+| Dependency advisories | `npm audit --audit-level=high` | in `functions` and `supply-chain` jobs | 0 high / 0 critical (28 moderate recorded) | CI | yes |
 | Release build (R8 + shrink) | `.github/workflows/android.yml` `release-build` | `./gradlew :app:assembleRelease` | not a test — a gate | CI, run 44799912835: APK 6.3 MB, mapping 679,287 lines | yes |
-| Documentation and static guarantees | `scripts/check_*.mjs`, `scripts/secret_scan.mjs` | see `docs/DOCUMENT_MAP.md` | 13 guards (4 with `--selftest`) | CI (`Documentation checks`, `Secret scan`) | yes |
+| Documentation and static guarantees | `scripts/check_*.mjs`, `scripts/secret_scan.mjs` | see `docs/DOCUMENT_MAP.md` | 16 guards (7 with `--selftest`) | CI (`Documentation checks`, `Supply chain`, `Secret scan`) | yes |
 | Instrumented (device) tests | `app/src/androidTest` | — | 1 template | nowhere | **no** — see §7 |
 
 The backend suite count is asserted nowhere by hand: `npm test` discovers `test/*.test.mjs`, and

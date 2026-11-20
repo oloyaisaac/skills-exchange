@@ -87,6 +87,15 @@ jobs:
           set -o pipefail
           ./gradlew :app:testDebugUnitTest --stacktrace --no-daemon 2>&1 | tee unit-tests.log
 
+      # R14-P2-02: Android Lint runs on every PR. Errors gate through check_lint_report.mjs; warnings
+      # are reported and do not fail the build, which is what keeps the gate switched on.
+      - name: Android Lint
+        run: |
+          set -o pipefail
+          ./gradlew :app:lintDebug --stacktrace --no-daemon 2>&1 | tee lint.log
+      - name: Gate on lint errors
+        run: node scripts/check_lint_report.mjs
+
       # R11-P2-05: coverage is measured and gated, not assumed.
       - name: Unit-test coverage (JaCoCo)
         run: |
@@ -137,6 +146,10 @@ jobs:
           cp app/build/test-results/testDebugUnitTest/*.xml ci-logs/test-results/ 2>/dev/null || true
           mkdir -p ci-logs/reports
           cp -r app/build/reports/jacoco ci-logs/reports/ 2>/dev/null || true
+          # R14: the lint XML and its summary travel with the failure, so an allowlist decision can be
+          # made from evidence rather than from a red mark.
+          cp app/build/reports/lint-results-debug.xml ci-logs/ 2>/dev/null || true
+          cp lint-summary.txt ci-logs/ 2>/dev/null || true
           {
             printf 'run: %s\ncommit: %s\n' "$GITHUB_RUN_ID" "$GITHUB_SHA"
             printf '\n-- workspace logs --\n'
@@ -150,6 +163,17 @@ jobs:
           git add -f ci-logs
           git commit -m "ci: android diagnostics for $GITHUB_SHA"
           git push -f origin HEAD:ci-logs
+
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-lint
+          path: |
+            app/build/reports/lint-results-debug.xml
+            app/build/reports/lint-results-debug.html
+            lint-summary.txt
+          if-no-files-found: ignore
 
       - name: Upload test reports
         if: always()
