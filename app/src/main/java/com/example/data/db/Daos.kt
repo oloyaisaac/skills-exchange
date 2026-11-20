@@ -186,6 +186,9 @@ interface PendingActionDao {
     @Query("DELETE FROM pending_actions WHERE id = :id")
     suspend fun deleteAction(id: String)
 
+    @Query("SELECT * FROM pending_actions WHERE id = :id LIMIT 1")
+    suspend fun getActionById(id: String): PendingActionEntity?
+
     @Query("SELECT COUNT(*) FROM pending_actions WHERE status = 'PENDING'")
     suspend fun countPendingActions(): Int
 

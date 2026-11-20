@@ -90,9 +90,21 @@ class DatabaseMigrationChainTest {
     private fun readResource(path: String): String =
         javaClass.classLoader!!.getResourceAsStream(path)!!.bufferedReader().use { it.readText() }
 
-    /** The exported Room schema is a TEST ASSET (see `app/build.gradle.kts`), not a classpath file. */
-    private fun readSchemaAsset(path: String): String =
-        context.assets.open(path).bufferedReader().use { it.readText() }
+    /**
+     * Reads the committed Room schema (`app/schemas/...`) from the module directory. Unit tests run
+     * with the module as the working directory; no copy of the schema is kept, so the test always
+     * validates against the file that is actually committed.
+     */
+    private fun readSchemaAsset(path: String): String {
+        val candidates = listOf(
+            java.io.File("schemas/$path"),
+            java.io.File("app/schemas/$path"),
+            java.io.File("../app/schemas/$path")
+        )
+        val file = candidates.firstOrNull { it.exists() }
+            ?: error("schema not found: $path (cwd=${java.io.File(".").absolutePath})")
+        return file.readText()
+    }
 
     @Test
     fun `every consecutive version from 11 to 28 has exactly one migration`() {

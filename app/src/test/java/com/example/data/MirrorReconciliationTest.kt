@@ -134,8 +134,11 @@ class MirrorReconciliationTest {
         val third = repository.reconcilePendingMirrors { false }
 
         assertEquals(1, third.abandoned)
-        val action = db.pendingActionDao().getPendingActionsList().single()
-        assertEquals("FAILED", action.status)
+        // An abandoned action leaves the PENDING queue but is kept (with its retry count) so the
+        // failure stays visible instead of vanishing.
+        assertTrue(db.pendingActionDao().getPendingActionsList().isEmpty())
+        val action = db.pendingActionDao().getActionById("sync_sos_sos_c")
+        assertEquals("FAILED", action!!.status)
         assertEquals(3, action.retryCount)
         assertFalse(db.sosIncidentDao().getSosIncidentById("sos_c")!!.firestoreMirrored)
     }
