@@ -1,5 +1,22 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [PROMPT-4 / R02] Server-confirmed escrow; client lifecycle fixes; Compose tests
+
+- **Escrow (R02-P2-01).** The sheet no longer writes `RELEASED_TO_WORKER`. Release calls the
+  `releaseEscrowToWorker` callable, shows progress, and records the local status only after the
+  server confirms; the repository refuses client-side releases outright. Cash settlement is recorded
+  as `CASH_SETTLEMENT_ACKNOWLEDGED` with honest copy instead of claiming locked funds.
+- **Single-flight (R02-P2-02).** `EscrowReleaseState` blocks a second release; `sosDispatchInFlight`
+  blocks repeated SOS taps.
+- **State (R02-P2-03).** Onboarding uses `rememberSaveable`, so phone/OTP/district/step survive
+  rotation and process death.
+- **Location (R02-P2-04).** SOS no longer falls back to invented Kampala coordinates.
+- **Tests (R02-P2-05).** Compose UI tests for onboarding (including instance-state restoration), job
+  posting validation, quote comparison and escrow release gating, run on the JVM via Robolectric.
+- **Privacy (R02-P2-06).** `SecureScreen()` sets `FLAG_SECURE` on escrow/PIN, guarantor and account
+  surfaces.
+- Evidence: CI run 44704246765, 362/362 Android tests, backend 171/171. R02 gate passed.
+
 ### [2026-11-20] [PROMPT-4 / R01] Android build restored; Reviewer 1 complete
 
 - Added `.github/workflows/android.yml`: SDK install, `:app:compileDebugKotlin` and
