@@ -21,7 +21,8 @@ import org.junit.runners.JUnit4
 class CallableRetryTest {
 
     private fun failure(code: FirebaseFunctionsException.Code) =
-        FirebaseFunctionsException("test failure", null, code)
+        // Android SDK signature: (message, code, details[, cause]).
+        FirebaseFunctionsException("test failure", code, null)
 
     @Test
     fun `transient codes are retryable`() {
