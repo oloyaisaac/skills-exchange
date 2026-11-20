@@ -283,7 +283,7 @@ fun EscrowAndProofSheet(
                 ) {
                     Column {
                         Text(
-                            text = "Labor (${job.laborHours} hrs @ $${"%.2f".format(job.laborRate)}/hr)",
+                            text = "Labor (${job.laborHours} hrs @ ${CurrencyRegion.format(job.laborRate, activeRegion)}/hr)",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Slate800
@@ -291,7 +291,7 @@ fun EscrowAndProofSheet(
                         Text(text = "Verified specialist skilled rate", fontSize = 10.sp, color = Slate500)
                     }
                     Text(
-                        text = "$${"%.2f".format(job.laborTotal)}",
+                        text = CurrencyRegion.format(job.laborTotal, activeRegion),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = Slate900
@@ -329,7 +329,7 @@ fun EscrowAndProofSheet(
                             Text(text = "Direct pass-through store cost", fontSize = 10.sp, color = Slate500)
                         }
                         Text(
-                            text = "$${"%.2f".format(job.materialsSubtotal)}",
+                            text = CurrencyRegion.format(job.materialsSubtotal, activeRegion),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = Slate900
@@ -377,7 +377,7 @@ fun EscrowAndProofSheet(
                             Text(text = job.emergencyAddonReason.ifBlank { "Parts purchase" }, fontSize = 10.sp, color = Slate500)
                         }
                         Text(
-                            text = "+$${"%.2f".format(job.emergencyAddonAmount)}",
+                            text = "+${CurrencyRegion.format(job.emergencyAddonAmount, activeRegion)}",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (job.emergencyAddonStatus == "APPROVED") IndustrialEmeraldDark else AmberUrgent
@@ -436,7 +436,7 @@ fun EscrowAndProofSheet(
                             )
                         }
                         Text(
-                            text = "Worker requested $${"%.2f".format(job.emergencyAddonAmount)} for '${job.emergencyAddonReason}'.",
+                            text = "Worker requested ${CurrencyRegion.format(job.emergencyAddonAmount, activeRegion)} for '${job.emergencyAddonReason}'.",
                             fontSize = 12.sp,
                             color = Color(0xFF78350F),
                             modifier = Modifier.padding(top = 4.dp)
@@ -709,9 +709,9 @@ fun EscrowAndProofSheet(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(text = "🛒 Early Parts Purchase Advance", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Slate800)
                                 Text(
-                                    text = if (job.materialAdvanceStatus == "DISBURSED") "✅ 50% Advance Disbursed ($${"%.2f".format(job.materialAdvanceAmount)}). Receipt upload verified."
-                                    else if (job.materialAdvanceRequested) "⏳ 50% Advance Requested ($${"%.2f".format(job.materialAdvanceAmount)}). Receipt upload required in 60m."
-                                    else "Worker can request up to 50% parts advance ($${"%.2f".format(maxAdvance)}) from escrow before labor.",
+                                    text = if (job.materialAdvanceStatus == "DISBURSED") "✅ 50% Advance Disbursed (${CurrencyRegion.format(job.materialAdvanceAmount, activeRegion)}). Receipt upload verified."
+                                    else if (job.materialAdvanceRequested) "⏳ 50% Advance Requested (${CurrencyRegion.format(job.materialAdvanceAmount, activeRegion)}). Receipt upload required in 60m."
+                                    else "Worker can request up to 50% parts advance (${CurrencyRegion.format(maxAdvance, activeRegion)}) from escrow before labor.",
                                     fontSize = 10.sp,
                                     color = Slate600
                                 )
@@ -1148,7 +1148,7 @@ fun EscrowAndProofSheet(
                                 Icon(imageVector = Icons.Default.CheckCircle, contentDescription = "Locked", tint = IndustrialEmeraldDark)
                                 Column {
                                     Text(text = "Escrow Funds Locked!", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = IndustrialEmeraldDark)
-                                    Text(text = "$${"%.2f".format(job.grandTotal)} held safely. Worker may begin labor.", fontSize = 11.sp, color = IndustrialEmeraldDark)
+                                    Text(text = "${CurrencyRegion.format(job.grandTotal, activeRegion)} held safely. Worker may begin labor.", fontSize = 11.sp, color = IndustrialEmeraldDark)
                                 }
                             }
                         }
@@ -1413,7 +1413,7 @@ fun EscrowAndProofSheet(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "📲 USSD Push Prompt dispatched to $phoneNumber:\n'Authorize locking $${"%.2f".format(job.grandTotal)} in Skills Exchange Escrow?'",
+                            text = "📲 USSD Push Prompt dispatched to $phoneNumber:\n'Authorize locking ${CurrencyRegion.format(job.grandTotal, activeRegion)} in Skills Exchange Escrow?'",
                             fontSize = 12.sp,
                             color = Color.White,
                             modifier = Modifier.padding(10.dp)

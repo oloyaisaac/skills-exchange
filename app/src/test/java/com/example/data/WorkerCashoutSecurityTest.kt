@@ -7,7 +7,6 @@ import com.example.data.db.AppDatabase
 import com.example.data.db.UserProfileEntity
 import com.example.data.db.WalletLedgerEntity
 import com.example.data.remote.FirebaseService
-import com.example.data.remote.SmsNotificationService
 import com.example.data.repository.SkillsExchangeRepository
 import com.example.data.repository.SkillsExchangeRepository.CashoutRequestResult
 import com.example.data.repository.SkillsExchangeRepository.WithdrawalCancelResult
@@ -62,7 +61,7 @@ class WorkerCashoutSecurityTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        repository = SkillsExchangeRepository(db, FirebaseService(), SmsNotificationService())
+        repository = SkillsExchangeRepository(db, FirebaseService())
         runBlocking {
             db.userProfileDao().insertUserProfile(
                 UserProfileEntity(id = workerA, phoneNumber = "+256700000001", fullName = "Worker A", initialRole = "WORKER", currentActiveMode = "WORKER", isWorkerActivated = true)

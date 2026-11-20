@@ -6,7 +6,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.example.data.db.AppDatabase
 import com.example.data.db.UserProfileEntity
 import com.example.data.remote.FirebaseService
-import com.example.data.remote.SmsNotificationService
 import com.example.data.repository.SkillsExchangeRepository
 import com.example.ui.viewmodel.SkillsExchangeViewModel
 import kotlinx.coroutines.flow.first
@@ -64,7 +63,7 @@ class DeviceLocalProfileRecoveryF3SecurityTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        repository = SkillsExchangeRepository(db, FirebaseService(), SmsNotificationService())
+        repository = SkillsExchangeRepository(db, FirebaseService())
     }
 
     @After

@@ -22,7 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.db.ServiceProviderEntity
-import com.example.data.remote.GroundedPlaceResult
+import com.example.data.remote.MapsGroundingResult
 import com.example.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,7 +33,7 @@ fun SearchModal(
     searchResults: List<ServiceProviderEntity>,
     onSelectProvider: (ServiceProviderEntity) -> Unit,
     onSearchGoogleMaps: (String) -> Unit,
-    mapsResults: Pair<String, List<GroundedPlaceResult>>?,
+    mapsResults: MapsGroundingResult?,
     isMapsSearching: Boolean,
     onDismiss: () -> Unit
 ) {
@@ -199,7 +199,7 @@ fun SearchModal(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "📍 Live Google Maps Grounded Places (Gemini 3.5 Flash)",
+                        text = "📍 REAL PLACES NEAR YOU (GOOGLE MAPS)",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = SignalBlue
@@ -210,66 +210,96 @@ fun SearchModal(
                 }
 
                 if (mapsResults != null) {
-                    val (summaryText, places) = mapsResults
+                    val result = mapsResults
 
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = Color(0xFFE8F0FE),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, SignalBlue),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp)
-                    ) {
-                        Text(
-                            text = summaryText.take(280) + if (summaryText.length > 280) "..." else "",
-                            fontSize = 11.sp,
-                            color = Slate800,
-                            modifier = Modifier.padding(10.dp)
-                        )
+                    if (result.error != null) {
+                        // R05-P2-05: a failure is stated plainly; no placeholder shops are shown.
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = Color(0xFFFFF4E5),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AmberUrgent),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp)
+                        ) {
+                            Text(
+                                text = result.error,
+                                fontSize = 11.sp,
+                                color = Slate800,
+                                modifier = Modifier.padding(10.dp)
+                            )
+                        }
                     }
 
-                    LazyColumn(
-                        modifier = Modifier.fillMaxHeight(0.5f),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(places) { place ->
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = Slate50,
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Slate200),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(modifier = Modifier.padding(10.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(text = place.name, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Slate900)
-                                        Text(text = place.rating, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AmberUrgent)
-                                    }
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Icon(imageVector = Icons.Default.LocationOn, contentDescription = null, tint = SignalBlue, modifier = Modifier.size(12.dp))
-                                        Text(text = place.address, fontSize = 11.sp, color = Slate600)
-                                    }
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(text = place.description, fontSize = 11.sp, color = Slate700)
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(text = "📞 ${place.phone}", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = Slate600)
-                                        Button(
-                                            onClick = { /* Open Directions */ },
-                                            modifier = Modifier.height(26.dp),
-                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                                            colors = ButtonDefaults.buttonColors(containerColor = SignalBlue),
-                                            shape = RoundedCornerShape(4.dp)
+                    if (result.summary.isNotEmpty()) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = if (result.isGrounded) Color(0xFFE8F0FE) else Color(0xFFF5F5F5),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                if (result.isGrounded) SignalBlue else Slate200
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Text(
+                                    text = if (result.isGrounded) {
+                                        "✅ Verified on Google Maps"
+                                    } else {
+                                        "⚠️ Not verified on Google Maps"
+                                    },
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (result.isGrounded) SignalBlue else Slate600
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = result.summary.take(280) + if (result.summary.length > 280) "..." else "",
+                                    fontSize = 11.sp,
+                                    color = Slate800
+                                )
+                            }
+                        }
+                    }
+
+                    if (result.isGrounded) {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxHeight(0.5f),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(result.places) { place ->
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Slate50,
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, Slate200),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(modifier = Modifier.padding(10.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Text("Directions & Map", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                            Text(text = place.name, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Slate900)
+                                            Text(text = "Google Maps", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = SignalBlue)
+                                        }
+                                        if (place.address.isNotEmpty()) {
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                Icon(imageVector = Icons.Default.LocationOn, contentDescription = null, tint = SignalBlue, modifier = Modifier.size(12.dp))
+                                                Text(text = place.address, fontSize = 11.sp, color = Slate600)
+                                            }
+                                        }
+                                        if (place.mapsUrl != null) {
+                                            Spacer(modifier = Modifier.height(6.dp))
+                                            Text(
+                                                text = "Open in Google Maps",
+                                                fontSize = 10.5.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = SignalBlue
+                                            )
                                         }
                                     }
                                 }
@@ -289,7 +319,7 @@ fun SearchModal(
                             colors = ButtonDefaults.buttonColors(containerColor = SignalBlue),
                             shape = RoundedCornerShape(6.dp)
                         ) {
-                            Text("📍 Find Nearby Material Suppliers with Google Maps AI", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                            Text("📍 Find Nearby Material Suppliers on Google Maps", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

@@ -114,6 +114,11 @@ import {
   validateTranscribedJob,
   MAX_AUDIO_BASE64_LENGTH,
 } from "./transcription";
+import {
+  buildMapsGroundingRequest,
+  normaliseSearchInput,
+  parseGroundedPlaces,
+} from "./places";
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -2238,6 +2243,31 @@ async function findOrCreateUserByPhone(phone: string): Promise<{ uid: string; is
  * authentication). Push is best-effort: a notification document is already written, and a push
  * failure must never fail the money/KYC/dispute operation that triggered it.
  */
+/**
+ * R05-P2-02: a user's registered device tokens, newest first.
+ *
+ * The Android client used to log its FCM token and never send it anywhere, so the backend could only
+ * reach a topic. Tokens are now written by `registerPushToken` and used here; the topic remains as a
+ * fallback for installs that have not registered yet.
+ */
+async function deviceTokensFor(userId: string): Promise<string[]> {
+  try {
+    const snapshot = await db
+      .collection("users")
+      .doc(userId)
+      .collection("push_tokens")
+      .orderBy("updatedAt", "desc")
+      .limit(20)
+      .get();
+    return snapshot.docs
+      .map((doc) => String(doc.get("token") || ""))
+      .filter((token) => token.length > 0);
+  } catch (error: any) {
+    console.warn("Push token lookup failed", { userId, message: error?.message });
+    return [];
+  }
+}
+
 async function sendUserPush(
   userId: string | undefined,
   title: string,
@@ -2246,6 +2276,38 @@ async function sendUserPush(
 ): Promise<void> {
   if (!userId) return;
   try {
+    const tokens = await deviceTokensFor(userId);
+    if (tokens.length > 0) {
+      const response = await admin.messaging().sendEachForMulticast({
+        tokens,
+        notification: { title, body },
+        data,
+        android: { priority: "high" },
+      });
+      // Tokens the provider has retired must not keep failing forever.
+      const stale: string[] = [];
+      response.responses.forEach((result, index) => {
+        const code = result.error?.code || "";
+        if (
+          code === "messaging/registration-token-not-registered" ||
+          code === "messaging/invalid-registration-token"
+        ) {
+          stale.push(tokens[index]);
+        }
+      });
+      await Promise.all(
+        stale.map((token) =>
+          db
+            .collection("users")
+            .doc(userId)
+            .collection("push_tokens")
+            .doc(encodeURIComponent(token))
+            .delete()
+            .catch(() => undefined)
+        )
+      );
+      if (response.successCount > 0) return;
+    }
     await admin.messaging().send({
       topic: `user_${userId}`,
       notification: { title, body },
@@ -2256,6 +2318,35 @@ async function sendUserPush(
     console.warn("User push failed", { userId, message: error?.message });
   }
 }
+
+/**
+ * R05-P2-02: register this device's FCM token for the calling user.
+ *
+ * The token is stored per device under the authenticated uid, so an account can hold several
+ * devices and a signed-out device cannot register against somebody else's account. The client never
+ * sends a uid; it is taken from the verified auth context.
+ */
+export const registerPushToken = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Authentication required to register a push token."
+    );
+  }
+  const token = String((data || {}).token || "").trim();
+  const platform = String((data || {}).platform || "android").trim().slice(0, 20);
+  if (token.length < 20 || token.length > 4096) {
+    throw new functions.https.HttpsError("invalid-argument", "A valid device token is required.");
+  }
+  const now = Date.now();
+  await db
+    .collection("users")
+    .doc(context.auth.uid)
+    .collection("push_tokens")
+    .doc(encodeURIComponent(token))
+    .set({ token, platform, updatedAt: now, createdAt: now }, { merge: true });
+  return { success: true };
+});
 
 /** R03-P2-07: a single IP may not drive an unbounded number of SMS sends. */
 const OTP_IP_WINDOW_MS = 60 * 60 * 1000;
@@ -2447,6 +2538,90 @@ export const transcribeVoiceJob = functions.runWith({ secrets: GEMINI_SECRETS })
     throw new functions.https.HttpsError("internal", "Voice transcription could not be understood");
   }
 });
+
+// =====================================================================================
+// R05-P2-04 / R05-P2-05: Google Maps grounding.
+//
+// P2-04: the Gemini key is no longer compiled into the APK. The client calls this callable and the
+// key stays in the Functions secret. P2-05: only places Google actually grounded are returned; when
+// nothing is grounded the client is told so instead of being handed invented shops.
+//
+// P2-07: one request has a 12s ceiling and at most two attempts with a short backoff, so a slow
+// Gemini upstream cannot hang the callable until the platform timeout.
+// =====================================================================================
+
+const PLACES_TIMEOUT_MS = 12000;
+const PLACES_MAX_ATTEMPTS = 2;
+const PLACES_RETRY_BASE_MS = 400;
+
+export const searchLocalPlaces = functions
+  .runWith({ secrets: GEMINI_SECRETS })
+  .https.onCall(async (data, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "Sign in to search nearby places."
+      );
+    }
+
+    let input: { query: string; district: string };
+    try {
+      input = normaliseSearchInput(data?.query, data?.district);
+    } catch (error) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        (error as Error).message || "Invalid search input"
+      );
+    }
+
+    const apiKey = secretOrEnv(geminiApiKey, "GEMINI_API_KEY");
+    if (!apiKey) {
+      // Fail closed: without a key there is nothing verifiable to show.
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Nearby place search is not configured."
+      );
+    }
+
+    const requestBody = buildMapsGroundingRequest(input.query, input.district);
+    let lastFailure = "";
+
+    for (let attempt = 1; attempt <= PLACES_MAX_ATTEMPTS; attempt++) {
+      try {
+        const response = await axios.post(
+          "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+          requestBody,
+          {
+            headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
+            timeout: PLACES_TIMEOUT_MS,
+            validateStatus: () => true,
+          }
+        );
+
+        if (response.status >= 200 && response.status < 300) {
+          return parseGroundedPlaces(response.data);
+        }
+
+        lastFailure = `status ${response.status}`;
+        const retryable = response.status === 429 || response.status >= 500;
+        if (!retryable) break;
+      } catch (error) {
+        lastFailure = (error as Error).message || "network error";
+      }
+
+      if (attempt < PLACES_MAX_ATTEMPTS) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, PLACES_RETRY_BASE_MS * attempt)
+        );
+      }
+    }
+
+    console.warn("Maps grounding failed", { lastFailure });
+    throw new functions.https.HttpsError(
+      "unavailable",
+      "Nearby place search is temporarily unavailable."
+    );
+  });
 
 // =====================================================================================
 // REM-044: consent and data-subject access.

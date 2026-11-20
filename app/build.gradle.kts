@@ -55,7 +55,14 @@ android {
     compose = true
     buildConfig = true
   }
-  testOptions { unitTests { isIncludeAndroidResources = true } }
+  testOptions {
+    unitTests {
+      isIncludeAndroidResources = true
+      // R05: the retry/formatting tests exercise code that calls android.util.Log; the default
+      // "not mocked" stubs would throw instead of returning a value.
+      isReturnDefaultValues = true
+    }
+  }
 
   // R04-P2-01: Room schema export. The JSON Room generates for every version is the contract the
   // migration tests validate against, so it is committed under `app/schemas` and never edited by

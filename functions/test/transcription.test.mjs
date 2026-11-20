@@ -7,6 +7,7 @@ import {
   extractGeminiText,
   validateTranscribedJob,
   buildGeminiTranscriptionRequest,
+  buildTranscriptionPrompt,
   TRANSCRIPTION_CATEGORIES,
 } from "../lib/transcription.js";
 
@@ -14,14 +15,14 @@ const valid = {
   fullTranscript: "My kitchen sink is leaking badly, please come today.",
   suggestedTitle: "Leaking kitchen sink",
   suggestedCategory: "plumbing",
-  suggestedBudget: 85.5,
+  suggestedBudget: 85000,
   suggestedDescription: "Water under the sink since morning.",
 };
 
 test("a complete model response is normalised", () => {
   const job = validateTranscribedJob(valid);
   assert.equal(job.suggestedCategory, "Plumbing");
-  assert.equal(job.suggestedBudget, 85.5);
+  assert.equal(job.suggestedBudget, 85000);
   assert.equal(job.suggestedTitle, "Leaking kitchen sink");
 });
 
@@ -29,7 +30,7 @@ test("missing transcript or unknown category is rejected, never invented", () =>
   assert.throws(() => validateTranscribedJob({ ...valid, fullTranscript: "   " }));
   assert.throws(() => validateTranscribedJob({ ...valid, suggestedCategory: "Plumbing-ish" }));
   assert.throws(() => validateTranscribedJob({ ...valid, suggestedBudget: -1 }));
-  assert.throws(() => validateTranscribedJob({ ...valid, suggestedBudget: 250_000 }));
+  assert.throws(() => validateTranscribedJob({ ...valid, suggestedBudget: 10_000_001 }));
   assert.throws(() => validateTranscribedJob({ ...valid, suggestedBudget: "85" }));
 });
 
@@ -67,4 +68,12 @@ test("request payload carries audio inline and asks for JSON", () => {
   assert.equal(parts[0].inlineData.data, "AAA");
   assert.equal(parts[0].inlineData.mimeType, "audio/mp4");
   assert.equal(payload.generationConfig.responseMimeType, "application/json");
+});
+
+test("R05-P2-03: a suggested budget is whole Uganda shillings, never a fraction", () => {
+  const job = validateTranscribedJob({ ...valid, suggestedBudget: 85000.49 });
+  assert.equal(job.suggestedBudget, 85000);
+  assert.equal(Number.isInteger(job.suggestedBudget), true);
+  assert.match(buildTranscriptionPrompt(), /Uganda shillings/);
+  assert.doesNotMatch(buildTranscriptionPrompt(), /USD/);
 });

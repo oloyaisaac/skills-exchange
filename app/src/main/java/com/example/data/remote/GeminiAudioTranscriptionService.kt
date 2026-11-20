@@ -32,10 +32,19 @@ class GeminiAudioTranscriptionService(
 
         return try {
             val audioBase64 = Base64.encodeToString(audioByteArray, Base64.NO_WRAP)
-            val result = functions
-                .getHttpsCallable("transcribeVoiceJob")
-                .call(mapOf("audioBase64" to audioBase64, "mimeType" to mimeType))
-                .await()
+            // R05-P2-07: transcription is read-only, so a transient failure is retried twice.
+            val result = CallableRetry.withRetry {
+                functions
+                    .getHttpsCallable("transcribeVoiceJob")
+                    .call(
+                        CallableContracts.payload(
+                            "transcribeVoiceJob",
+                            "audioBase64" to audioBase64,
+                            "mimeType" to mimeType
+                        )
+                    )
+                    .await()
+            }
 
             @Suppress("UNCHECKED_CAST")
             val data = result.data as? Map<String, Any?> ?: return null

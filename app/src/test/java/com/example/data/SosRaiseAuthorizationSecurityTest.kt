@@ -11,7 +11,6 @@ import com.example.data.db.SosIncidentEntity
 import com.example.data.repository.SkillsExchangeRepository
 import com.example.data.repository.SkillsExchangeRepository.SosRaiseResult
 import com.example.data.remote.FirebaseService
-import com.example.data.remote.SmsNotificationService
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -38,7 +37,7 @@ class SosRaiseAuthorizationSecurityTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        repository = SkillsExchangeRepository(db, FirebaseService(), SmsNotificationService())
+        repository = SkillsExchangeRepository(db, FirebaseService())
 
         runBlocking {
             db.serviceProviderDao().insertProvider(

@@ -25,37 +25,50 @@ enum class CurrencyRegion(val code: String, val label: String, val symbol: Strin
             }
         }
 
-        fun format(amountInUsdEquivalent: Double, region: CurrencyRegion = currentRegion): String {
-            // Realistic conversion multipliers
-            val localAmount = when (region) {
-                UGANDA -> amountInUsdEquivalent * 3700.0 // e.g. $10 -> 37,000 UGX
-                KENYA -> amountInUsdEquivalent * 130.0   // e.g. $10 -> 1,300 KES
-                TANZANIA -> amountInUsdEquivalent * 2600.0 // e.g. $10 -> 26,000 TZS
-                RWANDA -> amountInUsdEquivalent * 1300.0  // e.g. $10 -> 13,000 RWF
-                USA -> amountInUsdEquivalent
+        /**
+         * R05-P2-03: the ONE money unit in this app is the Uganda shilling. Every amount stored
+         * (`job.budget`, `job.grandTotal`, `job.laborTotal`, ledger rows) is UGX, and the provider
+         * payloads are UGX. This formatter used to multiply its input by 3,700 — it treated every
+         * stored number as USD — so a 37,000 UGX job was displayed as "UGX 136,900,000" while the
+         * server saw 37,000. There is no conversion on the way to the screen any more.
+         *
+         * Amounts are rounded to whole shillings: UGX is not quoted in subunits by the providers,
+         * and `momoCollection` refuses a non-integer total.
+         */
+        fun format(amountUgx: Double, region: CurrencyRegion = currentRegion): String {
+            val wholeShillings = roundToWholeShillings(amountUgx)
+            if (region == UGANDA) {
+                return "UGX " + NumberFormat.getIntegerInstance(Locale.US).format(wholeShillings)
             }
-
+            // Other regions are DISPLAY ONLY and explicitly approximate: the stored unit stays UGX.
+            val localAmount = wholeShillings * REGION_DISPLAY_RATES.getValue(region)
             return if (region.usesDecimals) {
                 "${region.symbol}${"%.2f".format(localAmount)}"
             } else {
-                val formattedInt = NumberFormat.getIntegerInstance(Locale.US).format(localAmount.toLong())
-                "${region.symbol} $formattedInt"
+                "${region.symbol} ${NumberFormat.getIntegerInstance(Locale.US).format(localAmount.toLong())}"
             }
         }
 
-        fun formatCompact(amountInUsdEquivalent: Double, region: CurrencyRegion = currentRegion): String {
-            val localAmount = when (region) {
-                UGANDA -> amountInUsdEquivalent * 3700.0
-                KENYA -> amountInUsdEquivalent * 130.0
-                TANZANIA -> amountInUsdEquivalent * 2600.0
-                RWANDA -> amountInUsdEquivalent * 1300.0
-                USA -> amountInUsdEquivalent
-            }
-            return if (localAmount >= 1000) {
-                "${region.symbol} ${(localAmount / 1000).toInt()}k"
+        fun formatCompact(amountUgx: Double, region: CurrencyRegion = currentRegion): String {
+            val wholeShillings = roundToWholeShillings(amountUgx)
+            return if (wholeShillings >= 1000) {
+                "${region.symbol} ${wholeShillings / 1000}k"
             } else {
-                format(amountInUsdEquivalent, region)
+                format(amountUgx, region)
             }
         }
+
+        /** R05-P2-03: whole shillings, so nothing fractional reaches the provider payload. */
+        fun roundToWholeShillings(amountUgx: Double): Long =
+            if (amountUgx.isNaN() || amountUgx.isInfinite()) 0L else kotlin.math.round(amountUgx).toLong()
+
+        /** Display-only approximations FROM the stored UGX amount. Never used for arithmetic. */
+        private val REGION_DISPLAY_RATES: Map<CurrencyRegion, Double> = mapOf(
+            UGANDA to 1.0,
+            KENYA to 0.035,
+            TANZANIA to 0.68,
+            RWANDA to 0.34,
+            USA to 0.00027
+        )
     }
 }
