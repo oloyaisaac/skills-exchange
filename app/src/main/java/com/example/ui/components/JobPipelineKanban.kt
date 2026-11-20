@@ -560,6 +560,7 @@ fun QuoteComparisonSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
@@ -640,9 +641,21 @@ fun QuoteComparisonSheet(
 
                             // AUDIT-W-NAV: Navigate to site button
                             Button(
-                                onClick = { navigateByDistrict(job) },
+                                onClick = {
+                                    if (job.district.isNotBlank()) {
+                                        val intent = Intent(
+                                            Intent.ACTION_VIEW,
+                                            Uri.parse("geo:0,0?q=${job.district}")
+                                        )
+                                        try {
+                                            context.startActivity(intent)
+                                        } catch (_: Exception) {
+                                            // No maps application installed.
+                                        }
+                                    }
+                                },
                                 modifier = Modifier.padding(start = 8.dp, top = 4.dp),
-                                enabled = job.status == JobStatus.ACCEPTED
+                                enabled = job.status == JobStatus.ACCEPTED.value
                             ) {
                                 Text(
                                     text = "Navigate",

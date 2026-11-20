@@ -735,7 +735,7 @@ class FirebaseService(private val context: Context? = null) {
 
     // Upload to storage/avatars/{userId}/profile_{timestamp}_{photoId}
     try {
-        val storageRef = storage?.child("avatars/${userId}/${fileName}") ?: return null
+        val storageRef = storage?.reference?.child("avatars/${userId}/${fileName}") ?: return null
         val uploadTask = storageRef.putBytes(bytes).await()
         val downloadUrl = storageRef.downloadUrl.await()
         return downloadUrl.toString()
@@ -769,7 +769,7 @@ class FirebaseService(private val context: Context? = null) {
 
         val photoId = java.util.UUID.randomUUID().toString()
         return try {
-            val storageRef = storage?.child("jobs/$jobId/initial_photos/$photoId") ?: return null
+            val storageRef = storage?.reference?.child("jobs/$jobId/initial_photos/$photoId") ?: return null
             storageRef.putBytes(bytes).await()
             storageRef.downloadUrl.await().toString()
         } catch (e: Exception) {
