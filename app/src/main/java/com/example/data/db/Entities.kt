@@ -138,7 +138,7 @@ data class ServiceProviderEntity(
     var momoNumber: String = "+256 772 198 420",
     var momoProvider: String = "MTN_MOMO", // "MTN_MOMO", "AIRTEL_MONEY"
     /** Legacy REAL value, not proven synchronized with the ledger. Never authorize cashouts with it. */
-    var walletBalance: Double = 185.0
+    var walletBalanceDisplay: Double = 185.0
 )
 
 @Entity(
@@ -517,7 +517,7 @@ data class UserProfileEntity(
     var momoNumber: String = "+256 772 198 420",
     var momoProvider: String = "MTN_MOMO",
     /** Legacy REAL value, not proven synchronized with the ledger. Never authorize cashouts with it. */
-    var walletBalance: Double = 185.0,
+    var walletBalanceDisplay: Double = 185.0,
     var latitude: Double? = null,
     var longitude: Double? = null,
     var address: String? = null,

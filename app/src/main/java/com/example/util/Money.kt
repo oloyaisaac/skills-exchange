@@ -6,13 +6,13 @@ package com.example.util
  * Server-side decisions and provider payloads have their own contracts; this helper does not
  * establish an end-to-end representation or prove all settlement flows use minor units.
  *
- * Room schema v29 still stores these amounts as REAL: job_posts budget, materialsCost, safetyFee,
+ * Room schemas v29 and v30 still store these amounts as REAL: job_posts budget, materialsCost, safetyFee,
  * laborRate, laborTotal, materialsSubtotal, platformFee, grandTotal, emergencyAddonAmount,
  * materialAdvanceAmount, calloutFee and recurringNegotiatedRate; job_quotes proposedRate and
- * totalQuote; disputes resolutionAmount; service_providers hourlyRate and walletBalance; and
- * user_profiles walletBalance. They are legacy fields, not necessarily editable quotes: for
+ * totalQuote; disputes resolutionAmount; service_providers hourlyRate and walletBalanceDisplay; and
+ * user_profiles walletBalanceDisplay. They are legacy fields, not necessarily editable quotes: for
  * example totalQuote is calculated by direct multiplication, and seeded jobs use constants.
- * The two walletBalance columns default to 185.0 and a DAO setter exists; they are not known to
+ * The two walletBalanceDisplay columns (named walletBalance before migration 29→30) default to 185.0 and a DAO setter exists; they are not known to
  * be synchronized with the ledger. They must not be used for cashout authorization.
  *
  * The schema guard is a heuristic: it checks money-shaped column names and direct Kotlin

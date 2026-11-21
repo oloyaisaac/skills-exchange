@@ -28,7 +28,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         WalletWithdrawalEntity::class,
         SosIncidentEntity::class
     ],
-    version = 29,
+    version = 30,
     exportSchema = true
 )
 @androidx.room.TypeConverters(TypeConverters::class)
@@ -656,6 +656,44 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         /**
+         * VC-05: rename legacy balance columns without requiring SQLite 3.25's RENAME COLUMN.
+         * Room runs migrations in a transaction. Snapshot all v29 descendants before deleting them,
+         * then rebuild both parents and restore descendants in foreign-key order. This avoids
+         * ON DELETE CASCADE / SET NULL silently destroying or changing dependent data.
+         * The snapshots are transaction-local; any failure aborts the whole migration.
+         */
+        val MIGRATION_29_30 = object : Migration(29, 30) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                val descendants = listOf(
+                    "job_posts", "skill_endorsements", "worker_kyc",
+                    "worker_training", "notifications", "reports",
+                    "wallet_ledger", "wallet_withdrawals", "chat_messages",
+                    "guarantors", "job_quotes", "disputes",
+                    "ratings", "job_status_audit", "sos_incidents"
+                )
+                for (table in descendants) {
+                    database.execSQL("CREATE TEMP TABLE `r04_backup_$table` AS SELECT * FROM `$table`")
+                }
+                // Reverse topological order: grandchildren before their parents.
+                for (table in descendants.asReversed()) database.execSQL("DELETE FROM `$table`")
+
+                database.execSQL("""CREATE TABLE IF NOT EXISTS `service_providers_r04_new` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `tagline` TEXT NOT NULL, `category` TEXT NOT NULL, `neighborhood` TEXT NOT NULL, `residenceYears` INTEGER NOT NULL, `hourlyRate` REAL NOT NULL, `distanceMiles` REAL NOT NULL, `rating` REAL NOT NULL, `completedJobsCount` INTEGER NOT NULL, `avgResponseTime` TEXT NOT NULL, `isVerifiedResident` INTEGER NOT NULL, `isBackgroundChecked` INTEGER NOT NULL, `bio` TEXT NOT NULL, `skillsCsv` TEXT NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `endorsementsCount` INTEGER NOT NULL, `nationalIdNumber` TEXT NOT NULL, `idDocumentUrl` TEXT NOT NULL, `selfieVerificationUrl` TEXT NOT NULL, `kycStatus` TEXT NOT NULL, `isActivated` INTEGER NOT NULL, `momoNumber` TEXT NOT NULL, `momoProvider` TEXT NOT NULL, `walletBalanceDisplay` REAL NOT NULL, PRIMARY KEY(`id`))""")
+                database.execSQL("""INSERT INTO `service_providers_r04_new` (`id`, `name`, `tagline`, `category`, `neighborhood`, `residenceYears`, `hourlyRate`, `distanceMiles`, `rating`, `completedJobsCount`, `avgResponseTime`, `isVerifiedResident`, `isBackgroundChecked`, `bio`, `skillsCsv`, `latitude`, `longitude`, `endorsementsCount`, `nationalIdNumber`, `idDocumentUrl`, `selfieVerificationUrl`, `kycStatus`, `isActivated`, `momoNumber`, `momoProvider`, `walletBalanceDisplay`) SELECT `id`, `name`, `tagline`, `category`, `neighborhood`, `residenceYears`, `hourlyRate`, `distanceMiles`, `rating`, `completedJobsCount`, `avgResponseTime`, `isVerifiedResident`, `isBackgroundChecked`, `bio`, `skillsCsv`, `latitude`, `longitude`, `endorsementsCount`, `nationalIdNumber`, `idDocumentUrl`, `selfieVerificationUrl`, `kycStatus`, `isActivated`, `momoNumber`, `momoProvider`, `walletBalance` FROM `service_providers`""")
+                database.execSQL("DROP TABLE `service_providers`")
+                database.execSQL("ALTER TABLE `service_providers_r04_new` RENAME TO `service_providers`")
+                database.execSQL("""CREATE TABLE IF NOT EXISTS `user_profiles_r04_new` (`id` TEXT NOT NULL, `phoneNumber` TEXT NOT NULL, `fullName` TEXT NOT NULL, `district` TEXT NOT NULL, `initialRole` TEXT NOT NULL, `currentActiveMode` TEXT NOT NULL, `workerKycStatus` TEXT NOT NULL, `isWorkerActivated` INTEGER NOT NULL, `trainingCompleted` INTEGER NOT NULL, `nationalIdNumber` TEXT NOT NULL, `primarySkill` TEXT, `additionalSkillsCsv` TEXT NOT NULL, `avatarUrl` TEXT NOT NULL, `backupContactName` TEXT NOT NULL, `backupContactPhone` TEXT NOT NULL, `momoNumber` TEXT NOT NULL, `momoProvider` TEXT NOT NULL, `walletBalanceDisplay` REAL NOT NULL, `latitude` REAL, `longitude` REAL, `address` TEXT, `isOnboardingCompleted` INTEGER NOT NULL, `createdAtTimestamp` INTEGER NOT NULL, `updatedAtTimestamp` INTEGER NOT NULL, PRIMARY KEY(`id`))""")
+                database.execSQL("""INSERT INTO `user_profiles_r04_new` (`id`, `phoneNumber`, `fullName`, `district`, `initialRole`, `currentActiveMode`, `workerKycStatus`, `isWorkerActivated`, `trainingCompleted`, `nationalIdNumber`, `primarySkill`, `additionalSkillsCsv`, `avatarUrl`, `backupContactName`, `backupContactPhone`, `momoNumber`, `momoProvider`, `walletBalanceDisplay`, `latitude`, `longitude`, `address`, `isOnboardingCompleted`, `createdAtTimestamp`, `updatedAtTimestamp`) SELECT `id`, `phoneNumber`, `fullName`, `district`, `initialRole`, `currentActiveMode`, `workerKycStatus`, `isWorkerActivated`, `trainingCompleted`, `nationalIdNumber`, `primarySkill`, `additionalSkillsCsv`, `avatarUrl`, `backupContactName`, `backupContactPhone`, `momoNumber`, `momoProvider`, `walletBalance`, `latitude`, `longitude`, `address`, `isOnboardingCompleted`, `createdAtTimestamp`, `updatedAtTimestamp` FROM `user_profiles`""")
+                database.execSQL("DROP TABLE `user_profiles`")
+                database.execSQL("ALTER TABLE `user_profiles_r04_new` RENAME TO `user_profiles`")
+                database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_user_profiles_phoneNumber` ON `user_profiles` (`phoneNumber`)")
+                for (table in descendants) {
+                    database.execSQL("INSERT INTO `$table` SELECT * FROM `r04_backup_$table`")
+                    database.execSQL("DROP TABLE `r04_backup_$table`")
+                }
+            }
+        }
+
+        /**
          * R04-P2-02: every retained migration, in order. `getDatabase` applies this array and the
          * migration test walks it, so a migration cannot exist without being exercised.
          */
@@ -664,7 +702,7 @@ abstract class AppDatabase : RoomDatabase() {
             MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19,
             MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23,
             MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28,
-            MIGRATION_28_29
+            MIGRATION_28_29, MIGRATION_29_30
         )
 
         fun getDatabase(context: Context): AppDatabase {

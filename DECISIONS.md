@@ -690,7 +690,7 @@ that do not exist (`updateGuarantorReview`, a validator `Outcome` object), so no
 **Decision and current limitations.** Room's wallet ledger and withdrawals use INTEGER `amountMinor`
 (hundredths of a UGX). The local cashout calculation reads ledger entries, not legacy profile balances.
 This is not a claim that all payment, refund, server, or provider paths use this representation.
-Sixteen other money fields and two `walletBalance` fields remain REAL in Room v29; `Money.kt` lists
+Sixteen other money fields and two `walletBalanceDisplay` fields remain REAL in Room v30; `Money.kt` lists
 them. Their meanings and writers differ: job creation uses `JobMoney.split`, quote submission directly
 multiplies rate by hours, and demo jobs have literal values. The two legacy balance fields default to
 185.0; a profile setter exists. They are not established to mirror the ledger and must not authorize
@@ -708,11 +708,12 @@ not a proof of authorization, arithmetic, SQL access, time semantics, or end-to-
 It allows the listed legacy REAL columns. Tests of actual cashout behavior
 and review of SQL and remote flows remain required.
 
-**Follow-up — proposed migration 29→30 (not implemented).** Rename the two legacy balance columns
-with a safe Room migration and export generated schema 30; then plan a subsequent versioned migration
-for the remaining REAL amounts with explicit rounding and provider/Firestore compatibility. Do not
-assume a target migration version remains available until implementation begins. The conversion is not
-implemented or verified by this decision.
+**Migration 29→30.** Rename the legacy balance columns to `walletBalanceDisplay`, preserving their
+values and descendants. The migration snapshots and restores dependent rows inside the Room migration
+transaction because dropping either parent can cascade. It needs temporary storage proportional to those
+rows. Compiler-generated schema and the migration chain tests are required before release. A subsequent
+versioned conversion of the remaining REAL amounts requires explicit rounding and provider/Firestore
+compatibility; no version has been reserved and that conversion is not implemented.
 
 ### D-2026-11-20-13 - One story vocabulary, and DONE is only reachable through evidence
 

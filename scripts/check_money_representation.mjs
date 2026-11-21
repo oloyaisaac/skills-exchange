@@ -32,11 +32,14 @@ export const QUOTED_MONEY = {
 };
 
 /** Legacy fields are not proven ledger mirrors and must not authorize cashouts. */
-export const DISPLAY_MIRRORS = ["user_profiles.walletBalance", "service_providers.walletBalance"];
+export const DISPLAY_MIRRORS = [
+  "user_profiles.walletBalance", "service_providers.walletBalance", // historical v29
+  "user_profiles.walletBalanceDisplay", "service_providers.walletBalanceDisplay", // v30
+];
 
 // Column *names* that denote an amount of money, anchored at the end so prose columns
 // (`reviewFeedback`) and URL columns (`materialAdvanceReceiptUrl`) are not mistaken for money.
-const MONEY = /(amount|amountminor|budget|fees?|totals?|subtotals?|costs?|rates?|balances?|prices?|advances?|quotes?)$/i;
+const MONEY = /(amount|amountminor|budget|fees?|totals?|subtotals?|costs?|rates?|balances?(?:display)?|prices?|advances?|quotes?)$/i;
 
 export function newestSchema(dir) {
   const files = fs
@@ -229,7 +232,7 @@ if (process.argv.includes("--selftest")) {
 
   console.log(
     `Money-representation check passed: schema v${schema.version}; money-shaped columns are ` +
-      `INTEGER or allowlisted REAL. No direct walletBalance member access found in scanned Kotlin files. ` +
+      `INTEGER or allowlisted REAL. No direct walletBalance / walletBalanceDisplay member access found in scanned Kotlin files. ` +
       `This heuristic does not prove money flow or detect SQL reads.`
   );
 }
