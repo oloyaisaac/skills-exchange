@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * VC-06: heuristic schema and source checks, not proof of money-flow correctness.
- * Checks money-shaped numeric columns against an explicit legacy REAL allowlist and
+ * Checks money-shaped columns against an explicit legacy REAL allowlist and
  * reports direct Kotlin member accesses to legacy walletBalance in all source layers.
  * It cannot detect SQL reads, reflection, aliases, indirect flows or validate semantics.
  * A separate review and tests of cashout authorization remain necessary.
@@ -37,7 +37,6 @@ export const DISPLAY_MIRRORS = ["user_profiles.walletBalance", "service_provider
 // Column *names* that denote an amount of money, anchored at the end so prose columns
 // (`reviewFeedback`) and URL columns (`materialAdvanceReceiptUrl`) are not mistaken for money.
 const MONEY = /(amount|amountminor|budget|fees?|totals?|subtotals?|costs?|rates?|balances?|prices?|advances?|quotes?)$/i;
-const NUMERIC = new Set(["REAL", "INTEGER", "NUMERIC", "FLOAT", "DOUBLE"]);
 
 export function newestSchema(dir) {
   const files = fs
@@ -55,7 +54,6 @@ export function moneyColumns(entities) {
   const found = [];
   for (const entity of entities) {
     for (const field of entity.fields) {
-      if (!NUMERIC.has(field.affinity)) continue; // TEXT/BLOB cannot store an amount
       if (!MONEY.test(field.columnName)) continue;
       found.push({ key: `${entity.tableName}.${field.columnName}`, affinity: field.affinity });
     }
@@ -69,11 +67,11 @@ export function auditSchema({ entities }, quoted = QUOTED_MONEY, mirrors = DISPL
   const seen = new Set(columns.map((column) => column.key));
 
   for (const column of columns) {
-    if (column.affinity === "INTEGER") continue; // settled money, minor units — the default
+    if (column.affinity === "INTEGER" && !Object.hasOwn(quoted, column.key) && !mirrors.includes(column.key)) continue;
     if (column.affinity === "REAL" && Object.prototype.hasOwnProperty.call(quoted, column.key)) continue;
     if (column.affinity === "REAL" && mirrors.includes(column.key)) continue;
     problems.push(
-      `${column.key}: money-shaped column stored as ${column.affinity} and not classified as quoted money`
+      `${column.key}: money-shaped column stored as ${column.affinity} and not classified as a valid INTEGER or allowlisted REAL`
     );
   }
 
@@ -84,9 +82,41 @@ export function auditSchema({ entities }, quoted = QUOTED_MONEY, mirrors = DISPL
   return problems;
 }
 
-/** Kotlin comments discuss these columns by name; only code that reads them matters. */
+/** Remove Kotlin comments without treating // inside a string as a comment.
+ * This is a lightweight lexer, not a parser; member names inside strings can produce false positives.
+ */
 export function stripComments(source) {
-  return source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/[^\n]*/g, " ");
+  let out = "", state = "code", depth = 0;
+  for (let i = 0; i < source.length;) {
+    const pair = source.slice(i, i + 2), triple = source.slice(i, i + 3), ch = source[i];
+    if (state === "line") {
+      if (ch === "\n") { state = "code"; out += "\n"; } else out += " ";
+      i++; continue;
+    }
+    if (state === "block") {
+      if (pair === "/*") { depth++; out += "  "; i += 2; continue; }
+      if (pair === "*/") { depth--; out += "  "; i += 2; if (!depth) state = "code"; continue; }
+      out += ch === "\n" ? "\n" : " "; i++; continue;
+    }
+    if (state === "triple") {
+      if (triple === '"""') { out += triple; i += 3; state = "code"; }
+      else { out += ch; i++; }
+      continue;
+    }
+    if (state === "string" || state === "char") {
+      out += ch; i++;
+      if (ch === "\\" && i < source.length) { out += source[i++]; continue; }
+      if ((state === "string" && ch === '"') || (state === "char" && ch === "'")) state = "code";
+      continue;
+    }
+    if (pair === "//") { state = "line"; out += "  "; i += 2; continue; }
+    if (pair === "/*") { state = "block"; depth = 1; out += "  "; i += 2; continue; }
+    if (triple === '"""') { state = "triple"; out += triple; i += 3; continue; }
+    if (ch === '"') state = "string";
+    else if (ch === "'") state = "char";
+    out += ch; i++;
+  }
+  return out;
 }
 
 /** Detect direct member accesses in all Kotlin source layers; this is not a Kotlin parser. */
@@ -96,7 +126,7 @@ export function auditMirrorReaders(files, mirrors = DISPLAY_MIRRORS) {
     const field = mirror.split(".")[1];
     for (const [file, text] of Object.entries(files)) {
       const reader = new RegExp(`\\.${field}\\b`);
-      if (reader.test(stripComments(text))) problems.push(`${mirror}: read by ${file}, but it is a display mirror of the ledger`);
+      if (reader.test(stripComments(text))) problems.push(`${mirror}: direct member access in ${file}; this legacy field must not authorize cashouts`);
     }
   }
   return problems;
@@ -129,6 +159,11 @@ function selftest() {
     throw new Error(`selftest: an unclassified REAL money column was not reported: ${unclassified}`);
   }
 
+  const unclassifiedText = auditSchema(schema([{ columnName: "grandTotal", affinity: "TEXT" }]), {});
+  if (!unclassifiedText.some((p) => p.includes("not classified"))) {
+    throw new Error("selftest: unclassified TEXT money-shaped field was not reported");
+  }
+
   const settled = auditSchema(schema([{ columnName: "walletBalance", affinity: "REAL" }]), {});
   if (!settled.some((p) => p.includes("walletBalance"))) {
     throw new Error("selftest: a REAL balance was not reported");
@@ -146,11 +181,17 @@ function selftest() {
   const readers = auditMirrorReaders({ "app/src/main/java/com/example/ui/Foo.kt": "job.walletBalance * 2" }, [
     "t.walletBalance",
   ]);
-  if (!readers.some((p) => p.includes("display mirror"))) {
+  if (!readers.some((p) => p.includes("direct member access"))) {
     throw new Error("selftest: a mirror reader outside the data layer was not reported");
   }
   if (auditMirrorReaders({ "app/src/main/java/com/example/ui/Bar.kt": "// row.walletBalance is only display" }, ["t.walletBalance"]).length !== 0) {
     throw new Error("selftest: a comment was mistaken for a reader");
+  }
+  if (auditMirrorReaders({ "app/src/main/java/com/example/data/repository/X.kt": 'val url = "https://example.com"; val n = row.walletBalance' }, ["t.walletBalance"]).length === 0) {
+    throw new Error("selftest: URL string hid member access");
+  }
+  if (auditMirrorReaders({ "app/src/main/java/com/example/data/repository/X.kt": "/* outer /* nested */ row.walletBalance */" }, ["t.walletBalance"]).length !== 0) {
+    throw new Error("selftest: nested comment was mistaken for a read");
   }
   if (auditMirrorReaders({ "app/src/main/java/com/example/data/repository/X.kt": "row.walletBalance" }, ["t.walletBalance"]).length === 0) {
     throw new Error("selftest: data-layer member access was not reported");
@@ -159,8 +200,12 @@ function selftest() {
     throw new Error("selftest: a changed allowlisted affinity was not reported");
   }
 
+  if (auditSchema(schema([{ columnName: "budget", affinity: "INTEGER" }]), { "t.budget": "legacy" }).length === 0) {
+    throw new Error("selftest: converted field with stale REAL allowlist was not reported");
+  }
+
   console.log(
-    "Money-representation selftest passed: unclassified REAL fields, affinity drift, stale allowlist and direct member access in UI/data fixtures detected."
+    "Money-representation selftest passed: unclassified REAL/TEXT fields, affinity drift, stale allowlist and direct member access in UI/data fixtures detected."
   );
 }
 
@@ -183,7 +228,7 @@ if (process.argv.includes("--selftest")) {
   }
 
   console.log(
-    `Money-representation check passed: schema v${schema.version}; money-shaped numeric columns are ` +
+    `Money-representation check passed: schema v${schema.version}; money-shaped columns are ` +
       `INTEGER or allowlisted REAL. No direct walletBalance member access found in scanned Kotlin files. ` +
       `This heuristic does not prove money flow or detect SQL reads.`
   );

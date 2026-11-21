@@ -96,3 +96,18 @@ legacy REAL values in authorization still requires independent evidence. Android
 were not run locally because the Android SDK and JDK are unavailable. R04 remains not approved. A
 separate agent must complete the migration if required and independently verify the full correction;
 R05 remains closed.
+
+### Additional R04 implementation progress
+
+The money guard now tests money-shaped TEXT as well as numeric affinities, detects a stale REAL
+allowlist when a field becomes INTEGER, and checks a direct data-layer member read following a URL
+literal (comments are removed without truncating URL strings). This remains a lexical heuristic, not
+proof of data flow or SQL behavior. On `6716927`, CI and Android build completed successfully; these
+latest guard edits have only been checked locally so far.
+
+The column rename is still outstanding. Schema v29 declares dependent foreign keys with CASCADE
+and SET NULL actions to both affected tables. A local SQLite 3.40.1 in-memory probe with foreign keys
+on showed that dropping a parent table deletes its ledger child row. A naive Room table rebuild would
+therefore risk data loss, and using `ALTER TABLE ... RENAME COLUMN` without handling older supported
+Android SQLite versions is not justified. A safe migration with representative child-data tests and
+Room-generated schema is still required; do not interpret this as completion of VC-05.

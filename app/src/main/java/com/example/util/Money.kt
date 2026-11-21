@@ -15,7 +15,7 @@ package com.example.util
  * The two walletBalance columns default to 185.0 and a DAO setter exists; they are not known to
  * be synchronized with the ledger. They must not be used for cashout authorization.
  *
- * The schema guard is a heuristic: it checks money-shaped numeric column names and direct Kotlin
+ * The schema guard is a heuristic: it checks money-shaped column names and direct Kotlin
  * member access, not SQL, reflection, calculation provenance or all possible money flows.
  * See D-2026-11-20-15 in DECISIONS.md for limitations and proposed migration work.
  */

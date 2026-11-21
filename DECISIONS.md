@@ -702,10 +702,10 @@ time representation: presentation fields such as `timestampText` and scheduling 
 New persisted event instants should use epoch milliseconds; conversion to display/time-zone-specific
 values belongs at the edge.
 
-**Guard.** `scripts/check_money_representation.mjs` flags unclassified money-shaped numeric schema
+**Guard.** `scripts/check_money_representation.mjs` flags unclassified money-shaped schema
 columns and direct Kotlin `walletBalance` member access in any layer. It is a name-based heuristic,
 not a proof of authorization, arithmetic, SQL access, time semantics, or end-to-end payment behavior.
-It ignores TEXT fields and allows the listed legacy REAL columns. Tests of actual cashout behavior
+It allows the listed legacy REAL columns. Tests of actual cashout behavior
 and review of SQL and remote flows remain required.
 
 **Follow-up — proposed migration 29→30 (not implemented).** Rename the two legacy balance columns
