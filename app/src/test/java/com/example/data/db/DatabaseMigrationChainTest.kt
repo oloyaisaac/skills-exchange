@@ -279,6 +279,9 @@ class DatabaseMigrationChainTest {
             "sos_incidents" to mapOf("id" to "'sos'", "jobId" to "'job'")
         )
         for ((table, overrides) in fixtures) insertV29Fixture(raw, table, overrides)
+        val before = fixtures.associate { (table, _) ->
+            table to raw.rawQuery("SELECT * FROM `$table`", null).use { snapshot(it) }
+        }
         raw.close()
 
         db = Room.databaseBuilder(context, AppDatabase::class.java, dbName)
@@ -289,6 +292,9 @@ class DatabaseMigrationChainTest {
             migrated.query("SELECT COUNT(*) FROM `$table`").use { cursor ->
                 assertTrue(cursor.moveToFirst())
                 assertEquals("row lost from $table", 1, cursor.getInt(0))
+            }
+            migrated.query("SELECT * FROM `$table`").use { cursor ->
+                assertEquals("values changed in $table", before[table], snapshot(cursor))
             }
         }
         migrated.query("SELECT walletBalanceDisplay FROM service_providers WHERE id='provider'").use {
@@ -304,6 +310,55 @@ class DatabaseMigrationChainTest {
             assertTrue(it.moveToFirst()); assertEquals(12345L, it.getLong(0))
         }
         migrated.query("PRAGMA foreign_key_check").use { assertEquals(0, it.count) }
+    }
+
+    private fun snapshot(cursor: android.database.Cursor): List<List<String?>> {
+        val rows = mutableListOf<List<String?>>()
+        while (cursor.moveToNext()) {
+            rows += (0 until cursor.columnCount).map { index ->
+                if (cursor.isNull(index)) null else cursor.getString(index)
+            }
+        }
+        return rows
+    }
+
+    @Test
+    fun `migration 29 to 30 rolls back if dependent row restore fails`() {
+        val file = context.getDatabasePath(dbName)
+        file.parentFile?.mkdirs()
+        val raw = SQLiteDatabase.openOrCreateDatabase(file, null)
+        raw.setForeignKeyConstraintsEnabled(true)
+        installSchema(raw, version = 29)
+        raw.version = 29
+        insertV29Fixture(raw, "user_profiles", mapOf("id" to "'user'", "phoneNumber" to "'unique'", "walletBalance" to "456.25"))
+        insertV29Fixture(raw, "wallet_ledger", mapOf("id" to "'ledger'", "workerId" to "'user'", "amountMinor" to "12345"))
+        raw.execSQL("CREATE TRIGGER fail_ledger_restore BEFORE INSERT ON wallet_ledger BEGIN SELECT RAISE(ABORT, 'restore failure'); END")
+        raw.close()
+
+        val failing = Room.databaseBuilder(context, AppDatabase::class.java, dbName)
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS).allowMainThreadQueries().build()
+        try {
+            try {
+                failing.openHelper.writableDatabase
+                throw AssertionError("migration unexpectedly succeeded")
+            } catch (expected: android.database.SQLException) {
+                assertTrue(expected.message.orEmpty().contains("restore failure"))
+            }
+        } finally {
+            failing.close()
+        }
+        val reopened = SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE)
+        try {
+            assertEquals(29, reopened.version)
+            reopened.rawQuery("SELECT walletBalance FROM user_profiles WHERE id='user'", null).use {
+                assertTrue(it.moveToFirst()); assertEquals(456.25, it.getDouble(0), 0.0)
+            }
+            reopened.rawQuery("SELECT amountMinor FROM wallet_ledger WHERE id='ledger'", null).use {
+                assertTrue(it.moveToFirst()); assertEquals(12345L, it.getLong(0))
+            }
+        } finally {
+            reopened.close()
+        }
     }
 
     private fun insertV29Fixture(raw: SQLiteDatabase, table: String, overrides: Map<String, String>) {

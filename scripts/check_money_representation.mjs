@@ -2,7 +2,7 @@
 /**
  * VC-06: heuristic schema and source checks, not proof of money-flow correctness.
  * Checks money-shaped columns against an explicit legacy REAL allowlist and
- * reports direct Kotlin member accesses to legacy walletBalance in all source layers.
+ * reports direct Kotlin member accesses to legacy balance fields in all source layers.
  * It cannot detect SQL reads, reflection, aliases, indirect flows or validate semantics.
  * A separate review and tests of cashout authorization remain necessary.
  */

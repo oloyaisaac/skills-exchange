@@ -703,7 +703,7 @@ New persisted event instants should use epoch milliseconds; conversion to displa
 values belongs at the edge.
 
 **Guard.** `scripts/check_money_representation.mjs` flags unclassified money-shaped schema
-columns and direct Kotlin `walletBalance` member access in any layer. It is a name-based heuristic,
+columns and direct Kotlin `walletBalance` and `walletBalanceDisplay` member access in any layer. It is a name-based heuristic,
 not a proof of authorization, arithmetic, SQL access, time semantics, or end-to-end payment behavior.
 It allows the listed legacy REAL columns. Tests of actual cashout behavior
 and review of SQL and remote flows remain required.
