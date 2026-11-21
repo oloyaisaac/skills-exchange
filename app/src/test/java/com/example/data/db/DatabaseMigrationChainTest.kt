@@ -22,7 +22,7 @@ import org.robolectric.annotation.Config
  *
  * The database starts as a real version-11 file built from `src/test/resources/migration/
  * v11_baseline.sql`, is seeded with a row, and is then opened through `AppDatabase` with the
- * production migration array. Room runs 11 → 29 and, because `exportSchema` is on and the entity
+ * production migration array. Room runs 11 → 30 and, because `exportSchema` is on and the entity
  * classes are the contract, validates the result: a column, index or foreign key that a migration
  * forgets makes `Room.openHelper.writableDatabase` throw `IllegalStateException("Migration didn't
  * properly handle ...")`, which fails this test.
@@ -107,10 +107,10 @@ class DatabaseMigrationChainTest {
     }
 
     @Test
-    fun `every consecutive version from 11 to 29 has exactly one migration`() {
+    fun `every consecutive version from 11 to 30 has exactly one migration`() {
         val pairs = AppDatabase.ALL_MIGRATIONS.map { it.startVersion to it.endVersion }
         assertEquals(
-            (11 until 29).map { it to it + 1 },
+            (11 until 30).map { it to it + 1 },
             pairs
         )
     }
@@ -125,7 +125,7 @@ class DatabaseMigrationChainTest {
 
         // Opening the database is the validation: Room compares the migrated schema with the
         // entity definitions and throws if they disagree.
-        assertEquals(29, db!!.openHelper.writableDatabase.version)
+        assertEquals(30, db!!.openHelper.writableDatabase.version)
 
         val job = runBlocking { db!!.jobPostDao().getJobById("job_v11") }
         assertNotNull("the pre-migration job row must survive", job)
@@ -215,7 +215,7 @@ class DatabaseMigrationChainTest {
             .allowMainThreadQueries()
             .build()
 
-        assertEquals(29, db!!.openHelper.writableDatabase.version)
+        assertEquals(30, db!!.openHelper.writableDatabase.version)
         val entries = runBlocking { db!!.walletLedgerDao().getEntriesForWorker("worker_1") }
         assertEquals(1, entries.size)
         assertEquals(10_050L, entries.single().amountMinor)
@@ -243,12 +243,144 @@ class DatabaseMigrationChainTest {
             .allowMainThreadQueries()
             .build()
 
-        assertEquals(29, db!!.openHelper.writableDatabase.version)
+        assertEquals(30, db!!.openHelper.writableDatabase.version)
         val cleared = runBlocking { db!!.jobPostDao().getJobById("job_default_pin") }
         assertNotNull("the row itself must survive", cleared)
         assertEquals("the shared default PIN must be gone", "", cleared!!.doorstepPin)
         val kept = runBlocking { db!!.jobPostDao().getJobById("job_real_pin") }
         assertEquals("a job's own PIN is not the migration's business", "7319", kept!!.doorstepPin)
+    }
+
+    @Test
+    fun `migration 29 to 30 preserves parents and all dependent rows`() {
+        val file = context.getDatabasePath(dbName)
+        file.parentFile?.mkdirs()
+        val raw = SQLiteDatabase.openOrCreateDatabase(file, null)
+        raw.setForeignKeyConstraintsEnabled(true)
+        installSchema(raw, version = 29)
+        raw.version = 29
+        val fixtures = listOf(
+            "service_providers" to mapOf("id" to "'provider'", "walletBalance" to "123.5"),
+            "user_profiles" to mapOf("id" to "'user'", "phoneNumber" to "'unique'", "walletBalance" to "456.25"),
+            "job_posts" to mapOf("id" to "'job'", "assignedProviderId" to "'provider'"),
+            "skill_endorsements" to mapOf("id" to "'endorsement'", "providerId" to "'provider'"),
+            "worker_kyc" to mapOf("id" to "'kyc'", "userId" to "'user'"),
+            "worker_training" to mapOf("id" to "'training'", "userId" to "'user'"),
+            "notifications" to mapOf("id" to "'notification'", "userId" to "'user'"),
+            "reports" to mapOf("id" to "'report'", "reportedBy" to "'user'", "reportedUserId" to "'user'"),
+            "wallet_ledger" to mapOf("id" to "'ledger'", "workerId" to "'user'", "amountMinor" to "12345"),
+            "wallet_withdrawals" to mapOf("id" to "'withdrawal'", "workerId" to "'user'"),
+            "chat_messages" to mapOf("id" to "'chat'", "jobId" to "'job'"),
+            "guarantors" to mapOf("id" to "'guarantor'", "workerKycId" to "'user'"),
+            "job_quotes" to mapOf("id" to "'quote'", "jobId" to "'job'", "workerId" to "'provider'"),
+            "disputes" to mapOf("id" to "'dispute'", "jobId" to "'job'"),
+            "ratings" to mapOf("id" to "'rating'", "jobId" to "'job'"),
+            "job_status_audit" to mapOf("id" to "'audit'", "jobId" to "'job'"),
+            "sos_incidents" to mapOf("id" to "'sos'", "jobId" to "'job'")
+        )
+        for ((table, overrides) in fixtures) insertV29Fixture(raw, table, overrides)
+        val before = fixtures.associate { (table, _) ->
+            table to raw.rawQuery("SELECT * FROM `$table`", null).use { snapshot(it) }
+        }
+        raw.close()
+
+        db = Room.databaseBuilder(context, AppDatabase::class.java, dbName)
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS).allowMainThreadQueries().build()
+        val migrated = db!!.openHelper.writableDatabase
+        assertEquals(30, migrated.version)
+        for ((table, _) in fixtures) {
+            migrated.query("SELECT COUNT(*) FROM `$table`").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals("row lost from $table", 1, cursor.getInt(0))
+            }
+            migrated.query("SELECT * FROM `$table`").use { cursor ->
+                assertEquals("values changed in $table", before[table], snapshot(cursor))
+            }
+        }
+        migrated.query("SELECT walletBalanceDisplay FROM service_providers WHERE id='provider'").use {
+            assertTrue(it.moveToFirst()); assertEquals(123.5, it.getDouble(0), 0.0)
+        }
+        migrated.query("SELECT walletBalanceDisplay FROM user_profiles WHERE id='user'").use {
+            assertTrue(it.moveToFirst()); assertEquals(456.25, it.getDouble(0), 0.0)
+        }
+        migrated.query("SELECT assignedProviderId FROM job_posts WHERE id='job'").use {
+            assertTrue(it.moveToFirst()); assertEquals("provider", it.getString(0))
+        }
+        migrated.query("SELECT amountMinor FROM wallet_ledger WHERE id='ledger'").use {
+            assertTrue(it.moveToFirst()); assertEquals(12345L, it.getLong(0))
+        }
+        migrated.query("PRAGMA foreign_key_check").use { assertEquals(0, it.count) }
+    }
+
+    private fun snapshot(cursor: android.database.Cursor): List<List<String?>> {
+        val rows = mutableListOf<List<String?>>()
+        while (cursor.moveToNext()) {
+            rows += (0 until cursor.columnCount).map { index ->
+                if (cursor.isNull(index)) null else cursor.getString(index)
+            }
+        }
+        return rows
+    }
+
+    @Test
+    fun `migration 29 to 30 rolls back if dependent row restore fails`() {
+        val file = context.getDatabasePath(dbName)
+        file.parentFile?.mkdirs()
+        val raw = SQLiteDatabase.openOrCreateDatabase(file, null)
+        raw.setForeignKeyConstraintsEnabled(true)
+        installSchema(raw, version = 29)
+        raw.version = 29
+        insertV29Fixture(raw, "user_profiles", mapOf("id" to "'user'", "phoneNumber" to "'unique'", "walletBalance" to "456.25"))
+        insertV29Fixture(raw, "wallet_ledger", mapOf("id" to "'ledger'", "workerId" to "'user'", "amountMinor" to "12345"))
+        raw.execSQL("CREATE TRIGGER fail_ledger_restore BEFORE INSERT ON wallet_ledger BEGIN SELECT RAISE(ABORT, 'restore failure'); END")
+        raw.close()
+
+        val failing = Room.databaseBuilder(context, AppDatabase::class.java, dbName)
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS).allowMainThreadQueries().build()
+        try {
+            try {
+                failing.openHelper.writableDatabase
+                throw AssertionError("migration unexpectedly succeeded")
+            } catch (expected: android.database.SQLException) {
+                assertTrue(expected.message.orEmpty().contains("restore failure"))
+            }
+        } finally {
+            failing.close()
+        }
+        val reopened = SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE)
+        try {
+            assertEquals(29, reopened.version)
+            reopened.rawQuery("SELECT walletBalance FROM user_profiles WHERE id='user'", null).use {
+                assertTrue(it.moveToFirst()); assertEquals(456.25, it.getDouble(0), 0.0)
+            }
+            reopened.rawQuery("SELECT amountMinor FROM wallet_ledger WHERE id='ledger'", null).use {
+                assertTrue(it.moveToFirst()); assertEquals(12345L, it.getLong(0))
+            }
+        } finally {
+            reopened.close()
+        }
+    }
+
+    private fun insertV29Fixture(raw: SQLiteDatabase, table: String, overrides: Map<String, String>) {
+        val entities = org.json.JSONObject(readSchemaAsset("com.example.data.db.AppDatabase/29.json"))
+            .getJSONObject("database").getJSONArray("entities")
+        val entity = (0 until entities.length()).map { entities.getJSONObject(it) }
+            .first { it.getString("tableName") == table }
+        val fields = entity.getJSONArray("fields")
+        val columns = mutableListOf<String>()
+        val values = mutableListOf<String>()
+        for (i in 0 until fields.length()) {
+            val field = fields.getJSONObject(i)
+            val column = field.getString("columnName")
+            columns += "`$column`"
+            values += overrides[column] ?: when {
+                !field.optBoolean("notNull", false) -> "NULL"
+                field.getString("affinity") == "TEXT" -> "''"
+                field.getString("affinity") == "REAL" -> "0.0"
+                else -> "0"
+            }
+        }
+        raw.execSQL("INSERT INTO `$table` (${columns.joinToString()}) VALUES (${values.joinToString()})")
     }
 
     /**

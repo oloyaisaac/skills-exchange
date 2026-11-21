@@ -65,22 +65,14 @@ jobs:
           set -o pipefail
           ./gradlew :app:compileDebugKotlin --stacktrace --no-daemon 2>&1 | tee compile.log
 
-      # R04-P2-01: Room writes its schema JSON during compilation. The remediation sandbox cannot
-      # run Gradle, so the generated files are published to the `ci-schema` branch and committed
-      # from there; the test run above can only validate what is actually committed.
-      - name: Publish generated Room schema
+      # Preserve compiler-generated Room exports as a run artifact for review and commit.
+      - name: Upload generated Room schemas
         if: always()
-        run: |
-          set -euo pipefail
-          if [ ! -d app/schemas ]; then echo "no schema directory"; exit 0; fi
-          mkdir -p /tmp/schema-publish && cd /tmp/schema-publish
-          git init -q .
-          cp -r "$GITHUB_WORKSPACE/app/schemas" ./schemas
-          git add -A
-          git -c user.email=ci@users.noreply.github.com -c user.name="CI schema" \
-            commit -qm "ci: room schemas for $GITHUB_SHA"
-          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" \
-            HEAD:ci-schema
+        uses: actions/upload-artifact@v4
+        with:
+          name: room-schemas
+          path: app/schemas
+          if-no-files-found: warn
 
       - name: Run JVM unit tests
         run: |

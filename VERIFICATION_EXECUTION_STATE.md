@@ -78,3 +78,52 @@ and `reviewer_completions/` are evidence and stay.
   real independence limit, not a formality: every claim below is re-derived from source, configuration
   and executed runs, and no completion declaration was accepted as evidence — the R01 declaration
   ("I finished the work for this reviewer.") contains none.
+
+### R04 proposed-correction re-check
+
+PR #34 merged the proposed corrections, but R04 remains **PARTIALLY VERIFIED** and not approved.
+VC-05 remains open; VC-06 has demonstrated limitations and overclaims; VC-07 is partial. The
+re-check record is restored in `verification/reports/VERIFICATION_04.md` §8. Await a separate
+implementation agent's corrections and independently re-verify R04; do not open R05.
+
+### R04 implementation handoff (not independent verification)
+
+At the user's direction this session switched from verifier to implementation. It corrected unsupported
+money/time claims, scoped the heuristic guard and extended its data-layer member-access selftest, and
+corrected the schema README. These changes do **not** complete VC-05: the two Room columns have not
+been renamed, the proposed 29→30 migration has not been written or exported, and the treatment of
+legacy REAL values in authorization still requires independent evidence. Android compilation and tests
+were not run locally because the Android SDK and JDK are unavailable. R04 remains not approved. A
+separate agent must complete the migration if required and independently verify the full correction;
+R05 remains closed.
+
+### Additional R04 implementation progress
+
+The money guard now tests money-shaped TEXT as well as numeric affinities, detects a stale REAL
+allowlist when a field becomes INTEGER, and checks a direct data-layer member read following a URL
+literal (comments are removed without truncating URL strings). This remains a lexical heuristic, not
+proof of data flow or SQL behavior. On `6716927`, CI and Android build completed successfully; these
+latest guard edits have only been checked locally so far.
+
+The column rename is still outstanding. Schema v29 declares dependent foreign keys with CASCADE
+and SET NULL actions to both affected tables. A local SQLite 3.40.1 in-memory probe with foreign keys
+on showed that dropping a parent table deletes its ledger child row. A naive Room table rebuild would
+therefore risk data loss, and using `ALTER TABLE ... RENAME COLUMN` without handling older supported
+Android SQLite versions is not justified. A safe migration with representative child-data tests and
+Room-generated schema is still required; do not interpret this as completion of VC-05.
+
+### R04 implementation update — migration 29→30
+
+The two legacy balance columns are renamed to `walletBalanceDisplay` by `MIGRATION_29_30`; Room's
+compiler-generated v30 JSON is committed. The migration snapshots dependent tables and restores them
+in foreign-key order, inside Room's migration transaction. A local SQLite 3.40.1 exercise preserved
+all values in 17 parent/descendant fixture tables with foreign keys enabled. The Android CI run
+44912407962 on `0caf544` passed compile, unit tests (including the complete v11→30 chain,
+parent/descendant row preservation and forced-restore-failure rollback), lint, coverage, and release
+build. The migration requires temporary storage proportional to descendant rows. These are implementation
+test results, not independent verification.
+
+VC-05 is **not yet closed**: legacy REAL job values are sent to Firestore and used in collection
+pricing decisions; they cannot honestly be claimed never to participate in payment decisions.
+`MIGRATION_30_31` is a proposed, unimplemented conversion. VC-06 and VC-07 changes also await independent
+review. R04 remains not approved; R05 remains closed.

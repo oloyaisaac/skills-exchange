@@ -685,39 +685,40 @@ that do not exist (`updateGuarantorReview`, a validator `Outcome` object), so no
 > *premise* does not: there is now no pinned JVM, and the remediation environment has no JDK at all.
 > See D-2026-11-20-14 for the rule that replaced it.
 
-### D-2026-11-20-15 - Money has one representation per role, and the schema is checked against it
+### D-2026-11-20-15 - Document existing money and time representations
 
-**Context.** R04 required "a documented single representation for money". The round wrote a comment in
-`Money.kt` claiming storage and balances were minor units, converted `wallet_ledger` and
-`wallet_withdrawals` to `amountMinor INTEGER`, and stopped. Independent verification read the exported
-`29.json` schema instead of the comment: **eighteen REAL money columns and two REAL `walletBalance`
-columns against two INTEGER tables**. The document asserted something the schema contradicted, and
-nothing failed.
+**Decision and current limitations.** Room's wallet ledger and withdrawals use INTEGER `amountMinor`
+(hundredths of a UGX). The local cashout calculation reads ledger entries, not legacy profile balances.
+This is not a claim that all payment, refund, server, or provider paths use this representation.
+Sixteen other money fields and two `walletBalanceDisplay` fields remain REAL in Room v30; `Money.kt` lists
+them. Their meanings and writers differ: job creation uses `JobMoney.split`, quote submission directly
+multiplies rate by hours, and demo jobs have literal values. The two legacy balance fields default to
+185.0; a profile setter exists. They are not established to mirror the ledger and must not authorize
+cashouts. This exclusion is established for the local cashout path, not for all money workflows:
+`FirebaseService` sends `job.grandTotal` to Firestore, and `functions/src/momoCollection.ts`
+validates and uses Firestore job pricing. These REAL values cannot honestly be called merely display
+values or said never to participate in payment decisions.
 
-**Options considered.**
+**Time.** Database event timestamps such as `createdAt`, `updatedAt`, and `createdTimestamp` are
+`Long` epoch milliseconds when populated by `System.currentTimeMillis()`. This is not a universal
+time representation: presentation fields such as `timestampText` and scheduling strings also exist.
+New persisted event instants should use epoch milliseconds; conversion to display/time-zone-specific
+values belongs at the edge.
 
-1. *Convert everything to minor units.* Correct eventually, but it means a migration and a rewrite of
-   job pricing, quote acceptance, dispute resolution and every screen that formats an amount — a large
-   change to money code with no device in this environment.
-2. *Delete the claim.* Cheap, but leaves the next contributor to invent their own rule.
-3. **Classify by role, then enforce the classification** (chosen).
+**Guard.** `scripts/check_money_representation.mjs` flags unclassified money-shaped schema
+columns and direct Kotlin `walletBalance` and `walletBalanceDisplay` member access in any layer. It is a name-based heuristic,
+not a proof of authorization, arithmetic, SQL access, time semantics, or end-to-end payment behavior.
+It allows the listed legacy REAL columns. Tests of actual cashout behavior
+and review of SQL and remote flows remain required.
 
-**Decision.** Money is one representation per role:
-
-- **settled** (summed into a balance, reserved, withdrawn, refunded, paid out) — `Long` minor units,
-  `Double` never touches it;
-- **quoted** (a price still being edited) — `REAL`, produced only by `JobMoney.split`, which rounds each
-  component once in whole shillings, and enumerated with a reason in the guard's `QUOTED_MONEY`;
-- **display mirror** — `user_profiles.walletBalance` and `service_providers.walletBalance` are mirrors of
-  the ledger with **no readers outside `com.example.data`**, which the guard verifies rather than assumes.
-
-`scripts/check_money_representation.mjs` parses the newest committed schema and fails the build on: a
-money-shaped numeric column that is REAL and unclassified, a REAL balance, an allowlist entry that no
-longer exists, or any read of a mirror outside the data layer.
-
-**Consequences.** The claim in `Money.kt` is now narrower and true. The remaining conversion (job pricing
-as minor units) is not deferred by promise: it is a separate, named piece of work that will delete entries
-from `QUOTED_MONEY` as it lands, and the guard will not let the list grow silently in the meantime.
+**Migration 29→30.** Rename the legacy balance columns to `walletBalanceDisplay`, preserving their
+values and descendants. The migration snapshots and restores dependent rows inside the Room migration
+transaction because dropping either parent can cascade. It needs temporary storage proportional to those
+rows. Compiler-generated schema and the migration chain tests are required before release. A subsequent
+conversion of the remaining REAL amounts is proposed as `MIGRATION_30_31` (not implemented or
+reserved). It requires explicit rounding, preservation of legacy values, and provider/Firestore
+compatibility. Until that work is implemented and verified, the single-money-representation criterion
+remains unmet.
 
 ### D-2026-11-20-13 - One story vocabulary, and DONE is only reachable through evidence
 

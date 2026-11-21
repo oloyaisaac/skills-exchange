@@ -355,7 +355,7 @@ interface UserProfileDao {
     @Query("UPDATE user_profiles SET trainingCompleted = :completed, updatedAtTimestamp = :timestamp WHERE id = :userId")
     suspend fun updateTrainingStatus(userId: String, completed: Boolean, timestamp: Long = System.currentTimeMillis())
 
-    @Query("UPDATE user_profiles SET walletBalance = :newBalance, updatedAtTimestamp = :timestamp WHERE id = :userId")
+    @Query("UPDATE user_profiles SET walletBalanceDisplay = :newBalance, updatedAtTimestamp = :timestamp WHERE id = :userId")
     suspend fun updateWalletBalance(userId: String, newBalance: Double, timestamp: Long = System.currentTimeMillis())
 
     /**
