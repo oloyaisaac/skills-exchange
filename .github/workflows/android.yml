@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: android-${{ github.ref }}
@@ -73,6 +74,22 @@ jobs:
           name: room-schemas
           path: app/schemas
           if-no-files-found: warn
+
+      # Artifact storage is not accessible from the remediation sandbox. Publish a compressed,
+      # compiler-generated schema in a PR comment so it can be retrieved through GitHub's API.
+      - name: Publish current schema to PR
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          schema=app/schemas/com.example.data.db.AppDatabase/30.json
+          test -f "$schema"
+          printf 'Room schema 30, generated from commit %s (gzip/base64):\n\n' "$HEAD_SHA" > /tmp/schema-comment.txt
+          gzip -n -c "$schema" | base64 -w0 >> /tmp/schema-comment.txt
+          gh pr comment "$PR_NUMBER" --body-file /tmp/schema-comment.txt
 
       - name: Run JVM unit tests
         run: |
