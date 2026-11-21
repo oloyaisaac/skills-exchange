@@ -221,6 +221,9 @@ jobs:
       - run: node scripts/check_story_coverage.mjs
       - run: node scripts/check_onboarding_docs.mjs --selftest
       - run: node scripts/check_onboarding_docs.mjs
+      # R04/VC-06: money has one representation per role, read from the exported Room schema.
+      - run: node scripts/check_money_representation.mjs --selftest
+      - run: node scripts/check_money_representation.mjs
       - run: node scripts/secret_scan.mjs
 
   secret-scan:

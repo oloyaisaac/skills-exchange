@@ -137,6 +137,11 @@ data class ServiceProviderEntity(
     // Mobile Money Wallet Schema
     var momoNumber: String = "+256 772 198 420",
     var momoProvider: String = "MTN_MOMO", // "MTN_MOMO", "AIRTEL_MONEY"
+    /**
+     * DISPLAY MIRROR ONLY (R04-P2-04 / D-2026-11-20-15). The authoritative balance is derived from
+     * `wallet_ledger.amountMinor`, which is `Long` minor units. This column is not read anywhere outside
+     * `com.example.data`, and `scripts/check_money_representation.mjs` fails the build if it is.
+     */
     var walletBalance: Double = 185.0
 )
 
@@ -515,6 +520,10 @@ data class UserProfileEntity(
     var backupContactPhone: String = "",
     var momoNumber: String = "+256 772 198 420",
     var momoProvider: String = "MTN_MOMO",
+    /**
+     * DISPLAY MIRROR ONLY (R04-P2-04 / D-2026-11-20-15). See [ServiceProviderEntity.walletBalance]:
+     * the ledger in minor units is authoritative and nothing outside the data layer may read this.
+     */
     var walletBalance: Double = 185.0,
     var latitude: Double? = null,
     var longitude: Double? = null,
