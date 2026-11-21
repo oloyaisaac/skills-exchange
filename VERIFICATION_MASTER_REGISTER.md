@@ -46,3 +46,6 @@ text in `verification/reports/VERIFICATION_02.md` §9. All inbound references re
    file, repoint every inbound reference, then run the documentation guards before committing.
 3. **Order is fixed.** The register is filled top to bottom. A reviewer that fails verification is
    re-verified in place; no later reviewer is opened until it passes.
+
+**R04 re-check:** merged proposed corrections do not close VC-05; VC-06 needs further evidence and
+accurate scope, and VC-07 is partial. R04 remains not approved; see `verification/reports/VERIFICATION_04.md` §8.

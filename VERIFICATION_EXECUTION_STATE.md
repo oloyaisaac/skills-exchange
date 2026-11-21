@@ -78,3 +78,10 @@ and `reviewer_completions/` are evidence and stay.
   real independence limit, not a formality: every claim below is re-derived from source, configuration
   and executed runs, and no completion declaration was accepted as evidence — the R01 declaration
   ("I finished the work for this reviewer.") contains none.
+
+### R04 proposed-correction re-check
+
+PR #34 merged the proposed corrections, but R04 remains **PARTIALLY VERIFIED** and not approved.
+VC-05 remains open; VC-06 has demonstrated limitations and overclaims; VC-07 is partial. The
+re-check record is restored in `verification/reports/VERIFICATION_04.md` §8. Await a separate
+implementation agent's corrections and independently re-verify R04; do not open R05.

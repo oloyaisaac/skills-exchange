@@ -112,3 +112,36 @@ What is genuinely good and should not be lost: the migration chain test, the exp
 removal with its data migration, the transactional cashout, and the mirror reconciliation are all real and
 executed. Four of the six findings are closed outright; the round is one honest column-type decision away
 from passing.
+
+## 8. Re-check after proposed corrections — NOT APPROVED
+
+PR #34 merged commit `9a1892f`, containing proposed corrections produced during this verification
+session, not by a separate implementation agent. It does not establish independent approval. The
+following remaining problems were independently rechecked on the merged code:
+
+- **VC-05 remains open.** Both schema properties remain named `walletBalance`, and no specific
+  conversion migration is identified. The statement in `Money.kt` and `DECISIONS.md` that quoted
+  money is produced only by `JobMoney.split` is contradicted by
+  `SkillsExchangeRepository.kt:1330–1338`, which directly multiplies `proposedRate * proposedHours`
+  and stores `totalQuote`. Demo catalogue values are also hand-coded. The claim that the balance
+  columns mirror the ledger is not established by an absence of reads: both default to 185.0 and a
+  separate DAO setter exists. Document actual behavior and the time representation with evidence.
+- **VC-06 needs qualification and further evidence.** The new guard, its selftest, and CI wiring
+  exist; the normal check and selftest passed. A synthetic data-layer read of `walletBalance` was
+  ignored because the guard explicitly skips the data layer, so it cannot establish that those fields
+  never influence authorization or balance calculations. A synthetic unclassified TEXT `grandTotal`
+  also went undetected; TEXT detection was not part of the original REAL-affinity requirement, but
+  this demonstrates that the guard's broader claim to classify every money-shaped column is false.
+  It does not enforce `JobMoney.split` provenance. Correct the claims and add targeted tests or other
+  evidence for actual invariants, including the legacy-field authorization constraint.
+- **VC-07 partially addressed:** the chain-test docstring says 11→29 and a schema README exists.
+  The README's assertion that any missing new JSON is reported by the chain test is not established:
+  Room validates against its generated current schema and the test explicitly reads particular versions.
+  Correct or prove that assertion.
+
+**Tests:** guard normal mode and `--selftest` passed; both synthetic probes above returned no problems.
+CI run 44897144012 and Android run 44897144006 succeeded on commit `9a1892f`. Android tests were not
+run locally (Android SDK/JDK unavailable). No deployment or local Firebase emulator verification was
+performed. The prior uncommitted re-check report was not included in PR #34; this section restores
+its findings on the new branch. The reviewer instruction and declaration remain retained. A separate
+implementation agent must address the findings before R04 is independently re-verified. R05 stays closed.
