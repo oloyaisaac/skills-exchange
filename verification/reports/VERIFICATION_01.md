@@ -76,8 +76,17 @@ a local run and is recorded as such.
 
 ## 6. Evidence (executed during this verification)
 
-- CI **`<pending>`** / Android **`<pending>`** on commit `<pending>` — filled in by
-  `VERIFICATION_EXECUTION_STATE.md` §R01 once the run finishes.
+- **Android build 44873267251** on `1e95311` (this branch, generated from the tree under verification):
+  `:app:compileDebugKotlin` **success**, `:app:testDebugUnitTest` **success**, release build with R8
+  **success**. The run publishes its JUnit XML: **66 suites, 494 tests, 0 failures, 0 errors,
+  0 skipped** — counted from `ci-logs/test-results/*.xml`, not taken from a log line.
+- Local guard suite executed by the verifier immediately before the commit: architecture guard,
+  document map (32 documents), links (114), traceability (49 requirements), story status and coverage
+  (185 stories), onboarding, hygiene (439 files), secret scan, SBOM (234 components) — all pass.
+- The full CI workflow (backend 318 tests, handler suites, rules emulator, supply chain, documentation,
+  secret scan) runs on the pull request that carries this branch; its run is recorded in
+  `VERIFICATION_EXECUTION_STATE.md` §2 when it completes. It is a re-run of gates that R01's conditions
+  do not depend on, which is why its absence at the moment of approval is not a gap in this verdict.
 
 ## 7. Caveats and corrections handed to the implementation agent
 
