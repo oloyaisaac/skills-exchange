@@ -679,6 +679,51 @@ that do not exist (`updateGuarantorReview`, a validator `Outcome` object), so no
 
 ---
 
+> **Superseded 2026-11-20 (R15).** The pinned `D:/` JDK paths this decision rests on were removed from
+> `gradle.properties` in R01, because they made a clean clone fail on anything but one Windows machine.
+> The decision's *reasoning* stands — a "no JDK" blocker must be tested, not assumed — but its
+> *premise* does not: there is now no pinned JVM, and the remediation environment has no JDK at all.
+> See D-2026-11-20-14 for the rule that replaced it.
+
+### D-2026-11-20-13 - One story vocabulary, and DONE is only reachable through evidence
+
+**Context.** R15 found `prd.json` carrying three ways to say a story was finished (`completed` 112,
+`COMPLETED` 16, `DONE` 9) and no evidence rule at all. The 112 `completed` stories had been closed by an
+earlier agent, mostly with `verified_by: code_inspection`; this programme then watched that exact kind of
+claim fail under review for escrow release (R02), account deletion (R06), the doorstep PIN (R07), the
+offline queue (R13) and reports (R10).
+
+**Decision.** One vocabulary — `DONE`, `IN_PROGRESS`, `VERIFICATION_PENDING`, `NOT_STARTED`, `UNVERIFIED`
+— enforced by `scripts/check_story_status.mjs`. `DONE` requires a `verification_note` beginning
+`evidence:` and long enough to be a record. `UNVERIFIED` is a real state with a required explanation: it
+means "an earlier agent marked this complete and this programme did not re-verify it", so nobody is
+credited with it. All 112 `completed` stories were moved to `UNVERIFIED`; the 25 remediation stories that
+have a round record were kept at `DONE` with that record as their evidence.
+
+**Consequences.** The completion count dropped from 137 to 25 in one commit — that is the point, not a
+regression: the previous number was a claim, and this one is a record. A story can be re-promoted to
+`DONE` by writing evidence, which is cheap when the evidence exists and impossible when it does not.
+
+### D-2026-11-20-14 - Unverified is a first-class outcome, and CI is the compiler of record
+
+**Context.** Half of this programme's findings could not be verified in the environment that fixed them:
+no JDK or Android SDK, no Firebase project, no device, no provider sandbox. An earlier decision
+(D-2026-09-27-1) had also taught agents to distrust "no JDK" reports, which is correct advice on a
+machine with a pinned JDK and false on one without.
+
+**Decision.**
+1. A change that cannot be compiled, run or deployed here is recorded as implemented-and-`UNVERIFIED`,
+   with the reason, and the evidence comes from the CI run rather than from the author.
+2. `AGENTS.md` states the environment truth: no local JDK, GitHub Actions is the compiler of record, and
+   a missing JDK **is** a reportable blocker. `scripts/check_onboarding_docs.mjs` refuses a doc that
+   claims setup is unnecessary or points at a Windows path.
+3. No document may state a runtime, latency, coverage or provider result that a command in this
+   repository cannot produce.
+
+**Consequences.** The programme's status is deliberately pessimistic: 0 domains pass, 15/15 reviews
+FAIL at review time, and every round ends with a "Not claimed" list. That list is the product of this
+decision, not an apology for it.
+
 ## D-2026-09-27-1 — REG-002 build verification: the "no JDK" blocker was false, and the build is the only real gate
 
 **Context**: On 2026-09-26 REG-002 was left `in_progress` with a recorded blocker stating that the

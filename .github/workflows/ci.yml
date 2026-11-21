@@ -214,6 +214,13 @@ jobs:
       - run: node scripts/check_repo_hygiene.mjs --selftest
       - run: node scripts/check_repo_hygiene.mjs
       - run: node scripts/check_lint_report.mjs --selftest
+      # R15: one status vocabulary with evidence, full story coverage, honest onboarding docs.
+      - run: node scripts/check_story_status.mjs --selftest
+      - run: node scripts/check_story_status.mjs
+      - run: node scripts/check_story_coverage.mjs --selftest
+      - run: node scripts/check_story_coverage.mjs
+      - run: node scripts/check_onboarding_docs.mjs --selftest
+      - run: node scripts/check_onboarding_docs.mjs
       - run: node scripts/secret_scan.mjs
 
   secret-scan:

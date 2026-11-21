@@ -44,7 +44,7 @@ Do NOT take any action until you have read all seven files.
 
 ### Project Root Structure
 ```
-d:\skills exchange\
+skills-exchange/
 ├── prd.json                    ← Master plan (READ ONLY — preserve structure)
 ├── requirement_file.md         ← Full requirements (READ ONLY)
 ├── AGENTS.md                   ← This operating manual
@@ -179,22 +179,22 @@ If you are stopping due to quota or session limits:
 ## Common Verification Commands
 
 ```powershell
-# Windows — from project root (d:\skills exchange\)
+# Windows — from project root (skills-exchange/)
 
 # Run all unit tests
-.\gradlew testDebugUnitTest
+./gradlew testDebugUnitTest
 
 # Run specific test
-.\gradlew testDebugUnitTest --tests com.example.ExampleRobolectricTest
+./gradlew testDebugUnitTest --tests com.example.ExampleRobolectricTest
 
 # Run screenshot test
-.\gradlew testDebugUnitTest --tests com.example.GreetingScreenshotTest
+./gradlew testDebugUnitTest --tests com.example.GreetingScreenshotTest
 
 # Build debug APK
-.\gradlew assembleDebug
+./gradlew assembleDebug
 
 # Note: JDK must be configured. Project bundles jdk11/ and jdk17/.
-# Set JAVA_HOME=d:\skills exchange\jdk11 or jdk17 before running.
+# Set JAVA_HOME=skills-exchange/jdk11 or jdk17 before running.
 ```
 
 ---

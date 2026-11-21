@@ -1,5 +1,44 @@
 # CHANGELOG.md — Skills Exchange Development History
 
+### [2026-11-20] [PROMPT-4 / R15] Documentation and traceability: one vocabulary, DONE only through evidence, and every story area accounted for
+
+- **137 stories were "done" on the strength of someone having read the code (R15-P2-01, HIGH).** The file
+  had three spellings — `completed` 112, `COMPLETED` 16, `DONE` 9 — and the 112 `completed` ones cited
+  `verified_by: code_inspection`, the exact claim this programme watched fail for escrow release (R02),
+  account deletion (R06), the doorstep PIN (R07), the offline queue (R13) and reports (R10). Those 112 are
+  now **`UNVERIFIED`**, each carrying the reason; 29 stories are `DONE` with a note beginning `evidence:`.
+  The count fell 137 → 29. That is the correction, not a regression.
+- **A vocabulary nobody can check is not a vocabulary (R15-P2-05, MEDIUM).** `scripts/check_story_status.mjs`
+  refuses a legacy spelling, a `DONE` without evidence, an evidence note too thin to be a record, an
+  `UNVERIFIED` without a reason — and any `TASKS.md` row that disagrees with `prd.json`. It found 41 of 73
+  task rows drifted, and `requirement_file.md` §17 had 6 of 15 groups wrong, four of them describing
+  shipped work as untouched.
+- **Traceability covered a fraction of the backlog (R15-P2-02, HIGH).** `docs/traceability.md` now carries
+  49 requirement rows and a **coverage table over all 27 story areas** (185 stories): the count, the
+  requirement rows that cover the area, or a stated reason it is a gap. Three areas that had code and tests
+  but no row got one (chat, disputes, map fallback); two requirements still have no automated test and the
+  matrix says so. `scripts/check_story_coverage.mjs` fails on a missing area, a drifted count, a phantom
+  requirement id or an empty reason.
+- **The onboarding docs described a machine that no longer exists (R15-P2-03, HIGH).** `AGENTS.md` promised
+  "No environment setup is required", pinned `D:/…/jdk17`, and told agents **never** to record "no JDK on
+  this machine" — advice that was right when a JDK was pinned and is wrong now; `README_AI.md` worked from
+  a Windows path; `README.md` described a `gradle.properties` R01 had deleted. All three now say the truth:
+  no local JDK or SDK, GitHub Actions compiles this, a missing JDK **is** a reportable blocker, and
+  `scripts/check_onboarding_docs.mjs` refuses a regression.
+- **The root was still a desk (R15-P2-06, LOW).** 22 files left: `fix*.ps1`, `inspect*.ps1`, `update_*.py`,
+  `repro.bat`, a stray root `package-lock.json`, two audit dumps (→ `review_results/archive/`) and
+  `dependency-report.json`, which this repository's own script had written. The hygiene guard now refuses a
+  root file that is neither a document nor a known build/config file.
+- **The cycle had no decision record, and one decision was quietly false (R15-P2-04, MEDIUM — mostly stale).**
+  `AGENT_STATE.md` had every round and the README's "111 tests" was already gone; what was missing were the
+  records. D-2026-11-20-13 (one vocabulary, evidence rule) and D-2026-11-20-14 (unverified as a first-class
+  outcome, CI as compiler of record) added; D-2026-09-27-1 marked superseded because its pinned JDK paths
+  no longer exist.
+- **Evidence:** CI 44871206306 6/6 and Android 44871206321 2/2 on `60d47d5` — 318 backend tests, 494
+  Android tests, lint gate, release build, SBOM, three new documentation guards. 19 guards, 10 self-tests,
+  32 documents, 49 requirements. This closes the fifteen-round programme: 15 of 15 implemented, none
+  deployed, still not production-ready.
+
 ### [2026-11-20] [PROMPT-4 / R14] DevOps and supply chain: a repository that stops accepting artefacts, a lint gate that found a crash, and a dependency set that is audited
 
 - **A device database and JVM crash logs were tracked, with no rule to stop them (R14-P2-01, HIGH).** R11

@@ -30,7 +30,8 @@
 12. R12 UI/UX & Accessibility — **completed (FAIL)**
 13. R13 Performance, Scalability & Reliability — **completed (FAIL)**
 14. R14 DevOps, Release Engineering & Supply Chain — **completed (FAIL)**
-15. R15 Documentation & Requirements Traceability — **completed (FAIL)**
+15. R15 Documentation & Requirements Traceability — **completed (FAIL)**; implementation **R15 COMPLETE**
+    (declaration `reviewer_completions/REVIEWER_15_DONE.md`, evidence in `REVIEWER_IMPLEMENTATION_STATE.md`)
 
 ## Outstanding examination tasks (carried)
 
