@@ -28,6 +28,43 @@ const FORBIDDEN = [
   { pattern: /(^|\/)\.env$/i, why: "secrets" },
 ];
 
+/**
+ * R15-P2-06: the repository root is a layout, not a desk.
+ *
+ * The review counted 87 diagnostic/build artefacts and a pile of scratch scripts at the root, none listed
+ * anywhere. The bulk were deleted in R11; R15 removed the rest (22 files: `fix*.ps1`, `inspect*.ps1`,
+ * `update_*.py`, `repro.bat`, two audit dumps moved to `review_results/archive/`, and a
+ * `dependency-report.json` this repository's own script had written). A root file is now either a Markdown
+ * document the document map lists, or one of these build/config files.
+ */
+const KNOWN_ROOT = new Set([
+  "gradlew",
+  "gradlew.bat",
+  "build.gradle.kts",
+  "settings.gradle.kts",
+  "gradle.properties",
+  "version.properties",
+  "prd.json",
+  "requirement_file.md",
+  "firebase.json",
+  ".firebaserc",
+  "firestore.rules",
+  "storage.rules",
+  "firestore.indexes.json",
+  "metadata.json",
+  ".gitignore",
+  ".gitattributes",
+  ".env.example",
+]);
+
+export function strayRootFiles(paths) {
+  return paths.filter((file) => {
+    if (file.includes("/")) return false;
+    if (file.toLowerCase().endsWith(".md")) return false;
+    return !KNOWN_ROOT.has(file);
+  });
+}
+
 /** The ignore lines this repository must keep, checked literally so a rewrite cannot drop them. */
 const REQUIRED_IGNORES = [
   "*.apk",
@@ -83,6 +120,19 @@ function selftest() {
   if (missingIgnores(REQUIRED_IGNORES.slice(1).join("\n")).length !== 1) {
     throw new Error("selftest: a single missing ignore rule was not detected");
   }
+
+  const stray = strayRootFiles([
+    "gradlew",
+    "prd.json",
+    "README.md",
+    "fix2.ps1",
+    "inspect3.ps1",
+    "dependency-report.json",
+    "app/src/main/AndroidManifest.xml",
+  ]);
+  if (stray.length !== 3 || !stray.includes("fix2.ps1")) {
+    throw new Error(`selftest: stray root detection returned ${JSON.stringify(stray)}`);
+  }
   console.log(
     `Repo hygiene selftest passed: ${checks.length} path classifications, both ignore-file refusals proven.`
   );
@@ -96,6 +146,10 @@ if (process.argv.includes("--selftest")) {
   for (const file of files) {
     const reasons = forbiddenReasons(file);
     if (reasons.length > 0) problems.push(`${file}: ${reasons.join("; ")}`);
+  }
+
+  for (const stray of strayRootFiles(files)) {
+    problems.push(`${stray}: a root file that is neither a document nor a build/config file`);
   }
 
   const ignorePath = ".gitignore";
@@ -113,6 +167,7 @@ if (process.argv.includes("--selftest")) {
     process.exit(1);
   }
   console.log(
-    `Repo hygiene check passed: ${files.length} tracked files, none of them an artefact, device capture or key; ignore rules present.`
+    `Repo hygiene check passed: ${files.length} tracked files, none of them an artefact, device capture or key; ` +
+      `root layout clean; ignore rules present.`
   );
 }

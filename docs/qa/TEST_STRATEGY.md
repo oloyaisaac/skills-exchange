@@ -26,7 +26,9 @@ remediation sandbox it is marked **UNVERIFIED** rather than estimated.
 | Android Lint | `./gradlew :app:lintDebug` | `node scripts/check_lint_report.mjs` reads the XML | 120 issues, 1 allowlisted rule | CI (`Compile and unit tests`); first run found 54 `NewApi` errors | yes (Error/Fatal) |
 | Dependency advisories | `npm audit --audit-level=high` | in `functions` and `supply-chain` jobs | 0 high / 0 critical (28 moderate recorded) | CI | yes |
 | Release build (R8 + shrink) | `.github/workflows/android.yml` `release-build` | `./gradlew :app:assembleRelease` | not a test — a gate | CI, run 44799912835: APK 6.3 MB, mapping 679,287 lines | yes |
-| Documentation and static guarantees | `scripts/check_*.mjs`, `scripts/secret_scan.mjs` | see `docs/DOCUMENT_MAP.md` | 16 guards (7 with `--selftest`) | CI (`Documentation checks`, `Supply chain`, `Secret scan`) | yes |
+| Story status and coverage | `scripts/check_story_status.mjs`, `scripts/check_story_coverage.mjs` | part of the documentation job | 185 stories, one vocabulary, 27 areas | CI (`Documentation checks`) | yes |
+| Onboarding docs | `scripts/check_onboarding_docs.mjs` | part of the documentation job | 3 documents | CI | yes |
+| Documentation and static guarantees | `scripts/check_*.mjs`, `scripts/secret_scan.mjs` | see `docs/DOCUMENT_MAP.md` | 19 guards (10 with `--selftest`) | CI (`Documentation checks`, `Supply chain`, `Secret scan`) | yes |
 | Instrumented (device) tests | `app/src/androidTest` | — | 1 template | nowhere | **no** — see §7 |
 
 The backend suite count is asserted nowhere by hand: `npm test` discovers `test/*.test.mjs`, and

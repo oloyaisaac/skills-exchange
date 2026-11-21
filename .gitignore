@@ -63,3 +63,6 @@ replay_pid*.log
 *.keystore
 my-upload-key.jks
 _device_test/*.sqlite
+# R15-P2-06: the supply-chain script's output is a build artefact, not a source file.
+dependency-report.json
+lint-summary.txt

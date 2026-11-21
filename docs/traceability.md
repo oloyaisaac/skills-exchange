@@ -32,6 +32,9 @@ a verification standpoint.
 | REQ-REL-03 | Shipped dependencies are audited, inventoried and licence-gated (§17) | `functions/package.json`, `rules-test/package.json`, `scripts/report_dependencies.mjs`, `.github/workflows/ci.yml` | `scripts/report_dependencies.mjs`, `functions/test/*.test.mjs` | Implemented in R14; 0 high/critical advisories at HEAD, 28 moderate recorded |
 | REQ-REL-04 | One file owns the version and a release build refuses to start without a signing key (§17) | `version.properties`, `app/build.gradle.kts` | `docs/ops/RELEASE_AND_SUPPLY_CHAIN.md` | Implemented in R14; validated at configuration time, proven by the CI release job |
 | REQ-REL-05 | Deployment and rollback are documented, and what is untested is labelled untested (§17) | `firebase.json`, `.firebaserc`, `docs/ops/DEPLOY_AND_ROLLBACK.md` | `docs/qa/TEST_STRATEGY.md` | Documented in R14; no environment exists and no drill has been run |
+| REQ-COMM-01 | Job chat between client and assigned worker, with a verified sender identity (§9) | `app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt`, `app/src/main/java/com/example/data/remote/FirebaseService.kt` | `app/src/test/java/com/example/data/ChatSenderIdentityF5SecurityTest.kt` | Implemented earlier, traced in R15; the stream is bounded to the last 200 messages (R13) |
+| REQ-DISP-01 | Dispute record and its authorization boundary (§9) | `app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt`, `app/src/main/java/com/example/data/db/Entities.kt` | `rules-test/firestore.rules.test.mjs` | Implemented; there is no dispute UI path that is exercised by a test, which is stated as the gap |
+| REQ-MAP-01 | The map degrades to a list when the Maps key is absent rather than crashing (§4) | `app/src/main/java/com/example/ui/screens/MainScreen.kt` | `app/src/test/java/com/example/MapEmptyProvidersOverlayTest.kt`, `app/src/test/java/com/example/MapsApiKeyFallbackTest.kt` | Implemented and asserted; no device render, so the fallback is proven only at the composable level |
 | REQ-PERF-01 | Queued offline actions are executed, retried to a bound and dead-lettered, not dropped (§9) | `app/src/main/java/com/example/data/repository/SkillsExchangeRepository.kt`, `app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt`, `app/src/main/java/com/example/ui/components/OfflineBanner.kt` | `app/src/test/java/com/example/data/PendingActionDrainTest.kt` | Implemented in R13; executed by the Android CI job |
 | REQ-PERF-02 | Every callable and SMS trigger declares a runtime; provider work gets the longer one (§10) | `functions/src/runtime.ts`, `functions/src/index.ts` | `functions/test/appCheck.test.mjs` | Implemented in R13; no deploy, so the deployed runtime is unverified |
 | REQ-PERF-03 | Provider reads retry with bounded jittered backoff; writes are never retried (§9) | `functions/src/providerRetry.ts`, `functions/src/index.ts` | `functions/test/providerRetry.test.mjs` | Implemented in R13; applies to the MoMo status read only, no live provider call |
@@ -58,6 +61,47 @@ a verification standpoint.
 | REQ-UI-02 | Screens are navigable with a screen reader: headings, live regions, described state (§17) | `app/src/main/java/com/example/ui/a11y/Accessibility.kt` | `app/src/test/java/com/example/ui/AccessibilitySemanticsTest.kt` | Headings, assertive/polite live regions and state descriptions are asserted in the semantics tree; no TalkBack pass has been run on a device |
 | REQ-UI-03 | Text meets the WCAG AA contrast floor (§17) | `app/src/main/java/com/example/ui/theme/Color.kt` | `app/src/test/java/com/example/ui/theme/ContrastTest.kt` | Light palette measured and gated after two real defects were corrected; the dark scheme has no assertions yet |
 | REQ-UI-04 | Interactive targets are at least 48dp (§17) | `app/src/main/java/com/example/ui/components/EscrowAndProofSheet.kt`, `app/src/main/java/com/example/ui/components/AuthModal.kt` | `app/src/test/java/com/example/ui/AccessibilitySemanticsTest.kt` | The panic and dismiss controls are asserted at the floor; the 28-32dp icons elsewhere are decorative, not tappable |
+
+## Story coverage by area (R15-P2-02)
+
+The table above maps *requirements* to code and tests. The review's second finding was that it covered
+only a fraction of the 185 stories in `prd.json`. This section closes that at the level the stories
+actually belong to: every story's id starts with an area prefix, and every area is listed here with its
+story count and either the requirement rows that cover it or an explicit statement that it is a gap.
+
+`scripts/check_story_coverage.mjs` fails if a story area is missing from this table, if a count drifts,
+or if a requirement id named here does not exist above. Counts are story counts, not status counts —
+`scripts/check_story_status.mjs` reports the status distribution, which changes every round.
+
+| Area | Stories | Requirement rows | Why it is, or is not, traced |
+|---|---|---|---|
+| `REM` | 73 | `REQ-ACC-01`, `REQ-ACC-02`, `REQ-AUTH-01`, `REQ-KYC-01`, `REQ-PAY-01`, `REQ-PAY-02`, `REQ-PAY-03`, `REQ-PAY-04`, `REQ-PAY-05`, `REQ-SAFE-01`, `REQ-SAFE-02`, `REQ-SAFE-03`, `REQ-SAFE-04`, `REQ-PRIV-01`, `REQ-PRIV-02`, `REQ-PRIV-03`, `REQ-PERF-01`, `REQ-PERF-02`, `REQ-PERF-03`, `REQ-PERF-04`, `REQ-PERF-05`, `REQ-REL-01`, `REQ-REL-02`, `REQ-REL-03`, `REQ-REL-04`, `REQ-REL-05`, `REQ-QA-01`, `REQ-QA-02`, `REQ-DOC-01` | Each remediation story implements one reviewer finding; the requirement rows are the behaviours those findings asked for. The round record in `reviewer_completions/` is the evidence |
+| `RVW` | 15 | none | Review-programme bookkeeping (which reviewer runs when), recorded in `REVIEWER_IMPLEMENTATION_STATE.md`. Not a product requirement |
+| `AUTH` | 12 | `REQ-AUTH-01`, `REQ-SESS-01` | Phone OTP identity, session handling and token revocation |
+| `SEC` | 9 | `REQ-SEC-01`, `REQ-PRIV-01`, `REQ-PRIV-02`, `REQ-PRIV-03` | Rules, storage scope and PII handling |
+| `KYC` | 7 | `REQ-KYC-01`, `REQ-KYC-02`, `REQ-KYC-03`, `REQ-KYC-04` | Guarantor and NIN verification |
+| `LOC` | 5 | `REQ-LOC-01`, `REQ-MAP-01` | District-scoped discovery and location minimisation |
+| `JOB` | 5 | `REQ-JOB-01`, `REQ-DOC-01` | Job lifecycle and authorship |
+| `PAY` | 5 | `REQ-PAY-01`, `REQ-PAY-02`, `REQ-PAY-03`, `REQ-PAY-04`, `REQ-PAY-05` | Collection, escrow, payout, refund and the ledger |
+| `DISP` | 5 | `REQ-DISP-01` | Dispute records exist and are authorized; there is no tested dispute UI, which is the gap |
+| `ADMIN` | 4 | `REQ-ADMIN-01` | In-app operator surfaces only; the web dashboard required by §10 does not exist and is recorded as a gap in `requirement_file.md` §16 |
+| `NOTIF` | 4 | `REQ-NOTIF-01` | SMS and FCM delivery |
+| `REG` | 4 | `REQ-ACC-01` | Registration and onboarding state; the onboarding flow is asserted, the process-death path only by `StateRestorationTester` |
+| `AT` | 4 | `REQ-NOTIF-01` | Africa's Talking integration; the provider is uncredited and unverified |
+| `STAB` | 3 | `REQ-QA-01`, `REQ-QA-02` | Build stability, suites and coverage |
+| `ROLE` | 3 | `REQ-ACC-02` | Client/worker mode switching and the permission matrix |
+| `SKILL` | 3 | `REQ-TAX-01` | The 125-service taxonomy |
+| `TRAIN` | 3 | `REQ-TRAIN-01` | Training gates activation |
+| `MARKET` | 3 | `REQ-JOB-01` | Discovery, quotes and matching |
+| `MAP` | 3 | `REQ-MAP-01` | Map fallback and key handling |
+| `RATE` | 3 | `REQ-RATE-01` | Ratings are server-authoritative |
+| `AI` | 2 | `REQ-AI-01` | Server-side transcription with no fabricated output |
+| `COMM` | 2 | `REQ-COMM-01` | Job chat and sender identity |
+| `SAFE` | 2 | `REQ-SAFE-01`, `REQ-SAFE-02`, `REQ-SAFE-03`, `REQ-SAFE-04` | SOS raise, dispatch, acknowledgement and the safety desk |
+| `DB` | 2 | `REQ-QA-01` | Schema export and executed migrations; covered by QA rather than by its own row |
+| `LEGAL` | 2 | `REQ-PRIV-01`, `REQ-PRIV-02`, `REQ-PRIV-03` | Consent receipts and retention; the privacy notice itself is UI copy with no DPIA |
+| `OFF` | 1 | `REQ-PERF-01` | The offline action queue |
+| `REL` | 1 | `REQ-REL-03` | Dependency and release-engineering tooling |
 
 ## Known gaps
 

@@ -63,7 +63,10 @@ A hyperlocal peer-to-peer services marketplace Android app for East African urba
 6. Connect a physical device or start an emulator with Google Play Services
 7. Run the app using the **Run** button or `./gradlew installDebug`
 
-> Build prerequisite: the current `gradle.properties` contains machine-specific Windows paths (`D:/…`) and a pinned local JDK. A clean checkout will not build until those are made portable — see `ASSESSMENT_REPORT.md` F-009. Installation instructions above are therefore **UNVERIFIED** on this commit.
+> Build prerequisite: a JDK 17+ and an Android SDK. This repository no longer pins a machine-specific
+> JDK or Gradle home - those were removed in R01, so a clean checkout builds on any machine that has the
+> toolchain. The remediation environment has neither, so the Android steps above run in GitHub Actions
+> rather than locally; `AGENTS.md` section 9 says what that means when you are writing code.
 
 ## Project Structure
 

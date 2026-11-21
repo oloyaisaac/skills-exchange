@@ -210,7 +210,24 @@ After implementing any story:
 ./gradlew assembleDebug
 ```
 
-> **Note (verified 2026-09-27)**: **No environment setup is required.** `gradle.properties` already pins the build JVM — `org.gradle.java.home=D:/kilo_downloads/jdk17/jdk17.0.20_10` (Amazon Corretto `17.0.20.1`) — and the Gradle home (`systemProp.org.gradle.user.home=D:/gradle-home`). `org.gradle.java.home` outranks `JAVA_HOME`, so `java` does not need to be on `PATH`; on Windows just run `.\gradlew.bat <task> --console=plain`. The repo-root `jdk17/` folder is empty and referenced by nothing; `jdk11/jdk-11.0.22+7/bin/java.exe` exists and is supplied as the JDK 11 toolchain through `org.gradle.java.installations.paths`; Android Studio's JetBrains Runtime (OpenJDK `25.0.2`) is a working fallback. **Never record "no JDK on this machine" as a blocker without checking `gradle.properties` first** — that false blocker once left a finished story unverified (DECISIONS.md D-2026-09-27-1). Expect the daemon to print nothing for minutes at a time during Kotlin compile and APK packaging; poll `app\build\` timestamps rather than assuming a hang.
+> **Environment truth (verified 2026-11-20, R15-P2-03).** This repository is compiled by **GitHub
+> Actions, not by the machine you are sitting at.** Two facts replace the earlier note:
+>
+> 1. **There is no local JDK or Android SDK in the remediation sandbox**, and `gradle.properties` pins no
+>    JVM any more: the absolute Windows JDK path and the pinned Gradle home were removed in R01, because
+>    they made a clean clone fail on anything but one Windows machine. If `./gradlew` cannot find Java,
+>    that is a real, reportable blocker: **record it in `AGENT_STATE.md` and take the evidence from CI
+>    instead.**
+>    Never claim a Kotlin change compiles without a green job — the two tests that failed on the way
+>    through R13 and R14 were both caught only by CI.
+> 2. **CI is the compiler of record.** `Android build` runs `:app:compileDebugKotlin`,
+>    `:app:testDebugUnitTest`, `:app:lintDebug` (gated by `scripts/check_lint_report.mjs`), JaCoCo and the
+>    R8 release build. `CI` runs the backend suites, the emulator suites, the supply chain and the
+>    documentation guards. Read the run, not the plan.
+>
+> The wrapper is `./gradlew` (POSIX) or `.\gradlew.bat` (Windows); a JDK 17+ is required *wherever* it
+> runs. The repo-root `jdk11/` and `jdk17/` folders are gitignored and empty in a clean clone — do not
+> depend on them.
 
 ---
 
