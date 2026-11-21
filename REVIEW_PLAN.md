@@ -196,4 +196,4 @@ Each remediation item gets a new PRD story; reviewers never mark their own remed
 - No reviewer has modified product source.
 - All new findings are traceable to a remediation owner or an accepted residual risk.
 
-*Start here:* R01 at `reviewers/ARCHITECTURE_REVIEWER.md`, then R14 at `reviewers/DEVOPS_REVIEWER.md`.
+*Start here:* R01 at `reviewers/ARCHITECTURE_REVIEWER.md` (deleted after verification; its preserved text and verdict are in `verification/reports/VERIFICATION_01.md`), then R14 at `reviewers/DEVOPS_REVIEWER.md`.

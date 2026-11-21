@@ -6,7 +6,7 @@
 - **Verdict: FAIL**
 - **Gate:** G0 Build — **FAIL**
 - **Environment:** Linux sandbox; no `java`, `javac`, `kotlinc`, Gradle runtime or Android SDK. `gradlew` is committed as mode `100644`, so `./gradlew --version` returns *Permission denied*; `bash gradlew --version` returns *JAVA_HOME is not set and no 'java' command could be found*. Gradle execution is therefore **UNVERIFIED**. The verdict rests on static structural evidence that does not require a compiler.
-- **Instruction file:** `reviewers/ARCHITECTURE_REVIEWER.md`
+- **Instruction file:** `reviewers/ARCHITECTURE_REVIEWER.md` — deleted after independent verification; text preserved in `verification/reports/VERIFICATION_01.md` §9
 
 ---
 

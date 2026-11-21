@@ -49,7 +49,7 @@ These tasks can be implemented now but cannot be *verified* without external res
 
 ### R01 — Architecture & Codebase Integrity
 
-Assignment: `reviewers/ARCHITECTURE_REVIEWER.md` · Report: `review_results/R01_ARCHITECTURE.md`
+Assignment: `reviewers/ARCHITECTURE_REVIEWER.md` (deleted after verification; preserved in `verification/reports/VERIFICATION_01.md` §9) · Report: `review_results/R01_ARCHITECTURE.md`
 
 | Task | Priority | Finding | Root cause | Affected files | Required correction | Depends on | Required tests | Acceptance criteria | Completion evidence |
 |---|---|---|---|---|---|---|---|---|---|

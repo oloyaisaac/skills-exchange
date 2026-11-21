@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Reviewer | R01 — Architecture & Codebase Integrity (P0) |
-| Assignment | `reviewers/ARCHITECTURE_REVIEWER.md` (read in full) |
+| Assignment | `reviewers/ARCHITECTURE_REVIEWER.md` (read in full); file deleted after independent verification — text preserved in `verification/reports/VERIFICATION_01.md` §9 |
 | Executed | 2026-11-19 |
 | Source reviewed | HEAD `06ff649`; code baseline `6b39a10` |
 | Areas | Buildability, module boundaries, god classes, dead code, duplication |
