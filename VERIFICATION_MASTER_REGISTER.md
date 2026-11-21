@@ -12,7 +12,7 @@ Status vocabulary: **VERIFIED COMPLETED** · **PARTIALLY VERIFIED** · **FAILED 
 
 | # | Reviewer title | Implementation declaration | Independent verification | Tests performed by verifier | Approval evidence | Instruction file |
 |---|---|---|---|---|---|---|
-| R01 | Principal Software Architect & Codebase Integrity | `reviewer_completions/REVIEWER_01_DONE.md` — one sentence, no evidence | **VERIFIED COMPLETED** | Node guard suite (19 checks + secret scan + SBOM); CI `:app:compileDebugKotlin`, 494 Android unit tests, 318 backend tests | `verification/reports/VERIFICATION_01.md`; five passing conditions re-tested; all five findings re-derived, 3 closed, 1 closed-with-growth, 1 closed stronger than asked | `retained` (pending §4 decision) |
+| R01 | Principal Software Architect & Codebase Integrity | `reviewer_completions/REVIEWER_01_DONE.md` — one sentence, no evidence | **VERIFIED COMPLETED** | Node guard suite (19 checks + secret scan + SBOM); CI `:app:compileDebugKotlin`, 494 Android unit tests, 318 backend tests | `verification/reports/VERIFICATION_01.md`; five passing conditions re-tested; all five findings re-derived, 3 closed, 1 closed-with-growth, 1 closed stronger than asked | **DELETED 2026-11-20** — text preserved in `verification/reports/VERIFICATION_01.md` §9 |
 | R02 | Senior Android Client Engineer (Kotlin/Compose) | `REVIEWER_02_DONE.md` | NOT VERIFIED | — | — | `retained` |
 | R03 | Backend & Cloud Functions Engineer | `REVIEWER_03_DONE.md` | NOT VERIFIED | — | — | `retained` |
 | R04 | Data & Persistence Integrity Engineer | `REVIEWER_04_DONE.md` | NOT VERIFIED | — | — | `retained` |
@@ -29,15 +29,19 @@ Status vocabulary: **VERIFIED COMPLETED** · **PARTIALLY VERIFIED** · **FAILED 
 | R15 | Documentation & Requirements Traceability Auditor | `REVIEWER_15_DONE.md` | NOT VERIFIED | — | — | `retained` |
 
 **Totals:** 15 reviewers · 1 verified · 0 failed · 0 blocked · 14 awaiting verification ·
-0 instruction files deleted · 15 retained.
+**1 instruction file deleted** (`reviewers/ARCHITECTURE_REVIEWER.md`) · 14 retained.
+
+**Deleted instruction files:** `reviewers/ARCHITECTURE_REVIEWER.md` (R01, 2026-11-20). Preserved
+verbatim in `verification/reports/VERIFICATION_01.md` §9; all ten inbound references repointed.
 
 ## Notes
 
 1. **Declarations are not evidence.** R01's completion file is a single sentence. That does not make it
    false — every claim in it turned out to be true when re-derived — but it carries no information that
    could approve anything on its own, which is why the gate is source-and-run based.
-2. **Deletion is gated.** No instruction file has been deleted. `VERIFICATION_EXECUTION_STATE.md` §4
-   records why (ten inbound references each, two documentation guards, and the append-only review
-   reports) and recommends archiving instead of deleting.
+2. **Deletion is deliberate and recorded.** The programme lead chose Phase 6 as written, so a verified
+   reviewer's instruction file is removed from the working tree. The procedure is fixed, so every later
+   round repeats it identically: preserve the full text in the verification report (§9), `git rm` the
+   file, repoint every inbound reference, then run the documentation guards before committing.
 3. **Order is fixed.** The register is filled top to bottom. A reviewer that fails verification is
    re-verified in place; no later reviewer is opened until it passes.

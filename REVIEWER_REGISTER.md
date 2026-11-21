@@ -7,7 +7,7 @@
 
 | ID | Professional title | PRD | Priority | Wave | Gate | Instruction file | Status |
 |---|---|---|---|---|---|---|---|
-| R01 | Principal Software Architect & Codebase Integrity Reviewer | RVW-001 | P0 | 0 | **Build gate** | `reviewers/ARCHITECTURE_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_01](reviewers/reports/REVIEW_01.md)) |
+| R01 | Principal Software Architect & Codebase Integrity Reviewer | RVW-001 | P0 | 0 | **Build gate** | `deleted after verification` → `verification/reports/VERIFICATION_01.md` | `submitted` — **FAIL** ([REVIEW_01](reviewers/reports/REVIEW_01.md)) |
 | R14 | DevOps, Release Engineering & Supply Chain Reviewer | RVW-014 | P0 | 0 | **Reproducibility gate** | `reviewers/DEVOPS_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_14](reviewers/reports/REVIEW_14.md)) |
 | R07 | Application Security Engineer | RVW-007 | P0 | 1 | Security gate | `reviewers/SECURITY_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_07](reviewers/reports/REVIEW_07.md)) |
 | R10 | Safety, Trust & Fraud Prevention Reviewer | RVW-010 | P0 | 1 | Safety gate | `reviewers/SAFETY_FRAUD_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_10](reviewers/reports/REVIEW_10.md)) |

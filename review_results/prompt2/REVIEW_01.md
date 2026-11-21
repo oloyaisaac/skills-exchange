@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Reviewer | R01 — Architecture & Codebase Integrity (P0, gate G0) |
-| Assignment | `reviewers/ARCHITECTURE_REVIEWER.md` (read in full) |
+| Assignment | `reviewers/ARCHITECTURE_REVIEWER.md` (read in full); file deleted after independent verification — text preserved in `verification/reports/VERIFICATION_01.md` §9 |
 | Executed | 2026-11-20 |
 | Source reviewed | `arena/0570a462-skills-exchange` @ `aa4a0bc` |
 | Mode | Strict review only — no application source, rules, build files or tests changed |

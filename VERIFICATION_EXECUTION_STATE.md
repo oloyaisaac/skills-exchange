@@ -21,7 +21,7 @@ numbering R01 → R15 · **Updated:** 2026-11-20
 
 | # | Reviewer | Verification | Report | Tests executed by verifier | Deleted instruction file |
 |---|---|---|---|---|---|
-| R01 | Principal Software Architect & Codebase Integrity | **VERIFIED COMPLETED** | `verification/reports/VERIFICATION_01.md` | Local Node guard suite (19 checks + secret scan + SBOM); Android **44873267251** — compile, 66 suites / 494 tests / 0 failures, R8 release; full CI **44873865641** 6/6 and Android **44873865632** 2/2 on this branch | none (retained — see §4) |
+| R01 | Principal Software Architect & Codebase Integrity | **VERIFIED COMPLETED** | `verification/reports/VERIFICATION_01.md` | Local Node guard suite (19 checks + secret scan + SBOM); Android **44873267251** — compile, 66 suites / 494 tests / 0 failures, R8 release; full CI **44873865641** 6/6 and Android **44873865632** 2/2 on this branch | **`reviewers/ARCHITECTURE_REVIEWER.md`** (text preserved in the report §9) |
 | R02 | Senior Android Client Engineer | awaiting verification | — | — | — |
 | R03 | Backend & Cloud Functions Engineer | awaiting verification | — | — | — |
 | R04 | Data & Persistence Integrity Engineer | awaiting verification | — | — | — |
@@ -46,32 +46,23 @@ These are records the verifier will not edit (a verifier that fixes what it veri
 | VC-01 | Implementation agent | `prd.json` REM-001 is `VERIFICATION_PENDING` although CI compiles and tests every push — cite the run id and move to `DONE`. REM-004 is `NOT_STARTED` although the duplicate manifest and dead `ActiveJobScreen.kt` are gone and guarded. | R01, caveat B |
 | VC-02 | Implementation agent | The god-class roadmap (D-2026-11-20-1) has no slice started; `SkillsExchangeRepository.kt` and `SkillsExchangeViewModel.kt` grew to 3,357 and 3,429 lines. REM-003 is correctly `NOT_STARTED`; the roadmap must not be cited as decomposition. | R01, caveat A |
 
-## 4. Instruction-file deletion policy (decision required)
+## 4. Instruction-file deletion policy (decided)
 
-Phases 6–8 ask that a reviewer's original instruction file be deleted once that reviewer is verified,
-with the deletion recorded. That collides with the repository's own guarantees, so it has **not** been
-executed yet, for R01 or anyone else:
+Phases 6–8 ask that a verified reviewer's original instruction file be deleted, and the programme lead
+chose that as written. The procedure is fixed so all fifteen rounds behave identically:
 
-1. Each instruction file is referenced from ten places — `REVIEWER_REGISTER.md`, `REVIEW_PLAN.md`,
-   `IMPLEMENTATION_ROADMAP.md`, `ASSESSMENT_REPORT.md`, `review_results/R01_ARCHITECTURE.md`,
-   `review_results/prompt2/REVIEW_01.md`, `reviewers/reports/REVIEW_01.md`, and three `prd.json` fields
-   on the `RVW-001` story — including the historical FAIL reports, which are append-only evidence.
-2. `scripts/check_doc_links.mjs` and `scripts/check_document_map.mjs` treat a broken path as a build
-   failure, so deletion without rewriting those references turns the documentation gate red.
-3. `AGENTS.md` and D-2026-11-20-13 require the opposite property: a claim must be traceable to its
-   source. Deleting the assignment makes every verification report assert against a document nobody can
-   re-read.
+1. Copy the assignment's full text into the verification report as §9 ("Preserved assignment text").
+2. `git rm` the instruction file.
+3. Repoint every inbound reference — this round had ten, including `REVIEWER_REGISTER.md`,
+   `REVIEW_PLAN.md`, `IMPLEMENTATION_ROADMAP.md`, `ASSESSMENT_REPORT.md`, the two historical reports
+   (`review_results/R01_ARCHITECTURE.md`, `review_results/prompt2/REVIEW_01.md`), the reviewer report
+   (`reviewers/reports/REVIEW_01.md`) and three `prd.json` fields on `RVW-001` — to the preserved copy.
+   Historical reports keep their verdicts; only the pointer changes.
+4. Run `check_doc_links`, `check_document_map`, `check_repo_hygiene`, `check_story_status` and
+   `check_story_coverage` before committing; a broken path fails the build.
 
-Three options, with the verifier's recommendation:
-
-| Option | Effect | Recommendation |
-|---|---|---|
-| **A. Delete as instructed** | `git rm` each verified file (recoverable from git history), rewrite all ten references per reviewer to the verification report, keep the instruction text inside that report | Workable, ~10 edits × 15 reviewers; loses the ability to re-read the assignment in the working tree |
-| **B. Archive on pass** | `git mv reviewers/X_REVIEWER.md verification/retained/R01_X_REVIEWER.md`; the register records the move; links keep working | **Recommended** — satisfies "removed from the active set, recorded in the register" without destroying provenance |
-| **C. Retain** | No deletion | Leaves Phase 6 unmet |
-
-Until the programme lead chooses, the files stay in place and the master register records
-`retained (pending decision)`.
+Applied to R01 on 2026-11-20. Nothing else was deleted: `review_results/` findings, `reviewers/reports/`
+and `reviewer_completions/` are evidence and stay.
 
 ## 5. Independence limits, stated
 
