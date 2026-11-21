@@ -85,3 +85,14 @@ PR #34 merged the proposed corrections, but R04 remains **PARTIALLY VERIFIED** a
 VC-05 remains open; VC-06 has demonstrated limitations and overclaims; VC-07 is partial. The
 re-check record is restored in `verification/reports/VERIFICATION_04.md` §8. Await a separate
 implementation agent's corrections and independently re-verify R04; do not open R05.
+
+### R04 implementation handoff (not independent verification)
+
+At the user's direction this session switched from verifier to implementation. It corrected unsupported
+money/time claims, scoped the heuristic guard and extended its data-layer member-access selftest, and
+corrected the schema README. These changes do **not** complete VC-05: the two Room columns have not
+been renamed, the proposed 29→30 migration has not been written or exported, and the treatment of
+legacy REAL values in authorization still requires independent evidence. Android compilation and tests
+were not run locally because the Android SDK and JDK are unavailable. R04 remains not approved. A
+separate agent must complete the migration if required and independently verify the full correction;
+R05 remains closed.

@@ -12,5 +12,6 @@ covered by execution instead — `DatabaseMigrationChainTest` builds a real vers
 Room validates 11 → 29 in one run.
 
 **Adding a migration.** Bump `version`, add the migration, run `./gradlew :app:compileDebugKotlin` (or
-let CI do it) and commit the new `N.json` in the same change. A version without its JSON is a gap the
-chain test reports as a missing schema, not a silent pass.
+let CI do it) and commit the new `N.json` in the same change. The chain test loads specific exported
+versions for its fixtures and validates the final database against Room's generated schema; it does not
+assert that every version has a committed JSON. Review the schema export separately.

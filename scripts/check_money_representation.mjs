@@ -1,52 +1,37 @@
 #!/usr/bin/env node
 /**
- * R04-P2-04 / VC-06: money has one representation per role, and the schema has to agree.
- *
- * The round documented `Money` as "the one money representation" while the exported schema still held
- * eighteen REAL money columns and two REAL balances. A comment cannot enforce that; this can.
- *
- * The rule, checked against the newest committed Room schema (not against prose):
- *
- *   - money that is **settled** — anything that is summed into a balance, reserved, withdrawn or paid
- *     out — is stored as `INTEGER` minor units and summed as `Long`;
- *   - money that is **quoted** — a price the user is still editing — may be stored as `REAL`, but only
- *     if it is named in `QUOTED_MONEY` below with the reason, and only if it is produced by a single
- *     rounding step (`JobMoney.split`) before it becomes money;
- *   - a column whose name looks like money but appears in neither list fails the build, so the next
- *     contributor has to make the same decision deliberately;
- *   - an allowlist entry that no longer matches a column fails too, so the list cannot rot;
- *   - both `walletBalance` columns are display mirrors of the ledger. They may stay `REAL` only while
- *     nothing outside the data layer reads them — checked here, because "display only" is a claim like
- *     any other.
- *
- * `--selftest` proves each refusal with fixtures.
+ * VC-06: heuristic schema and source checks, not proof of money-flow correctness.
+ * Checks money-shaped numeric columns against an explicit legacy REAL allowlist and
+ * reports direct Kotlin member accesses to legacy walletBalance in all source layers.
+ * It cannot detect SQL reads, reflection, aliases, indirect flows or validate semantics.
+ * A separate review and tests of cashout authorization remain necessary.
  */
 import fs from "node:fs";
 import path from "node:path";
 
 const SCHEMA_DIR = "app/schemas/com.example.data.db.AppDatabase";
 
-/** Money columns that are quoted, not settled: REAL, with the reason they are allowed to be. */
+/** Legacy REAL fields: roles are descriptive, not evidence of calculation or settlement. */
 export const QUOTED_MONEY = {
-  "job_posts.budget": "the resident's asking price while the job is REQUESTED/QUOTED; whole shillings from JobMoney.split",
-  "job_posts.materialsCost": "a cost estimate entered by the resident, rounded once by JobMoney.split",
-  "job_posts.safetyFee": "a quoted add-on, summed by JobMoney.split in whole shillings",
-  "job_posts.laborRate": "an hourly rate the worker may still renegotiate (REQ-003 recurring contracts)",
-  "job_posts.laborTotal": "the rounded labour component of a quote, recomputed by JobMoney.split on change",
-  "job_posts.materialsSubtotal": "the rounded materials component of a quote",
-  "job_posts.platformFee": "the rounded 10% fee of a quote, recomputed by JobMoney.split",
-  "job_posts.grandTotal": "the rounded sum of the components, never accumulated with Double arithmetic",
-  "job_posts.emergencyAddonAmount": "a quoted add-on, folded into the total by JobMoney.split",
-  "job_posts.materialAdvanceAmount": "a quoted advance, settled only through the wallet ledger",
-  "job_posts.calloutFee": "a quoted visit fee, folded into the total by JobMoney.split",
-  "job_posts.recurringNegotiatedRate": "a worker's proposed rate for a recurring contract, not yet money",
-  "job_quotes.totalQuote": "the quote total as offered; the ledger records what is actually paid",
-  "job_quotes.proposedRate": "a worker's price for one job; accepted quotes are re-derived server-side",
-  "disputes.resolutionAmount": "the administrator's figure for the record; the refund itself moves through the ledger",
-  "service_providers.hourlyRate": "a public profile rate, display and search only",
+  "job_posts.budget": "job budget",
+  "job_posts.materialsCost": "job materials cost",
+  "job_posts.safetyFee": "job safety fee",
+  "job_posts.laborRate": "job labor rate",
+  "job_posts.laborTotal": "job labor total",
+  "job_posts.materialsSubtotal": "job materials subtotal",
+  "job_posts.platformFee": "job platform fee",
+  "job_posts.grandTotal": "job total",
+  "job_posts.emergencyAddonAmount": "emergency add-on",
+  "job_posts.materialAdvanceAmount": "material advance",
+  "job_posts.calloutFee": "callout fee",
+  "job_posts.recurringNegotiatedRate": "recurring rate",
+  "job_quotes.totalQuote": "quote total",
+  "job_quotes.proposedRate": "proposed quote rate",
+  "disputes.resolutionAmount": "recorded dispute amount",
+  "service_providers.hourlyRate": "provider rate",
 };
 
-/** Columns that are balances in name only: display mirrors of `wallet_ledger`, never read for money. */
+/** Legacy fields are not proven ledger mirrors and must not authorize cashouts. */
 export const DISPLAY_MIRRORS = ["user_profiles.walletBalance", "service_providers.walletBalance"];
 
 // Column *names* that denote an amount of money, anchored at the end so prose columns
@@ -85,10 +70,8 @@ export function auditSchema({ entities }, quoted = QUOTED_MONEY, mirrors = DISPL
 
   for (const column of columns) {
     if (column.affinity === "INTEGER") continue; // settled money, minor units — the default
-    if (Object.prototype.hasOwnProperty.call(quoted, column.key)) continue;
-    // A display mirror is allowed to be REAL only because it is unread outside the data layer;
-    // `auditMirrorReaders` is what proves that, so the two rules are always applied together.
-    if (mirrors.includes(column.key)) continue;
+    if (column.affinity === "REAL" && Object.prototype.hasOwnProperty.call(quoted, column.key)) continue;
+    if (column.affinity === "REAL" && mirrors.includes(column.key)) continue;
     problems.push(
       `${column.key}: money-shaped column stored as ${column.affinity} and not classified as quoted money`
     );
@@ -106,13 +89,12 @@ export function stripComments(source) {
   return source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/[^\n]*/g, " ");
 }
 
-/** "Display only" is a claim: nothing outside the data layer may read a display mirror. */
+/** Detect direct member accesses in all Kotlin source layers; this is not a Kotlin parser. */
 export function auditMirrorReaders(files, mirrors = DISPLAY_MIRRORS) {
   const problems = [];
   for (const mirror of mirrors) {
     const field = mirror.split(".")[1];
     for (const [file, text] of Object.entries(files)) {
-      if (file.startsWith("app/src/main/java/com/example/data/")) continue; // the layer that owns them
       const reader = new RegExp(`\\.${field}\\b`);
       if (reader.test(stripComments(text))) problems.push(`${mirror}: read by ${file}, but it is a display mirror of the ledger`);
     }
@@ -170,12 +152,15 @@ function selftest() {
   if (auditMirrorReaders({ "app/src/main/java/com/example/ui/Bar.kt": "// row.walletBalance is only display" }, ["t.walletBalance"]).length !== 0) {
     throw new Error("selftest: a comment was mistaken for a reader");
   }
-  if (auditMirrorReaders({ "app/src/main/java/com/example/data/db/X.kt": "row.walletBalance" }, ["t.walletBalance"]).length !== 0) {
-    throw new Error("selftest: the owning data layer was refused");
+  if (auditMirrorReaders({ "app/src/main/java/com/example/data/repository/X.kt": "row.walletBalance" }, ["t.walletBalance"]).length === 0) {
+    throw new Error("selftest: data-layer member access was not reported");
+  }
+  if (auditSchema(schema([{ columnName: "budget", affinity: "NUMERIC" }]), { "t.budget": "legacy" }).length === 0) {
+    throw new Error("selftest: a changed allowlisted affinity was not reported");
   }
 
   console.log(
-    "Money-representation selftest passed: unclassified REAL money, REAL balances, stale allowlist and stray mirror readers all refused."
+    "Money-representation selftest passed: unclassified REAL fields, affinity drift, stale allowlist and direct member access in UI/data fixtures detected."
   );
 }
 
@@ -198,8 +183,8 @@ if (process.argv.includes("--selftest")) {
   }
 
   console.log(
-    `Money-representation check passed: schema v${schema.version} — every money column is minor-unit ` +
-      `INTEGER or classified quoted money (${Object.keys(QUOTED_MONEY).length}), both balances are ` +
-      `unread display mirrors.`
+    `Money-representation check passed: schema v${schema.version}; money-shaped numeric columns are ` +
+      `INTEGER or allowlisted REAL. No direct walletBalance member access found in scanned Kotlin files. ` +
+      `This heuristic does not prove money flow or detect SQL reads.`
   );
 }

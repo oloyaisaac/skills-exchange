@@ -3102,7 +3102,7 @@ class SkillsExchangeRepository(
         }
 
         // 4. Authoritative available balance from the LEDGER — never a caller-supplied number and
-        //    never the display-only `UserProfileEntity.walletBalance` field.
+        //    never the legacy `UserProfileEntity.walletBalance` field.
         //    R04-P2-04: every amount is an exact integer in minor units; the requested Double is
         //    converted once, here, and a non-representable amount is rejected instead of guessed.
         val requestedMinor = Money.toMinorUnits(amount)

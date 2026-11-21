@@ -1,44 +1,23 @@
 package com.example.util
 
 /**
- * R04-P2-04 / VC-05: the money representation, stated precisely enough to be checked.
+ * Wallet ledger and withdrawal amounts are stored as [Long] hundredths of a UGX.
+ * Local cashout balance calculation reads the ledger, not the legacy profile balance columns.
+ * Server-side decisions and provider payloads have their own contracts; this helper does not
+ * establish an end-to-end representation or prove all settlement flows use minor units.
  *
- * An earlier version of this comment said "the one money representation" and then described storage as
- * minor units, while the exported schema still held eighteen REAL money columns and two REAL balances.
- * A rule that the schema contradicts is worse than no rule, so the rule is now split by **role**, and
- * `scripts/check_money_representation.mjs` fails the build when the schema stops agreeing with it.
+ * Room schema v29 still stores these amounts as REAL: job_posts budget, materialsCost, safetyFee,
+ * laborRate, laborTotal, materialsSubtotal, platformFee, grandTotal, emergencyAddonAmount,
+ * materialAdvanceAmount, calloutFee and recurringNegotiatedRate; job_quotes proposedRate and
+ * totalQuote; disputes resolutionAmount; service_providers hourlyRate and walletBalance; and
+ * user_profiles walletBalance. They are legacy fields, not necessarily editable quotes: for
+ * example totalQuote is calculated by direct multiplication, and seeded jobs use constants.
+ * The two walletBalance columns default to 185.0 and a DAO setter exists; they are not known to
+ * be synchronized with the ledger. They must not be used for cashout authorization.
  *
- * ## Settled money — `Long` minor units, always
- *
- * Money that is summed into a balance, reserved, withdrawn, refunded or paid out:
- * `wallet_ledger.amountMinor`, `wallet_withdrawals.amountMinor`, and anything derived from them.
- * Storage, arithmetic and comparisons are `Long`; `Double` never touches a balance. This is the only
- * representation a payout decision may use.
- *
- * ## Quoted money — `REAL`, produced only by [com.example.util.JobMoney.split]
- *
- * A price while the user is still editing it: job budgets, labour/materials/fee components, quotes,
- * a dispute's resolution figure, a provider's public hourly rate. These are stored as `REAL` because
- * they round-trip through provider payloads and Firestore as numbers, and because the rounding rule
- * ("whole shillings, each component rounded once, total = sum of rounded parts") is owned by
- * `JobMoney.split`, not by this object.
- *
- * The list is explicit: `QUOTED_MONEY` in the guard names every one of these columns with the reason,
- * and a new money-shaped `REAL` column fails the build until someone classifies it deliberately.
- *
- * ## Display mirrors — `REAL`, and provably unread
- *
- * `user_profiles.walletBalance` and `service_providers.walletBalance` are leftovers that mirror the
- * ledger. They are not authoritative: the balance a cashout checks is computed from `wallet_ledger`.
- * The guard also fails if any file outside `com.example.data` reads either one, so the "display only"
- * claim is enforced rather than asserted.
- *
- * ## Conversion points
- *
- * [toMinorUnits] is the only way into settled money, and it rejects NaN, infinity and out-of-range
- * values instead of letting them become a balance. [toMajorUnits] and [format] are display-only.
- *
- * Decision record: `DECISIONS.md` D-2026-11-20-15.
+ * The schema guard is a heuristic: it checks money-shaped numeric column names and direct Kotlin
+ * member access, not SQL, reflection, calculation provenance or all possible money flows.
+ * See D-2026-11-20-15 in DECISIONS.md for limitations and proposed migration work.
  */
 object Money {
 
@@ -46,7 +25,7 @@ object Money {
     const val MINOR_UNITS_PER_UNIT: Long = 100L
 
     /**
-     * Converts a requested/displayed amount to minor units, rounding half away from zero.
+     * Converts a requested/displayed amount to minor units, rounding to nearest, with ties to even.
      * Returns null for NaN, ±Infinity or values outside the safe range, so a corrupt or hostile
      * amount can never enter the ledger.
      */
