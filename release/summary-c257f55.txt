@@ -1,0 +1,4 @@
+APK: app/build/outputs/apk/release/app-release.apk
+APK size: 6.4M (6660915 bytes)
+R8 mapping: 690271 lines
+Uncompressed resources: 599.8 KB
