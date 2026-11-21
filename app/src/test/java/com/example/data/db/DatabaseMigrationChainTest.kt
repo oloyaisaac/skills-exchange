@@ -22,7 +22,7 @@ import org.robolectric.annotation.Config
  *
  * The database starts as a real version-11 file built from `src/test/resources/migration/
  * v11_baseline.sql`, is seeded with a row, and is then opened through `AppDatabase` with the
- * production migration array. Room runs 11 → 28 and, because `exportSchema` is on and the entity
+ * production migration array. Room runs 11 → 29 and, because `exportSchema` is on and the entity
  * classes are the contract, validates the result: a column, index or foreign key that a migration
  * forgets makes `Room.openHelper.writableDatabase` throw `IllegalStateException("Migration didn't
  * properly handle ...")`, which fails this test.

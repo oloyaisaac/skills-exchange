@@ -685,6 +685,40 @@ that do not exist (`updateGuarantorReview`, a validator `Outcome` object), so no
 > *premise* does not: there is now no pinned JVM, and the remediation environment has no JDK at all.
 > See D-2026-11-20-14 for the rule that replaced it.
 
+### D-2026-11-20-15 - Money has one representation per role, and the schema is checked against it
+
+**Context.** R04 required "a documented single representation for money". The round wrote a comment in
+`Money.kt` claiming storage and balances were minor units, converted `wallet_ledger` and
+`wallet_withdrawals` to `amountMinor INTEGER`, and stopped. Independent verification read the exported
+`29.json` schema instead of the comment: **eighteen REAL money columns and two REAL `walletBalance`
+columns against two INTEGER tables**. The document asserted something the schema contradicted, and
+nothing failed.
+
+**Options considered.**
+
+1. *Convert everything to minor units.* Correct eventually, but it means a migration and a rewrite of
+   job pricing, quote acceptance, dispute resolution and every screen that formats an amount — a large
+   change to money code with no device in this environment.
+2. *Delete the claim.* Cheap, but leaves the next contributor to invent their own rule.
+3. **Classify by role, then enforce the classification** (chosen).
+
+**Decision.** Money is one representation per role:
+
+- **settled** (summed into a balance, reserved, withdrawn, refunded, paid out) — `Long` minor units,
+  `Double` never touches it;
+- **quoted** (a price still being edited) — `REAL`, produced only by `JobMoney.split`, which rounds each
+  component once in whole shillings, and enumerated with a reason in the guard's `QUOTED_MONEY`;
+- **display mirror** — `user_profiles.walletBalance` and `service_providers.walletBalance` are mirrors of
+  the ledger with **no readers outside `com.example.data`**, which the guard verifies rather than assumes.
+
+`scripts/check_money_representation.mjs` parses the newest committed schema and fails the build on: a
+money-shaped numeric column that is REAL and unclassified, a REAL balance, an allowlist entry that no
+longer exists, or any read of a mirror outside the data layer.
+
+**Consequences.** The claim in `Money.kt` is now narrower and true. The remaining conversion (job pricing
+as minor units) is not deferred by promise: it is a separate, named piece of work that will delete entries
+from `QUOTED_MONEY` as it lands, and the guard will not let the list grow silently in the meantime.
+
 ### D-2026-11-20-13 - One story vocabulary, and DONE is only reachable through evidence
 
 **Context.** R15 found `prd.json` carrying three ways to say a story was finished (`completed` 112,
