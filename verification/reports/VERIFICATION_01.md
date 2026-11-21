@@ -84,9 +84,9 @@ a local run and is recorded as such.
   document map (32 documents), links (114), traceability (49 requirements), story status and coverage
   (185 stories), onboarding, hygiene (439 files), secret scan, SBOM (234 components) — all pass.
 - The full CI workflow (backend 318 tests, handler suites, rules emulator, supply chain, documentation,
-  secret scan) runs on the pull request that carries this branch; its run is recorded in
-  `VERIFICATION_EXECUTION_STATE.md` §2 when it completes. It is a re-run of gates that R01's conditions
-  do not depend on, which is why its absence at the moment of approval is not a gap in this verdict.
+  secret scan) ran on the pull request carrying this branch: **CI 44873865641 — 6/6 green**, Android
+  **44873865632 — 2/2 green**, on `1e95311`+docs. All eight checks pass, so the backend half of the tree
+  is green in the same verification window as the Kotlin half.
 
 ## 7. Caveats and corrections handed to the implementation agent
 

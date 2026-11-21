@@ -21,7 +21,7 @@ numbering R01 → R15 · **Updated:** 2026-11-20
 
 | # | Reviewer | Verification | Report | Tests executed by verifier | Deleted instruction file |
 |---|---|---|---|---|---|
-| R01 | Principal Software Architect & Codebase Integrity | **VERIFIED COMPLETED** | `verification/reports/VERIFICATION_01.md` | Local Node guard suite (19 checks + secret scan + SBOM); Android run **44873267251** — compile, 66 suites / 494 tests / 0 failures, R8 release build | none (retained — see §4) |
+| R01 | Principal Software Architect & Codebase Integrity | **VERIFIED COMPLETED** | `verification/reports/VERIFICATION_01.md` | Local Node guard suite (19 checks + secret scan + SBOM); Android **44873267251** — compile, 66 suites / 494 tests / 0 failures, R8 release; full CI **44873865641** 6/6 and Android **44873865632** 2/2 on this branch | none (retained — see §4) |
 | R02 | Senior Android Client Engineer | awaiting verification | — | — | — |
 | R03 | Backend & Cloud Functions Engineer | awaiting verification | — | — | — |
 | R04 | Data & Persistence Integrity Engineer | awaiting verification | — | — | — |
