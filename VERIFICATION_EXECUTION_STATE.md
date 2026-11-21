@@ -22,7 +22,7 @@ numbering R01 → R15 · **Updated:** 2026-11-20
 | # | Reviewer | Verification | Report | Tests executed by verifier | Deleted instruction file |
 |---|---|---|---|---|---|
 | R01 | Principal Software Architect & Codebase Integrity | **VERIFIED COMPLETED** | `verification/reports/VERIFICATION_01.md` | Local Node guard suite (19 checks + secret scan + SBOM); Android **44873267251** — compile, 66 suites / 494 tests / 0 failures, R8 release; full CI **44873865641** 6/6 and Android **44873865632** 2/2 on this branch | **`reviewers/ARCHITECTURE_REVIEWER.md`** (text preserved in the report §9) |
-| R02 | Senior Android Client Engineer | **VERIFIED COMPLETED** | `verification/reports/VERIFICATION_02.md` | Compose critical-flow classes from CI XML (7 tests, 0 failures); full Android suite 494; local guard suite; full CI on the PR | **`reviewers/ANDROID_CLIENT_REVIEWER.md`** (text preserved in the report §9) |
+| R02 | Senior Android Client Engineer | **VERIFIED COMPLETED** | `verification/reports/VERIFICATION_02.md` | Compose critical-flow classes from CI XML (7 tests, 0 failures); full Android suite 494; local guard suite; **CI 44876801082 6/6**, **Android 44876801131 2/2** on this branch | **`reviewers/ANDROID_CLIENT_REVIEWER.md`** (text preserved in the report §9) |
 | R03 | Backend & Cloud Functions Engineer | awaiting verification | — | — | — |
 | R04 | Data & Persistence Integrity Engineer | awaiting verification | — | — | — |
 | R05 | API & External Integrations Engineer | awaiting verification | — | — | — |
