@@ -68,7 +68,7 @@ Assignment: `reviewers/ANDROID_CLIENT_REVIEWER.md` (deleted after verification; 
 
 ### R03 — Backend & Cloud Functions
 
-Assignment: `reviewers/BACKEND_REVIEWER.md` · Report: `review_results/R03_BACKEND.md`
+Assignment: `reviewers/BACKEND_REVIEWER.md` (deleted after verification; preserved in `verification/reports/VERIFICATION_03.md` §9) · Report: `review_results/R03_BACKEND.md`
 
 | Task | Priority | Finding | Root cause | Affected files | Required correction | Depends on | Required tests | Acceptance criteria | Completion evidence |
 |---|---|---|---|---|---|---|---|---|---|

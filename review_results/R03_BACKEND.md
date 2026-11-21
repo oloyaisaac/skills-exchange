@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Reviewer | R03 — Backend / Cloud Functions (P0) |
-| Assignment | `reviewers/BACKEND_REVIEWER.md` (read in full) |
+| Assignment | `reviewers/BACKEND_REVIEWER.md` (read in full); file deleted after independent verification — text preserved in `verification/reports/VERIFICATION_03.md` §9 |
 | Executed | 2026-11-19 |
 | Source reviewed | HEAD `06ff649` |
 | Areas | 18 exported functions, authorization, webhook, deployability, FCM, idempotency |

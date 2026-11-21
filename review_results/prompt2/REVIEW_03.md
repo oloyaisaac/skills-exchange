@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Reviewer | R03 — Backend & Cloud Functions (P0) |
-| Assignment | `reviewers/BACKEND_REVIEWER.md` (read in full) |
+| Assignment | `reviewers/BACKEND_REVIEWER.md` (read in full); file deleted after independent verification — text preserved in `verification/reports/VERIFICATION_03.md` §9 |
 | Executed | 2026-11-20 |
 | Source reviewed | `arena/0570a462-skills-exchange` @ `aa4a0bc` |
 | Mode | Review only — no backend source changed |
