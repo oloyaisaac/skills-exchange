@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.remote.AccountDeletionRulesTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:00.503Z" hostname="runnervm0hi8g" time="0.02">
+  <properties/>
+  <testcase name="only a completed purge allows the auth user to be deleted" classname="com.example.data.remote.AccountDeletionRulesTest" time="0.003"/>
+  <testcase name="an incomplete purge keeps the account and carries the counts" classname="com.example.data.remote.AccountDeletionRulesTest" time="0.001"/>
+  <testcase name="the dialog copy never claims success before the server does" classname="com.example.data.remote.AccountDeletionRulesTest" time="0.002"/>
+  <testcase name="a stale session is reported as a re-authentication request, not a failure" classname="com.example.data.remote.AccountDeletionRulesTest" time="0.001"/>
+  <testcase name="an expired session, an unreachable server and an unknown error are all failures" classname="com.example.data.remote.AccountDeletionRulesTest" time="0.0"/>
+  <testcase name="the client never deletes the auth user before the server purge" classname="com.example.data.remote.AccountDeletionRulesTest" time="0.008"/>
+  <testcase name="deletion no longer wipes local data before the server agrees" classname="com.example.data.remote.AccountDeletionRulesTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

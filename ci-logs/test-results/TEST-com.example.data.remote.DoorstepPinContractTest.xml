@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.remote.DoorstepPinContractTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:00.780Z" hostname="runnervm0hi8g" time="0.007">
+  <properties/>
+  <testcase name="the server error codes map to the states the dialog knows" classname="com.example.data.remote.DoorstepPinContractTest" time="0.002"/>
+  <testcase name="the rules keep PIN material out of every client's reach" classname="com.example.data.remote.DoorstepPinContractTest" time="0.001"/>
+  <testcase name="the worker is told to ask for the PIN instead of being shown it" classname="com.example.data.remote.DoorstepPinContractTest" time="0.001"/>
+  <testcase name="only an accepted callable result counts as verified" classname="com.example.data.remote.DoorstepPinContractTest" time="0.001"/>
+  <testcase name="a verified result has nothing to show, every other result does" classname="com.example.data.remote.DoorstepPinContractTest" time="0.0"/>
+  <testcase name="an unknown or missing error is a failure, never a success" classname="com.example.data.remote.DoorstepPinContractTest" time="0.0"/>
+  <testcase name="the client sends only the typed PIN, and the sheet shows it only to the resident" classname="com.example.data.remote.DoorstepPinContractTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,35 @@
+{
+  "name": "skills-exchange-functions",
+  "scripts": {
+    "lint": "tslint --project tsconfig.json",
+    "build": "tsc",
+    "test": "node --test test/*.test.mjs",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include='lib/**/*.js' --test-coverage-lines=90 --test-coverage-branches=80 --test-coverage-functions=90 test/*.test.mjs",
+    "serve": "npm run build && firebase serve --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log",
+    "test:handlers": "node --test test/handlers.emulator.mjs"
+  },
+  "engines": {
+    "node": "22"
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.0.0",
+    "axios": "^1.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.4",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.10",
+    "firebase-functions-test": "^3.4.0"
+  },
+  "private": true,
+  "overrides": {
+    "@types/express": "^4.17.21",
+    "@types/express-serve-static-core": "^4.19.9"
+  }
+}

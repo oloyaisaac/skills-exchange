@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.ui.theme.ContrastTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:06.797Z" hostname="runnervm0hi8g" time="0.023">
+  <properties/>
+  <testcase name="icon tints stay above the non-text floor" classname="com.example.ui.theme.ContrastTest" time="0.021"/>
+  <testcase name="white on the filled action colours meets the AA body floor" classname="com.example.ui.theme.ContrastTest" time="0.0"/>
+  <testcase name="status banners keep their text readable" classname="com.example.ui.theme.ContrastTest" time="0.001"/>
+  <testcase name="text on its surfaces meets the AA body floor" classname="com.example.ui.theme.ContrastTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

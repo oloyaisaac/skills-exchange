@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.util.MoneyTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:06.951Z" hostname="runnervm0hi8g" time="0.003">
+  <properties/>
+  <testcase name="repeated credits do not drift" classname="com.example.util.MoneyTest" time="0.001"/>
+  <testcase name="non-finite amounts are rejected rather than converted" classname="com.example.util.MoneyTest" time="0.001"/>
+  <testcase name="formatting is deterministic and locale independent" classname="com.example.util.MoneyTest" time="0.001"/>
+  <testcase name="major and minor units round trip" classname="com.example.util.MoneyTest" time="0.0"/>
+  <testcase name="the sum is order independent" classname="com.example.util.MoneyTest" time="0.0"/>
+  <testcase name="conversion is exact for the values the app produces" classname="com.example.util.MoneyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

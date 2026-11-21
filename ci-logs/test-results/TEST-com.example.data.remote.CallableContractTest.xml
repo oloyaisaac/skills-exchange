@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.remote.CallableContractTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:00.611Z" hostname="runnervm0hi8g" time="0.033">
+  <properties/>
+  <testcase name="payload validates required fields" classname="com.example.data.remote.CallableContractTest" time="0.001"/>
+  <testcase name="payloads with no fields are allowed only for callables that take none" classname="com.example.data.remote.CallableContractTest" time="0.0"/>
+  <testcase name="null optionals are dropped and real optionals are kept" classname="com.example.data.remote.CallableContractTest" time="0.0"/>
+  <testcase name="an unknown field is refused instead of sent to the server" classname="com.example.data.remote.CallableContractTest" time="0.001"/>
+  <testcase name="every registered callable is exported by the functions module" classname="com.example.data.remote.CallableContractTest" time="0.002"/>
+  <testcase name="every call site in the app is registered" classname="com.example.data.remote.CallableContractTest" time="0.018"/>
+  <testcase name="no call site builds a raw map payload any more" classname="com.example.data.remote.CallableContractTest" time="0.01"/>
+  <testcase name="a wrongly typed field is refused" classname="com.example.data.remote.CallableContractTest" time="0.001"/>
+  <testcase name="a missing required field is refused before the call" classname="com.example.data.remote.CallableContractTest" time="0.0"/>
+  <testcase name="an unregistered callable name fails loudly" classname="com.example.data.remote.CallableContractTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

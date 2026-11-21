@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.ui.viewmodel.AuthViewModelTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:06.824Z" hostname="runnervm0hi8g" time="0.027">
+  <properties/>
+  <testcase name="extractInitials returns correct initials for various name inputs" classname="com.example.ui.viewmodel.AuthViewModelTest" time="0.022"/>
+  <testcase name="phone number is unique identifier for duplicate prevention" classname="com.example.ui.viewmodel.AuthViewModelTest" time="0.001"/>
+  <testcase name="UserProfileEntity defaults have isOnboardingCompleted true for backward compatibility" classname="com.example.ui.viewmodel.AuthViewModelTest" time="0.003"/>
+  <testcase name="worker access check logic is correct" classname="com.example.ui.viewmodel.AuthViewModelTest" time="0.0"/>
+  <testcase name="UserProfileEntity default values are correct for new client" classname="com.example.ui.viewmodel.AuthViewModelTest" time="0.0"/>
+  <testcase name="existing profile preserves data and role on migration" classname="com.example.ui.viewmodel.AuthViewModelTest" time="0.0"/>
+  <testcase name="UserProfileEntity worker fields default correctly" classname="com.example.ui.viewmodel.AuthViewModelTest" time="0.0"/>
+  <testcase name="client role creation sets CLIENT initialRole and active mode" classname="com.example.ui.viewmodel.AuthViewModelTest" time="0.001"/>
+  <testcase name="worker role creation sets WORKER initialRole and enforces KYC and training gating" classname="com.example.ui.viewmodel.AuthViewModelTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

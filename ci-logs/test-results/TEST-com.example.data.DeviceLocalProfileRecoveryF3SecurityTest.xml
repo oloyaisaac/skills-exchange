@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.DeviceLocalProfileRecoveryF3SecurityTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:02:51.494Z" hostname="runnervm0hi8g" time="0.377">
+  <properties/>
+  <testcase name="test F the demo default profile can never become the authenticated identity" classname="com.example.data.DeviceLocalProfileRecoveryF3SecurityTest" time="0.039"/>
+  <testcase name="test D a missing uid bound profile fails closed without any fallback" classname="com.example.data.DeviceLocalProfileRecoveryF3SecurityTest" time="0.054"/>
+  <testcase name="test A the authenticated firebase uid wins over a newer room row" classname="com.example.data.DeviceLocalProfileRecoveryF3SecurityTest" time="0.055"/>
+  <testcase name="test G an existing legitimate profile still resolves" classname="com.example.data.DeviceLocalProfileRecoveryF3SecurityTest" time="0.05"/>
+  <testcase name="test B a phone conflict cannot change the authenticated identity" classname="com.example.data.DeviceLocalProfileRecoveryF3SecurityTest" time="0.056"/>
+  <testcase name="test E no firebase authentication yields no authenticated profile" classname="com.example.data.DeviceLocalProfileRecoveryF3SecurityTest" time="0.056"/>
+  <testcase name="test C no phone lookup can establish authenticated identity" classname="com.example.data.DeviceLocalProfileRecoveryF3SecurityTest" time="0.063"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

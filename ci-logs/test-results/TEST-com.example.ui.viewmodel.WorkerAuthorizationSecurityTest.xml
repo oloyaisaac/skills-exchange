@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.ui.viewmodel.WorkerAuthorizationSecurityTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:06.890Z" hostname="runnervm0hi8g" time="0.002">
+  <properties/>
+  <testcase name="state 10b - blank id or demo placeholder profile is denied" classname="com.example.ui.viewmodel.WorkerAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="state 8b - worker approved and activated but training not completed is denied" classname="com.example.ui.viewmodel.WorkerAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="state 3 - worker with unverified or not applied status is denied" classname="com.example.ui.viewmodel.WorkerAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="state 1 - unauthenticated user is strictly denied worker dashboard access" classname="com.example.ui.viewmodel.WorkerAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="state 4 - worker verification pending is denied" classname="com.example.ui.viewmodel.WorkerAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="state 7 - worker rejected is denied" classname="com.example.ui.viewmodel.WorkerAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="state 10 - null user profile is denied" classname="com.example.ui.viewmodel.WorkerAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="state 2b - client with forged or tampered approval fields is strictly denied" classname="com.example.ui.viewmodel.WorkerAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="state 6 - worker awaiting admin review is denied" classname="com.example.ui.viewmodel.WorkerAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="state 5 - worker verification submitted is denied" classname="com.example.ui.viewmodel.WorkerAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="state 2 - authenticated client is strictly denied worker dashboard access" classname="com.example.ui.viewmodel.WorkerAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="state 9 - worker registered, approved, trained, and activated is allowed" classname="com.example.ui.viewmodel.WorkerAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="state 8 - worker approved but not activated is denied" classname="com.example.ui.viewmodel.WorkerAuthorizationSecurityTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

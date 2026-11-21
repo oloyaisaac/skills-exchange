@@ -1,0 +1,84 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Calculating task graph as no cached configuration is available for tasks: :app:compileDebugKotlin
+Checking the license for package Android SDK Platform 37.0 in /home/runner/android-sdk/licenses
+License for package Android SDK Platform 37.0 accepted.
+Preparing "Install Android SDK Platform 37.0 (revision 2)".
+"Install Android SDK Platform 37.0 (revision 2)" ready.
+Installing Android SDK Platform 37.0 in /home/runner/android-sdk/platforms/android-37.0
+"Install Android SDK Platform 37.0 (revision 2)" complete.
+"Install Android SDK Platform 37.0 (revision 2)" finished.
+[=========                              ] 25%                                   > Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig FROM-CACHE
+> Task :app:processDebugGoogleServices FROM-CACHE
+> Task :app:generateDebugResources FROM-CACHE
+> Task :app:packageDebugResources FROM-CACHE
+> Task :app:processDebugNavigationResources FROM-CACHE
+> Task :app:parseDebugLocalResources FROM-CACHE
+> Task :app:generateDebugRFile FROM-CACHE
+> Task :app:kspDebugKotlin
+> Task :app:compileDebugKotlin
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/build/generated/ksp/debug/kotlin/com/example/data/db/JobPostDao_Impl.kt:924:23 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/build/generated/ksp/debug/kotlin/com/example/data/db/ServiceProviderDao_Impl.kt:190:23 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:60:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:126:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:149:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:368:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:375:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:382:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:389:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:404:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:440:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:457:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:472:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:508:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:545:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:551:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:561:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:573:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:593:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:653:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/db/AppDatabase.kt:666:34 The corresponding parameter in the supertype 'Migration' is named 'db'. This may cause problems when calling this function with named arguments.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/remote/FirebaseService.kt:206:17 Condition is always 'true'.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/remote/FirebaseService.kt:1600:29 Unchecked cast of 'Any?' to 'List<Map<String, Any>>'.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/remote/FirebaseService.kt:1695:30 Unchecked cast of 'Any?' to 'List<Map<String, Any>>'.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/remote/SkillsExchangeMessagingService.kt:36:45 'val token: Task<String!>' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/remote/SkillsExchangeMessagingService.kt:50:45 'fun deleteToken(): Task<Void!>' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/remote/SkillsExchangeMessagingService.kt:56:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/data/remote/SkillsExchangeMessagingService.kt:57:15 'fun onNewToken(p0: String): Unit' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/components/AccountCenterSheets.kt:244:40 'val Icons.Outlined.ReceiptLong: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.ReceiptLong.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/components/ChatDrawer.kt:284:53 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/components/EscrowAndProofSheet.kt:866:58 'val Icons.Filled.ReceiptLong: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ReceiptLong.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/components/EscrowAndProofSheet.kt:1342:66 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/components/FreelancerDashboardView.kt:185:46 'val Icons.Filled.Assignment: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Assignment.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/components/FreelancerDashboardView.kt:412:13 'fun Divider(modifier: Modifier = ..., thickness: Dp = ..., color: Color = ...): Unit' is deprecated. Renamed to HorizontalDivider.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/components/FreelancerDashboardView.kt:456:78 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/components/JobPipelineKanban.kt:329:58 'val Icons.Outlined.ReceiptLong: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.ReceiptLong.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/components/JobPipelineKanban.kt:416:54 'val Icons.Outlined.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Chat.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/components/NavigationDrawer.kt:432:21 'fun Divider(modifier: Modifier = ..., thickness: Dp = ..., color: Color = ...): Unit' is deprecated. Renamed to HorizontalDivider.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/components/NavigationDrawer.kt:469:51 'val Icons.Outlined.ReceiptLong: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.ReceiptLong.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/components/NavigationDrawer.kt:589:21 'fun Divider(modifier: Modifier = ..., thickness: Dp = ..., color: Color = ...): Unit' is deprecated. Renamed to HorizontalDivider.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/components/NavigationDrawer.kt:603:61 'val Icons.Filled.Logout: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Logout.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/components/ProviderCard.kt:291:74 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/components/ProviderDetailSheet.kt:548:70 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/components/QuoteSubmissionSheet.kt:229:58 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/screens/MainScreen.kt:333:55 'val Icons.Outlined.ListAlt: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.ListAlt.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/screens/OnboardingScreen.kt:241:57 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/screens/OnboardingScreen.kt:593:57 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/screens/OnboardingScreen.kt:780:61 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/ui/viewmodel/SkillsExchangeViewModel.kt:1477:35 Condition is always 'true'.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/util/CurrencyUtils.kt:7:41 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/util/CurrencyUtils.kt:8:39 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/util/CurrencyUtils.kt:9:45 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/util/CurrencyUtils.kt:10:40 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/util/GoogleSignInHelper.kt:7:8 'class GoogleSignInOptions : AbstractSafeParcelable, Api.ApiOptions.Optional, ReflectedParcelable' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/util/GoogleSignInHelper.kt:35:19 'class GoogleSignInOptions : AbstractSafeParcelable, Api.ApiOptions.Optional, ReflectedParcelable' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/util/GoogleSignInHelper.kt:35:47 'class GoogleSignInOptions : AbstractSafeParcelable, Api.ApiOptions.Optional, ReflectedParcelable' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/util/LocationHelper.kt:121:29 'fun requestSingleUpdate(p0: String, p1: LocationListener, p2: Looper?): Unit' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/skills-exchange/skills-exchange/app/src/main/java/com/example/util/LocationHelper.kt:132:58 'fun getFromLocation(p0: Double, p1: Double, p2: Int): (Mutable)List<Address!>?' is deprecated. Deprecated in Java.
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1795269626129.json
+
+BUILD SUCCESSFUL in 1m 29s
+9 actionable tasks: 2 executed, 7 from cache
+Configuration cache entry stored.

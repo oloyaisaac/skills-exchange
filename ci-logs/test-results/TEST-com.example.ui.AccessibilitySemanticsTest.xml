@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.ui.AccessibilitySemanticsTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:01.113Z" hostname="runnervm0hi8g" time="4.096">
+  <properties/>
+  <testcase name="the onboarding role question is a heading" classname="com.example.ui.AccessibilitySemanticsTest" time="1.654"/>
+  <testcase name="the dispatch verdict is an assertive live region" classname="com.example.ui.AccessibilitySemanticsTest" time="1.413"/>
+  <testcase name="the offline banner announces itself politely" classname="com.example.ui.AccessibilitySemanticsTest" time="0.074"/>
+  <testcase name="the panic button is at least 48dp tall" classname="com.example.ui.AccessibilitySemanticsTest" time="0.268"/>
+  <testcase name="the safety copy resolves in Swahili" classname="com.example.ui.AccessibilitySemanticsTest" time="0.234"/>
+  <testcase name="the panic button describes the alert state" classname="com.example.ui.AccessibilitySemanticsTest" time="0.235"/>
+  <testcase name="the panic control survives a 200 percent font scale" classname="com.example.ui.AccessibilitySemanticsTest" time="0.211"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

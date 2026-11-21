@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "420248329042",
+    "project_id": "skills-exchange-f9189",
+    "storage_bucket": "skills-exchange-f9189.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:420248329042:android:7fa8317859e131243e388b",
+        "android_client_info": {
+          "package_name": "com.aistudio.skillsexchange.nxptvq"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "420248329042-dota11ofau6rkara32ojg7k6e45lk870.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aistudio.skillsexchange.nxptvq",
+            "certificate_hash": "380b0e057008c7fc45f4724119acb0443544903d"
+          }
+        },
+        {
+          "client_id": "420248329042-im973in0078oaqunbth1gsdbtqp2hiin.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5zetgxjY0pkoTWJf272fZLNSNv-9YtpA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "420248329042-im973in0078oaqunbth1gsdbtqp2hiin.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,304 @@
+package com.example.data.remote
+
+/**
+ * R05-P2-06: one typed field of a callable request.
+ *
+ * A callable payload used to be an untyped `Map<String, Any>` built at each call site, so a renamed
+ * or forgotten field only failed after a round trip — as a generic server error the user could not
+ * act on. Every callable the app invokes is now described here, and [CallableContracts.payload]
+ * refuses to send a request that does not match the description.
+ */
+enum class CallableValueType {
+    STRING,
+    NUMBER,
+    BOOLEAN,
+    MAP,
+    LIST;
+
+    /** True when [value] can be carried by a callable field of this type. */
+    fun accepts(value: Any?): Boolean = when (this) {
+        STRING -> value is String
+        NUMBER -> value is Number
+        BOOLEAN -> value is Boolean
+        MAP -> value is Map<*, *>
+        LIST -> value is List<*>
+    }
+}
+
+/** Description of one callable: its function name plus required/optional typed fields. */
+data class CallableContract(
+    val name: String,
+    val required: Map<String, CallableValueType> = emptyMap(),
+    val optional: Map<String, CallableValueType> = emptyMap()
+) {
+    val allowedFields: Set<String> get() = required.keys + optional.keys
+}
+
+/** A request that cannot be sent as typed; carries the offending field, never the value. */
+class CallableContractException(message: String) : IllegalArgumentException(message)
+
+/**
+ * The registry of every callable this app invokes, with the field types the server expects.
+ *
+ * Kept as data (not reflection) so a unit test can compare it against the `getHttpsCallable("...")`
+ * call sites in the client and the `export const ...` handlers in `functions/src/index.ts`.
+ */
+object CallableContracts {
+
+    val ALL: List<CallableContract> = listOf(
+        CallableContract(
+            name = "sendOtp",
+            required = mapOf("phoneNumber" to CallableValueType.STRING)
+        ),
+        CallableContract(
+            name = "verifyOtp",
+            required = mapOf(
+                "phoneNumber" to CallableValueType.STRING,
+                "code" to CallableValueType.STRING
+            )
+        ),
+        CallableContract(
+            name = "registerPushToken",
+            required = mapOf("token" to CallableValueType.STRING),
+            optional = mapOf("platform" to CallableValueType.STRING)
+        ),
+        CallableContract(
+            name = "searchLocalPlaces",
+            required = mapOf("query" to CallableValueType.STRING),
+            optional = mapOf("district" to CallableValueType.STRING)
+        ),
+        CallableContract(
+            name = "transcribeVoiceJob",
+            required = mapOf("audioBase64" to CallableValueType.STRING),
+            optional = mapOf("mimeType" to CallableValueType.STRING)
+        ),
+        CallableContract(
+            name = "releaseEscrowToWorker",
+            required = mapOf(
+                "jobId" to CallableValueType.STRING,
+                "workerId" to CallableValueType.STRING
+            ),
+            optional = mapOf("provider" to CallableValueType.STRING)
+        ),
+        CallableContract(
+            name = "revokeMyTokens",
+            optional = mapOf("reason" to CallableValueType.STRING)
+        ),
+        // R06-P2-01: account deletion is a server-side purge; the client only supplies the job ids
+        // it believes it posted and the server verifies each one before deleting.
+        CallableContract(
+            name = "deleteMyAccount",
+            optional = mapOf("jobIds" to CallableValueType.LIST)
+        ),
+        // R07-P2-01: the doorstep PIN is registered and verified server-side.
+        CallableContract(
+            name = "setDoorstepPin",
+            required = mapOf("jobId" to CallableValueType.STRING, "pin" to CallableValueType.STRING)
+        ),
+        CallableContract(
+            name = "verifyDoorstepPin",
+            required = mapOf("jobId" to CallableValueType.STRING, "pin" to CallableValueType.STRING)
+        ),
+        // R06-P2-04: drop this device's push token before sign-out.
+        CallableContract(
+            name = "clearMyPushTokens",
+            optional = mapOf("token" to CallableValueType.STRING)
+        ),
+        CallableContract(
+            name = "recordConsent",
+            required = mapOf(
+                "version" to CallableValueType.STRING,
+                "grants" to CallableValueType.MAP
+            )
+        ),
+        // R10-P2-04: guarantor records are written by the server, which is the only actor that can see
+        // every account's guarantors and therefore detect duplicates and self-guaranteeing.
+        CallableContract(
+            name = "submitGuarantorVerification",
+            required = mapOf(
+                "guarantors" to CallableValueType.LIST,
+                "consentVersion" to CallableValueType.STRING
+            ),
+            optional = mapOf("groupPhotoStoragePath" to CallableValueType.STRING)
+        ),
+        // R10-P2-02: reports reach an operator, with a server-computed priority and SLA.
+        CallableContract(
+            name = "fileReport",
+            required = mapOf(
+                "subjectUid" to CallableValueType.STRING,
+                "category" to CallableValueType.STRING,
+                "details" to CallableValueType.STRING
+            ),
+            optional = mapOf(
+                "subjectName" to CallableValueType.STRING,
+                "jobId" to CallableValueType.STRING
+            )
+        ),
+        // R10-P2-06: one rating per job per direction, decided server-side.
+        CallableContract(
+            name = "submitRating",
+            required = mapOf(
+                "jobId" to CallableValueType.STRING,
+                "subjectUid" to CallableValueType.STRING,
+                "stars" to CallableValueType.NUMBER
+            ),
+            optional = mapOf("review" to CallableValueType.STRING)
+        ),
+        // R10-P2-03: the sentence the app shows about an emergency alert comes from the server.
+        CallableContract(
+            name = "getSosDispatchStatus",
+            required = mapOf("incidentId" to CallableValueType.STRING)
+        ),
+        CallableContract(name = "exportMyData"),
+        // R09-P2-02: the third-party guarantor grant. `confirmed` must be true — the server refuses
+        // anything else — and the count is validated against the policy maximum server-side.
+        CallableContract(
+            name = "recordGuarantorConsent",
+            required = mapOf(
+                "version" to CallableValueType.STRING,
+                "guarantorCount" to CallableValueType.NUMBER,
+                "confirmed" to CallableValueType.BOOLEAN
+            )
+        ),
+        // R09: withdrawal of consent is recorded, and needs a fresh sign-in (server-enforced).
+        CallableContract(
+            name = "withdrawConsent",
+            required = mapOf("version" to CallableValueType.STRING),
+            optional = mapOf("reason" to CallableValueType.STRING)
+        ),
+        CallableContract(name = "getAdminAccess"),
+        // R10: operator surfaces for reports and the trust & safety numbers.
+        CallableContract(
+            name = "getReportsQueue",
+            optional = mapOf("status" to CallableValueType.STRING)
+        ),
+        CallableContract(
+            name = "resolveReport",
+            required = mapOf(
+                "reportId" to CallableValueType.STRING,
+                "status" to CallableValueType.STRING,
+                "outcome" to CallableValueType.STRING
+            ),
+            optional = mapOf("notes" to CallableValueType.STRING)
+        ),
+        CallableContract(
+            name = "getSafetyMetrics",
+            optional = mapOf("windowDays" to CallableValueType.NUMBER)
+        ),
+        CallableContract(name = "getPendingVerificationQueue"),
+        CallableContract(
+            name = "reviewWorkerApplication",
+            required = mapOf(
+                "userId" to CallableValueType.STRING,
+                "decision" to CallableValueType.STRING
+            ),
+            optional = mapOf("feedback" to CallableValueType.STRING)
+        ),
+        CallableContract(
+            name = "setWorkerActivationStatus",
+            required = mapOf(
+                "userId" to CallableValueType.STRING,
+                "activate" to CallableValueType.BOOLEAN
+            )
+        ),
+        CallableContract(
+            name = "getDisputesQueue",
+            optional = mapOf("status" to CallableValueType.STRING)
+        ),
+        CallableContract(
+            name = "resolveDispute",
+            required = mapOf(
+                "disputeId" to CallableValueType.STRING,
+                "resolution" to CallableValueType.STRING
+            ),
+            optional = mapOf(
+                "resolutionType" to CallableValueType.STRING,
+                "resolutionAmount" to CallableValueType.NUMBER,
+                "adminNotes" to CallableValueType.STRING
+            )
+        ),
+        CallableContract(
+            name = "createMoMoCollection",
+            required = mapOf("jobId" to CallableValueType.STRING),
+            optional = mapOf(
+                "amountUgx" to CallableValueType.NUMBER,
+                "phoneNumber" to CallableValueType.STRING
+            )
+        ),
+        CallableContract(
+            name = "getMoMoCollectionStatus",
+            required = mapOf("transactionRef" to CallableValueType.STRING)
+        ),
+        // R08-P2-02: the wallet balance lives on the server. The client reads it through this
+        // callable instead of trusting a local ledger, and every cashout is decided server-side.
+        CallableContract(name = "getWallet"),
+        CallableContract(
+            name = "requestWalletCashout",
+            required = mapOf(
+                "amountUgx" to CallableValueType.NUMBER,
+                "requestId" to CallableValueType.STRING
+            )
+        ),
+        CallableContract(
+            name = "cancelWalletCashout",
+            optional = mapOf(
+                "requestId" to CallableValueType.STRING,
+                "withdrawalId" to CallableValueType.STRING
+            )
+        ),
+        // R08-P2-07: refund status is provider-verified server-side, never inferred locally.
+        CallableContract(
+            name = "getRefundStatus",
+            required = mapOf("refundRef" to CallableValueType.STRING)
+        )
+    )
+
+    private val byName: Map<String, CallableContract> = ALL.associateBy { it.name }
+
+    fun contractFor(name: String): CallableContract =
+        byName[name] ?: throw CallableContractException(
+            "No typed contract is registered for callable '$name'. Add it to CallableContracts.ALL."
+        )
+
+    /**
+     * Validates [fields] against the contract for [name] and returns the wire payload.
+     *
+     * Null values are dropped (a null is "not supplied"), so an optional field can be passed as
+     * `null` without polluting the request. Missing required fields, unknown fields and wrongly
+     * typed values all throw [CallableContractException] *before* the network call.
+     */
+    fun payload(name: String, vararg fields: Pair<String, Any?>): Map<String, Any> {
+        val contract = contractFor(name)
+        val supplied = fields
+            .filter { (_, value) -> value != null }
+            .toMap()
+
+        val unknown = supplied.keys - contract.allowedFields
+        if (unknown.isNotEmpty()) {
+            throw CallableContractException(
+                "Callable '$name' does not accept field(s): ${unknown.sorted().joinToString(", ")}"
+            )
+        }
+
+        val missing = contract.required.keys - supplied.keys
+        if (missing.isNotEmpty()) {
+            throw CallableContractException(
+                "Callable '$name' requires field(s): ${missing.sorted().joinToString(", ")}"
+            )
+        }
+
+        val misTyped = supplied.filter { (field, value) ->
+            val expected = contract.required[field] ?: contract.optional[field]
+            expected != null && !expected.accepts(value)
+        }.keys
+        if (misTyped.isNotEmpty()) {
+            throw CallableContractException(
+                "Callable '$name' received the wrong type for: ${misTyped.sorted().joinToString(", ")}"
+            )
+        }
+
+        val result = LinkedHashMap<String, Any>()
+        supplied.forEach { (field, value) -> if (value != null) result[field] = value }
+        return result
+    }
+}

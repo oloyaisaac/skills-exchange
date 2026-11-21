@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.MapsApiKeyFallbackTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:02:49.950Z" hostname="runnervm0hi8g" time="0.43">
+  <properties/>
+  <testcase name="interactiveMapView_withoutRealApiKey_showsFallbackAndDoesNotCrash" classname="com.example.MapsApiKeyFallbackTest" time="0.193"/>
+  <testcase name="fallback_explainsHowToConfigureTheKey" classname="com.example.MapsApiKeyFallbackTest" time="0.112"/>
+  <testcase name="interactiveMapView_withoutRealApiKey_andNoProviders_showsFallback" classname="com.example.MapsApiKeyFallbackTest" time="0.121"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

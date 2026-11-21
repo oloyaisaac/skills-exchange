@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.ui.CriticalFlowComposeTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:05.218Z" hostname="runnervm0hi8g" time="0.824">
+  <properties/>
+  <testcase name="job posting stays disabled until the required fields are valid" classname="com.example.ui.CriticalFlowComposeTest" time="0.457"/>
+  <testcase name="quote comparison shows the worker quote and accepts it" classname="com.example.ui.CriticalFlowComposeTest" time="0.242"/>
+  <testcase name="pipeline renders the job and opens it" classname="com.example.ui.CriticalFlowComposeTest" time="0.123"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.DistanceUtilTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:02:30.960Z" hostname="runnervm0hi8g" time="0.019">
+  <properties/>
+  <testcase name="effective distance uses real location when available" classname="com.example.DistanceUtilTest" time="0.007"/>
+  <testcase name="effective distance falls back when user location is unknown" classname="com.example.DistanceUtilTest" time="0.0"/>
+  <testcase name="known city-to-city distance is approximately correct" classname="com.example.DistanceUtilTest" time="0.0"/>
+  <testcase name="same coordinates have zero distance" classname="com.example.DistanceUtilTest" time="0.0"/>
+  <testcase name="distance is symmetric" classname="com.example.DistanceUtilTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,533 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isDocOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
+    // REM-010: jobs carry the client's exact address, landmark directions and the MoMo
+    // payout number, so no job document may be read anonymously or by unrelated accounts.
+    // Read access is limited to the two parties of the job (owner / assigned provider) and
+    // admins. Provider assignment is recorded as `assignedProviderUid`; the legacy
+    // `assignedProviderId` comparison mirrors the transitions below so documents written
+    // before that column existed stay readable to their worker.
+    function isJobParticipant(jobId) {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/jobs/$(jobId)).data.postedByUid == request.auth.uid ||
+        get(/databases/$(database)/documents/jobs/$(jobId)).data.assignedProviderUid == request.auth.uid ||
+        get(/databases/$(database)/documents/jobs/$(jobId)).data.assignedProviderId == request.auth.uid
+      );
+    }
+
+    // REM-024: destructive owner actions require a recent sign-in (auth_time within five
+    // minutes of the request). A long-lived stolen session can read and update, but cannot delete.
+    function hasFreshAuth() {
+      return isAuthenticated() &&
+        request.auth.token.auth_time is int &&
+        request.auth.token.auth_time * 1000 > request.time.toMillis() - 300000;
+    }
+
+    // R07-P2-03: a job document mixes what the client legitimately edits (title, photos,
+    // description) with what only the server may decide (money that has moved, release
+    // timestamps, doorstep-PIN material). These field lists are the boundary.
+    function serverOwnedJobFieldsTouched() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['releasedAt', 'releasedBy', 'payoutAmountUgx', 'platformFeeUgx',
+                 'doorstepPin', 'doorstepPinHash', 'doorstepPinAttempts', 'doorstepPinLockedUntil',
+                 'doorstepPinVerifiedAt', 'doorstepPinVerifiedBy', 'escrowLockedAt']);
+    }
+
+    // R07-P2-03: escrow state is money state. A client may nudge the non-terminal states that
+    // its own workflow owns, but `FUNDS_LOCKED_IN_ESCROW` (payment received), `RELEASED_TO_WORKER`
+    // (payout queued) and `REFUNDED` are outcomes written only by the Admin SDK functions. Before
+    // this rule the owner could send `escrowStatus = "RELEASED_TO_WORKER"` in the same update that
+    // moved the status, forging payment at the rules layer.
+    function escrowTransitionAllowed() {
+      return request.resource.data.escrowStatus == resource.data.escrowStatus ||
+        ((request.auth.uid == resource.data.assignedProviderUid ||
+          request.auth.uid == resource.data.assignedProviderId) &&
+         request.resource.data.escrowStatus in ['WORK_IN_PROGRESS', 'PROOF_SUBMITTED']) ||
+        (request.auth.uid == resource.data.postedByUid &&
+         request.resource.data.escrowStatus in ['QUOTE_PENDING', 'DEPOSIT_PROMPTED']);
+    }
+
+    // R07-P2-03: the amounts a job is priced at may only be edited by its owner while the job is
+    // still unpriced/unaccepted. Once money is attached they are immutable from a client.
+    function jobMoneyPinned() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['grandTotal', 'platformFee', 'laborTotal', 'materialsSubtotal', 'budget']) ||
+        (request.auth.uid == resource.data.postedByUid &&
+         resource.data.status in ['REQUESTED', 'QUOTED']);
+    }
+
+    function isWorkerKycApproved() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/worker_kyc/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/worker_kyc/$(request.auth.uid)).data.kycStatus == 'APPROVED';
+    }
+
+    // REG-002: verification photographs must live under the submitting worker's own
+    // private prefix (users/{uid}/guarantors/...), never a public bucket and never
+    // another user's folder. Only the path string is stored in documents.
+    function isPrivatePhotoPath(path, uid) {
+      return path is string
+        && path.split("/")[0] == 'users'
+        && path.split("/")[1] == uid
+        && path.split("/")[2] == 'guarantors';
+    }
+
+    // REG-002 / SEC-006: privileged account-authorization fields on a user document.
+    // A worker may maintain their own profile but can never self-approve or self-activate.
+    function touchesPrivilegedUserFields() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['workerKycStatus', 'isWorkerActivated', 'isProviderActivated', 'admin', 'trainingCompleted']);
+    }
+
+    // SEC-006: Rules for worker_kyc collection
+    match /worker_kyc/{userId} {
+      allow read: if isDocOwner(userId) || isAdmin();
+      allow create: if isDocOwner(userId);
+      allow update: if isAdmin();
+      // R07-P2-02: account erasure must be possible for the account's own data. It was
+      // admin-only, so a client-side deletion removed the Auth user while the KYC document
+      // survived. The fresh-auth window keeps a stolen long-lived session from erasing it.
+      allow delete: if isAdmin() || (isDocOwner(userId) && hasFreshAuth());
+    }
+
+    // SEC-006: Rules for worker_training collection
+    match /worker_training/{userId} {
+      allow read: if isDocOwner(userId) || isAdmin();
+      allow create: if isDocOwner(userId);
+      allow update: if isDocOwner(userId) || isAdmin();
+      // R07-P2-02: same erasure rule as worker_kyc.
+      allow delete: if isAdmin() || (isDocOwner(userId) && hasFreshAuth());
+    }
+
+    // SEC-006: Rules for guarantors collection
+    // REG-002 hardening: a guarantor record contains a third party's NIN number and
+    // photographs. Reads are no longer open to every signed-in user — only the owning
+    // worker and admins. A worker may file/refresh guarantors for themselves only, must
+    // supply the full required field set with consent, and can never write the
+    // admin-owned verification outcome fields.
+    match /guarantors/{docId} {
+      allow read: if isAdmin() ||
+        (isAuthenticated() && resource.data.workerKycId == request.auth.uid);
+
+      // R10-P2-04: guarantor records are written by `submitGuarantorVerification` only.
+      //
+      // They used to be written straight from the device, so the duplicate checks could not exist:
+      // a client cannot see the other accounts that already list the same person. The callable holds
+      // the whole picture (salted NIN fingerprints, phone keys, submission velocity) and refuses
+      // duplicates before anything is stored; this rule makes that the only path. The consent receipt
+      // is verified there too, against `users/{uid}/guarantor_consents/{version}`.
+      allow create: if false;
+
+      allow update: if false;
+
+      // Deletion is account erasure (Admin SDK) or an operator removing a fraudulent row.
+      allow delete: if false;
+    }
+
+    // REG-002: One verification submission per worker (the two guarantors + the group
+    // photograph). The worker may file and re-file their own submission; the review
+    // outcome (status / feedback / reviewer / NIN result) is admin-only, so a worker can
+    // never self-approve the guarantor step.
+    match /guarantor_submissions/{workerId} {
+      allow read: if isDocOwner(workerId) || isAdmin();
+
+      // R09-P2-02: consent is versioned and dated, not a bare boolean. The worker must have recorded
+      // the third-party consent through `recordGuarantorConsent` first (which writes the receipt in
+      // `users/{uid}/guarantor_consents/{version}`), and the submission must name that policy version.
+      // A missing or malformed version, or a timestamp that is not a plausible epoch millis, is denied.
+      // R10-P2-04: filed by `submitGuarantorVerification` only (see the note on /guarantors).
+      allow create: if false;
+
+      // Re-submitting after a "changes required" decision: delete then re-create, so the
+      // status always returns to PENDING_REVIEW through the create rule above.
+      allow update: if false;
+
+      allow delete: if false;
+    }
+
+    // SEC-006 / AUDIT-W-QUOTE: Rules for job_quotes collection
+    match /job_quotes/{quoteId} {
+      // REM-015: a quote reveals a worker's price and terms. Reads are limited to the worker
+      // who submitted it, the owner of the parent job and admins.
+      allow read: if isAuthenticated() && (
+        resource.data.workerId == request.auth.uid ||
+        isAdmin() ||
+        (resource.data.jobId is string &&
+         get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.postedByUid == request.auth.uid)
+      );
+      allow create: if isAuthenticated() && request.resource.data.workerId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        (resource.data.workerId == request.auth.uid && request.resource.data.workerId == resource.data.workerId) ||
+        isAdmin()
+      );
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.workerId == request.auth.uid && hasFreshAuth());
+    }
+
+    // SEC-006: Rules for notifications collection
+    match /notifications/{notifId} {
+      // REM-013: notifications are written exclusively by Cloud Functions (Admin SDK bypasses
+      // rules). A client could previously forge a notification for any userId or body.
+      allow read: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if false;
+      // Owners may only mark their own notification read; they may not rewrite its body.
+      allow update: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt']);
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid && hasFreshAuth();
+    }
+
+    // SEC-006: Rules for disputes collection
+    // R10-P2-02: reports live on the server. Filing goes through `fileReport` (which validates the
+    // category, the size, the SLA and the priority ladder); triage is admin-only through
+    // `resolveReport`. The reporter may read the outcome of their own report; nobody may rewrite the
+    // history of a triaged report from a client.
+    match /reports/{reportId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() || resource.data.reportedBy == request.auth.uid
+      );
+      allow write: if false;
+    }
+
+    // R10-P2-06: one rating per job per direction, written by `submitRating`. A client can read the
+    // rating it gave or received, and nothing else — and it can write none of it.
+    match /ratings/{ratingId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() || resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid
+      );
+      allow write: if false;
+    }
+
+    // R10-P2-06: the reputation aggregate is derived from the ratings above. Everybody may read it
+    // (it is what the profile shows); nobody may write it.
+    match /worker_stats/{workerUid} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // R10-P2-04: intake refusals are audit evidence — who filed, when, and which codes refused it.
+    // Counts and codes only, so an operator can read them and the reporter cannot.
+    match /guarantor_intake_audit/{auditId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /disputes/{disputeId} {
+      allow read: if isAuthenticated() &&
+        (resource.data.reportedBy == request.auth.uid || resource.data.reportedUserId == request.auth.uid || isAdmin());
+      // AUDIT-A-ARBITRATE: dispute filing now writes this collection from the client
+      // (FirebaseService.syncDisputeToFirestore), so bind authorship server-side exactly
+      // like jobs bind postedByUid on create — a caller can only file a dispute reported
+      // BY themselves. Resolutions still only arrive via the admin-gated resolveDispute
+      // callable (Admin SDK bypasses these rules).
+      allow create: if isAuthenticated() && request.resource.data.reportedBy == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // SEC-006: Rules for momo_transactions (read-only for users)
+    match /momo_transactions/{txId} {
+      // REM-013: the MoMo ledger is server-owned. Only the Admin SDK (webhook, collection and
+      // payout functions) may create or mutate it; users get owner-scoped reads.
+      allow read: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if false;
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // SEC-006: Rules for momo_payouts (read-only for users)
+    match /momo_payouts/{payoutId} {
+      allow read: if isAuthenticated() &&
+        (resource.data.workerId == request.auth.uid || isAdmin());
+      allow create: if isAdmin(); // Only server/admin can create payouts
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // R08-P2-02 / R08-P2-05 / R08-P2-06: the money books are server-owned.
+    //
+    // `payouts` is the provider ledger, `materialAdvances` tracks the materials draw, and
+    // `wallet_entries` / `wallets` / `wallet_withdrawals` are the worker wallet and its cashouts.
+    // `platform_fees` records how each collection was split and `reconciliation_reports` holds the
+    // provider-vs-platform sweeps. All of it is written only through the Admin SDK (which bypasses
+    // these rules), so no client — owner or admin — may write them, and nothing is world-readable.
+    // A worker sees their balance and statement through the `getWallet` callable, not by reading the
+    // ledger, so a modified APK cannot fabricate a balance.
+    match /payouts/{payoutId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /materialAdvances/{jobId} {
+      // The resident who asked and the assigned worker may see the advance's existence and status;
+      // the amounts are server-written.
+      allow read: if isAuthenticated() &&
+        (resource.data.requestedBy == request.auth.uid ||
+          resource.data.workerId == request.auth.uid ||
+          isAdmin());
+      allow write: if false;
+    }
+
+    match /wallet_entries/{entryId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /wallets/{uid} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /wallet_withdrawals/{withdrawalId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /platform_fees/{feeId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /reconciliation_reports/{reportId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // R09-P2-04: evidence that the retention sweep ran, and what it did. Admin-readable; written only
+    // by the scheduled function.
+    match /retention_reports/{reportId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // R09-P2-01: proof that an erasure was requested and completed (counts only, no personal data).
+    match /account_deletions/{deletionId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // --- MODULE 2: USER PROFILES & KYC VERIFICATION LAYER ---
+    match /users/{userId} {
+      // C2-1: a `users/{uid}` document carries a phone number (and optionally a backup
+      // contact — a third party's number), so reads are owner-or-admin only. It previously
+      // allowed every signed-in user to read every account. Admin/inspection paths use the
+      // Admin SDK (rules bypassed) and admin clients carry the `admin` custom claim
+      // (see isAdmin()); no client needs another user's private account document.
+      allow read: if isDocOwner(userId) || isAdmin();
+      allow create: if isDocOwner(userId);
+      // REG-002 / SEC-006: owner-managed profile fields, but the verification and
+      // activation decisions are admin-owned. A worker can never flip their own
+      // workerKycStatus / isWorkerActivated / admin flag through a profile write.
+      allow update: if isDocOwner(userId) && !touchesPrivilegedUserFields();
+      // R07-P2-02: there was no delete rule at all, so erasing an account from the client was
+      // impossible by construction. The owner may now delete their own profile document, and only
+      // within the fresh-auth window.
+      allow delete: if isDocOwner(userId) && hasFreshAuth();
+
+      // REM-044: consent receipts are written only by the recordConsent callable (Admin SDK);
+      // the account owner may read their history, nobody may edit or delete it from a client.
+      match /consents/{version} {
+        allow read: if isDocOwner(userId) || isAdmin();
+        allow write: if false;
+      }
+
+      // R09-P2-02: third-party guarantor consent is a separate grant with its own receipt, written
+      // only by `recordGuarantorConsent`. The owner may read it; a client can never forge, edit or
+      // delete the proof that another person agreed.
+      match /guarantor_consents/{version} {
+        allow read: if isDocOwner(userId) || isAdmin();
+        allow write: if false;
+      }
+
+      // Sensitive KYC verification fields: owner may submit, admin may update status
+      match /verification/{docId} {
+        allow read: if isDocOwner(userId) || isAdmin();
+        allow create, update: if isDocOwner(userId) || isAdmin();
+      }
+    }
+
+    // R07-P2-01: the doorstep PIN is verified server-side. Only the salted hash and the attempt
+    // counter live here, and no client — owner, provider or admin — may read or write this
+    // collection. The Admin SDK (which bypasses rules) is the only reader.
+    match /job_secrets/{jobId} {
+      allow read, write: if false;
+    }
+
+    // REM-023: provisioning audit trail. Written only by scripts/grant-admin.js through the
+    // Admin SDK; readable by administrators, never writable from a client.
+    // REM-027: refunds are server-written only; admins can read the trail.
+    match /refunds/{refundId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /admin_audit/{auditId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Service Providers catalog
+    // SEC-001: Enforce document ownership — only the provider (uid == providerId) may write their own profile.
+    // REM-010: the catalogue is no longer world-readable. Unauthenticated clients could
+    // enumerate every provider name, neighbourhood and rate; reads now require a signed-in
+    // session. The synced fields (see FirebaseService.syncProviderToFirestore) contain no
+    // phone number, NIN or payout data.
+    match /providers/{providerId} {
+      allow read: if isAuthenticated();
+      // Create: authenticated user may create their own provider record (uid must match document id)
+      allow create: if isAuthenticated() && request.auth.uid == providerId;
+      // Update: only the provider themselves may update their own profile
+      allow update: if isAuthenticated() && request.auth.uid == providerId;
+      // R07-P2-02: the provider may erase their own catalogue row (account erasure); admins may
+      // still delete any record for suspension. Both need the fresh-auth window.
+      allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == providerId && hasFreshAuth());
+    }
+
+    // --- MODULE 1: JOB LIFECYCLE & ESCROW STATE MACHINE ---
+    match /jobs/{jobId} {
+      // REM-010: previously world-readable. A job document contains streetAddress,
+      // apartmentSuite, landmarkDirections and momoPhoneNumber, so reads are now limited to
+      // the owner, the assigned provider and admins. Clients must filter by
+      // postedByUid/assignedProviderUid (an unfiltered collection listen is denied).
+      allow read: if isAdmin() ||
+        (isAuthenticated() && (
+          resource.data.postedByUid == request.auth.uid ||
+          resource.data.assignedProviderUid == request.auth.uid ||
+          resource.data.assignedProviderId == request.auth.uid
+        ));
+
+      // C2-2 Fix #4 (F4): `postedByUid` is the authoritative owner of the job. On create it MUST
+      // equal the authenticated uid — a client can therefore never post a job on someone else's
+      // behalf by supplying a foreign value. Legacy documents synced before this field existed
+      // have it absent/empty, so the update branch compares against resource.data (server-held
+      // value) and never lets a caller rewrite ownership.
+      allow create: if isAuthenticated() &&
+        request.resource.data.status == 'REQUESTED' &&
+        request.resource.data.escrowStatus == 'QUOTE_PENDING' &&
+        request.resource.data.postedByUid == request.auth.uid;
+
+      // State Machine Enforcement on Updates.
+      // C2-2 Fix #4 (F4): ownership is immutable once created. Any update that would change
+      // postedByUid is denied outright, in every branch of the state machine below — otherwise a
+      // caller could create a job, transfer ownership, then act on (or claim earnings from) a
+      // job that is no longer theirs.
+      //
+      // C2-2 job-status AUTHORIZATION: previously only Case 2 checked WHO was acting. Cases 1, 3 and
+      // 4 were reachable by ANY authenticated user, so any signed-in account could move somebody
+      // else's job along a structurally legal transition. Each branch below now names the actor it
+      // requires. This mirrors the client-side `isJobTransitionAuthorized` policy; the client check
+      // is defence-in-depth for offline/local state, and these rules are the real server boundary.
+      // NOTE: this file is source only — it is NOT deployed (see CHANGELOG/AGENT_STATE).
+      allow update: if isAuthenticated() &&
+        request.resource.data.postedByUid == resource.data.postedByUid &&
+        // R07-P2-03: server-owned fields, escrow state and priced amounts are pinned here so a
+        // client cannot forge a payout outcome alongside a legal status transition.
+        !serverOwnedJobFieldsTouched() &&
+        escrowTransitionAllowed() &&
+        jobMoneyPinned() &&
+        (
+        // Case 1: Client accepting quote -> ACCEPTED_FUNDED (OWNER ONLY)
+        (resource.data.status == 'REQUESTED' && request.resource.data.status in ['QUOTED', 'ACCEPTED_FUNDED'] &&
+          request.auth.uid == resource.data.postedByUid) ||
+
+        // Case 2: Worker starting work -> IN_PROGRESS (Must be hired worker and KYC Approved)
+        (resource.data.status == 'ACCEPTED_FUNDED' && request.resource.data.status == 'IN_PROGRESS' &&
+          request.auth.uid == resource.data.assignedProviderId && isWorkerKycApproved()) ||
+
+        // Case 3: Worker submitting proof -> COMPLETED (ASSIGNED WORKER ONLY; must go through
+        // IN_PROGRESS first, so a caller cannot skip ahead from REQUESTED)
+        (resource.data.status == 'IN_PROGRESS' && request.resource.data.status == 'COMPLETED' &&
+          resource.data.assignedProviderId != null &&
+          request.auth.uid == resource.data.assignedProviderId) ||
+
+        // Case 4: Client approving & releasing funds -> RELEASED or DISPUTED (OWNER ONLY)
+        (resource.data.status == 'COMPLETED' &&
+          request.resource.data.status in ['RELEASED', 'DISPUTED'] &&
+          request.auth.uid == resource.data.postedByUid) ||
+
+        // Case 5: Client cancelling or disputing a live job (OWNER ONLY). Cancellable/disputable
+        // states mirror the client's CANCELLABLE_STATES/DISPUTABLE_STATES sets. CANCELLED and
+        // EXPIRED are intentionally absent: a finished job is never resurrected or re-cancelled.
+        (resource.data.status in ['REQUESTED', 'QUOTED', 'ACCEPTED_FUNDED', 'IN_PROGRESS', 'COMPLETED', 'RELEASED', 'DISPUTED'] &&
+          request.resource.data.status in ['CANCELLED', 'DISPUTED'] &&
+          request.auth.uid == resource.data.postedByUid)
+      );
+
+      allow delete: if false; // Audit trail preservation
+
+      // C2-2 Fix #5 (F5): chat messages live in a subcollection and previously had NO rule at
+      // all, which Firestore treats as deny-by-default. This adds the smallest possible
+      // subcollection rule so authorship is enforced by the server rather than trusted from the
+      // client:
+      //  - create binds `senderId` to the authenticated uid, so a client cannot post a message
+      //    as another account,
+      //  - update may only be performed by the original author AND may not change `senderId`
+      //    (authorship is immutable), and
+      //  - delete is denied, preserving the conversation audit trail.
+      // `senderName` is display text and is deliberately unconstrained.
+      match /messages/{messageId} {
+        // REM-010: chat was world-readable. Only the author and the job's two parties
+        // (or an admin) may read a message; the parent job is the authority.
+        allow read: if isAdmin() ||
+          (isAuthenticated() && (
+            resource.data.senderId == request.auth.uid ||
+            isJobParticipant(jobId)
+          ));
+        allow create: if isAuthenticated() &&
+          request.resource.data.senderId == request.auth.uid &&
+          request.resource.data.senderName is string;
+        allow update: if isAuthenticated() &&
+          resource.data.senderId == request.auth.uid &&
+          request.resource.data.senderId == resource.data.senderId;
+        allow delete: if false;
+      }
+    // AUDIT-A-SOS (source only — not deployed): emergency SOS incident rules.
+    //
+    // An incident is authored by the job owner at raise time; the Firestore doc is a
+    // best-effort mirror of the authoritative Room record consumed by the admin-gated
+    // `getSosQueue` callable. It is NOT world-readable: reads are limited to the job owner,
+    // the assigned provider (by Firebase UID), and admins.
+    //
+    // Authorization model (canonical provider -> Firebase UID):
+    //   - owner    : postedByUid == request.auth.uid
+    //   - provider : assignedProviderUid == request.auth.uid
+    //   - admin    : isAdmin()
+    //
+    // `assignedProviderId` is the service_providers catalog foreign key (display/join id,
+    // e.g. "prov_1") — never an authorization key, never compared against request.auth.uid.
+    match /sosIncidents/{incidentId} {
+      allow read: if isAuthenticated() &&
+        (resource.data.postedByUid == request.auth.uid ||
+         resource.data.assignedProviderUid == request.auth.uid ||
+         isAdmin());
+      allow create: if isAuthenticated() &&
+        request.resource.data.postedByUid == request.auth.uid &&
+        request.resource.data.jobId is string &&
+        request.resource.data.status == 'ACTIVE' &&
+        exists(/databases/$(database)/documents/jobs/$(request.resource.data.jobId));
+      // Only admins may mutate lifecycle state (ack/cleared timestamps). Clients may only
+      // raise via create (owner bound). No client may rewrite actor/job/id/raisedAt or
+      // arbitrary status/resolved fields.
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    }
+  }
+}

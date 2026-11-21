@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.remote.MoMoPaymentUiStateTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:00.957Z" hostname="runnervm0hi8g" time="0.004">
+  <properties/>
+  <testcase name="backend PENDING maps to PENDING" classname="com.example.data.remote.MoMoPaymentUiStateTest" time="0.002"/>
+  <testcase name="mapping is case and whitespace insensitive for the three real states" classname="com.example.data.remote.MoMoPaymentUiStateTest" time="0.0"/>
+  <testcase name="garbage status maps to NEEDS_ATTENTION - never success" classname="com.example.data.remote.MoMoPaymentUiStateTest" time="0.0"/>
+  <testcase name="backend FAILED maps to FAILED" classname="com.example.data.remote.MoMoPaymentUiStateTest" time="0.0"/>
+  <testcase name="null status maps to NEEDS_ATTENTION - never success" classname="com.example.data.remote.MoMoPaymentUiStateTest" time="0.0"/>
+  <testcase name="backend NEEDS_RECONCILIATION maps to NEEDS_ATTENTION - never success" classname="com.example.data.remote.MoMoPaymentUiStateTest" time="0.0"/>
+  <testcase name="backend UNKNOWN maps to NEEDS_ATTENTION - never success" classname="com.example.data.remote.MoMoPaymentUiStateTest" time="0.0"/>
+  <testcase name="backend SUCCESSFUL maps to SUCCESSFUL" classname="com.example.data.remote.MoMoPaymentUiStateTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

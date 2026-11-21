@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.db.ServiceTaxonomyValidationTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:00.494Z" hostname="runnervm0hi8g" time="0.007">
+  <properties/>
+  <testcase name="same-family additional skill is valid" classname="com.example.data.db.ServiceTaxonomyValidationTest" time="0.004"/>
+  <testcase name="findService resolves by id and name" classname="com.example.data.db.ServiceTaxonomyValidationTest" time="0.001"/>
+  <testcase name="unknown additional skill is rejected" classname="com.example.data.db.ServiceTaxonomyValidationTest" time="0.0"/>
+  <testcase name="unknown primary skill is rejected" classname="com.example.data.db.ServiceTaxonomyValidationTest" time="0.001"/>
+  <testcase name="more than two additional skills is rejected" classname="com.example.data.db.ServiceTaxonomyValidationTest" time="0.0"/>
+  <testcase name="catalog exposes all 125 services" classname="com.example.data.db.ServiceTaxonomyValidationTest" time="0.0"/>
+  <testcase name="compatible cross-family pair is allowed" classname="com.example.data.db.ServiceTaxonomyValidationTest" time="0.0"/>
+  <testcase name="primary skill resolves by id and additional by id is valid" classname="com.example.data.db.ServiceTaxonomyValidationTest" time="0.0"/>
+  <testcase name="housekeeping and gardening compatible pair is allowed" classname="com.example.data.db.ServiceTaxonomyValidationTest" time="0.0"/>
+  <testcase name="two additional skills within same family are valid" classname="com.example.data.db.ServiceTaxonomyValidationTest" time="0.0"/>
+  <testcase name="incompatible trade family is rejected" classname="com.example.data.db.ServiceTaxonomyValidationTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

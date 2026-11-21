@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.util.ProfileValidatorsTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:06.957Z" hostname="runnervm0hi8g" time="0.002">
+  <properties/>
+  <testcase name="backup save blocked when unauthenticated" classname="com.example.util.ProfileValidatorsTest" time="0.0"/>
+  <testcase name="validation never consults another users data" classname="com.example.util.ProfileValidatorsTest" time="0.0"/>
+  <testcase name="photo upload blocked when unauthenticated" classname="com.example.util.ProfileValidatorsTest" time="0.0"/>
+  <testcase name="phone without name is accepted" classname="com.example.util.ProfileValidatorsTest" time="0.0"/>
+  <testcase name="photo upload blocked when no image is selected" classname="com.example.util.ProfileValidatorsTest" time="0.0"/>
+  <testcase name="photo upload allowed for authenticated own profile with selection" classname="com.example.util.ProfileValidatorsTest" time="0.0"/>
+  <testcase name="name without phone is rejected" classname="com.example.util.ProfileValidatorsTest" time="0.0"/>
+  <testcase name="duplicate primary and backup phone is rejected" classname="com.example.util.ProfileValidatorsTest" time="0.0"/>
+  <testcase name="invalid backup phone number is rejected" classname="com.example.util.ProfileValidatorsTest" time="0.0"/>
+  <testcase name="empty optional values are accepted" classname="com.example.util.ProfileValidatorsTest" time="0.0"/>
+  <testcase name="photo upload blocked without own profile" classname="com.example.util.ProfileValidatorsTest" time="0.001"/>
+  <testcase name="isValidPhone follows the project 9 to 15 digit convention" classname="com.example.util.ProfileValidatorsTest" time="0.0"/>
+  <testcase name="backup save blocked without own profile" classname="com.example.util.ProfileValidatorsTest" time="0.0"/>
+  <testcase name="valid backup phone number is accepted" classname="com.example.util.ProfileValidatorsTest" time="0.0"/>
+  <testcase name="backup save allowed for authenticated own profile with valid data" classname="com.example.util.ProfileValidatorsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.remote.SecurityRulesInvariantsTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:01.072Z" hostname="runnervm0hi8g" time="0.005">
+  <properties/>
+  <testcase name="only the public asset prefix is world-readable in Storage" classname="com.example.data.remote.SecurityRulesInvariantsTest" time="0.002"/>
+  <testcase name="release hardening is switched on in the build" classname="com.example.data.remote.SecurityRulesInvariantsTest" time="0.0"/>
+  <testcase name="no Firestore collection is readable by everyone" classname="com.example.data.remote.SecurityRulesInvariantsTest" time="0.001"/>
+  <testcase name="privileged fields and the money ledger stay server-owned" classname="com.example.data.remote.SecurityRulesInvariantsTest" time="0.001"/>
+  <testcase name="private identity prefixes stay owner-or-admin only" classname="com.example.data.remote.SecurityRulesInvariantsTest" time="0.0"/>
+  <testcase name="account erasure stays possible for the owner, with a fresh sign-in" classname="com.example.data.remote.SecurityRulesInvariantsTest" time="0.001"/>
+  <testcase name="the doorstep PIN is server-held and job money fields are pinned" classname="com.example.data.remote.SecurityRulesInvariantsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

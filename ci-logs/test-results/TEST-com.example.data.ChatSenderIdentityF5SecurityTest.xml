@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.ChatSenderIdentityF5SecurityTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:02:50.425Z" hostname="runnervm0hi8g" time="0.77">
+  <properties/>
+  <testcase name="test B the newer room row never becomes the sender" classname="com.example.data.ChatSenderIdentityF5SecurityTest" time="0.311"/>
+  <testcase name="test F2 a system notification is never treated as the current user's message" classname="com.example.data.ChatSenderIdentityF5SecurityTest" time="0.115"/>
+  <testcase name="test F a legacy message with no senderId is never claimed" classname="com.example.data.ChatSenderIdentityF5SecurityTest" time="0.061"/>
+  <testcase name="test D an invalid firebase uid also fails closed" classname="com.example.data.ChatSenderIdentityF5SecurityTest" time="0.057"/>
+  <testcase name="test E a message authored by uid_A is never treated as uid_B's" classname="com.example.data.ChatSenderIdentityF5SecurityTest" time="0.062"/>
+  <testcase name="test C sending fails closed with no authenticated firebase user" classname="com.example.data.ChatSenderIdentityF5SecurityTest" time="0.056"/>
+  <testcase name="test E2 authorship ignores senderName" classname="com.example.data.ChatSenderIdentityF5SecurityTest" time="0.061"/>
+  <testcase name="test A the author is the authenticated firebase uid not a display string" classname="com.example.data.ChatSenderIdentityF5SecurityTest" time="0.036"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

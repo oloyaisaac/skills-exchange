@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.remote.MapsGroundingContractTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:00.803Z" hostname="runnervm0hi8g" time="0.128">
+  <properties/>
+  <testcase name="the Gemini key is not read from the generated BuildConfig" classname="com.example.data.remote.MapsGroundingContractTest" time="0.08"/>
+  <testcase name="a grounded response becomes real place cards" classname="com.example.data.remote.MapsGroundingContractTest" time="0.004"/>
+  <testcase name="the client calls the authenticated callable instead of the Gemini endpoint" classname="com.example.data.remote.MapsGroundingContractTest" time="0.0"/>
+  <testcase name="malformed payloads degrade to nothing found, never to fake data" classname="com.example.data.remote.MapsGroundingContractTest" time="0.0"/>
+  <testcase name="the invented shop list is gone" classname="com.example.data.remote.MapsGroundingContractTest" time="0.002"/>
+  <testcase name="the Gemini key is not injected into the build either" classname="com.example.data.remote.MapsGroundingContractTest" time="0.0"/>
+  <testcase name="callable failures produce a message, never a fallback shop" classname="com.example.data.remote.MapsGroundingContractTest" time="0.001"/>
+  <testcase name="an ungrounded answer renders no place cards at all" classname="com.example.data.remote.MapsGroundingContractTest" time="0.0"/>
+  <testcase name="the search modal labels unverified answers" classname="com.example.data.remote.MapsGroundingContractTest" time="0.0"/>
+  <testcase name="a place without a Google Maps uri is dropped" classname="com.example.data.remote.MapsGroundingContractTest" time="0.0"/>
+  <testcase name="the Gemini key is no longer referenced by any app source file" classname="com.example.data.remote.MapsGroundingContractTest" time="0.041"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

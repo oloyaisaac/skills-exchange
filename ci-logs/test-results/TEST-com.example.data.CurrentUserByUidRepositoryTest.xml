@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.CurrentUserByUidRepositoryTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:02:51.199Z" hostname="runnervm0hi8g" time="0.288">
+  <properties/>
+  <testcase name="fails closed for null blank and legacy demo uids" classname="com.example.data.CurrentUserByUidRepositoryTest" time="0.053"/>
+  <testcase name="stale cached uid never wins over the authenticated firebase uid" classname="com.example.data.CurrentUserByUidRepositoryTest" time="0.065"/>
+  <testcase name="fails closed when the uid has no matching row" classname="com.example.data.CurrentUserByUidRepositoryTest" time="0.052"/>
+  <testcase name="resolves the authenticated uid and ignores the newer row" classname="com.example.data.CurrentUserByUidRepositoryTest" time="0.055"/>
+  <testcase name="a database holding only the demo placeholder yields no identity" classname="com.example.data.CurrentUserByUidRepositoryTest" time="0.057"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

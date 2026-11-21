@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.ui.viewmodel.GoogleAuthModalCompletionSecurityTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:06.853Z" hostname="runnervm0hi8g" time="0.018">
+  <properties/>
+  <testcase name="Case B - empty or blank phone number keeps completion disabled" classname="com.example.ui.viewmodel.GoogleAuthModalCompletionSecurityTest" time="0.003"/>
+  <testcase name="Case C - empty or blank district keeps completion disabled" classname="com.example.ui.viewmodel.GoogleAuthModalCompletionSecurityTest" time="0.001"/>
+  <testcase name="Case D - existing Google user profile restoration is preserved" classname="com.example.ui.viewmodel.GoogleAuthModalCompletionSecurityTest" time="0.012"/>
+  <testcase name="Case A - valid full name phone and district allow completion" classname="com.example.ui.viewmodel.GoogleAuthModalCompletionSecurityTest" time="0.0"/>
+  <testcase name="Case C - empty or blank legal name keeps completion disabled" classname="com.example.ui.viewmodel.GoogleAuthModalCompletionSecurityTest" time="0.0"/>
+  <testcase name="Case B - format-invalid phone number keeps completion disabled" classname="com.example.ui.viewmodel.GoogleAuthModalCompletionSecurityTest" time="0.0"/>
+  <testcase name="Case E - profile always uses authoritative Firebase UID and never falls back to phone identity" classname="com.example.ui.viewmodel.GoogleAuthModalCompletionSecurityTest" time="0.0"/>
+  <testcase name="Case A - new Google user profile resolves with authoritative Firebase UID and collected fields" classname="com.example.ui.viewmodel.GoogleAuthModalCompletionSecurityTest" time="0.0"/>
+  <testcase name="Case D - matching phone number from another account cannot overwrite or elevate new Google identity" classname="com.example.ui.viewmodel.GoogleAuthModalCompletionSecurityTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

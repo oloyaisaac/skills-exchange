@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.remote.ServerWalletTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:01.080Z" hostname="runnervm0hi8g" time="0.026">
+  <properties/>
+  <testcase name="a response that is not a wallet is refused" classname="com.example.data.remote.ServerWalletTest" time="0.002"/>
+  <testcase name="a statement line is not spendable while a debit is negative" classname="com.example.data.remote.ServerWalletTest" time="0.02"/>
+  <testcase name="a wallet response is parsed without trusting the number types" classname="com.example.data.remote.ServerWalletTest" time="0.001"/>
+  <testcase name="a cashout response requires the withdrawal id" classname="com.example.data.remote.ServerWalletTest" time="0.002"/>
+  <testcase name="the wallet callables are registered with typed fields" classname="com.example.data.remote.ServerWalletTest" time="0.0"/>
+  <testcase name="a refund status is terminal only when the provider settled it" classname="com.example.data.remote.ServerWalletTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

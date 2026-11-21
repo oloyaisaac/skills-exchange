@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.ui.viewmodel.PhoneAuthIdentitySecurityTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:06.875Z" hostname="runnervm0hi8g" time="0.004">
+  <properties/>
+  <testcase name="every resolved profile is keyed to the authenticated uid" classname="com.example.ui.viewmodel.PhoneAuthIdentitySecurityTest" time="0.0"/>
+  <testcase name="client registering on a worker phone number keeps the client role and is denied worker access" classname="com.example.ui.viewmodel.PhoneAuthIdentitySecurityTest" time="0.0"/>
+  <testcase name="phone match does not copy the other account's personal data" classname="com.example.ui.viewmodel.PhoneAuthIdentitySecurityTest" time="0.0"/>
+  <testcase name="demo placeholder row is never adopted as a privileged account" classname="com.example.ui.viewmodel.PhoneAuthIdentitySecurityTest" time="0.0"/>
+  <testcase name="unknown identity is created fail closed in both roles" classname="com.example.ui.viewmodel.PhoneAuthIdentitySecurityTest" time="0.0"/>
+  <testcase name="phone match with another uid never inherits worker privileges" classname="com.example.ui.viewmodel.PhoneAuthIdentitySecurityTest" time="0.0"/>
+  <testcase name="record owned by the authenticated uid keeps the privileges an admin granted" classname="com.example.ui.viewmodel.PhoneAuthIdentitySecurityTest" time="0.0"/>
+  <testcase name="session owner fails closed when no authenticated identity exists" classname="com.example.ui.viewmodel.PhoneAuthIdentitySecurityTest" time="0.001"/>
+  <testcase name="session owner is the phone verified firebase uid" classname="com.example.ui.viewmodel.PhoneAuthIdentitySecurityTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

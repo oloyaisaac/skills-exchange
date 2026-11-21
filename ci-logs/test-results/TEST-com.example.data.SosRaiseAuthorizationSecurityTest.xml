@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.SosRaiseAuthorizationSecurityTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:02:58.033Z" hostname="runnervm0hi8g" time="0.431">
+  <properties/>
+  <testcase name="synthetic and presentation-text actors are denied" classname="com.example.data.SosRaiseAuthorizationSecurityTest" time="0.036"/>
+  <testcase name="owner raising SOS succeeds and persists an ACTIVE incident" classname="com.example.data.SosRaiseAuthorizationSecurityTest" time="0.032"/>
+  <testcase name="emergency SOS internal respects owner gate and records coordinates" classname="com.example.data.SosRaiseAuthorizationSecurityTest" time="0.034"/>
+  <testcase name="legacy null-owner internal raise denied to everybody" classname="com.example.data.SosRaiseAuthorizationSecurityTest" time="0.03"/>
+  <testcase name="spoofed actor uid is denied on raise" classname="com.example.data.SosRaiseAuthorizationSecurityTest" time="0.037"/>
+  <testcase name="re-raising on an already active job stays ACTIVE and is idempotent" classname="com.example.data.SosRaiseAuthorizationSecurityTest" time="0.029"/>
+  <testcase name="catalog record id is never an authorization key on raise" classname="com.example.data.SosRaiseAuthorizationSecurityTest" time="0.024"/>
+  <testcase name="owner raising SOS on own job is authorized" classname="com.example.data.SosRaiseAuthorizationSecurityTest" time="0.028"/>
+  <testcase name="assigned provider raising SOS on assigned job is authorized" classname="com.example.data.SosRaiseAuthorizationSecurityTest" time="0.033"/>
+  <testcase name="legacy job with null owner may not be raised on by anybody" classname="com.example.data.SosRaiseAuthorizationSecurityTest" time="0.024"/>
+  <testcase name="stranger internal raise fails closed, no flag, no incident" classname="com.example.data.SosRaiseAuthorizationSecurityTest" time="0.04"/>
+  <testcase name="assigned provider raising SOS succeeds when addressed by its Firebase UID" classname="com.example.data.SosRaiseAuthorizationSecurityTest" time="0.029"/>
+  <testcase name="stranger cannot raise SOS on another users job" classname="com.example.data.SosRaiseAuthorizationSecurityTest" time="0.023"/>
+  <testcase name="unauthenticated public triggerSosAlert fails closed and sets no flag" classname="com.example.data.SosRaiseAuthorizationSecurityTest" time="0.027"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

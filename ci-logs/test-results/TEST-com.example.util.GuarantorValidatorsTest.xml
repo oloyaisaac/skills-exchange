@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.util.GuarantorValidatorsTest" tests="24" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:06.925Z" hostname="runnervm0hi8g" time="0.01">
+  <properties/>
+  <testcase name="guarantor without recorded consent is rejected" classname="com.example.util.GuarantorValidatorsTest" time="0.003"/>
+  <testcase name="the two guarantors must be two different people" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <testcase name="well formed NIN passes the structural check" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <testcase name="missing NIN is rejected" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <testcase name="a duplicate NIN is detected even when typed with different spacing or case" classname="com.example.util.GuarantorValidatorsTest" time="0.001"/>
+  <testcase name="one guarantor is rejected" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <testcase name="client account may not file guarantors" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <testcase name="anonymous session may not file guarantors" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <testcase name="three guarantors are rejected" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <testcase name="missing group photograph is rejected" classname="com.example.util.GuarantorValidatorsTest" time="0.001"/>
+  <testcase name="too-short NIN is rejected" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <testcase name="missing contact number is rejected" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <testcase name="worker cannot stand as their own guarantor" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <testcase name="the same NIN entered twice is rejected" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <testcase name="missing full name is rejected" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <testcase name="complete set of two guarantors plus group photo is accepted" classname="com.example.util.GuarantorValidatorsTest" time="0.001"/>
+  <testcase name="only the three known photo purposes are allowed" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <testcase name="malformed contact number is rejected" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <testcase name="identifiers are masked and scrubbed" classname="com.example.util.GuarantorValidatorsTest" time="0.001"/>
+  <testcase name="same phone reused for both guarantors is rejected" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <testcase name="missing worker-and-guarantor photograph is rejected" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <testcase name="name with payload characters is rejected" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <testcase name="missing guarantor photograph is rejected" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <testcase name="guarantor id is deterministic so re-submission replaces the row" classname="com.example.util.GuarantorValidatorsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

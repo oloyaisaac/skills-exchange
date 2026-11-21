@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.JobStatusAuthorizationSecurityTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:02:53.083Z" hostname="runnervm0hi8g" time="0.38">
+  <properties/>
+  <testcase name="test G invalid and synthetic identities are rejected" classname="com.example.data.JobStatusAuthorizationSecurityTest" time="0.024"/>
+  <testcase name="test D an unrelated worker cannot modify another users job" classname="com.example.data.JobStatusAuthorizationSecurityTest" time="0.037"/>
+  <testcase name="test J the newer room profile cannot influence authorization" classname="com.example.data.JobStatusAuthorizationSecurityTest" time="0.044"/>
+  <testcase name="cancelJob with a non-existent job fails closed" classname="com.example.data.JobStatusAuthorizationSecurityTest" time="0.03"/>
+  <testcase name="test A the owner may perform an authorized client transition" classname="com.example.data.JobStatusAuthorizationSecurityTest" time="0.03"/>
+  <testcase name="test H attribution is preserved and the state machine is still enforced" classname="com.example.data.JobStatusAuthorizationSecurityTest" time="0.032"/>
+  <testcase name="cancelJob with no authenticated user fails closed" classname="com.example.data.JobStatusAuthorizationSecurityTest" time="0.028"/>
+  <testcase name="cancelJob authorization mirrors isJobTransitionAuthorized" classname="com.example.data.JobStatusAuthorizationSecurityTest" time="0.019"/>
+  <testcase name="test E authorization rejects a transition the state machine considers legal" classname="com.example.data.JobStatusAuthorizationSecurityTest" time="0.018"/>
+  <testcase name="test C worker transitions fail closed because no worker uid exists" classname="com.example.data.JobStatusAuthorizationSecurityTest" time="0.022"/>
+  <testcase name="test F no firebase authentication yields no transition" classname="com.example.data.JobStatusAuthorizationSecurityTest" time="0.043"/>
+  <testcase name="test B another authenticated client cannot modify the job" classname="com.example.data.JobStatusAuthorizationSecurityTest" time="0.045"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

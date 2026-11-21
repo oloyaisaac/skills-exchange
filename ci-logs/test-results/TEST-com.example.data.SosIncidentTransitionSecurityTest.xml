@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.SosIncidentTransitionSecurityTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:02:55.224Z" hostname="runnervm0hi8g" time="2.798">
+  <properties/>
+  <testcase name="acknowledge transitions an ACTIVE incident and records the actor" classname="com.example.data.SosIncidentTransitionSecurityTest" time="2.473"/>
+  <testcase name="acknowledge rejects an unauthenticated actor" classname="com.example.data.SosIncidentTransitionSecurityTest" time="0.051"/>
+  <testcase name="resolve transitions an ACTIVE incident and records the actor" classname="com.example.data.SosIncidentTransitionSecurityTest" time="0.044"/>
+  <testcase name="acknowledge rejects unknown incident id" classname="com.example.data.SosIncidentTransitionSecurityTest" time="0.043"/>
+  <testcase name="incident identity cannot be rewritten through resolve" classname="com.example.data.SosIncidentTransitionSecurityTest" time="0.055"/>
+  <testcase name="acknowledge rejects an already-resolved incident" classname="com.example.data.SosIncidentTransitionSecurityTest" time="0.047"/>
+  <testcase name="resolve rejects an already-resolved incident" classname="com.example.data.SosIncidentTransitionSecurityTest" time="0.042"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

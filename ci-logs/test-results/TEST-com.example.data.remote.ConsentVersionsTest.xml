@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.remote.ConsentVersionsTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:00.777Z" hostname="runnervm0hi8g" time="0.002">
+  <properties/>
+  <testcase name="the three required grants are the ones the server names" classname="com.example.data.remote.ConsentVersionsTest" time="0.0"/>
+  <testcase name="a failure is a failure, never a silent success" classname="com.example.data.remote.ConsentVersionsTest" time="0.001"/>
+  <testcase name="policy version is a dated value" classname="com.example.data.remote.ConsentVersionsTest" time="0.0"/>
+  <testcase name="guarantor consent uses the same revision" classname="com.example.data.remote.ConsentVersionsTest" time="0.0"/>
+  <testcase name="a recorded outcome carries the version and the server time" classname="com.example.data.remote.ConsentVersionsTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

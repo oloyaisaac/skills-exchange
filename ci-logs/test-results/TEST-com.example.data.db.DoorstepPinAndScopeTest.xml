@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.db.DoorstepPinAndScopeTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:00.328Z" hostname="runnervm0hi8g" time="0.163">
+  <properties/>
+  <testcase name="the job feed shows open work, the viewer's own work and work assigned to them" classname="com.example.data.db.DoorstepPinAndScopeTest" time="0.026"/>
+  <testcase name="an unknown viewer sees only open work and legacy rows" classname="com.example.data.db.DoorstepPinAndScopeTest" time="0.027"/>
+  <testcase name="pin format fails closed on blank and malformed input" classname="com.example.data.db.DoorstepPinAndScopeTest" time="0.019"/>
+  <testcase name="a job created without a pin carries no default code" classname="com.example.data.db.DoorstepPinAndScopeTest" time="0.018"/>
+  <testcase name="the client no longer compares pins locally" classname="com.example.data.db.DoorstepPinAndScopeTest" time="0.037"/>
+  <testcase name="only KYC-approved providers reach the browse feed" classname="com.example.data.db.DoorstepPinAndScopeTest" time="0.032"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

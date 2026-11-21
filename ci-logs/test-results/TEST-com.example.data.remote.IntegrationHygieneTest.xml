@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.remote.IntegrationHygieneTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:00.791Z" hostname="runnervm0hi8g" time="0.003">
+  <properties/>
+  <testcase name="the seeded demo jobs do not claim an unsupported provider" classname="com.example.data.remote.IntegrationHygieneTest" time="0.001"/>
+  <testcase name="every integration client goes through the typed callable contracts" classname="com.example.data.remote.IntegrationHygieneTest" time="0.001"/>
+  <testcase name="the Africa's Talking client is suspend-only" classname="com.example.data.remote.IntegrationHygieneTest" time="0.001"/>
+  <testcase name="only integrated payment channels can be selected" classname="com.example.data.remote.IntegrationHygieneTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

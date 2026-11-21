@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.remote.PhoneAuthVerificationSecurityTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:01.043Z" hostname="runnervm0hi8g" time="0.015">
+  <properties/>
+  <testcase name="internationally prefixed input is preserved" classname="com.example.data.remote.PhoneAuthVerificationSecurityTest" time="0.014"/>
+  <testcase name="arbitrary six digit code is refused when no firebase verification is pending" classname="com.example.data.remote.PhoneAuthVerificationSecurityTest" time="0.001"/>
+  <testcase name="no six digit combination authenticates without a pending firebase verification" classname="com.example.data.remote.PhoneAuthVerificationSecurityTest" time="0.0"/>
+  <testcase name="code with wrong length or non digits is refused before credential exchange" classname="com.example.data.remote.PhoneAuthVerificationSecurityTest" time="0.0"/>
+  <testcase name="well formed code with a pending firebase verification is handed to firebase only" classname="com.example.data.remote.PhoneAuthVerificationSecurityTest" time="0.0"/>
+  <testcase name="ambiguous or unusable phone input is rejected instead of guessed" classname="com.example.data.remote.PhoneAuthVerificationSecurityTest" time="0.0"/>
+  <testcase name="play services auto verified credential allows verification without a code" classname="com.example.data.remote.PhoneAuthVerificationSecurityTest" time="0.0"/>
+  <testcase name="ugandan phone input is normalised to e164" classname="com.example.data.remote.PhoneAuthVerificationSecurityTest" time="0.0"/>
+  <testcase name="blank verification id that is not a real credential is refused" classname="com.example.data.remote.PhoneAuthVerificationSecurityTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

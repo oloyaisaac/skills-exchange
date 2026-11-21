@@ -1,0 +1,68 @@
+*.iml
+
+.gradle
+
+.kotlin
+
+/local.properties
+
+/.idea/caches
+
+/.idea/libraries
+
+/.idea/modules.xml
+
+/.idea/workspace.xml
+
+/.idea/navEditor.xml
+
+/.idea/assetWizardSettings.xml
+
+.DS_Store
+
+/build
+
+/captures
+
+.externalNativeBuild
+
+.cxx
+
+local.properties
+
+.env
+
+debug.keystore
+# Environment variables
+.env
+
+# Local JDK installations and zip packages
+jdk11/
+jdk17/
+*.zip
+
+# Dependency trees and build output — regenerated locally, never to be tracked.
+# `functions/node_modules/` is the npm install tree for the Cloud Functions package and
+# `functions/lib/` is the compiled output of `npm run build` (`main: lib/index.js`).
+# Ignoring them keeps `git status` to the real source changes instead of thousands of
+# dependency files. No file is deleted by these rules.
+node_modules/
+functions/lib/
+
+# R14-P2-01: build artefacts, device captures and secrets never belong in the repository.
+# The round removed a committed device database, two JVM crash logs and two JFR replays; these rules
+# stop the next one. `scripts/check_repo_hygiene.mjs` fails the build if a forbidden file is tracked.
+*.apk
+*.aab
+*.hprof
+*.sqlite
+*.sqlite3
+hs_err_pid*.log
+replay_pid*.log
+*.jks
+*.keystore
+my-upload-key.jks
+_device_test/*.sqlite
+# R15-P2-06: the supply-chain script's output is a build artefact, not a source file.
+dependency-report.json
+lint-summary.txt

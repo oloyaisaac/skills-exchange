@@ -1,0 +1,2454 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 29,
+    "identityHash": "240f668ac970827e0b22597d9c932af7",
+    "entities": [
+      {
+        "tableName": "service_providers",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `tagline` TEXT NOT NULL, `category` TEXT NOT NULL, `neighborhood` TEXT NOT NULL, `residenceYears` INTEGER NOT NULL, `hourlyRate` REAL NOT NULL, `distanceMiles` REAL NOT NULL, `rating` REAL NOT NULL, `completedJobsCount` INTEGER NOT NULL, `avgResponseTime` TEXT NOT NULL, `isVerifiedResident` INTEGER NOT NULL, `isBackgroundChecked` INTEGER NOT NULL, `bio` TEXT NOT NULL, `skillsCsv` TEXT NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `endorsementsCount` INTEGER NOT NULL, `nationalIdNumber` TEXT NOT NULL, `idDocumentUrl` TEXT NOT NULL, `selfieVerificationUrl` TEXT NOT NULL, `kycStatus` TEXT NOT NULL, `isActivated` INTEGER NOT NULL, `momoNumber` TEXT NOT NULL, `momoProvider` TEXT NOT NULL, `walletBalance` REAL NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tagline",
+            "columnName": "tagline",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "neighborhood",
+            "columnName": "neighborhood",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "residenceYears",
+            "columnName": "residenceYears",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hourlyRate",
+            "columnName": "hourlyRate",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "distanceMiles",
+            "columnName": "distanceMiles",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rating",
+            "columnName": "rating",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "completedJobsCount",
+            "columnName": "completedJobsCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "avgResponseTime",
+            "columnName": "avgResponseTime",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isVerifiedResident",
+            "columnName": "isVerifiedResident",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isBackgroundChecked",
+            "columnName": "isBackgroundChecked",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bio",
+            "columnName": "bio",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "skillsCsv",
+            "columnName": "skillsCsv",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "latitude",
+            "columnName": "latitude",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "longitude",
+            "columnName": "longitude",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endorsementsCount",
+            "columnName": "endorsementsCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nationalIdNumber",
+            "columnName": "nationalIdNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "idDocumentUrl",
+            "columnName": "idDocumentUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "selfieVerificationUrl",
+            "columnName": "selfieVerificationUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kycStatus",
+            "columnName": "kycStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isActivated",
+            "columnName": "isActivated",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "momoNumber",
+            "columnName": "momoNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "momoProvider",
+            "columnName": "momoProvider",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "walletBalance",
+            "columnName": "walletBalance",
+            "affinity": "REAL",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "skill_endorsements",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `providerId` TEXT NOT NULL, `skillName` TEXT NOT NULL, `endorsedByNeighborName` TEXT NOT NULL, `neighborDistrict` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`providerId`) REFERENCES `service_providers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "providerId",
+            "columnName": "providerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "skillName",
+            "columnName": "skillName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endorsedByNeighborName",
+            "columnName": "endorsedByNeighborName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "neighborDistrict",
+            "columnName": "neighborDistrict",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_skill_endorsements_providerId",
+            "unique": false,
+            "columnNames": [
+              "providerId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_skill_endorsements_providerId` ON `${TABLE_NAME}` (`providerId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "service_providers",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "providerId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "job_posts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `streetAddress` TEXT NOT NULL, `apartmentSuite` TEXT NOT NULL, `landmarkDirections` TEXT NOT NULL, `photos` TEXT NOT NULL, `scheduledAt` INTEGER NOT NULL, `category` TEXT NOT NULL, `description` TEXT NOT NULL, `postedByUid` TEXT, `postedByResident` TEXT NOT NULL, `district` TEXT NOT NULL, `budget` REAL NOT NULL, `urgency` TEXT NOT NULL, `status` TEXT NOT NULL, `assignedProviderId` TEXT, `assignedProviderName` TEXT, `assignedProviderUid` TEXT, `workerLatitude` REAL, `workerLongitude` REAL, `workerLocationUpdatedAt` INTEGER NOT NULL, `createdTimestamp` INTEGER NOT NULL, `estimatedHours` REAL NOT NULL, `materialsCost` REAL NOT NULL, `safetyFee` REAL NOT NULL, `materialsProvidedBy` TEXT NOT NULL, `laborHours` REAL NOT NULL, `laborRate` REAL NOT NULL, `laborTotal` REAL NOT NULL, `materialsSubtotal` REAL NOT NULL, `platformFee` REAL NOT NULL, `grandTotal` REAL NOT NULL, `materialReceiptsCsv` TEXT NOT NULL, `beforePhotoUrl` TEXT, `afterPhotoUrl` TEXT, `emergencyAddonRequested` INTEGER NOT NULL, `emergencyAddonAmount` REAL NOT NULL, `emergencyAddonReason` TEXT NOT NULL, `emergencyAddonReceiptUrl` TEXT NOT NULL, `emergencyAddonStatus` TEXT NOT NULL, `paymentChannel` TEXT NOT NULL, `momoPhoneNumber` TEXT NOT NULL, `escrowStatus` TEXT NOT NULL, `doorstepPin` TEXT NOT NULL, `isDoorstepVerified` INTEGER NOT NULL, `materialAdvanceRequested` INTEGER NOT NULL, `materialAdvanceAmount` REAL NOT NULL, `materialAdvanceReceiptUrl` TEXT NOT NULL, `materialAdvanceStatus` TEXT NOT NULL, `isSosTriggered` INTEGER NOT NULL, `calloutFee` REAL NOT NULL, `jobType` TEXT NOT NULL, `recurringSchedule` TEXT NOT NULL, `recurringStartDate` TEXT NOT NULL, `recurringContractProposal` TEXT NOT NULL, `recurringNegotiatedRate` REAL NOT NULL, `recurringProposalStatus` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`assignedProviderId`) REFERENCES `service_providers`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "streetAddress",
+            "columnName": "streetAddress",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "apartmentSuite",
+            "columnName": "apartmentSuite",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "landmarkDirections",
+            "columnName": "landmarkDirections",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "photos",
+            "columnName": "photos",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scheduledAt",
+            "columnName": "scheduledAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "postedByUid",
+            "columnName": "postedByUid",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "postedByResident",
+            "columnName": "postedByResident",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "district",
+            "columnName": "district",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "budget",
+            "columnName": "budget",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "urgency",
+            "columnName": "urgency",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "assignedProviderId",
+            "columnName": "assignedProviderId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "assignedProviderName",
+            "columnName": "assignedProviderName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "assignedProviderUid",
+            "columnName": "assignedProviderUid",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "workerLatitude",
+            "columnName": "workerLatitude",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "workerLongitude",
+            "columnName": "workerLongitude",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "workerLocationUpdatedAt",
+            "columnName": "workerLocationUpdatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdTimestamp",
+            "columnName": "createdTimestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "estimatedHours",
+            "columnName": "estimatedHours",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "materialsCost",
+            "columnName": "materialsCost",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "safetyFee",
+            "columnName": "safetyFee",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "materialsProvidedBy",
+            "columnName": "materialsProvidedBy",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "laborHours",
+            "columnName": "laborHours",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "laborRate",
+            "columnName": "laborRate",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "laborTotal",
+            "columnName": "laborTotal",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "materialsSubtotal",
+            "columnName": "materialsSubtotal",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "platformFee",
+            "columnName": "platformFee",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "grandTotal",
+            "columnName": "grandTotal",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "materialReceiptsCsv",
+            "columnName": "materialReceiptsCsv",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "beforePhotoUrl",
+            "columnName": "beforePhotoUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "afterPhotoUrl",
+            "columnName": "afterPhotoUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "emergencyAddonRequested",
+            "columnName": "emergencyAddonRequested",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "emergencyAddonAmount",
+            "columnName": "emergencyAddonAmount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "emergencyAddonReason",
+            "columnName": "emergencyAddonReason",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "emergencyAddonReceiptUrl",
+            "columnName": "emergencyAddonReceiptUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "emergencyAddonStatus",
+            "columnName": "emergencyAddonStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "paymentChannel",
+            "columnName": "paymentChannel",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "momoPhoneNumber",
+            "columnName": "momoPhoneNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "escrowStatus",
+            "columnName": "escrowStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "doorstepPin",
+            "columnName": "doorstepPin",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDoorstepVerified",
+            "columnName": "isDoorstepVerified",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "materialAdvanceRequested",
+            "columnName": "materialAdvanceRequested",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "materialAdvanceAmount",
+            "columnName": "materialAdvanceAmount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "materialAdvanceReceiptUrl",
+            "columnName": "materialAdvanceReceiptUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "materialAdvanceStatus",
+            "columnName": "materialAdvanceStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSosTriggered",
+            "columnName": "isSosTriggered",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "calloutFee",
+            "columnName": "calloutFee",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "jobType",
+            "columnName": "jobType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recurringSchedule",
+            "columnName": "recurringSchedule",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recurringStartDate",
+            "columnName": "recurringStartDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recurringContractProposal",
+            "columnName": "recurringContractProposal",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recurringNegotiatedRate",
+            "columnName": "recurringNegotiatedRate",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recurringProposalStatus",
+            "columnName": "recurringProposalStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_job_posts_assignedProviderId",
+            "unique": false,
+            "columnNames": [
+              "assignedProviderId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_job_posts_assignedProviderId` ON `${TABLE_NAME}` (`assignedProviderId`)"
+          },
+          {
+            "name": "index_job_posts_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_job_posts_status` ON `${TABLE_NAME}` (`status`)"
+          },
+          {
+            "name": "index_job_posts_postedByUid",
+            "unique": false,
+            "columnNames": [
+              "postedByUid"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_job_posts_postedByUid` ON `${TABLE_NAME}` (`postedByUid`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "service_providers",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "assignedProviderId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "chat_messages",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `jobId` TEXT NOT NULL, `senderId` TEXT, `senderName` TEXT NOT NULL, `isFromUser` INTEGER NOT NULL, `message` TEXT NOT NULL, `timestampText` TEXT NOT NULL, `isSystemNotification` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`jobId`) REFERENCES `job_posts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "jobId",
+            "columnName": "jobId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "senderId",
+            "columnName": "senderId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "senderName",
+            "columnName": "senderName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isFromUser",
+            "columnName": "isFromUser",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "message",
+            "columnName": "message",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestampText",
+            "columnName": "timestampText",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSystemNotification",
+            "columnName": "isSystemNotification",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_chat_messages_jobId",
+            "unique": false,
+            "columnNames": [
+              "jobId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_chat_messages_jobId` ON `${TABLE_NAME}` (`jobId`)"
+          },
+          {
+            "name": "index_chat_messages_senderId",
+            "unique": false,
+            "columnNames": [
+              "senderId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_chat_messages_senderId` ON `${TABLE_NAME}` (`senderId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "job_posts",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "jobId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "user_profiles",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `phoneNumber` TEXT NOT NULL, `fullName` TEXT NOT NULL, `district` TEXT NOT NULL, `initialRole` TEXT NOT NULL, `currentActiveMode` TEXT NOT NULL, `workerKycStatus` TEXT NOT NULL, `isWorkerActivated` INTEGER NOT NULL, `trainingCompleted` INTEGER NOT NULL, `nationalIdNumber` TEXT NOT NULL, `primarySkill` TEXT, `additionalSkillsCsv` TEXT NOT NULL, `avatarUrl` TEXT NOT NULL, `backupContactName` TEXT NOT NULL, `backupContactPhone` TEXT NOT NULL, `momoNumber` TEXT NOT NULL, `momoProvider` TEXT NOT NULL, `walletBalance` REAL NOT NULL, `latitude` REAL, `longitude` REAL, `address` TEXT, `isOnboardingCompleted` INTEGER NOT NULL, `createdAtTimestamp` INTEGER NOT NULL, `updatedAtTimestamp` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "phoneNumber",
+            "columnName": "phoneNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fullName",
+            "columnName": "fullName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "district",
+            "columnName": "district",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "initialRole",
+            "columnName": "initialRole",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currentActiveMode",
+            "columnName": "currentActiveMode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "workerKycStatus",
+            "columnName": "workerKycStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isWorkerActivated",
+            "columnName": "isWorkerActivated",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "trainingCompleted",
+            "columnName": "trainingCompleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nationalIdNumber",
+            "columnName": "nationalIdNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "primarySkill",
+            "columnName": "primarySkill",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "additionalSkillsCsv",
+            "columnName": "additionalSkillsCsv",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "avatarUrl",
+            "columnName": "avatarUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "backupContactName",
+            "columnName": "backupContactName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "backupContactPhone",
+            "columnName": "backupContactPhone",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "momoNumber",
+            "columnName": "momoNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "momoProvider",
+            "columnName": "momoProvider",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "walletBalance",
+            "columnName": "walletBalance",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "latitude",
+            "columnName": "latitude",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "longitude",
+            "columnName": "longitude",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "address",
+            "columnName": "address",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isOnboardingCompleted",
+            "columnName": "isOnboardingCompleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAtTimestamp",
+            "columnName": "createdAtTimestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtTimestamp",
+            "columnName": "updatedAtTimestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_user_profiles_phoneNumber",
+            "unique": true,
+            "columnNames": [
+              "phoneNumber"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_user_profiles_phoneNumber` ON `${TABLE_NAME}` (`phoneNumber`)"
+          }
+        ]
+      },
+      {
+        "tableName": "worker_kyc",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` TEXT NOT NULL, `fullLegalName` TEXT NOT NULL, `nationalIdNumber` TEXT NOT NULL, `dateOfBirth` TEXT NOT NULL, `gender` TEXT NOT NULL, `idFrontStoragePath` TEXT NOT NULL, `idBackStoragePath` TEXT NOT NULL, `status` TEXT NOT NULL, `submittedAt` INTEGER NOT NULL, `reviewedAt` INTEGER NOT NULL, `reviewFeedback` TEXT NOT NULL, `groupPhotoStoragePath` TEXT NOT NULL, `guarantorStatus` TEXT NOT NULL, `guarantorsSubmittedAt` INTEGER NOT NULL, `guarantorReviewFeedback` TEXT NOT NULL, `identityDocumentUri` TEXT, `identityDocumentIssuingAuthority` TEXT, `identityDocumentExpiry` INTEGER, `identityDocumentConsentGiven` INTEGER NOT NULL, `identityDocumentConsentWithdrawn` INTEGER NOT NULL, `addressDocumentUri` TEXT, `addressDocumentIssuingAuthority` TEXT, `addressDocumentExpiry` INTEGER, `addressDocumentUtilityBillDate` INTEGER, `addressDocumentConsentGiven` INTEGER NOT NULL, `addressDocumentConsentWithdrawn` INTEGER NOT NULL, `incomeDocumentUri` TEXT, `incomeDocumentType` TEXT, `incomeDocumentDate` INTEGER, `incomeDocumentConsentGiven` INTEGER NOT NULL, `incomeDocumentConsentWithdrawn` INTEGER NOT NULL, `sourceDocumentUri` TEXT, `sourceDocumentType` TEXT, `sourceDocumentAuthenticityVerified` INTEGER NOT NULL, `sourceDocumentConsentGiven` INTEGER NOT NULL, `sourceDocumentConsentWithdrawn` INTEGER NOT NULL, `faceMatchResult` REAL, `faceIdPhotoUri` TEXT, `faceMatchThreshold` REAL NOT NULL, `faceRecognitionConsentGiven` INTEGER NOT NULL, `faceRecognitionConsentWithdrawn` INTEGER NOT NULL, PRIMARY KEY(`userId`), FOREIGN KEY(`userId`) REFERENCES `user_profiles`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fullLegalName",
+            "columnName": "fullLegalName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nationalIdNumber",
+            "columnName": "nationalIdNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dateOfBirth",
+            "columnName": "dateOfBirth",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gender",
+            "columnName": "gender",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "idFrontStoragePath",
+            "columnName": "idFrontStoragePath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "idBackStoragePath",
+            "columnName": "idBackStoragePath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "submittedAt",
+            "columnName": "submittedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reviewedAt",
+            "columnName": "reviewedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reviewFeedback",
+            "columnName": "reviewFeedback",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "groupPhotoStoragePath",
+            "columnName": "groupPhotoStoragePath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "guarantorStatus",
+            "columnName": "guarantorStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "guarantorsSubmittedAt",
+            "columnName": "guarantorsSubmittedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "guarantorReviewFeedback",
+            "columnName": "guarantorReviewFeedback",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "identityDocumentUri",
+            "columnName": "identityDocumentUri",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "identityDocumentIssuingAuthority",
+            "columnName": "identityDocumentIssuingAuthority",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "identityDocumentExpiry",
+            "columnName": "identityDocumentExpiry",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "identityDocumentConsentGiven",
+            "columnName": "identityDocumentConsentGiven",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "identityDocumentConsentWithdrawn",
+            "columnName": "identityDocumentConsentWithdrawn",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "addressDocumentUri",
+            "columnName": "addressDocumentUri",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "addressDocumentIssuingAuthority",
+            "columnName": "addressDocumentIssuingAuthority",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "addressDocumentExpiry",
+            "columnName": "addressDocumentExpiry",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "addressDocumentUtilityBillDate",
+            "columnName": "addressDocumentUtilityBillDate",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "addressDocumentConsentGiven",
+            "columnName": "addressDocumentConsentGiven",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "addressDocumentConsentWithdrawn",
+            "columnName": "addressDocumentConsentWithdrawn",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "incomeDocumentUri",
+            "columnName": "incomeDocumentUri",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "incomeDocumentType",
+            "columnName": "incomeDocumentType",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "incomeDocumentDate",
+            "columnName": "incomeDocumentDate",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "incomeDocumentConsentGiven",
+            "columnName": "incomeDocumentConsentGiven",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "incomeDocumentConsentWithdrawn",
+            "columnName": "incomeDocumentConsentWithdrawn",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceDocumentUri",
+            "columnName": "sourceDocumentUri",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourceDocumentType",
+            "columnName": "sourceDocumentType",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourceDocumentAuthenticityVerified",
+            "columnName": "sourceDocumentAuthenticityVerified",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceDocumentConsentGiven",
+            "columnName": "sourceDocumentConsentGiven",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceDocumentConsentWithdrawn",
+            "columnName": "sourceDocumentConsentWithdrawn",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "faceMatchResult",
+            "columnName": "faceMatchResult",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "faceIdPhotoUri",
+            "columnName": "faceIdPhotoUri",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "faceMatchThreshold",
+            "columnName": "faceMatchThreshold",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "faceRecognitionConsentGiven",
+            "columnName": "faceRecognitionConsentGiven",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "faceRecognitionConsentWithdrawn",
+            "columnName": "faceRecognitionConsentWithdrawn",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "userId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_worker_kyc_userId",
+            "unique": false,
+            "columnNames": [
+              "userId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_worker_kyc_userId` ON `${TABLE_NAME}` (`userId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "user_profiles",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "userId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "guarantors",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `workerKycId` TEXT NOT NULL, `fullName` TEXT NOT NULL, `phoneNumber` TEXT NOT NULL, `relationship` TEXT NOT NULL, `district` TEXT NOT NULL, `idFrontStoragePath` TEXT NOT NULL, `idBackStoragePath` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `nationalIdNumber` TEXT NOT NULL, `guarantorPhotoStoragePath` TEXT NOT NULL, `workerWithGuarantorPhotoStoragePath` TEXT NOT NULL, `consentProvided` INTEGER NOT NULL, `ninVerificationStatus` TEXT NOT NULL, `submittedAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`workerKycId`) REFERENCES `worker_kyc`(`userId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "workerKycId",
+            "columnName": "workerKycId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fullName",
+            "columnName": "fullName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "phoneNumber",
+            "columnName": "phoneNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "relationship",
+            "columnName": "relationship",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "district",
+            "columnName": "district",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "idFrontStoragePath",
+            "columnName": "idFrontStoragePath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "idBackStoragePath",
+            "columnName": "idBackStoragePath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nationalIdNumber",
+            "columnName": "nationalIdNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "guarantorPhotoStoragePath",
+            "columnName": "guarantorPhotoStoragePath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "workerWithGuarantorPhotoStoragePath",
+            "columnName": "workerWithGuarantorPhotoStoragePath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "consentProvided",
+            "columnName": "consentProvided",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ninVerificationStatus",
+            "columnName": "ninVerificationStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "submittedAt",
+            "columnName": "submittedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_guarantors_workerKycId",
+            "unique": false,
+            "columnNames": [
+              "workerKycId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_guarantors_workerKycId` ON `${TABLE_NAME}` (`workerKycId`)"
+          },
+          {
+            "name": "index_guarantors_phoneNumber",
+            "unique": false,
+            "columnNames": [
+              "phoneNumber"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_guarantors_phoneNumber` ON `${TABLE_NAME}` (`phoneNumber`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "worker_kyc",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "workerKycId"
+            ],
+            "referencedColumns": [
+              "userId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "worker_training",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` TEXT NOT NULL, `status` TEXT NOT NULL, `completedModulesCsv` TEXT NOT NULL, `startedAt` INTEGER NOT NULL, `completionTimestamp` INTEGER NOT NULL, `currentModuleIndex` INTEGER NOT NULL, `totalModules` INTEGER NOT NULL, `platformRulesCompleted` INTEGER NOT NULL, `escrowGuidelinesCompleted` INTEGER NOT NULL, `customerEtiquetteCompleted` INTEGER NOT NULL, `safetyProtocolsCompleted` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`userId`), FOREIGN KEY(`userId`) REFERENCES `user_profiles`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "completedModulesCsv",
+            "columnName": "completedModulesCsv",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startedAt",
+            "columnName": "startedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "completionTimestamp",
+            "columnName": "completionTimestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currentModuleIndex",
+            "columnName": "currentModuleIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalModules",
+            "columnName": "totalModules",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "platformRulesCompleted",
+            "columnName": "platformRulesCompleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "escrowGuidelinesCompleted",
+            "columnName": "escrowGuidelinesCompleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "customerEtiquetteCompleted",
+            "columnName": "customerEtiquetteCompleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "safetyProtocolsCompleted",
+            "columnName": "safetyProtocolsCompleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "userId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_worker_training_userId",
+            "unique": false,
+            "columnNames": [
+              "userId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_worker_training_userId` ON `${TABLE_NAME}` (`userId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "user_profiles",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "userId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "job_quotes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `jobId` TEXT NOT NULL, `workerId` TEXT NOT NULL, `workerName` TEXT NOT NULL, `proposedRate` REAL NOT NULL, `proposedHours` REAL NOT NULL, `totalQuote` REAL NOT NULL, `notes` TEXT NOT NULL, `status` TEXT NOT NULL, `submittedAt` INTEGER NOT NULL, `respondedAt` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`jobId`) REFERENCES `job_posts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`workerId`) REFERENCES `service_providers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "jobId",
+            "columnName": "jobId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "workerId",
+            "columnName": "workerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "workerName",
+            "columnName": "workerName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "proposedRate",
+            "columnName": "proposedRate",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "proposedHours",
+            "columnName": "proposedHours",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalQuote",
+            "columnName": "totalQuote",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "submittedAt",
+            "columnName": "submittedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "respondedAt",
+            "columnName": "respondedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_job_quotes_jobId",
+            "unique": false,
+            "columnNames": [
+              "jobId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_job_quotes_jobId` ON `${TABLE_NAME}` (`jobId`)"
+          },
+          {
+            "name": "index_job_quotes_workerId",
+            "unique": false,
+            "columnNames": [
+              "workerId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_job_quotes_workerId` ON `${TABLE_NAME}` (`workerId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "job_posts",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "jobId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "service_providers",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "workerId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "pending_actions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `actionType` TEXT NOT NULL, `payloadJson` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `retryCount` INTEGER NOT NULL, `maxRetries` INTEGER NOT NULL, `status` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actionType",
+            "columnName": "actionType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "payloadJson",
+            "columnName": "payloadJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retryCount",
+            "columnName": "retryCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maxRetries",
+            "columnName": "maxRetries",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "disputes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `jobId` TEXT NOT NULL, `reportedBy` TEXT NOT NULL, `reportedUserId` TEXT NOT NULL, `disputeReason` TEXT NOT NULL, `description` TEXT NOT NULL, `evidenceUrlsCsv` TEXT NOT NULL, `status` TEXT NOT NULL, `adminNotes` TEXT NOT NULL, `resolutionType` TEXT NOT NULL, `resolutionAmount` REAL NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `resolvedAt` INTEGER NOT NULL, `resolvedBy` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`jobId`) REFERENCES `job_posts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "jobId",
+            "columnName": "jobId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reportedBy",
+            "columnName": "reportedBy",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reportedUserId",
+            "columnName": "reportedUserId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "disputeReason",
+            "columnName": "disputeReason",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "evidenceUrlsCsv",
+            "columnName": "evidenceUrlsCsv",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "adminNotes",
+            "columnName": "adminNotes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "resolutionType",
+            "columnName": "resolutionType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "resolutionAmount",
+            "columnName": "resolutionAmount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "resolvedAt",
+            "columnName": "resolvedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "resolvedBy",
+            "columnName": "resolvedBy",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_disputes_jobId",
+            "unique": false,
+            "columnNames": [
+              "jobId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_disputes_jobId` ON `${TABLE_NAME}` (`jobId`)"
+          },
+          {
+            "name": "index_disputes_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_disputes_status` ON `${TABLE_NAME}` (`status`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "job_posts",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "jobId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "ratings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `jobId` TEXT NOT NULL, `fromUserId` TEXT NOT NULL, `toUserId` TEXT NOT NULL, `rating` INTEGER NOT NULL, `review` TEXT NOT NULL, `isFromClient` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`jobId`) REFERENCES `job_posts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "jobId",
+            "columnName": "jobId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fromUserId",
+            "columnName": "fromUserId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "toUserId",
+            "columnName": "toUserId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rating",
+            "columnName": "rating",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "review",
+            "columnName": "review",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isFromClient",
+            "columnName": "isFromClient",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_ratings_jobId",
+            "unique": false,
+            "columnNames": [
+              "jobId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_ratings_jobId` ON `${TABLE_NAME}` (`jobId`)"
+          },
+          {
+            "name": "index_ratings_toUserId",
+            "unique": false,
+            "columnNames": [
+              "toUserId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_ratings_toUserId` ON `${TABLE_NAME}` (`toUserId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "job_posts",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "jobId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "notifications",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `userId` TEXT NOT NULL, `type` TEXT NOT NULL, `title` TEXT NOT NULL, `body` TEXT NOT NULL, `jobId` TEXT NOT NULL, `isRead` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`userId`) REFERENCES `user_profiles`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "body",
+            "columnName": "body",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "jobId",
+            "columnName": "jobId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isRead",
+            "columnName": "isRead",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_notifications_userId",
+            "unique": false,
+            "columnNames": [
+              "userId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_notifications_userId` ON `${TABLE_NAME}` (`userId`)"
+          },
+          {
+            "name": "index_notifications_createdAt",
+            "unique": false,
+            "columnNames": [
+              "createdAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_notifications_createdAt` ON `${TABLE_NAME}` (`createdAt`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "user_profiles",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "userId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "job_status_audit",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `jobId` TEXT NOT NULL, `fromStatus` TEXT NOT NULL, `toStatus` TEXT NOT NULL, `changedBy` TEXT NOT NULL, `changedAt` INTEGER NOT NULL, `reason` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`jobId`) REFERENCES `job_posts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "jobId",
+            "columnName": "jobId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fromStatus",
+            "columnName": "fromStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "toStatus",
+            "columnName": "toStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "changedBy",
+            "columnName": "changedBy",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "changedAt",
+            "columnName": "changedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reason",
+            "columnName": "reason",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_job_status_audit_jobId",
+            "unique": false,
+            "columnNames": [
+              "jobId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_job_status_audit_jobId` ON `${TABLE_NAME}` (`jobId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "job_posts",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "jobId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "reports",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `reportedBy` TEXT NOT NULL, `reportedUserId` TEXT NOT NULL, `reportedUserName` TEXT NOT NULL, `reason` TEXT NOT NULL, `description` TEXT NOT NULL, `evidenceUrlsCsv` TEXT NOT NULL, `status` TEXT NOT NULL, `adminNotes` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `resolvedAt` INTEGER NOT NULL, `resolvedBy` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`reportedBy`) REFERENCES `user_profiles`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`reportedUserId`) REFERENCES `user_profiles`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reportedBy",
+            "columnName": "reportedBy",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reportedUserId",
+            "columnName": "reportedUserId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reportedUserName",
+            "columnName": "reportedUserName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reason",
+            "columnName": "reason",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "evidenceUrlsCsv",
+            "columnName": "evidenceUrlsCsv",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "adminNotes",
+            "columnName": "adminNotes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "resolvedAt",
+            "columnName": "resolvedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "resolvedBy",
+            "columnName": "resolvedBy",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_reports_reportedBy",
+            "unique": false,
+            "columnNames": [
+              "reportedBy"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_reports_reportedBy` ON `${TABLE_NAME}` (`reportedBy`)"
+          },
+          {
+            "name": "index_reports_reportedUserId",
+            "unique": false,
+            "columnNames": [
+              "reportedUserId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_reports_reportedUserId` ON `${TABLE_NAME}` (`reportedUserId`)"
+          },
+          {
+            "name": "index_reports_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_reports_status` ON `${TABLE_NAME}` (`status`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "user_profiles",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "reportedBy"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "user_profiles",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "reportedUserId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "wallet_ledger",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `workerId` TEXT NOT NULL, `entryType` TEXT NOT NULL, `amountMinor` INTEGER NOT NULL, `withdrawalId` TEXT, `description` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`workerId`) REFERENCES `user_profiles`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "workerId",
+            "columnName": "workerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entryType",
+            "columnName": "entryType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amountMinor",
+            "columnName": "amountMinor",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "withdrawalId",
+            "columnName": "withdrawalId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_wallet_ledger_workerId",
+            "unique": false,
+            "columnNames": [
+              "workerId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_wallet_ledger_workerId` ON `${TABLE_NAME}` (`workerId`)"
+          },
+          {
+            "name": "index_wallet_ledger_withdrawalId",
+            "unique": false,
+            "columnNames": [
+              "withdrawalId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_wallet_ledger_withdrawalId` ON `${TABLE_NAME}` (`withdrawalId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "user_profiles",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "workerId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "wallet_withdrawals",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `workerId` TEXT NOT NULL, `amountMinor` INTEGER NOT NULL, `destinationMomoNumber` TEXT NOT NULL, `status` TEXT NOT NULL, `idempotencyKey` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`workerId`) REFERENCES `user_profiles`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "workerId",
+            "columnName": "workerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amountMinor",
+            "columnName": "amountMinor",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "destinationMomoNumber",
+            "columnName": "destinationMomoNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "idempotencyKey",
+            "columnName": "idempotencyKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_wallet_withdrawals_workerId",
+            "unique": false,
+            "columnNames": [
+              "workerId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_wallet_withdrawals_workerId` ON `${TABLE_NAME}` (`workerId`)"
+          },
+          {
+            "name": "index_wallet_withdrawals_idempotencyKey",
+            "unique": false,
+            "columnNames": [
+              "idempotencyKey"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_wallet_withdrawals_idempotencyKey` ON `${TABLE_NAME}` (`idempotencyKey`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "user_profiles",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "workerId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "sos_incidents",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `jobId` TEXT NOT NULL, `postedByUid` TEXT NOT NULL, `assignedProviderId` TEXT, `assignedProviderUid` TEXT, `status` TEXT NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `district` TEXT NOT NULL, `raisedAt` INTEGER NOT NULL, `acknowledgedAt` INTEGER NOT NULL, `clearedAt` INTEGER NOT NULL, `clearedBy` TEXT, `firestoreMirrored` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`jobId`) REFERENCES `job_posts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "jobId",
+            "columnName": "jobId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "postedByUid",
+            "columnName": "postedByUid",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "assignedProviderId",
+            "columnName": "assignedProviderId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "assignedProviderUid",
+            "columnName": "assignedProviderUid",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "latitude",
+            "columnName": "latitude",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "longitude",
+            "columnName": "longitude",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "district",
+            "columnName": "district",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "raisedAt",
+            "columnName": "raisedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "acknowledgedAt",
+            "columnName": "acknowledgedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clearedAt",
+            "columnName": "clearedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clearedBy",
+            "columnName": "clearedBy",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "firestoreMirrored",
+            "columnName": "firestoreMirrored",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_sos_incidents_jobId",
+            "unique": true,
+            "columnNames": [
+              "jobId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_sos_incidents_jobId` ON `${TABLE_NAME}` (`jobId`)"
+          },
+          {
+            "name": "index_sos_incidents_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sos_incidents_status` ON `${TABLE_NAME}` (`status`)"
+          },
+          {
+            "name": "index_sos_incidents_postedByUid",
+            "unique": false,
+            "columnNames": [
+              "postedByUid"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sos_incidents_postedByUid` ON `${TABLE_NAME}` (`postedByUid`)"
+          },
+          {
+            "name": "index_sos_incidents_assignedProviderId",
+            "unique": false,
+            "columnNames": [
+              "assignedProviderId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sos_incidents_assignedProviderId` ON `${TABLE_NAME}` (`assignedProviderId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "job_posts",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "jobId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '240f668ac970827e0b22597d9c932af7')"
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.RatingAuthorizationSecurityTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:02:55.212Z" hostname="runnervm0hi8g" time="0.008">
+  <properties/>
+  <testcase name="synthetic and presentation-text actors are denied" classname="com.example.data.RatingAuthorizationSecurityTest" time="0.006"/>
+  <testcase name="owner cannot rate before escrow is released" classname="com.example.data.RatingAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="legacy job with null owner may be rated by nobody" classname="com.example.data.RatingAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="missing assignment denies every target" classname="com.example.data.RatingAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="owner rating assigned worker on released job is authorized" classname="com.example.data.RatingAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="stranger cannot rate another users released job" classname="com.example.data.RatingAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="owner cannot credit an unrelated worker" classname="com.example.data.RatingAuthorizationSecurityTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

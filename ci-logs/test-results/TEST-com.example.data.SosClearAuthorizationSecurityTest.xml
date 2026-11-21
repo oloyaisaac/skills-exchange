@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.SosClearAuthorizationSecurityTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:02:55.221Z" hostname="runnervm0hi8g" time="0.001">
+  <properties/>
+  <testcase name="synthetic and presentation-text actors are denied" classname="com.example.data.SosClearAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="stranger cannot stand down another users SOS" classname="com.example.data.SosClearAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="owner cannot clear an SOS that is not active" classname="com.example.data.SosClearAuthorizationSecurityTest" time="0.001"/>
+  <testcase name="owner standing down active SOS is authorized" classname="com.example.data.SosClearAuthorizationSecurityTest" time="0.0"/>
+  <testcase name="legacy job with null owner may be stood down by nobody" classname="com.example.data.SosClearAuthorizationSecurityTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

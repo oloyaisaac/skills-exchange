@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.util.AdminQueueDecisionsTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:06.903Z" hostname="runnervm0hi8g" time="0.004">
+  <properties/>
+  <testcase name="decision matching is case-insensitive but allow-listed" classname="com.example.util.AdminQueueDecisionsTest" time="0.0"/>
+  <testcase name="reject without feedback is blocked" classname="com.example.util.AdminQueueDecisionsTest" time="0.0"/>
+  <testcase name="locked console blocks every decision" classname="com.example.util.AdminQueueDecisionsTest" time="0.0"/>
+  <testcase name="changes-required without feedback is blocked" classname="com.example.util.AdminQueueDecisionsTest" time="0.0"/>
+  <testcase name="reject with sufficient feedback is allowed" classname="com.example.util.AdminQueueDecisionsTest" time="0.0"/>
+  <testcase name="blank applicant id fails closed" classname="com.example.util.AdminQueueDecisionsTest" time="0.0"/>
+  <testcase name="unknown decision vocabulary is rejected" classname="com.example.util.AdminQueueDecisionsTest" time="0.0"/>
+  <testcase name="approve with no feedback is allowed" classname="com.example.util.AdminQueueDecisionsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

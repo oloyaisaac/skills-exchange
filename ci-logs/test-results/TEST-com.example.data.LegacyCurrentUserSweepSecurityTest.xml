@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.LegacyCurrentUserSweepSecurityTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:02:53.471Z" hostname="runnervm0hi8g" time="0.192">
+  <properties/>
+  <testcase name="sos contact details come only from the authenticated row" classname="com.example.data.LegacyCurrentUserSweepSecurityTest" time="0.027"/>
+  <testcase name="the newest room row can never satisfy the worker gate for the authenticated account" classname="com.example.data.LegacyCurrentUserSweepSecurityTest" time="0.044"/>
+  <testcase name="security-sensitive identity resolves to the authenticated uid never the newer row" classname="com.example.data.LegacyCurrentUserSweepSecurityTest" time="0.049"/>
+  <testcase name="missing firebase identity fails closed instead of using the newest room row" classname="com.example.data.LegacyCurrentUserSweepSecurityTest" time="0.041"/>
+  <testcase name="firebase uid is trimmed and a placeholder is never an identity" classname="com.example.data.LegacyCurrentUserSweepSecurityTest" time="0.024"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

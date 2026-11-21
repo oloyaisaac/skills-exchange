@@ -1,0 +1,1 @@
+/home/runner/work/_temp/c2584bc6-4a87-4d77-b34b-83833df8c289.sh: line 2: sdkmanager: command not found

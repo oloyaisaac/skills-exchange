@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.remote.PushRegistrationTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:01.060Z" hostname="runnervm0hi8g" time="0.009">
+  <properties/>
+  <testcase name="short, blank and malformed tokens are refused" classname="com.example.data.remote.PushRegistrationTest" time="0.006"/>
+  <testcase name="a job id that is not job-shaped is dropped from the Intent" classname="com.example.data.remote.PushRegistrationTest" time="0.001"/>
+  <testcase name="the registration payload carries the token and the platform" classname="com.example.data.remote.PushRegistrationTest" time="0.0"/>
+  <testcase name="the payload matches the typed callable contract" classname="com.example.data.remote.PushRegistrationTest" time="0.001"/>
+  <testcase name="the messaging service never logs the raw token" classname="com.example.data.remote.PushRegistrationTest" time="0.0"/>
+  <testcase name="a logged token is redacted to its last six characters" classname="com.example.data.remote.PushRegistrationTest" time="0.0"/>
+  <testcase name="display text is clipped so a hostile payload cannot flood the shade" classname="com.example.data.remote.PushRegistrationTest" time="0.0"/>
+  <testcase name="a real token is accepted" classname="com.example.data.remote.PushRegistrationTest" time="0.0"/>
+  <testcase name="a notification type is upper snake case or GENERAL" classname="com.example.data.remote.PushRegistrationTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

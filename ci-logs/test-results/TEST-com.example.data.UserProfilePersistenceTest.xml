@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.UserProfilePersistenceTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:02:58.473Z" hostname="runnervm0hi8g" time="0.291">
+  <properties/>
+  <testcase name="selected worker role is preserved and gates stay closed" classname="com.example.data.UserProfilePersistenceTest" time="0.024"/>
+  <testcase name="uid-keyed lookup returns the authenticated uid even when another row is newer" classname="com.example.data.UserProfilePersistenceTest" time="0.027"/>
+  <testcase name="selected client role is preserved and is immediately usable" classname="com.example.data.UserProfilePersistenceTest" time="0.029"/>
+  <testcase name="legacy demo row never shadows the authenticated profile" classname="com.example.data.UserProfilePersistenceTest" time="0.025"/>
+  <testcase name="updating an existing profile keeps a single current user row" classname="com.example.data.UserProfilePersistenceTest" time="0.032"/>
+  <testcase name="client account cannot access worker dashboard or satisfy activation gate (SEC-009)" classname="com.example.data.UserProfilePersistenceTest" time="0.025"/>
+  <testcase name="uid-keyed lookup returns null when the authenticated uid has no row" classname="com.example.data.UserProfilePersistenceTest" time="0.04"/>
+  <testcase name="uid-keyed lookup never returns the demo placeholder" classname="com.example.data.UserProfilePersistenceTest" time="0.031"/>
+  <testcase name="onboarding insert makes the authenticated profile the current user" classname="com.example.data.UserProfilePersistenceTest" time="0.027"/>
+  <testcase name="current user is null when only the demo placeholder row exists" classname="com.example.data.UserProfilePersistenceTest" time="0.027"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.PendingActionDrainTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:02:53.861Z" hostname="runnervm0hi8g" time="0.21">
+  <properties/>
+  <testcase name="an unknown action type is retired at the cap and its payload survives" classname="com.example.data.PendingActionDrainTest" time="0.047"/>
+  <testcase name="one pass handles both kinds and reports what is left" classname="com.example.data.PendingActionDrainTest" time="0.044"/>
+  <testcase name="an empty queue drains to nothing" classname="com.example.data.PendingActionDrainTest" time="0.037"/>
+  <testcase name="a failing sync is retried to the cap and then dead-lettered" classname="com.example.data.PendingActionDrainTest" time="0.042"/>
+  <testcase name="a mirrored incident is synced once and leaves the queue" classname="com.example.data.PendingActionDrainTest" time="0.036"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

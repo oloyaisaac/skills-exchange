@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.remote.CallableRetryTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:00.646Z" hostname="runnervm0hi8g" time="0.129">
+  <properties/>
+  <testcase name="a transient failure succeeds on the next attempt" classname="com.example.data.remote.CallableRetryTest" time="0.12"/>
+  <testcase name="transient codes are retryable" classname="com.example.data.remote.CallableRetryTest" time="0.002"/>
+  <testcase name="decisions are not retried" classname="com.example.data.remote.CallableRetryTest" time="0.0"/>
+  <testcase name="only callable exceptions are retryable failures" classname="com.example.data.remote.CallableRetryTest" time="0.001"/>
+  <testcase name="a non-retryable failure fails immediately" classname="com.example.data.remote.CallableRetryTest" time="0.002"/>
+  <testcase name="retries stop after three attempts" classname="com.example.data.remote.CallableRetryTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

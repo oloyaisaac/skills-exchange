@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.util.QuoteProposalValidatorsTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:06.961Z" hostname="runnervm0hi8g" time="0.005">
+  <properties/>
+  <testcase name="notes are optional but length-capped" classname="com.example.util.QuoteProposalValidatorsTest" time="0.002"/>
+  <testcase name="every backend result maps to a readable message" classname="com.example.util.QuoteProposalValidatorsTest" time="0.0"/>
+  <testcase name="total formats as UGX with grouping" classname="com.example.util.QuoteProposalValidatorsTest" time="0.0"/>
+  <testcase name="safe total multiplies rate by hours" classname="com.example.util.QuoteProposalValidatorsTest" time="0.001"/>
+  <testcase name="invalid rate is rejected" classname="com.example.util.QuoteProposalValidatorsTest" time="0.0"/>
+  <testcase name="invalid hours are rejected" classname="com.example.util.QuoteProposalValidatorsTest" time="0.0"/>
+  <testcase name="valid hours are accepted" classname="com.example.util.QuoteProposalValidatorsTest" time="0.0"/>
+  <testcase name="form blocker requires rate and hours" classname="com.example.util.QuoteProposalValidatorsTest" time="0.0"/>
+  <testcase name="valid rate is accepted" classname="com.example.util.QuoteProposalValidatorsTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

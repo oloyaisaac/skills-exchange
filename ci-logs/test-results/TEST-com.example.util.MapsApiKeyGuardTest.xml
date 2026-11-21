@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.util.MapsApiKeyGuardTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:06.945Z" hostname="runnervm0hi8g" time="0.004">
+  <properties/>
+  <testcase name="surrounding whitespace does not invalidate a real key" classname="com.example.util.MapsApiKeyGuardTest" time="0.001"/>
+  <testcase name="un-substituted gradle placeholder is not usable" classname="com.example.util.MapsApiKeyGuardTest" time="0.001"/>
+  <testcase name="typical Google Maps key is usable" classname="com.example.util.MapsApiKeyGuardTest" time="0.0"/>
+  <testcase name="null key is not usable" classname="com.example.util.MapsApiKeyGuardTest" time="0.0"/>
+  <testcase name="placeholder residue embedded in a value is not usable" classname="com.example.util.MapsApiKeyGuardTest" time="0.0"/>
+  <testcase name="whitespace-only key is not usable" classname="com.example.util.MapsApiKeyGuardTest" time="0.0"/>
+  <testcase name="empty key is not usable" classname="com.example.util.MapsApiKeyGuardTest" time="0.0"/>
+  <testcase name="other placeholder tokens are not usable" classname="com.example.util.MapsApiKeyGuardTest" time="0.0"/>
+  <testcase name="DEFAULT_MAPS_API_KEY placeholder is not usable" classname="com.example.util.MapsApiKeyGuardTest" time="0.001"/>
+  <testcase name="placeholder detection ignores case" classname="com.example.util.MapsApiKeyGuardTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

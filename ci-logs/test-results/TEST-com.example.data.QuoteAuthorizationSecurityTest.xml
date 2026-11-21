@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.QuoteAuthorizationSecurityTest" tests="24" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:02:54.340Z" hostname="runnervm0hi8g" time="0.869">
+  <properties/>
+  <testcase name="test 24 pure quote response policy correctly authorizes owner only" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.056"/>
+  <testcase name="test 22 quote cannot be responded to on cancelled or completed jobs" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.054"/>
+  <testcase name="test 11 duplicate pending quote is rejected" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.043"/>
+  <testcase name="test 16 stranger cannot accept or reject quotes" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.04"/>
+  <testcase name="test 1 unauthenticated submitQuote fails closed" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.038"/>
+  <testcase name="test 6 NaN and infinite hours are rejected" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.035"/>
+  <testcase name="test 13 legitimate quote succeeds with authoritative UID, chat message, and notification" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.037"/>
+  <testcase name="test 18 legitimate job owner can reject quote" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.036"/>
+  <testcase name="test 14 QUOTING status also accepts quotes" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.031"/>
+  <testcase name="test 19 quote cannot be responded to on mismatched jobId" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.03"/>
+  <testcase name="test 20 non-existent quote returns QuoteNotFound" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.028"/>
+  <testcase name="test 12 worker can submit new quote after previous quote was rejected" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.035"/>
+  <testcase name="test 17 legitimate job owner can accept quote" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.034"/>
+  <testcase name="test 2 caller cannot spoof worker UID with synthetic or presentation strings" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.028"/>
+  <testcase name="test 8 non-quotable and terminal jobs are rejected" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.042"/>
+  <testcase name="test 21 already terminal quote cannot be modified again" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.031"/>
+  <testcase name="test 7 non-existent job is rejected" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.029"/>
+  <testcase name="test 4 NaN and infinite rates are rejected" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.027"/>
+  <testcase name="test 5 zero and negative hours are rejected" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.027"/>
+  <testcase name="test 3 zero and negative rates are rejected" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.042"/>
+  <testcase name="test 10 legacy job with null owner cannot be quoted" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.038"/>
+  <testcase name="test 23 pure quote submission policy correctly authorizes legitimate inputs" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.026"/>
+  <testcase name="test 9 worker cannot quote own job" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.031"/>
+  <testcase name="test 15 unauthenticated respondToQuote fails closed" classname="com.example.data.QuoteAuthorizationSecurityTest" time="0.031"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

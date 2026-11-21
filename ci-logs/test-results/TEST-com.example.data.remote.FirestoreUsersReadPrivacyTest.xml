@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.remote.FirestoreUsersReadPrivacyTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:00.788Z" hostname="runnervm0hi8g" time="0.002">
+  <properties/>
+  <testcase name="admin read capability is preserved" classname="com.example.data.remote.FirestoreUsersReadPrivacyTest" time="0.001"/>
+  <testcase name="user documents are not readable by every authenticated user" classname="com.example.data.remote.FirestoreUsersReadPrivacyTest" time="0.0"/>
+  <testcase name="owner-only writes and privileged field protection are unchanged" classname="com.example.data.remote.FirestoreUsersReadPrivacyTest" time="0.001"/>
+  <testcase name="user documents are readable by their owner" classname="com.example.data.remote.FirestoreUsersReadPrivacyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

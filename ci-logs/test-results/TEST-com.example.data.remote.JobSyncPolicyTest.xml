@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.remote.JobSyncPolicyTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:00.796Z" hostname="runnervm0hi8g" time="0.003">
+  <properties/>
+  <testcase name="terminal escrow outcomes are withheld from the client payload" classname="com.example.data.remote.JobSyncPolicyTest" time="0.001"/>
+  <testcase name="a non-terminal escrow state is still mirrored" classname="com.example.data.remote.JobSyncPolicyTest" time="0.0"/>
+  <testcase name="the rules and the client agree on the server-only escrow states" classname="com.example.data.remote.JobSyncPolicyTest" time="0.001"/>
+  <testcase name="the job mirror merges and never carries the doorstep PIN" classname="com.example.data.remote.JobSyncPolicyTest" time="0.001"/>
+  <testcase name="priced amounts are withheld once the job is funded" classname="com.example.data.remote.JobSyncPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

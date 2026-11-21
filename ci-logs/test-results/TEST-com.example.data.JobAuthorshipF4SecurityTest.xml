@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.JobAuthorshipF4SecurityTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:02:52.576Z" hostname="runnervm0hi8g" time="0.229">
+  <properties/>
+  <testcase name="test D ownership never falls back to the newer room row" classname="com.example.data.JobAuthorshipF4SecurityTest" time="0.038"/>
+  <testcase name="test A a new job is stamped with the authenticated firebase uid" classname="com.example.data.JobAuthorshipF4SecurityTest" time="0.021"/>
+  <testcase name="test B display text and synthetic ids are never accepted as ownership" classname="com.example.data.JobAuthorshipF4SecurityTest" time="0.02"/>
+  <testcase name="test C job creation fails closed and persists nothing without an authenticated uid" classname="com.example.data.JobAuthorshipF4SecurityTest" time="0.041"/>
+  <testcase name="test B2 a bare district name is shape-valid but never becomes ownership" classname="com.example.data.JobAuthorshipF4SecurityTest" time="0.022"/>
+  <testcase name="test F a legacy job is never guessed into the current user's ownership" classname="com.example.data.JobAuthorshipF4SecurityTest" time="0.044"/>
+  <testcase name="test E ownership queries key on postedByUid and never on the display string" classname="com.example.data.JobAuthorshipF4SecurityTest" time="0.04"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

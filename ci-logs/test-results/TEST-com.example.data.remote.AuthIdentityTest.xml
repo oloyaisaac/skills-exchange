@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.remote.AuthIdentityTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:00.526Z" hostname="runnervm0hi8g" time="0.081">
+  <properties/>
+  <testcase name="the deletion callable is registered with a typed contract" classname="com.example.data.remote.AuthIdentityTest" time="0.005"/>
+  <testcase name="no Google OAuth client id is hardcoded in source" classname="com.example.data.remote.AuthIdentityTest" time="0.069"/>
+  <testcase name="a link collision is never reported as success" classname="com.example.data.remote.AuthIdentityTest" time="0.003"/>
+  <testcase name="a Google identity is linked to the signed-in account, never silently swapped" classname="com.example.data.remote.AuthIdentityTest" time="0.001"/>
+  <testcase name="the push token is deleted before the session ends on logout" classname="com.example.data.remote.AuthIdentityTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

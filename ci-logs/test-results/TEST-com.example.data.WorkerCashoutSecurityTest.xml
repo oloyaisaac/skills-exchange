@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.WorkerCashoutSecurityTest" tests="27" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:02:58.777Z" hostname="runnervm0hi8g" time="0.749">
+  <properties/>
+  <testcase name="availableBalance_mathIsAuditable" classname="com.example.data.WorkerCashoutSecurityTest" time="0.027"/>
+  <testcase name="duplicateSameKey_reusedNotDuplicated" classname="com.example.data.WorkerCashoutSecurityTest" time="0.034"/>
+  <testcase name="invalidAmounts_rejected" classname="com.example.data.WorkerCashoutSecurityTest" time="0.029"/>
+  <testcase name="unauthenticatedCancel_failsClosed" classname="com.example.data.WorkerCashoutSecurityTest" time="0.029"/>
+  <testcase name="cancelReleasesFunds_andNextRequestCanUseThem" classname="com.example.data.WorkerCashoutSecurityTest" time="0.036"/>
+  <testcase name="syntheticAndBlankIdentity_rejected" classname="com.example.data.WorkerCashoutSecurityTest" time="0.024"/>
+  <testcase name="unauthenticatedRequest_failsClosed" classname="com.example.data.WorkerCashoutSecurityTest" time="0.035"/>
+  <testcase name="completedWithdrawal_debitsExactlyOnce" classname="com.example.data.WorkerCashoutSecurityTest" time="0.025"/>
+  <testcase name="workerACannotCancelWorkerBWithdrawal" classname="com.example.data.WorkerCashoutSecurityTest" time="0.027"/>
+  <testcase name="negativeAvailableBalance_clampedToZero" classname="com.example.data.WorkerCashoutSecurityTest" time="0.023"/>
+  <testcase name="secondDistinctActiveWithdrawal_blocked" classname="com.example.data.WorkerCashoutSecurityTest" time="0.025"/>
+  <testcase name="mismatchedFromState_rejected" classname="com.example.data.WorkerCashoutSecurityTest" time="0.023"/>
+  <testcase name="validAmount_accepted" classname="com.example.data.WorkerCashoutSecurityTest" time="0.027"/>
+  <testcase name="withdrawalCannotMakeAvailableNegative" classname="com.example.data.WorkerCashoutSecurityTest" time="0.025"/>
+  <testcase name="failedWithdrawal_releasesReservation" classname="com.example.data.WorkerCashoutSecurityTest" time="0.032"/>
+  <testcase name="callerCannotSpoofAnotherWorkerUid" classname="com.example.data.WorkerCashoutSecurityTest" time="0.024"/>
+  <testcase name="amountExceedingAvailable_rejected" classname="com.example.data.WorkerCashoutSecurityTest" time="0.024"/>
+  <testcase name="foreignActorCannotTransitionAnotherWorkersWithdrawal" classname="com.example.data.WorkerCashoutSecurityTest" time="0.024"/>
+  <testcase name="withdrawalCannotCreateMoney" classname="com.example.data.WorkerCashoutSecurityTest" time="0.031"/>
+  <testcase name="blankIdempotencyKey_rejected" classname="com.example.data.WorkerCashoutSecurityTest" time="0.028"/>
+  <testcase name="completionRequiresServerAuthority" classname="com.example.data.WorkerCashoutSecurityTest" time="0.026"/>
+  <testcase name="terminalWithdrawalCannotBeModified" classname="com.example.data.WorkerCashoutSecurityTest" time="0.027"/>
+  <testcase name="cancelReleasesReservation_restoringFunds" classname="com.example.data.WorkerCashoutSecurityTest" time="0.039"/>
+  <testcase name="blankOrMalformedDestination_rejected" classname="com.example.data.WorkerCashoutSecurityTest" time="0.026"/>
+  <testcase name="workerCannotMarkOwnWithdrawalCompleted" classname="com.example.data.WorkerCashoutSecurityTest" time="0.026"/>
+  <testcase name="validPendingToCancelled_requiresOwner" classname="com.example.data.WorkerCashoutSecurityTest" time="0.022"/>
+  <testcase name="workerCannotAdvanceOrCancelProcessing" classname="com.example.data.WorkerCashoutSecurityTest" time="0.022"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

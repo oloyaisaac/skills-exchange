@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.ui.viewmodel.RestoreSessionIdentitySecurityTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:06.884Z" hostname="runnervm0hi8g" time="0.002">
+  <properties/>
+  <testcase name="C cached uid without firebase authentication is never resurrected" classname="com.example.ui.viewmodel.RestoreSessionIdentitySecurityTest" time="0.001"/>
+  <testcase name="B stale cached uid is discarded and the firebase uid becomes the identity" classname="com.example.ui.viewmodel.RestoreSessionIdentitySecurityTest" time="0.0"/>
+  <testcase name="E demo placeholder is never the authenticated users profile" classname="com.example.ui.viewmodel.RestoreSessionIdentitySecurityTest" time="0.001"/>
+  <testcase name="A matching cached uid restores the firebase identity and its own room profile" classname="com.example.ui.viewmodel.RestoreSessionIdentitySecurityTest" time="0.0"/>
+  <testcase name="D missing profile for the firebase uid never falls back to another room row" classname="com.example.ui.viewmodel.RestoreSessionIdentitySecurityTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

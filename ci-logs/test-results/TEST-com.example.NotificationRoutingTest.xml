@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.NotificationRoutingTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:02:50.382Z" hostname="runnervm0hi8g" time="0.002">
+  <properties/>
+  <testcase name="sos event routes to trust and safety sheet" classname="com.example.NotificationRoutingTest" time="0.001"/>
+  <testcase name="training requirement has no direct navigation target" classname="com.example.NotificationRoutingTest" time="0.0"/>
+  <testcase name="payment status routes to escrow wallet sheet" classname="com.example.NotificationRoutingTest" time="0.001"/>
+  <testcase name="unknown or empty type falls back to no target" classname="com.example.NotificationRoutingTest" time="0.0"/>
+  <testcase name="dispute update routes to trust and safety sheet" classname="com.example.NotificationRoutingTest" time="0.0"/>
+  <testcase name="verification decision routes to identity sheet" classname="com.example.NotificationRoutingTest" time="0.0"/>
+  <testcase name="new quote routes to quote comparison sheet" classname="com.example.NotificationRoutingTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

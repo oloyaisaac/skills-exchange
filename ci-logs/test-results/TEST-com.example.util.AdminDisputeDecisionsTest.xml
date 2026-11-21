@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.util.AdminDisputeDecisionsTest" tests="19" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:03:06.894Z" hostname="runnervm0hi8g" time="0.008">
+  <properties/>
+  <testcase name="terminal resolved dispute cannot be re-resolved" classname="com.example.util.AdminDisputeDecisionsTest" time="0.001"/>
+  <testcase name="resolved with no refund type is allowed" classname="com.example.util.AdminDisputeDecisionsTest" time="0.0"/>
+  <testcase name="partial refund with valid amount is allowed" classname="com.example.util.AdminDisputeDecisionsTest" time="0.0"/>
+  <testcase name="partial refund with NaN amount is blocked" classname="com.example.util.AdminDisputeDecisionsTest" time="0.0"/>
+  <testcase name="no action with refund amount is blocked" classname="com.example.util.AdminDisputeDecisionsTest" time="0.0"/>
+  <testcase name="partial refund with zero amount is blocked" classname="com.example.util.AdminDisputeDecisionsTest" time="0.0"/>
+  <testcase name="blank dispute id fails closed" classname="com.example.util.AdminDisputeDecisionsTest" time="0.0"/>
+  <testcase name="invalid resolution is rejected" classname="com.example.util.AdminDisputeDecisionsTest" time="0.0"/>
+  <testcase name="full refund with valid amount is allowed" classname="com.example.util.AdminDisputeDecisionsTest" time="0.0"/>
+  <testcase name="rejected with no action is allowed" classname="com.example.util.AdminDisputeDecisionsTest" time="0.0"/>
+  <testcase name="partial refund without amount is blocked" classname="com.example.util.AdminDisputeDecisionsTest" time="0.0"/>
+  <testcase name="escalated is allowed" classname="com.example.util.AdminDisputeDecisionsTest" time="0.0"/>
+  <testcase name="invalid resolution type is rejected" classname="com.example.util.AdminDisputeDecisionsTest" time="0.0"/>
+  <testcase name="terminal rejected dispute cannot be re-resolved" classname="com.example.util.AdminDisputeDecisionsTest" time="0.0"/>
+  <testcase name="full refund without amount is blocked" classname="com.example.util.AdminDisputeDecisionsTest" time="0.0"/>
+  <testcase name="resolution matching is case-insensitive but allow-listed" classname="com.example.util.AdminDisputeDecisionsTest" time="0.0"/>
+  <testcase name="partial refund with infinite amount is blocked" classname="com.example.util.AdminDisputeDecisionsTest" time="0.0"/>
+  <testcase name="partial refund with negative amount is blocked" classname="com.example.util.AdminDisputeDecisionsTest" time="0.0"/>
+  <testcase name="worker suspended with refund amount is blocked" classname="com.example.util.AdminDisputeDecisionsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

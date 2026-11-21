@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.data.db.DatabaseMigrationChainTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-21T14:02:59.783Z" hostname="runnervm0hi8g" time="0.539">
+  <properties/>
+  <testcase name="migration 27 to 28 converts wallet money to exact minor units" classname="com.example.data.db.DatabaseMigrationChainTest" time="0.135"/>
+  <testcase name="migration 28 to 29 clears the shared default door PIN and leaves real ones alone" classname="com.example.data.db.DatabaseMigrationChainTest" time="0.09"/>
+  <testcase name="a v11 database migrates to the current version and keeps its data" classname="com.example.data.db.DatabaseMigrationChainTest" time="0.105"/>
+  <testcase name="the migrated database accepts new rows and viewer-scoped queries" classname="com.example.data.db.DatabaseMigrationChainTest" time="0.08"/>
+  <testcase name="migration 29 to 30 preserves parents and all dependent rows" classname="com.example.data.db.DatabaseMigrationChainTest" time="0.102"/>
+  <testcase name="every consecutive version from 11 to 30 has exactly one migration" classname="com.example.data.db.DatabaseMigrationChainTest" time="0.021"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
