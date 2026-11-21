@@ -694,7 +694,10 @@ Sixteen other money fields and two `walletBalanceDisplay` fields remain REAL in 
 them. Their meanings and writers differ: job creation uses `JobMoney.split`, quote submission directly
 multiplies rate by hours, and demo jobs have literal values. The two legacy balance fields default to
 185.0; a profile setter exists. They are not established to mirror the ledger and must not authorize
-cashouts.
+cashouts. This exclusion is established for the local cashout path, not for all money workflows:
+`FirebaseService` sends `job.grandTotal` to Firestore, and `functions/src/momoCollection.ts`
+validates and uses Firestore job pricing. These REAL values cannot honestly be called merely display
+values or said never to participate in payment decisions.
 
 **Time.** Database event timestamps such as `createdAt`, `updatedAt`, and `createdTimestamp` are
 `Long` epoch milliseconds when populated by `System.currentTimeMillis()`. This is not a universal
@@ -712,8 +715,10 @@ and review of SQL and remote flows remain required.
 values and descendants. The migration snapshots and restores dependent rows inside the Room migration
 transaction because dropping either parent can cascade. It needs temporary storage proportional to those
 rows. Compiler-generated schema and the migration chain tests are required before release. A subsequent
-versioned conversion of the remaining REAL amounts requires explicit rounding and provider/Firestore
-compatibility; no version has been reserved and that conversion is not implemented.
+conversion of the remaining REAL amounts is proposed as `MIGRATION_30_31` (not implemented or
+reserved). It requires explicit rounding, preservation of legacy values, and provider/Firestore
+compatibility. Until that work is implemented and verified, the single-money-representation criterion
+remains unmet.
 
 ### D-2026-11-20-13 - One story vocabulary, and DONE is only reachable through evidence
 

@@ -11,7 +11,8 @@ package com.example.util
  * materialAdvanceAmount, calloutFee and recurringNegotiatedRate; job_quotes proposedRate and
  * totalQuote; disputes resolutionAmount; service_providers hourlyRate and walletBalanceDisplay; and
  * user_profiles walletBalanceDisplay. They are legacy fields, not necessarily editable quotes: for
- * example totalQuote is calculated by direct multiplication, and seeded jobs use constants.
+ * example totalQuote is calculated by direct multiplication, seeded jobs use constants, and job
+ * pricing is sent to Firestore where collection code validates and uses it for payment decisions.
  * The two walletBalanceDisplay columns (named walletBalance before migration 29→30) default to 185.0 and a DAO setter exists; they are not known to
  * be synchronized with the ledger. They must not be used for cashout authorization.
  *

@@ -111,3 +111,19 @@ on showed that dropping a parent table deletes its ledger child row. A naive Roo
 therefore risk data loss, and using `ALTER TABLE ... RENAME COLUMN` without handling older supported
 Android SQLite versions is not justified. A safe migration with representative child-data tests and
 Room-generated schema is still required; do not interpret this as completion of VC-05.
+
+### R04 implementation update — migration 29→30
+
+The two legacy balance columns are renamed to `walletBalanceDisplay` by `MIGRATION_29_30`; Room's
+compiler-generated v30 JSON is committed. The migration snapshots dependent tables and restores them
+in foreign-key order, inside Room's migration transaction. A local SQLite 3.40.1 exercise preserved
+all values in 17 parent/descendant fixture tables with foreign keys enabled. The Android CI run
+44912407962 on `0caf544` passed compile, unit tests (including the complete v11→30 chain,
+parent/descendant row preservation and forced-restore-failure rollback), lint, coverage, and release
+build. The migration requires temporary storage proportional to descendant rows. These are implementation
+test results, not independent verification.
+
+VC-05 is **not yet closed**: legacy REAL job values are sent to Firestore and used in collection
+pricing decisions; they cannot honestly be claimed never to participate in payment decisions.
+`MIGRATION_30_31` is a proposed, unimplemented conversion. VC-06 and VC-07 changes also await independent
+review. R04 remains not approved; R05 remains closed.
