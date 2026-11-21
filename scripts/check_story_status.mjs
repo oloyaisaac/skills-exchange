@@ -13,7 +13,10 @@
  *   - DONE requires a `verification_note` that starts with `evidence:` and is long enough to be a record
  *     rather than a tick;
  *   - UNVERIFIED requires a `verification_note` saying why it is not claimed;
- *   - story ids are unique.
+ *   - story ids are unique;
+ *   - TASKS.md's status column agrees with prd.json for every REM row. It did not: 41 of 73 rows
+ *     disagreed when this check was written, because the table was maintained by hand in fourteen
+ *     rounds while the story file moved underneath it.
  *
  * `--selftest` proves every refusal with fixtures.
  */
@@ -49,6 +52,26 @@ export function auditStories(stories) {
 
     if (story.status === "UNVERIFIED" && note.length === 0) {
       problems.push(`${id}: UNVERIFIED without a verification_note explaining what is not claimed`);
+    }
+  }
+
+  return problems;
+}
+
+/** The task table carries the same statuses; a second hand-maintained copy drifts silently. */
+export function auditTaskTable(text, statusById) {
+  const problems = [];
+  const rows = text.split("\n").filter((line) => /^\|\s*REM-\d{3}\s*\|/.test(line));
+  if (rows.length === 0) problems.push("TASKS.md has no REM rows to cross-check");
+
+  for (const row of rows) {
+    const cells = row.split("|").map((cell) => cell.trim());
+    const id = cells[1];
+    const status = cells[cells.length - 2];
+    if (!statusById.has(id)) {
+      problems.push(`${id}: a TASKS.md row with no story in prd.json`);
+    } else if (statusById.get(id) !== status) {
+      problems.push(`${id}: TASKS.md says ${status}, prd.json says ${statusById.get(id)}`);
     }
   }
 
@@ -93,10 +116,29 @@ function selftest() {
     throw new Error("selftest: a duplicate id was not reported");
   }
 
+  const table = [
+    "| REM-001 | HIGH | R01 | one | - | DONE |",
+    "| REM-002 | HIGH | R01 | two | - | NOT_STARTED |",
+  ].join("\n");
+  const statusById = new Map([["REM-001", "DONE"], ["REM-002", "NOT_STARTED"]]);
+  if (auditTaskTable(table, statusById).length !== 0) {
+    throw new Error(`selftest: an agreeing task table was refused: ${auditTaskTable(table, statusById)}`);
+  }
+  const drifted = auditTaskTable(table.replace("| DONE |", "| COMPLETED |"), statusById);
+  if (!drifted.some((problem) => problem.includes("TASKS.md says COMPLETED"))) {
+    throw new Error(`selftest: task-table drift was not reported: ${JSON.stringify(drifted)}`);
+  }
+  const phantom = auditTaskTable("| REM-999 | LOW | R99 | x | - | DONE |", statusById);
+  if (!phantom.some((problem) => problem.includes("no story in prd.json"))) {
+    throw new Error("selftest: a task row with no story was not reported");
+  }
+
   const counts = histogram(ok);
   if (counts.DONE !== 1 || counts.UNVERIFIED !== 1) throw new Error("selftest: the histogram is wrong");
 
-  console.log("Story-status selftest passed: vocabulary, evidence, UNVERIFIED note and duplicate-id refusals all fire.");
+  console.log(
+    "Story-status selftest passed: vocabulary, evidence, UNVERIFIED-note, duplicate-id and task-table drift refusals all fire."
+  );
 }
 
 if (process.argv.includes("--selftest")) {
@@ -118,10 +160,16 @@ if (process.argv.includes("--selftest")) {
     process.exit(1);
   }
 
+  if (fs.existsSync("TASKS.md")) {
+    const statusById = new Map(stories.map((story) => [story.id, story.status]));
+    problems.push(...auditTaskTable(fs.readFileSync("TASKS.md", "utf8"), statusById));
+  }
+
   const counts = histogram(stories);
   const summary = STATUSES.map((status) => `${status} ${counts[status] || 0}`).join(", ");
   console.log(
     `Story-status check passed: ${stories.length} stories in one vocabulary (${summary}); ` +
-      `every DONE carries evidence, every UNVERIFIED carries a reason.`
+      `every DONE carries evidence, every UNVERIFIED carries a reason, ` +
+      `and TASKS.md agrees row for row.`
   );
 }

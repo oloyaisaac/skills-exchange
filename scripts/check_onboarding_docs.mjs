@@ -12,7 +12,9 @@
  *   1. no Windows absolute path (`C:\`, `D:/`) — it does not exist on a runner or in the sandbox;
  *   2. no claim that setup is unnecessary, because nothing here supplies a JDK;
  *   3. `AGENTS.md` must say where compilation actually happens (CI) and that a missing JDK is a
- *      reportable blocker, so the next agent does not re-invent the false blocker.
+ *      reportable blocker, so the next agent does not re-invent the false blocker;
+ *   4. the guard count quoted in `docs/qa/TEST_STRATEGY.md` must match `scripts/` — it read "16 guards
+ *      (7 with --selftest)" while 19/9 existed, because every round added a guard and nobody counted.
  *
  * `--selftest` proves every refusal with fixtures.
  */
@@ -50,6 +52,20 @@ export function auditDocs(files) {
   return problems;
 }
 
+/** A quoted count of the guards is a claim like any other; derive it from the directory instead. */
+export function auditGuardCount(markdown, actual) {
+  const match = /(\d+)\s+guards\s+\((\d+)\s+with\s+`?--selftest`?\)/.exec(markdown);
+  if (!match) return ["TEST_STRATEGY.md no longer states how many guards exist"];
+  const problems = [];
+  if (Number(match[1]) !== actual.total) {
+    problems.push(`TEST_STRATEGY.md says ${match[1]} guards, scripts/ has ${actual.total}`);
+  }
+  if (Number(match[2]) !== actual.withSelftest) {
+    problems.push(`TEST_STRATEGY.md says ${match[2]} self-tests, scripts/ has ${actual.withSelftest}`);
+  }
+  return problems;
+}
+
 function selftest() {
   const good = {
     "AGENTS.md":
@@ -83,7 +99,19 @@ function selftest() {
     throw new Error("selftest: a missing 'GitHub Actions' statement was not reported");
   }
 
-  console.log("Onboarding-doc selftest passed: Windows paths, the setup claim and the missing CI/JDK statements all refused.");
+  const counts = { total: 19, withSelftest: 9 };
+  const line = "| x | 19 guards (9 with `--selftest`) |";
+  if (auditGuardCount(line, counts).length !== 0) {
+    throw new Error(`selftest: a correct guard count was refused: ${auditGuardCount(line, counts)}`);
+  }
+  if (!auditGuardCount("16 guards (7 with `--selftest`)", counts).some((p) => p.includes("says 16 guards"))) {
+    throw new Error("selftest: a drifted guard count was not reported");
+  }
+  if (!auditGuardCount("| x | no counts |", counts).some((p) => p.includes("no longer states"))) {
+    throw new Error("selftest: a missing guard count was not reported");
+  }
+
+  console.log("Onboarding-doc selftest passed: Windows paths, the setup claim, the missing CI/JDK statements and the guard count all checked.");
 }
 
 if (process.argv.includes("--selftest")) {
@@ -100,6 +128,16 @@ if (process.argv.includes("--selftest")) {
   }
   problems.push(...auditDocs(files));
 
+  const strategy = "docs/qa/TEST_STRATEGY.md";
+  if (fs.existsSync(strategy)) {
+    const scripts = fs.readdirSync("scripts").filter((file) => file.endsWith(".mjs"));
+    const actual = {
+      total: scripts.length,
+      withSelftest: scripts.filter((file) => fs.readFileSync(`scripts/${file}`, "utf8").includes("--selftest")).length,
+    };
+    problems.push(...auditGuardCount(fs.readFileSync(strategy, "utf8"), actual));
+  }
+
   if (problems.length > 0) {
     console.error(`Onboarding-doc check failed (${problems.length} problem(s)):`);
     for (const problem of problems) console.error(`  - ${problem}`);
@@ -107,6 +145,6 @@ if (process.argv.includes("--selftest")) {
   }
   console.log(
     `Onboarding-doc check passed: ${DOCS.length} documents describe the real environment — no Windows paths, ` +
-      `no setup claim, and CI named as the compiler.`
+      `no setup claim, CI named as the compiler, and the quoted guard count true.`
   );
 }

@@ -12,7 +12,10 @@
  *   - a row's count disagrees with `prd.json`,
  *   - a row names a requirement id that does not exist in the requirements table,
  *   - a row claims to trace an area but names no requirement and gives no reason (the reason column
- *     must be non-empty either way).
+ *     must be non-empty either way);
+ *   - `requirement_file.md`'s group table names a REM id that does not exist, or still says group
+ *     NOT_STARTED while a story in it is DONE. That table was a hand-written roll-up as well: six of
+ *     fifteen rows were wrong by R15, four of them describing shipped work as untouched.
  *
  * `--selftest` proves each refusal with fixtures.
  */
@@ -67,6 +70,29 @@ export function coverageRows(markdown) {
     });
   }
   return rows;
+}
+
+/** `requirement_file.md` §17 rolls the REM stories up by review group. */
+export function auditGroupTable(text, statusById) {
+  const problems = [];
+  let rows = 0;
+  for (const line of text.split("\n")) {
+    if (!/^\|\s*R\d{2}\s*\|/.test(line)) continue;
+    const cells = line.split("|").map((cell) => cell.trim()).filter((cell, index, all) => index > 0 && index < all.length - 1);
+    const [group, idsCell, ...rest] = cells;
+    const statusCell = rest[rest.length - 1] || "";
+    if (!/REM-\d{3}/.test(idsCell || "")) continue;
+    rows += 1;
+    const ids = [...idsCell.matchAll(/REM-\d{3}/g)].map((m) => m[0]);
+    const missing = ids.filter((id) => !statusById.has(id));
+    if (missing.length > 0) problems.push(`${group}: names ${missing.join(", ")}, which prd.json does not have`);
+    const done = ids.filter((id) => statusById.get(id) === "DONE");
+    if (/^NOT_STARTED/.test(statusCell.trim()) && done.length > 0) {
+      problems.push(`${group}: says NOT_STARTED but ${done.join(", ")} ${done.length === 1 ? "is" : "are"} DONE`);
+    }
+  }
+  if (rows === 0) problems.push("requirement_file.md §17 has no group rows to cross-check");
+  return problems;
 }
 
 export function audit(prd, markdown) {
@@ -146,7 +172,24 @@ function selftest() {
     throw new Error("selftest: a malformed story id was not reported");
   }
 
-  console.log("Story-coverage selftest passed: missing area, drifted count, phantom requirement, empty reason and malformed id all refused.");
+  const statusById = new Map([["REM-001", "DONE"], ["REM-002", "NOT_STARTED"]]);
+  const groups = [
+    "| R01 | REM-001, REM-002 | statement | PARTIAL (one done) |",
+    "| R02 | REM-002 | statement | NOT_STARTED |",
+  ].join("\n");
+  if (auditGroupTable(groups, statusById).length !== 0) {
+    throw new Error(`selftest: a truthful group table was refused: ${auditGroupTable(groups, statusById)}`);
+  }
+  const stale = auditGroupTable("| R02 | REM-001 | statement | NOT_STARTED |", statusById);
+  if (!stale.some((p) => p.includes("says NOT_STARTED but REM-001"))) {
+    throw new Error(`selftest: a stale NOT_STARTED group was not reported: ${JSON.stringify(stale)}`);
+  }
+  const ghost = auditGroupTable("| R09 | REM-999 | statement | NOT_STARTED |", statusById);
+  if (!ghost.some((p) => p.includes("REM-999"))) {
+    throw new Error("selftest: a group naming a missing story was not reported");
+  }
+
+  console.log("Story-coverage selftest passed: missing area, drifted count, phantom requirement, empty reason and malformed id, stale group and ghost story all refused.");
 }
 
 if (process.argv.includes("--selftest")) {
@@ -161,6 +204,11 @@ if (process.argv.includes("--selftest")) {
   const prd = JSON.parse(fs.readFileSync(PRD, "utf8"));
   const markdown = fs.readFileSync(DOC, "utf8");
   const { problems, counts } = audit(prd, markdown);
+
+  if (fs.existsSync("requirement_file.md")) {
+    const statusById = new Map((prd.stories || []).map((story) => [story.id, story.status]));
+    problems.push(...auditGroupTable(fs.readFileSync("requirement_file.md", "utf8"), statusById));
+  }
 
   if (problems.length > 0) {
     console.error(`Story-coverage check failed (${problems.length} problem(s)):`);

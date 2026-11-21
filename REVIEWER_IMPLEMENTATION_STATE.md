@@ -1,17 +1,17 @@
 # REVIEWER IMPLEMENTATION STATE — Prompt 4 (strict one-reviewer-at-a-time)
 
 **Programme:** ASMT-2026-11-19 · **Cycle:** Prompt-4 remediation
-**Updated:** 2026-11-20 · **Branch:** `arena/29125468-skills-exchange`
+**Updated:** 2026-11-20 · **Branch:** `arena/9287401d-skills-exchange`
 
 ## Position
 
 | Field | Value |
 |---|---|
 | Total original reviewers | **15** |
-| Current reviewer | **R14 — COMPLETE** (evidence below) |
-| Reviewers fully implemented and verified | **R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R11, R12, R13, R14 (14 of 15)** |
-| Reviewers awaiting implementation | R15 |
-| Next reviewer number | **15** |
+| Current reviewer | **R15 — COMPLETE** (evidence below). Programme closed at 15 of 15 |
+| Reviewers fully implemented and verified | **R01–R15 (15 of 15)** |
+| Reviewers awaiting implementation | none — the fifteen assigned rounds are implemented |
+| Next reviewer number | **none.** The repository leaves public review after R15 |
 
 ## R01 — COMPLETE (gate passed)
 
@@ -633,3 +633,32 @@ found something the review did not:
 ## Blockers
 
 None. R01–R14 complete; R15 is the last round.
+
+## R15 — COMPLETE (gate passed)
+
+Two claims had gone stale by implementation time; four were live, and one was worse than reported —
+`prd.json` carried **three** status spellings, not the two the review counted.
+
+| Finding | Required correction | Status | Evidence |
+|---|---|---|---|
+| R15-P2-01 | Status must reflect evidence | **IMPLEMENTED** | 112 `completed` stories rested on `verified_by: code_inspection`, the same claim that failed for escrow (R02), deletion (R06), the PIN (R07), the queue (R13) and reports (R10). All 112 are `UNVERIFIED` with the reason written in; 29 stories are `DONE`, each with an `evidence:` note |
+| R15-P2-02 | Traceability beyond the few requirement ids | **IMPLEMENTED** | `docs/traceability.md`: 49 requirement rows plus a coverage table over all **27 story areas** (185 stories), each with a count and either requirement rows or a stated reason; three new rows where code and tests existed untraced. Guard: `check_story_coverage.mjs` |
+| R15-P2-03 | Onboarding must describe the real environment | **IMPLEMENTED** | `AGENTS.md` no longer claims "no environment setup is required", no longer pins `D:/` JDK paths (removed in R01), and no longer tells agents to suppress a "no JDK" blocker; `README_AI.md` and `README.md` follow. Guard: `check_onboarding_docs.mjs` |
+| R15-P2-04 | Stale state and missing decision records | **STALE FOR THE REST, FIXED FOR THE DECISIONS** | `AGENT_STATE.md` had every Prompt-4 round and the README no longer claims 111 tests; D-2026-11-20-13 and D-2026-11-20-14 added, D-2026-09-27-1 marked superseded |
+| R15-P2-05 | One status vocabulary with a definition | **IMPLEMENTED** | Five statuses; `DONE` needs an `evidence:` note of substance; `TASKS.md` and `requirement_file.md` §17 are cross-checked against the story file row for row (41 of 73 task rows and 6 of 15 group rows were wrong) |
+| R15-P2-06 | Root documents and scratch | **IMPLEMENTED** | 22 root files removed; the hygiene guard now refuses an unrecognised root file |
+
+### Verification evidence (executed)
+
+- CI run **44871206306**: 6/6 green, including `Documentation checks` with the three new guards;
+  Android **44871206321**: compile + unit (494 tests, lint gate) and release build with R8.
+- `check_story_status.mjs`: 185 stories, DONE 29 / IN_PROGRESS 26 / VERIFICATION_PENDING 10 /
+  NOT_STARTED 8 / UNVERIFIED 112; evidence and reasons present; `TASKS.md` agrees.
+- `check_story_coverage.mjs`: 185 stories, 27 areas, 49 requirements, 15 group rows consistent.
+- Guards 19 (10 with `--selftest`), documents 32, tracked files 439.
+
+### Not verified
+
+Nothing was deployed, no device ran the app, and no Firebase project exists here. The status file is
+therefore deliberately pessimistic: `UNVERIFIED` is a recorded gap, not a reassurance, and no document
+in this repository may describe the project as production-ready.

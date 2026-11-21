@@ -7023,7 +7023,8 @@
       "phase": 19,
       "title": "Replace unverifiable build claims",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "DONE",
+      "verification_note": "evidence: R15 rewrote the three documents that carried the unverifiable claims - AGENTS.md (the 'no environment setup is required' note, with its pinned D:/ JDK), README_AI.md (Windows paths) and README.md (a gradle.properties description R01 had already fixed) - and scripts/check_onboarding_docs.mjs fails the build if a Windows absolute path, the setup claim, or a doc that omits 'GitHub Actions compiles this' returns. The 81 'BUILD SUCCESSFUL' lines the finding counted are no longer in any tracked text: the root audit dumps that carried them moved to review_results/archive/ in the same round.",
       "depends_on": [
         "REM-001",
         "REM-002"
@@ -7059,7 +7060,8 @@
       "phase": 19,
       "title": "Reconcile PRD status with evidence",
       "priority": "HIGH",
-      "status": "NOT_STARTED",
+      "status": "DONE",
+      "verification_note": "evidence: R15 reconciled the file against evidence. One vocabulary (DONE / IN_PROGRESS / VERIFICATION_PENDING / NOT_STARTED / UNVERIFIED) replaced completed/COMPLETED/DONE; 112 stories that rested on verified_by=code_inspection are UNVERIFIED with the reason written into each; the 25 remediation stories that have a round record stay DONE with that record cited. scripts/check_story_status.mjs fails on a legacy spelling, a DONE without an 'evidence:' note, or an UNVERIFIED without a reason - with a selftest proving each refusal.",
       "depends_on": [
         "REM-067"
       ],
@@ -7129,8 +7131,8 @@
       "phase": 19,
       "title": "Assign requirement IDs and build a trace matrix",
       "priority": "MEDIUM",
-      "status": "VERIFICATION_PENDING",
-      "status_note": "docs/traceability.md assigns 18 REQ IDs across requirement sections 3-10, maps each to code and tests, and scripts/check_traceability.mjs validates the structure and reports 4 requirements with no automated test. Coverage of every feature is not yet complete.",
+      "status": "DONE",
+      "verification_note": "evidence: docs/traceability.md now maps 49 requirement ids to code and tests, and adds a coverage table for all 27 story areas (185 stories) naming the requirement rows that cover each, or why the area is a gap. scripts/check_story_coverage.mjs fails on a story area with no row, a count that drifts from prd.json, a requirement id that no row defines, or an empty reason - with a selftest. Two requirements still have no automated test (REQ-LOC-01, REQ-TRAIN-01) and the matrix says so.",
       "independent_verification": "PENDING",
 
       "depends_on": [],
@@ -7165,8 +7167,8 @@
       "phase": 19,
       "title": "Correct README capability claims",
       "priority": "MEDIUM",
-      "status": "IN_PROGRESS",
-      "status_note": "README no longer advertises Airtel Money integration or a web admin dashboard; it keeps the pre-production caveat and points to the traceability matrix. scripts/check_readme_claims.mjs guards those claims. Dependency on REM-023/REM-033 is not yet fully verified.",
+      "status": "DONE",
+      "verification_note": "evidence: the channels the finding named are gone from the README - R05 removed Airtel Money and card entirely and the README now says so in bold ('neither has an integration'), and no admin dashboard is advertised; R12 corrected the test counts and R15 replaced the build-prerequisite paragraph that described a gradle.properties R01 had already fixed. scripts/check_readme_claims.mjs fails the build when a permission, a payment channel, a test count or a readiness claim drifts from the tree.",
       "independent_verification": "PENDING",
 
       "depends_on": [

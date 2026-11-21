@@ -345,3 +345,38 @@
 
 ---
 
+---
+
+## 2026-11-20 (Prompt-4 R15 COMPLETE) - DOCUMENTATION AND TRACEABILITY GATE PASSED; PROGRAMME CLOSED AT 15/15
+
+- R15 landed on `arena/9287401d-skills-exchange`, based on `39d9043`. CI run 44871206306 was 6/6 green
+  (backend 318/318, handler tests, rules tests, supply chain, documentation checks, secret scan) and
+  Android run 44871206321 was 2/2 (compile and 494 unit tests behind the lint gate; release build with
+  R8). Three of the six findings were live, two were stale, and one was worse than reported.
+- The status file was the main problem. It had three spellings for finished (completed 112, COMPLETED 16,
+  DONE 9), and the 112 `completed` stories rested on `verified_by: code_inspection` - exactly the claim
+  this programme watched fail for escrow release (R02), account deletion (R06), the doorstep PIN (R07),
+  the offline queue (R13) and reports (R10). All 112 are now UNVERIFIED, each with the reason written in;
+  29 stories are DONE with an `evidence:` note; 26 are IN_PROGRESS, 10 VERIFICATION_PENDING, 8
+  NOT_STARTED. The completion count fell from 137 to 29 on purpose.
+- New guards, each with a selftest and wired into `Documentation checks`: check_story_status.mjs (one
+  vocabulary, evidence required for DONE, a reason required for UNVERIFIED, and TASKS.md cross-checked
+  row for row - 41 of 73 rows had drifted), check_story_coverage.mjs (all 27 story areas against the
+  coverage table, plus requirement_file.md section 17 group rows - 6 of 15 were wrong), and
+  check_onboarding_docs.mjs (no Windows absolute path, no "setup is not required" claim, CI named).
+- docs/traceability.md now maps 49 requirement ids and adds a coverage table over all 27 story areas;
+  three areas that had code and tests but no row got one (chat, disputes, map fallback). Two requirements
+  still have no automated test and the matrix says so.
+- AGENTS.md no longer promises "No environment setup is required", no longer pins D:/ JDK paths (R01
+  deleted them), and no longer tells agents to suppress a "no JDK" blocker - missing JDK is a reportable
+  blocker and CI is the compiler of record. README_AI.md and README.md follow; the onboarding guard
+  refuses a regression. DECISIONS.md gained D-2026-11-20-13 and D-2026-11-20-14 and marks D-2026-09-27-1
+  superseded.
+- The root gave up 22 files: fix/inspect/update scripts, a stray root package-lock.json, two audit dumps
+  moved to review_results/archive/, and dependency-report.json which our own supply-chain script wrote.
+  check_repo_hygiene.mjs now refuses a root file that is neither a document nor a build/config file.
+- Not verified: nothing deployed, no device, no Firebase project, no provider sandbox. SLOs, provider
+  behaviour and the rollback drill remain exactly as R13/R14 left them - written, not executed. The
+  project is not production-ready and no document may say it is.
+- Programme state: fifteen reviewers, R01-R15 implemented and merged, none deployed. The repository flips
+  private after this round; there is no next reviewer.
