@@ -9,21 +9,21 @@ numbering R01 → R15 · **Updated:** 2026-11-20
 | Field | Value |
 |---|---|
 | Original reviewer count | **15** (R01–R15, per `REVIEWER_REGISTER.md`, which is authoritative) |
-| Current reviewer number | **R02** (pending — R01 is verified, R02 has not been started) |
-| Current reviewer name | R02 — Senior Android Client Engineer (Kotlin/Compose) |
-| Verified reviewers | **R01** |
+| Current reviewer number | **R04** (pending — R03 is verified, R04 has not been started) |
+| Current reviewer name | R04 — Data & Persistence Integrity Engineer |
+| Verified reviewers | **R01, R02, R03** |
 | Failed reviewers | none |
 | Blocked reviewers | none |
-| Reviewers awaiting verification | R02, R03, R04, R05, R06, R07, R08, R09, R10, R11, R12, R13, R14, R15 (14) |
-| Next reviewer number | **R02** |
+| Reviewers awaiting verification | R04, R05, R06, R07, R08, R09, R10, R11, R12, R13, R14, R15 (12) |
+| Next reviewer number | **R04** |
 
 ## 2. Per-reviewer ledger
 
 | # | Reviewer | Verification | Report | Tests executed by verifier | Deleted instruction file |
 |---|---|---|---|---|---|
 | R01 | Principal Software Architect & Codebase Integrity | **VERIFIED COMPLETED** | `verification/reports/VERIFICATION_01.md` | Local Node guard suite (19 checks + secret scan + SBOM); Android **44873267251** — compile, 66 suites / 494 tests / 0 failures, R8 release; full CI **44873865641** 6/6 and Android **44873865632** 2/2 on this branch | **`reviewers/ARCHITECTURE_REVIEWER.md`** (text preserved in the report §9) |
-| R02 | Senior Android Client Engineer | awaiting verification | — | — | — |
-| R03 | Backend & Cloud Functions Engineer | awaiting verification | — | — | — |
+| R02 | Senior Android Client Engineer | **VERIFIED COMPLETED** | `verification/reports/VERIFICATION_02.md` | Compose critical-flow classes from CI XML (7 tests, 0 failures); full Android suite 494; local guard suite; **CI 44876801082 6/6**, **Android 44876801131 2/2** on this branch | **`reviewers/ANDROID_CLIENT_REVIEWER.md`** (text preserved in the report §9) |
+| R03 | Backend & Cloud Functions Engineer | **VERIFIED COMPLETED** | `verification/reports/VERIFICATION_03.md` | Executed locally: `npm ci`, `npm run build` (tsc exit 0), `npm test` **318/318**, `webhookAuth.test.mjs` 8/8, export/auth structural scan (43 callables, 2 unauthenticated by design); **CI 44878042617 6/6**, **Android 44878042621 2/2** | **`reviewers/BACKEND_REVIEWER.md`** (text preserved in the report §9) |
 | R04 | Data & Persistence Integrity Engineer | awaiting verification | — | — | — |
 | R05 | API & External Integrations Engineer | awaiting verification | — | — | — |
 | R06 | Authentication & Identity Engineer | awaiting verification | — | — | — |
@@ -45,6 +45,8 @@ These are records the verifier will not edit (a verifier that fixes what it veri
 |---|---|---|---|
 | VC-01 | Implementation agent | `prd.json` REM-001 is `VERIFICATION_PENDING` although CI compiles and tests every push — cite the run id and move to `DONE`. REM-004 is `NOT_STARTED` although the duplicate manifest and dead `ActiveJobScreen.kt` are gone and guarded. | R01, caveat B |
 | VC-02 | Implementation agent | The god-class roadmap (D-2026-11-20-1) has no slice started; `SkillsExchangeRepository.kt` and `SkillsExchangeViewModel.kt` grew to 3,357 and 3,429 lines. REM-003 is correctly `NOT_STARTED`; the roadmap must not be cited as decomposition. | R01, caveat A |
+| VC-04 | Implementation agent | `functions/src/index.ts:2215` still says `firestore.indexes.json` "is not part of the project"; four indexes are declared and wired. Stale comment. | R03, §7 |
+| VC-03 | Implementation agent | `EscrowAndProofSheet.kt:1430` says "Payout Dispatched" / "Funds sent to … via Mobile Money" while the server has only an accepted `PAYOUT_PENDING` request. Reachable only after server confirmation, so the gate holds; the wording overstates settlement. | R02, §7 |
 
 ## 4. Instruction-file deletion policy (decided)
 

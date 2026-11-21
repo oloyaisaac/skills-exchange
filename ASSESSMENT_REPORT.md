@@ -383,8 +383,8 @@ Full sequencing, parallelism and exit criteria: `REVIEW_PLAN.md`.
 | `REVIEW_PLAN.md` | Execution plan, evidence protocol, report template |
 | `PRODUCTION_READINESS.md` | Domain gates and explicit non-readiness verdict |
 | `reviewers/ARCHITECTURE_REVIEWER.md` — deleted after independent verification; text preserved in `verification/reports/VERIFICATION_01.md` §9 | R01 |
-| `reviewers/ANDROID_CLIENT_REVIEWER.md` | R02 |
-| `reviewers/BACKEND_REVIEWER.md` | R03 |
+| `reviewers/ANDROID_CLIENT_REVIEWER.md` — deleted after independent verification; text preserved in `verification/reports/VERIFICATION_02.md` §9 | R02 |
+| `reviewers/BACKEND_REVIEWER.md` — deleted after independent verification; text preserved in `verification/reports/VERIFICATION_03.md` §9 | R03 |
 | `reviewers/DATA_REVIEWER.md` | R04 |
 | `reviewers/API_INTEGRATION_REVIEWER.md` | R05 |
 | `reviewers/AUTH_REVIEWER.md` | R06 |

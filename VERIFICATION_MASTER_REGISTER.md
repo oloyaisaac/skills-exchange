@@ -13,8 +13,8 @@ Status vocabulary: **VERIFIED COMPLETED** · **PARTIALLY VERIFIED** · **FAILED 
 | # | Reviewer title | Implementation declaration | Independent verification | Tests performed by verifier | Approval evidence | Instruction file |
 |---|---|---|---|---|---|---|
 | R01 | Principal Software Architect & Codebase Integrity | `reviewer_completions/REVIEWER_01_DONE.md` — one sentence, no evidence | **VERIFIED COMPLETED** | Node guard suite (19 checks + secret scan + SBOM); CI `:app:compileDebugKotlin`, 494 Android unit tests, 318 backend tests | `verification/reports/VERIFICATION_01.md`; five passing conditions re-tested; all five findings re-derived, 3 closed, 1 closed-with-growth, 1 closed stronger than asked | **DELETED 2026-11-20** — text preserved in `verification/reports/VERIFICATION_01.md` §9 |
-| R02 | Senior Android Client Engineer (Kotlin/Compose) | `REVIEWER_02_DONE.md` | NOT VERIFIED | — | — | `retained` |
-| R03 | Backend & Cloud Functions Engineer | `REVIEWER_03_DONE.md` | NOT VERIFIED | — | — | `retained` |
+| R02 | Senior Android Client Engineer (Kotlin/Compose) | `REVIEWER_02_DONE.md` — one sentence, no evidence | **VERIFIED COMPLETED** | Compose critical-flow classes (7 tests) + full Android suite (494) from CI XML; local guard suite; full CI on the PR | `verification/reports/VERIFICATION_02.md`; six passing conditions re-tested; all seven findings closed at code and rules layer | **DELETED 2026-11-20** — text preserved in `verification/reports/VERIFICATION_02.md` §9 |
+| R03 | Backend & Cloud Functions Engineer | `REVIEWER_03_DONE.md` — one sentence, no evidence | **VERIFIED COMPLETED** | Executed locally: `npm run build` (tsc 0), `npm test` 318/318, `webhookAuth.test.mjs` 8/8, export/auth scan; emulator handler suite (19) from CI | `verification/reports/VERIFICATION_03.md`; seven conditions retested, eight findings closed | **DELETED 2026-11-20** — text preserved in `verification/reports/VERIFICATION_03.md` §9 |
 | R04 | Data & Persistence Integrity Engineer | `REVIEWER_04_DONE.md` | NOT VERIFIED | — | — | `retained` |
 | R05 | API & External Integrations Engineer | `REVIEWER_05_DONE.md` | NOT VERIFIED | — | — | `retained` |
 | R06 | Authentication & Identity Engineer | `REVIEWER_06_DONE.md` | NOT VERIFIED | — | — | `retained` |
@@ -28,11 +28,12 @@ Status vocabulary: **VERIFIED COMPLETED** · **PARTIALLY VERIFIED** · **FAILED 
 | R14 | DevOps, Release Engineering & Supply Chain Reviewer | `REVIEWER_14_DONE.md` | NOT VERIFIED | — | — | `retained` |
 | R15 | Documentation & Requirements Traceability Auditor | `REVIEWER_15_DONE.md` | NOT VERIFIED | — | — | `retained` |
 
-**Totals:** 15 reviewers · 1 verified · 0 failed · 0 blocked · 14 awaiting verification ·
-**1 instruction file deleted** (`reviewers/ARCHITECTURE_REVIEWER.md`) · 14 retained.
+**Totals:** 15 reviewers · 3 verified · 0 failed · 0 blocked · 12 awaiting verification ·
+**3 instruction files deleted** · 12 retained.
 
-**Deleted instruction files:** `reviewers/ARCHITECTURE_REVIEWER.md` (R01, 2026-11-20). Preserved
-verbatim in `verification/reports/VERIFICATION_01.md` §9; all ten inbound references repointed.
+**Deleted instruction files:** `reviewers/ARCHITECTURE_REVIEWER.md` (R01, 2026-11-20) — text in
+`verification/reports/VERIFICATION_01.md` §9; `reviewers/ANDROID_CLIENT_REVIEWER.md` (R02, 2026-11-20) —
+text in `verification/reports/VERIFICATION_02.md` §9. All inbound references repointed in both cases.
 
 ## Notes
 

@@ -14,12 +14,12 @@
 | R08 | Payments, Escrow & Financial Controls Auditor | RVW-008 | P0 | 1 | Money gate | `reviewers/PAYMENTS_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_08](reviewers/reports/REVIEW_08.md)) |
 | R09 | Privacy, KYC & Regulatory Compliance Reviewer | RVW-009 | P0 | 1 | Compliance gate | `reviewers/PRIVACY_COMPLIANCE_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_09](reviewers/reports/REVIEW_09.md)) |
 | R06 | Authentication & Identity Engineer | RVW-006 | P0 | 2 | Identity gate | `reviewers/AUTH_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_06](reviewers/reports/REVIEW_06.md)) |
-| R03 | Backend & Cloud Functions Engineer | RVW-003 | P0 | 2 | — | `reviewers/BACKEND_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_03](reviewers/reports/REVIEW_03.md)) |
+| R03 | Backend & Cloud Functions Engineer | RVW-003 | P0 | 2 | — | `deleted after verification` → `verification/reports/VERIFICATION_03.md` | `submitted` — **FAIL** ([REVIEW_03](reviewers/reports/REVIEW_03.md)) |
 | R04 | Data & Persistence Integrity Engineer | RVW-004 | P1 | 2 | — | `reviewers/DATA_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_04](reviewers/reports/REVIEW_04.md)) |
 | R05 | API & External Integrations Engineer | RVW-005 | P1 | 2 | — | `reviewers/API_INTEGRATION_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_05](reviewers/reports/REVIEW_05.md)) |
 | R11 | QA & Test Engineering Lead | RVW-011 | P1 | 3 | Evidence gate | `reviewers/QA_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_11](reviewers/reports/REVIEW_11.md)) |
 | R13 | Performance, Scalability & Reliability Engineer | RVW-013 | P1 | 3 | — | `reviewers/PERFORMANCE_RELIABILITY_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_13](reviewers/reports/REVIEW_13.md)) |
-| R02 | Senior Android Client Engineer (Kotlin/Compose) | RVW-002 | P1 | 3 | — | `reviewers/ANDROID_CLIENT_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_02](reviewers/reports/REVIEW_02.md)) |
+| R02 | Senior Android Client Engineer (Kotlin/Compose) | RVW-002 | P1 | 3 | — | `deleted after verification` → `verification/reports/VERIFICATION_02.md` | `submitted` — **FAIL** ([REVIEW_02](reviewers/reports/REVIEW_02.md)) |
 | R12 | UI/UX & Accessibility Specialist | RVW-012 | P1 | 3 | — | `reviewers/UI_UX_ACCESSIBILITY_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_12](reviewers/reports/REVIEW_12.md)) |
 | R15 | Documentation & Requirements Traceability Auditor | RVW-015 | P1 | 4 | Synthesis gate | `reviewers/DOCUMENTATION_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_15](reviewers/reports/REVIEW_15.md)) |
 
