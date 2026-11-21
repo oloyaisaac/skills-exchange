@@ -59,7 +59,7 @@ Assignment: `reviewers/ARCHITECTURE_REVIEWER.md` (deleted after verification; pr
 
 ### R02 — Android Client
 
-Assignment: `reviewers/ANDROID_CLIENT_REVIEWER.md` · Report: `review_results/R02_ANDROID_CLIENT.md`
+Assignment: `reviewers/ANDROID_CLIENT_REVIEWER.md` (deleted after verification; preserved in `verification/reports/VERIFICATION_02.md` §9) · Report: `review_results/R02_ANDROID_CLIENT.md`
 
 | Task | Priority | Finding | Root cause | Affected files | Required correction | Depends on | Required tests | Acceptance criteria | Completion evidence |
 |---|---|---|---|---|---|---|---|---|---|

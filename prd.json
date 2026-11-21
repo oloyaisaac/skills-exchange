@@ -3796,7 +3796,7 @@
             "goal": "Produce an evidence-backed verdict for Android Client Engineering with blocking findings, residual risks and passing conditions recorded in the reviewer's report.",
             "scope": {
                 "include": [
-                    "reviewers/ANDROID_CLIENT_REVIEWER.md",
+                    "verification/reports/VERIFICATION_02.md",
                     "ASSESSMENT_REPORT.md",
                     "PRODUCTION_READINESS.md"
                 ],
@@ -3806,7 +3806,7 @@
                 ]
             },
             "files_likely_affected": [
-                "reviewers/ANDROID_CLIENT_REVIEWER.md"
+                "verification/reports/VERIFICATION_02.md"
             ],
             "acceptance_criteria": [
                 "All 11 mandatory sections of the reviewer instruction file are addressed",
@@ -3820,7 +3820,7 @@
                 "Findings cross-referenced in ASSESSMENT_REPORT.md and PRODUCTION_READINESS.md"
             ],
             "evidence_required": "File:line citations, command output, or document quotes for every claim. Statements that could not be executed in this environment must be labelled UNVERIFIED, not PASS.",
-            "reviewer_file": "reviewers/ANDROID_CLIENT_REVIEWER.md",
+            "reviewer_file": "verification/reports/VERIFICATION_02.md",
             "notes": "Added 2026-11-19 by the independent assessment. Existing 97 stories retain their prior statuses; they were NOT re-verified by this task. ASSESSMENT_REPORT.md F-001 records that committed HEAD contains compile-blocking source defects, so prior 'completed' claims must be treated as unverified until RVW-001/RVW-011 re-check them."
         },
         {

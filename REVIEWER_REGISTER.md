@@ -19,7 +19,7 @@
 | R05 | API & External Integrations Engineer | RVW-005 | P1 | 2 | — | `reviewers/API_INTEGRATION_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_05](reviewers/reports/REVIEW_05.md)) |
 | R11 | QA & Test Engineering Lead | RVW-011 | P1 | 3 | Evidence gate | `reviewers/QA_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_11](reviewers/reports/REVIEW_11.md)) |
 | R13 | Performance, Scalability & Reliability Engineer | RVW-013 | P1 | 3 | — | `reviewers/PERFORMANCE_RELIABILITY_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_13](reviewers/reports/REVIEW_13.md)) |
-| R02 | Senior Android Client Engineer (Kotlin/Compose) | RVW-002 | P1 | 3 | — | `reviewers/ANDROID_CLIENT_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_02](reviewers/reports/REVIEW_02.md)) |
+| R02 | Senior Android Client Engineer (Kotlin/Compose) | RVW-002 | P1 | 3 | — | `deleted after verification` → `verification/reports/VERIFICATION_02.md` | `submitted` — **FAIL** ([REVIEW_02](reviewers/reports/REVIEW_02.md)) |
 | R12 | UI/UX & Accessibility Specialist | RVW-012 | P1 | 3 | — | `reviewers/UI_UX_ACCESSIBILITY_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_12](reviewers/reports/REVIEW_12.md)) |
 | R15 | Documentation & Requirements Traceability Auditor | RVW-015 | P1 | 4 | Synthesis gate | `reviewers/DOCUMENTATION_REVIEWER.md` | `submitted` — **FAIL** ([REVIEW_15](reviewers/reports/REVIEW_15.md)) |
 

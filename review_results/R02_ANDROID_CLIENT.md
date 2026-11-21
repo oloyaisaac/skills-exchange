@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Reviewer | R02 — Android Client (P1) |
-| Assignment | `reviewers/ANDROID_CLIENT_REVIEWER.md` (read in full) |
+| Assignment | `reviewers/ANDROID_CLIENT_REVIEWER.md` (read in full); file deleted after independent verification — text preserved in `verification/reports/VERIFICATION_02.md` §9 |
 | Executed | 2026-11-19 |
 | Source reviewed | HEAD `06ff649`; code baseline `6b39a10` |
 | Areas | Compose screens, lifecycle, state, permissions, process death, onboarding |

@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Reviewer | R02 — Android Client (P1) |
-| Assignment | `reviewers/ANDROID_CLIENT_REVIEWER.md` (read in full) |
+| Assignment | `reviewers/ANDROID_CLIENT_REVIEWER.md` (read in full); file deleted after independent verification — text preserved in `verification/reports/VERIFICATION_02.md` §9 |
 | Executed | 2026-11-20 |
 | Source reviewed | `arena/0570a462-skills-exchange` @ `aa4a0bc` |
 | Mode | Review only — no client source changed |
